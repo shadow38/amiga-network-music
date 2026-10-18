@@ -1,0 +1,20 @@
+{
+    "configurations": [
+        {
+            "name": "AmigaOS 3.2 (m68k-amigaos-gcc)",
+            "includePath": [
+                "${workspaceFolder}/src",
+                "${workspaceFolder}/.sdk/libnix-include",
+                "${workspaceFolder}/.sdk/gcc-include",
+                "${workspaceFolder}/.sdk/ndk-include",
+                "${workspaceFolder}/.sdk/sys-include",
+                "${workspaceFolder}/.sdk/include"
+            ],
+            "defines": ["__amigaos__", "AMIGA", "mc68000", "__mc68000__", "__m68k__", "mc68020", "__mc68020__"],
+            "compilerPath": "",
+            "cStandard": "gnu17",
+            "intelliSenseMode": "gcc-x86"
+        }
+    ],
+    "version": 4
+}

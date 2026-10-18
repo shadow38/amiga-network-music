@@ -1,0 +1,42 @@
+{
+    // tools/amiga-make.sh picks the toolchain (see README); on Windows it runs in WSL
+    // (default distribution).
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Amiga: build",
+            "type": "process",
+            "command": "sh",
+            "args": ["tools/amiga-make.sh", "all"],
+            "windows": {
+                "command": "wsl.exe",
+                "args": ["--cd", "${workspaceFolder}", "--exec", "sh", "tools/amiga-make.sh", "all"]
+            },
+            "group": { "kind": "build", "isDefault": true },
+            "problemMatcher": { "base": "$gcc", "fileLocation": ["relative", "${workspaceFolder}"] }
+        },
+        {
+            "label": "Amiga: clean",
+            "type": "process",
+            "command": "sh",
+            "args": ["tools/amiga-make.sh", "clean"],
+            "windows": {
+                "command": "wsl.exe",
+                "args": ["--cd", "${workspaceFolder}", "--exec", "sh", "tools/amiga-make.sh", "clean"]
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Amiga: sync headers (.sdk)",
+            "detail": "Copy the toolchain headers into .sdk/ for IntelliSense",
+            "type": "process",
+            "command": "sh",
+            "args": ["tools/amiga-make.sh", "sdk"],
+            "windows": {
+                "command": "wsl.exe",
+                "args": ["--cd", "${workspaceFolder}", "--exec", "sh", "tools/amiga-make.sh", "sdk"]
+            },
+            "problemMatcher": []
+        }
+    ]
+}

@@ -1,0 +1,9 @@
+{
+    // Status bar buttons for the tasks in tasks.json (spencerwmiles.vscode-task-buttons extension)
+    "VsCodeTaskButtons.showCounter": false,
+    "VsCodeTaskButtons.tasks": [
+        { "label": "$(tools) Build", "task": "Amiga: build", "tooltip": "Build (Ctrl+Shift+B)" },
+        { "label": "$(trash) Clean", "task": "Amiga: clean", "tooltip": "Delete obj/ and out/" },
+        { "label": "$(sync) Headers", "task": "Amiga: sync headers (.sdk)", "tooltip": "Copy the toolchain headers into .sdk/ (IntelliSense)" }
+    ]
+}
