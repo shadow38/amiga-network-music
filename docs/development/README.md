@@ -45,7 +45,8 @@ success criterion and a way to check it.
 | 0.2 Test LMS server | ✅ 2026-10-18 |
 | 0.3 Reference player | ✅ 2026-10-18 |
 | 0.4 WinUAE test configuration | 🔶 provisional (networking, no AHI) |
-| 0.5 to 0.8 | ⬜ |
+| 0.5, 0.6, 0.8 | ⬜ |
+| 0.7 Automated runs in WinUAE | 🔶 serial shell working |
 | 1.1 amisqueeze: control connection | ✅ 2026-10-18 |
 | 1.1b amisqueeze: default options (`ENV:amisqueeze.prefs`) | ✅ 2026-10-18 |
 | **1.2 amisqueeze: receiving the stream** | ⬜ **next step** |

@@ -68,12 +68,19 @@ Back to the [plan](README.md).
 - **Criterion**: `make test` passes; a known regression (swapped bytes, wrong `STAT` field) makes it fail.
 - **Recommended before**: 1.2.
 
-## 0.7 Logging and automated runs in WinUAE ⬜
+## 0.7 Logging and automated runs in WinUAE 🔶
 
 - **Goal**: run a test in WinUAE and read its result from the host, without manual steps.
-- **Content**: an option to log to a file (on the mounted volume, so visible from the host); a startup script in
-  the emulated Amiga that runs the test and then quits WinUAE.
-- **Criterion**: one command on the host starts WinUAE, waits, then prints the test log.
+- **Done (2026-10-18, local setup)**: a **serial shell**. WinUAE connects the Amiga's serial port to a local TCP
+  socket (`win32.serial_port=TCP://127.0.0.1:<port>`; the `win32.` prefix is required, otherwise WinUAE logs
+  "unknown config entry"); `S:User-Startup` runs `Mount AUX:` and `Run >NIL: NewShell AUX:`; a host script sends a
+  command line and reads the output up to the next prompt. Validated: commands, starting amisqueeze in the
+  background (`Run NM:amisqueeze >T:log …`), `Status`, `Break <n>`, reading the log. Pitfalls: send one character at
+  a time (no flow control, characters get lost otherwise); the console wraps the prompt in control sequences
+  (`CSI 20h`, `SI`) to filter out.
+- **To do**: start WinUAE from the host and wait for the shell; a generic version of the host script in
+  `tools/`; scripted test scenarios.
+- **Criterion**: one command on the host starts WinUAE, waits, runs a scenario and prints its result.
 
 ## 0.8 Source-level debugging ⬜ (optional)
 
