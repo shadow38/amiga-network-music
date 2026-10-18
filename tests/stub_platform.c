@@ -17,6 +17,11 @@ uint32_t stub_now;
 int      stub_chunk;
 int      stub_connect_fails;
 int      stub_stream_open;
+uint8_t  stub_file[2 * 1024 * 1024];
+int      stub_file_len;
+int      stub_file_open;
+int      stub_file_fails;
+int      stub_file_limit;
 
 struct queue {
     uint8_t data[2 * 1024 * 1024];
@@ -171,6 +176,35 @@ void plat_close(int sock)
 int plat_error(void)
 {
     return 0;
+}
+
+int plat_file_create(const char *name)
+{
+    (void)name;
+    if (stub_file_fails)
+        return -1;
+    stub_file_len = 0;
+    stub_file_open = 1;
+    return STUB_FILE;
+}
+
+int plat_file_write(int file, const void *buf, int len)
+{
+    int max = stub_file_limit ? stub_file_limit : (int)sizeof(stub_file);
+
+    if (file != STUB_FILE || !stub_file_open)
+        return -1;
+    if (len > max - stub_file_len)
+        len = max - stub_file_len;
+    memcpy(stub_file + stub_file_len, buf, (size_t)len);
+    stub_file_len += len;
+    return len;
+}
+
+void plat_file_close(int file)
+{
+    if (file == STUB_FILE)
+        stub_file_open = 0;
 }
 
 int plat_wait(struct plat_fd *fds, int n, uint32_t timeout_ms)

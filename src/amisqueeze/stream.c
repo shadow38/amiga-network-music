@@ -9,7 +9,8 @@
  *     STMs is sent again when the output reaches it (gapless);
  *   buffer empty: STMo while still streaming, STMu once everything was played.
  * Single buffer: raw PCM needs no decoding, so the ring buffer is both the stream and the output buffer.
- * The virtual output consumes it at the PCM rate, like a sound card; files (1.3) and AHI (1.4) come later.
+ * The virtual output consumes it at the PCM rate, like a sound card; with the OUTPUT option, what it consumes is
+ * also written to a file (plan step 1.3: what AHI will play, checked byte by byte). AHI comes with step 1.4.
  */
 #include <string.h>
 
@@ -23,6 +24,7 @@ int stream_init(struct player *p)
     p->stream.sock = -1;
     p->stream.state = STREAM_IDLE;
     p->out.state = OUTPUT_STOPPED;
+    p->out.file = -1;
     return ring_init(&p->ring, STREAM_BUFFER_SIZE);
 }
 
@@ -125,6 +127,60 @@ int stream_events(const struct player *p)
 
 /* ---- virtual output ---- */
 
+int output_file_open(struct player *p, const char *name)
+{
+    struct output *o = &p->out;
+
+    o->file = plat_file_create(name);
+    if (o->file < 0) {
+        msg("amisqueeze: cannot create %s: error %d\n", name, plat_error());
+        return 0;
+    }
+    o->file_name = name;
+    o->written = 0;
+    if (p->verbose)
+        msg("output: writing the audio to %s\n", name);
+    return 1;
+}
+
+void output_file_close(struct player *p)
+{
+    struct output *o = &p->out;
+
+    if (o->file < 0)
+        return;
+    plat_file_close(o->file);
+    o->file = -1;
+    if (p->verbose)
+        msg("output: %lu bytes written to %s\n", (unsigned long)o->written, o->file_name);
+}
+
+/* Plays n bytes (n <= ring_used): written to the OUTPUT file if any, then dropped from the buffer. A write error
+ * closes the file; playback goes on without it. */
+static void consume(struct player *p, uint32_t n)
+{
+    struct output *o = &p->out;
+
+    while (n > 0) {
+        const uint8_t *d;
+        uint32_t len = ring_read_space(&p->ring, &d);
+
+        if (len > n)
+            len = n;
+        if (o->file >= 0) {
+            int w = plat_file_write(o->file, d, (int)len);
+            if (w > 0)
+                o->written += (uint32_t)w;
+            if (w != (int)len) {
+                msg("amisqueeze: cannot write to %s: error %d, file closed\n", o->file_name, plat_error());
+                output_file_close(p);
+            }
+        }
+        ring_consume(&p->ring, len);
+        n -= len;
+    }
+}
+
 /* The output reaches the next queued track: it becomes the current one */
 static void next_track(struct player *p)
 {
@@ -211,7 +267,7 @@ void output_tick(struct player *p, uint32_t now)
         }
         o->starved = 0;
         n = bytes < avail ? bytes : avail;
-        ring_consume(r, n);
+        consume(p, n);
         o->played += n;
         bytes -= n;
     }

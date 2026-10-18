@@ -78,6 +78,7 @@ docs/development/     development plan
 Makefile              build (m68k-amigaos-gcc must be in the PATH; HOSTCC for the host build)
 tools/amiga-make.sh   runs make with whichever toolchain is available (see "Building")
 tools/check-saves.py  checks the generated assembly (safeguard against a gcc bug, see "Building")
+tools/pcm-compare.py  compares the PCM written by amisqueeze (OUTPUT option) with a reference, byte by byte
 ```
 
 `obj/`, `out/`, `obj-host/`, `out-host/` and `.sdk/` are generated (ignored by `.gitignore`).
@@ -153,12 +154,13 @@ Tasks (`.vscode/tasks.json`, calling `tools/amiga-make.sh`, through WSL on Windo
 amisqueeze SERVER=192.168.1.10 NAME=Amiga VERBOSE
 ```
 
-Options (`SERVER`, `PORT`, `NAME`, `MAC`, `VERBOSE`) and default options stored in `ENV:amisqueeze.prefs` are
+Options (`SERVER`, `PORT`, `NAME`, `MAC`, `OUTPUT`, `VERBOSE`) and default options stored in `ENV:amisqueeze.prefs` are
 described in the **[user guide](docs/user-guide.md)**.
 
-Current state (steps 1.1, 1.1b and 1.2 of the plan): control connection, player name, default options, and PCM
+Current state (steps 1.1 to 1.3 of the plan): control connection, player name, default options, and PCM
 streams received into a 1 MB buffer consumed at the playing pace by a virtual output (progress reported to LMS,
-gapless next track, pause, stop); no sound yet. What comes next is in the
+gapless next track, pause, stop), optionally written to a file (`OUTPUT`) to check it byte by byte; no sound
+yet. What comes next is in the
 [amisqueeze plan](docs/development/phase-1-amisqueeze.md).
 
 Protocol references: squeezelite (`slimproto.c`, `slimproto.h`, `stream.c`, `pcm.c`,

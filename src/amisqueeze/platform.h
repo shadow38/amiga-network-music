@@ -48,6 +48,12 @@ struct plat_fd {
     int ready;
 };
 
+/* Output file (OUTPUT option): creates or replaces the file; returns a handle (>= 0), or -1 (plat_error()) */
+int plat_file_create(const char *name);
+/* Bytes written, fewer than len on error (plat_error()) */
+int plat_file_write(int file, const void *buf, int len);
+void plat_file_close(int file);
+
 /* Waits until one of the n sockets is ready, the timeout expires or the user interrupts (Ctrl-C). n may be 0
  * (plain delay that can be interrupted). Returns 1 = something ready, 0 = timeout, -1 = interrupted,
  * -2 = error (already reported). */

@@ -131,12 +131,17 @@ int player_main(struct player *p, const struct options *o)
             (unsigned long)(STREAM_BUFFER_SIZE / 1024));
         return PLAYER_FAIL;
     }
+    if (o->output && !output_file_open(p, o->output)) {
+        stream_free(p);
+        return PLAYER_FAIL;
+    }
     msg("player \"%s\" (%02X:%02X:%02X:%02X:%02X:%02X), server %s port %u\n",
         p->name, p->mac[0], p->mac[1], p->mac[2], p->mac[3], p->mac[4], p->mac[5],
         o->server, (unsigned)p->server_port);
 
     run(p);
     slim_disconnect(p);
+    output_file_close(p);
     stream_free(p);
     msg("stopped\n");
     return PLAYER_OK;

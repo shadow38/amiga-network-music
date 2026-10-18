@@ -75,15 +75,38 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   - WinUAE: no memory leak (same free memory after three play/stop cycles), and still working with a 2 KB stack;
     Amiga executable: 21,488 bytes.
 
-## 1.3 Output to a file ⬜ (next step)
+## 1.3 Output to a file ✅ (2026-10-18)
 
 - **Goal**: check the received data byte by byte before listening to anything.
-- **Content**: an `OUTPUT=<file>` option that writes the received PCM (after any conversion) to a file.
-- **Criterion**: the file written to the mounted volume is identical to the PCM produced on the host by the same
-  conversion (`sox`).
-- **Test**: automated comparison on the host.
+- **Content**: an `OUTPUT=<file>` option (command line and default options) that writes what the virtual output
+  plays, exactly as received (no conversion yet: the byte swap for the 68k belongs to AHI, 1.4): nothing while
+  paused, nothing of what a stop or a seek flushes, the next track right after the previous one. One file per run:
+  created (or replaced) at start-up, closed at the end; a file that cannot be created stops amisqueeze (return
+  code 20); a write error is reported once, the file is closed and playback goes on.
+- **Criterion**: the file is identical to the expected PCM, with two kinds of references: a counter pattern
+  (frame n holds n on the left and its complement on the right) encoded in FLAC, which LMS decodes losslessly, so
+  the reference is known in advance; and an MP3 decoded by the same `sox` command as the server's conversion rule.
+  Two tracks back to back must give both references one after the other (gapless, nothing lost at the boundary).
+- **Test**: unit tests (file captured by the stub platform: pause, gapless, stop, errors); fake server scenario
+  (two tracks of pseudo-random bytes, file compared with what was sent; file that cannot be created);
+  `tools/pcm-compare.py` (identical / prefix / different, and with the counter pattern the counter values around
+  the first difference); then the host build and the Amiga build against LMS.
+- **Done**: `consume()` in `stream.c` writes each contiguous part of the ring buffer (`ring_read_space()`) before
+  dropping it, the only place where the output consumes data; `plat_file_create/write/close` in both platform
+  layers (`Open`/`Write`/`Close` of dos.library on the Amiga).
+- **Validated**:
+  - `make test`: 156 unit checks, fake server scenarios (file identical to the 2.5 s of data sent over two
+    tracks; `OUTPUT` in a missing directory: error, return code 20);
+  - host build and Amiga build (WinUAE) against LMS 9.1.1, one `play` per run, file compared once the output has
+    drained: counter pattern twice (40 s, 7,056,000 bytes) and a 20 s MP3 twice: identical on both builds; a 195 s
+    MP3 on the Amiga with a 2 KB stack: identical (34,403,328 bytes), same free memory before and after; Amiga
+    executable: 22,268 bytes.
+- **Pitfall found**: LMS strips the ID3v1 tag (last 128 bytes) of an MP3 before passing it to `sox`, whose MP3
+  decoder then drops the last frame (1,152 samples): seen with the test MP3, where the tag was the only data after
+  that frame. A reference decoded from the whole file is then one frame too long: decode the file without its
+  ID3v1 tag, or use test MP3s without one (`lame --id3v2-only`).
 
-## 1.4 AHI audio output ⬜
+## 1.4 AHI audio output ⬜ (next step)
 
 - **Goal**: hear the sound, and hear it right.
 - **Content**: `ahi.device`, double-buffered `CMD_WRITE`, `AHIST_S16S`; byte swapping when the stream is

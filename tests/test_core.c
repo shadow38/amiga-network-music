@@ -177,6 +177,7 @@ static void test_ring(void)
 {
     struct ring r;
     uint8_t *w, out[16];
+    const uint8_t *rp;
     uint32_t n;
 
     CHECK(ring_init(&r, 16));
@@ -194,6 +195,8 @@ static void test_ring(void)
     memcpy(w, "gh", 2);
     ring_commit(&r, 2);
     CHECK(ring_used(&r) == 12 && ring_space(&r) == 4);
+    n = ring_read_space(&r, &rp);
+    CHECK(n == 10 && rp == r.buf + 6);  /* contiguous data up to the end, the rest is at the start */
     CHECK(ring_read(&r, out, 16) == 12 && !memcmp(out, "6789abcdefgh", 12));
     CHECK(r.total_in == 18 && r.total_out == 18 && ring_used(&r) == 0);
     ring_clear(&r);
@@ -569,6 +572,133 @@ static void test_autostart_0(void)
     teardown(&p);
 }
 
+/* ---- OUTPUT file ---- */
+
+static uint8_t track_a[PCM_BPS];        /* 1 s, then 0.5 s of non-periodic bytes: a slip would show */
+static uint8_t track_b[PCM_BPS / 2];
+
+static void fill(uint8_t *b, uint32_t len, uint32_t seed)
+{
+    uint32_t i;
+
+    for (i = 0; i < len; i++) {
+        seed = seed * 1103515245u + 12345u;
+        b[i] = (uint8_t)(seed >> 16);
+    }
+}
+
+/* Plays until the output stops (at most `ms`), in steps of 100 ms like the main loop */
+static void play_for(struct player *p, uint32_t ms)
+{
+    for (; ms > 0 && p->out.state == OUTPUT_RUNNING; ms -= 100) {
+        stub_now += 100;
+        output_tick(p, stub_now);
+    }
+}
+
+static void setup_file(struct player *p)
+{
+    setup(p, "Amiga");
+    stub_file_fails = 0;
+    stub_file_limit = 0;
+    stub_file_len = 0;
+    p->verbose = 1;
+    CHECK(output_file_open(p, "out.pcm"));
+    CHECK(stub_file_open && strstr(stub_out, "output: writing the audio to out.pcm") != NULL);
+    CHECK(slim_connect(p, 0));
+}
+
+/* The file gets what the output plays: nothing while paused, the next track right after the previous one */
+static void test_output_file(void)
+{
+    struct player p;
+
+    fill(track_a, sizeof(track_a), 1);
+    fill(track_b, sizeof(track_b), 2);
+    setup_file(&p);
+    open_stream(&p, '1', 1);
+    stub_feed_stream(track_a, sizeof(track_a));
+    drain_stream(&p);
+    stub_stream_end();
+    stream_io(&p, PLAT_READ);
+    CHECK(stub_file_len == 0);                          /* nothing played yet */
+    play_for(&p, 300);
+    CHECK(stub_file_len == PCM_BPS * 3 / 10 && !memcmp(stub_file, track_a, (size_t)stub_file_len));
+
+    feed_strm('p', NULL, 0, 0, 0, NULL);
+    drain(&p);
+    stub_now += 1000;
+    output_tick(&p, stub_now);
+    CHECK(stub_file_len == PCM_BPS * 3 / 10);           /* paused: nothing written */
+    feed_strm('u', NULL, 0, 0, 0, NULL);
+    drain(&p);
+
+    stub_reset();
+    open_stream(&p, '1', 1);                            /* track B, gapless */
+    stub_feed_stream(track_b, sizeof(track_b));
+    drain_stream(&p);
+    stub_stream_end();
+    stream_io(&p, PLAT_READ);
+    play_for(&p, 3000);
+    CHECK(p.out.state == OUTPUT_STOPPED);
+    CHECK(stub_file_len == (int)(sizeof(track_a) + sizeof(track_b)));
+    CHECK(!memcmp(stub_file, track_a, sizeof(track_a)));
+    CHECK(!memcmp(stub_file + sizeof(track_a), track_b, sizeof(track_b)));
+
+    clear_tx();
+    output_file_close(&p);
+    CHECK(!stub_file_open && p.out.file < 0);
+    CHECK(strstr(stub_out, "output: 264600 bytes written to out.pcm") != NULL);
+    teardown(&p);
+}
+
+/* Data flushed by a stop is never written */
+static void test_output_file_stop(void)
+{
+    struct player p;
+
+    setup_file(&p);
+    open_stream(&p, '1', 1);
+    stub_feed_stream(track_a, 50000);
+    drain_stream(&p);
+    play_for(&p, 100);
+    CHECK(stub_file_len == PCM_BPS / 10);
+    feed_strm('q', NULL, 0, 0, 0, NULL);
+    drain(&p);
+    play_for(&p, 1000);
+    CHECK(stub_file_len == PCM_BPS / 10 && !memcmp(stub_file, track_a, (size_t)stub_file_len));
+    output_file_close(&p);
+    teardown(&p);
+}
+
+/* File that cannot be created; write error (disk full): one message, file closed, playback goes on */
+static void test_output_file_errors(void)
+{
+    struct player p;
+
+    setup(&p, "Amiga");
+    stub_file_fails = 1;
+    CHECK(!output_file_open(&p, "out.pcm") && p.out.file < 0);
+    CHECK(strstr(stub_out, "amisqueeze: cannot create out.pcm") != NULL);
+    teardown(&p);
+
+    setup_file(&p);
+    stub_file_limit = 10000;
+    open_stream(&p, '1', 1);
+    stub_feed_stream(track_a, sizeof(track_a));
+    drain_stream(&p);
+    clear_tx();
+    play_for(&p, 100);
+    CHECK(stub_file_len == 10000 && !stub_file_open && p.out.file < 0);
+    CHECK(strstr(stub_out, "amisqueeze: cannot write to out.pcm") != NULL);
+    CHECK(p.out.state == OUTPUT_RUNNING && output_elapsed_ms(&p) == 100);
+    clear_tx();
+    play_for(&p, 100);
+    CHECK(stub_file_len == 10000 && strstr(stub_out, "cannot write") == NULL);  /* reported once */
+    CHECK(output_elapsed_ms(&p) == 200);
+    teardown(&p);
+}
+
 int main(void)
 {
     test_ring();
@@ -587,6 +717,9 @@ int main(void)
     test_connect_failure();
     test_not_pcm();
     test_autostart_0();
+    test_output_file();
+    test_output_file_stop();
+    test_output_file_errors();
     printf("test_core: %d checks, %d failed\n", checks, failures);
     return failures ? 1 : 0;
 }

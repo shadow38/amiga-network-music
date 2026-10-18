@@ -31,6 +31,7 @@ struct options {
     uint16_t    port;                   /* 0 = SLIMPROTO_PORT */
     const char *name;                   /* NULL = "Amiga" */
     const char *mac;                    /* "xx:xx:xx:xx:xx:xx", NULL = derived from the name */
+    const char *output;                 /* file receiving the audio played, NULL = none */
     int         verbose;
 };
 
@@ -57,7 +58,8 @@ struct stream {
     int      autostart;                 /* 1 = start by itself, 0 = wait for strm u */
 };
 
-/* Virtual output: consumes the buffer at the PCM rate, as a sound card would (replaced by AHI later) */
+/* Virtual output: consumes the buffer at the PCM rate, as a sound card would (replaced by AHI later); with the
+ * OUTPUT option, every byte consumed is also written to a file, as received (no conversion) */
 enum output_state {
     OUTPUT_STOPPED,                     /* nothing to play */
     OUTPUT_LOADED,                      /* autostart 0: ready, waiting for strm u */
@@ -82,6 +84,9 @@ struct output {
     int          starved;               /* buffer empty while still streaming (STMo sent) */
     struct track queue[MAX_TRACKS];
     int          queued;
+    int          file;                  /* OUTPUT file, -1 = none */
+    const char  *file_name;
+    uint64_t     written;               /* bytes written to it */
 };
 
 struct player {
@@ -132,6 +137,9 @@ void stream_stop(struct player *p);
 void stream_io(struct player *p, int ready);
 /* Events wanted on the stream socket (0 = none: idle, or buffer full) */
 int stream_events(const struct player *p);
+/* OUTPUT file: created (or replaced) before playing anything, closed at the end; 0 if it cannot be created */
+int output_file_open(struct player *p, const char *name);
+void output_file_close(struct player *p);
 /* Virtual output: consumes the buffer up to now, sends STMs, STMt, STMo, STMu as needed */
 void output_tick(struct player *p, uint32_t now);
 void output_pause(struct player *p);

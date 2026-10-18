@@ -2,7 +2,7 @@
  * posix.c - amisqueeze on Linux (or another POSIX system), for host-side tests: entry point and the system
  * services of platform.h. Same behaviour as the Amiga build; the arguments use the same KEY=value syntax:
  *
- *   amisqueeze [SERVER=]<ip|name> [PORT=3483] [NAME=<name>] [MAC=xx:xx:xx:xx:xx:xx] [VERBOSE]
+ *   amisqueeze [SERVER=]<ip|name> [PORT=3483] [NAME=<name>] [MAC=xx:xx:xx:xx:xx:xx] [OUTPUT=<file>] [VERBOSE]
  *
  * Ctrl-C (SIGINT) or SIGTERM stops it, like Ctrl-C on the Amiga. No default options file.
  */
@@ -157,6 +157,38 @@ void plat_close(int sock)
     close(sock);
 }
 
+int plat_file_create(const char *name)
+{
+    int fd = open(name, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+
+    if (fd < 0)
+        last_error = errno;
+    return fd;
+}
+
+int plat_file_write(int file, const void *buf, int len)
+{
+    const char *b = buf;
+    int done = 0;
+
+    while (done < len) {
+        ssize_t n = write(file, b + done, (size_t)(len - done));
+        if (n < 0 && errno == EINTR)
+            continue;
+        if (n <= 0) {
+            last_error = n < 0 ? errno : ENOSPC;
+            break;
+        }
+        done += (int)n;
+    }
+    return done;
+}
+
+void plat_file_close(int file)
+{
+    close(file);
+}
+
 int plat_error(void)
 {
     return last_error;
@@ -223,6 +255,8 @@ static int parse_args(int argc, char **argv, struct options *o)
                 o->name = v;
             else if (k == 3 && !strncasecmp(a, "MAC", 3))
                 o->mac = v;
+            else if (k == 6 && !strncasecmp(a, "OUTPUT", 6))
+                o->output = v;
             else {
                 msg("amisqueeze: unknown option %s\n", a);
                 return 0;

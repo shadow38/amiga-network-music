@@ -4,11 +4,14 @@ and checks what it sends (see "make test").
 
 Usage: fake_server.py <path to the host build of amisqueeze>
 """
+import os
+import random
 import signal
 import socket
 import struct
 import subprocess
 import sys
+import tempfile
 import threading
 import time
 
@@ -124,16 +127,17 @@ HTTP_REQUEST = b"GET /test.pcm?player=test HTTP/1.0\r\n\r\n"
 
 
 class HttpServer(threading.Thread):
-    """Serves one PCM track: `seconds` of audio, sent in chunks of `chunk` bytes every `pause` seconds"""
+    """Serves one PCM track: `seconds` of audio, sent in chunks of `chunk` bytes every `pause` seconds. The bytes
+    are pseudo-random (fixed `seed`): a byte lost, duplicated or moved shows in a comparison."""
 
-    def __init__(self, seconds, chunk=65536, pause=0.0):
+    def __init__(self, seconds, chunk=65536, pause=0.0, seed=1):
         super().__init__(daemon=True)
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.sock.bind(("127.0.0.1", 0))
         self.sock.listen(1)
         self.port = self.sock.getsockname()[1]
-        self.data = bytes(i & 0xFF for i in range(int(PCM_BPS * seconds)))
+        self.data = random.Random(seed).randbytes(int(PCM_BPS * seconds))
         self.chunk, self.pause = chunk, pause
         self.request = b""
         self.closed_by_player = False
@@ -185,12 +189,12 @@ def stat_bytes(body):
     return high << 32 | low
 
 
-def start_session(name):
+def start_session(name, *args):
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     server.bind(("127.0.0.1", 0))
     server.listen(1)
-    proc = start(server.getsockname()[1], "NAME=" + name, "VERBOSE")
+    proc = start(server.getsockname()[1], "NAME=" + name, "VERBOSE", *args)
     conn = accept(server)
     read_packet(conn)                   # HELO
     return server, proc, Session(conn)
@@ -277,6 +281,40 @@ def scenario_stop():
         server.close()
 
 
+def first_difference(a, b):
+    n = min(len(a), len(b))
+    return next((i for i in range(n) if a[i] != b[i]), n)
+
+
+def scenario_output():
+    print("-- OUTPUT file: two tracks back to back (gapless), file compared with the data sent")
+    tmp = tempfile.mkdtemp()
+    path = os.path.join(tmp, "play.pcm")
+    http1, http2 = HttpServer(1.5, seed=1), HttpServer(1.0, seed=2)
+    http1.start()
+    http2.start()
+    server, proc, s = start_session("Output", "OUTPUT=" + path)
+    try:
+        send_strm_s(s, http1)
+        s.until("STAT:STMd")
+        send_strm_s(s, http2)           # sent by LMS after STMd: appended to the buffer
+        s.until("STAT:STMd")
+        s.until("STAT:STMu", timeout=6)
+        check(s.names().count("STAT:STMs") == 2, "STMs for each track")
+    finally:
+        rc, out = stop(proc)
+        server.close()
+    with open(path, "rb") as f:
+        data = f.read()
+    sent = http1.data + http2.data
+    check(len(data) == len(sent), "file size %d bytes, %d sent" % (len(data), len(sent)))
+    check(data == sent, "file identical to the data sent (first difference at byte %d)"
+          % first_difference(data, sent))
+    check("output: %d bytes written to %s" % (len(sent), path) in out, "bytes written reported")
+    os.remove(path)
+    os.rmdir(tmp)
+
+
 def scenario_no_server():
     print("-- no server listening: retries, Ctrl-C during the wait")
     probe = socket.socket()
@@ -299,6 +337,10 @@ def scenario_arguments():
     proc = subprocess.run([sys.argv[1], "SERVER=127.0.0.1", "MAC=00:11"], stdout=subprocess.PIPE,
                           stderr=subprocess.STDOUT, text=True, timeout=TIMEOUT)
     check(proc.returncode == 20 and "invalid MAC" in proc.stdout, "invalid MAC: error, exit code 20")
+    proc = subprocess.run([sys.argv[1], "SERVER=127.0.0.1", "OUTPUT=/nonexistent/play.pcm"], stdout=subprocess.PIPE,
+                          stderr=subprocess.STDOUT, text=True, timeout=TIMEOUT)
+    check(proc.returncode == 20 and "cannot create /nonexistent/play.pcm" in proc.stdout,
+          "OUTPUT file that cannot be created: error, exit code 20")
 
 
 if __name__ == "__main__":
@@ -308,6 +350,7 @@ if __name__ == "__main__":
     scenario_stream()
     scenario_pause()
     scenario_stop()
+    scenario_output()
     scenario_no_server()
     scenario_arguments()
     print("fake_server: %d failed" % failures)

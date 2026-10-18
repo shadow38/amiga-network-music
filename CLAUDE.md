@@ -32,8 +32,8 @@ Decided (2026-10-18): two programs in this repository, one `src/<prog>/` directo
 Work proceeds in testable steps, each validated with the user **before** writing code: the plan is in
 `docs/development/` (keep the statuses up to date). User-facing behaviour (options, messages) is documented in
 `docs/user-guide.md`: update it with every change visible to users. Steps 1.1b (default options in
-`ENV:amisqueeze.prefs`) and 1.2 (stream received, virtual output) validated on 2026-10-18. Next: amisqueeze step
-1.3 (output to a file), then 1.4 (AHI, needs 0.5).
+`ENV:amisqueeze.prefs`), 1.2 (stream received, virtual output) and 1.3 (`OUTPUT` file) validated on 2026-10-18.
+Next: amisqueeze step 1.4 (AHI, needs 0.5).
 
 Step 1.2 (stream.c, ring.c): HTTP stream with a non-blocking connection; one 1 MB ring buffer, reported to LMS
 as both the stream and the output buffer (raw PCM needs no decoding); a virtual output consumes it at the PCM rate
@@ -42,6 +42,13 @@ STMt every second while playing, DSCO + STMd at the end of the data, the next tr
 the boundary, STMo / STMu when the buffer is empty, STMl for autostart 0, pause / unpause. STMt is not printed with
 VERBOSE (one per second). Criteria are measured on the server through its CLI (`<player> time ?`, mode, playlist
 index), never on the web page, whose progress bar animates by itself.
+
+Step 1.3: `OUTPUT=<file>` writes what the virtual output consumes (`consume()` in `stream.c`, the only place
+where data leaves the buffer), as received, one file per run. Byte-exact checks with `tools/pcm-compare.py`:
+a counter pattern in FLAC (decoded losslessly by LMS) and MP3s decoded by the server's own `sox` command. Start
+playback with a single `play`, and compare only after the output has drained (`output: end of playback`) and
+amisqueeze has stopped. LMS strips an MP3's ID3v1 tag before conversion, and `sox` then drops the last frame:
+test MP3s without ID3v1 (`lame --id3v2-only`).
 
 amisqueeze state: control connection (step 1.1) validated on 2026-10-18 in WinUAE (`bsdsocket_emu`,
 `SERVER=127.0.0.1`) with LMS 9.1.1: the player shows up in LMS and reconnects by itself after a server restart.

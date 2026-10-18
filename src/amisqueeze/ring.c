@@ -58,6 +58,16 @@ void ring_commit(struct ring *r, uint32_t n)
     r->total_in += n;
 }
 
+uint32_t ring_read_space(const struct ring *r, const uint8_t **p)
+{
+    uint32_t n = r->size - r->rpos;
+
+    if (n > r->used)
+        n = r->used;
+    *p = r->buf + r->rpos;
+    return n;
+}
+
 uint32_t ring_read(struct ring *r, void *dst, uint32_t n)
 {
     uint8_t *d = dst;

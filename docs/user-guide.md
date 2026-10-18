@@ -12,8 +12,8 @@ other player.
 **Current state (version 0.1, in development):** amisqueeze connects to the server, shows up as a player and
 **receives the audio stream** of what LMS plays: in LMS, playback progresses, moves on to the next track, pauses,
 seeks and stops as with any player. But **there is no sound yet**: the audio is received and discarded at the
-playing pace. Sound through AHI is the next part of the work. Only raw PCM streams are accepted for now (LMS
-converts the other formats, see the requirements).
+playing pace (or written to a file with `OUTPUT`, to check it). Sound through AHI is the next part of the work.
+Only raw PCM streams are accepted for now (LMS converts the other formats, see the requirements).
 
 ### Requirements
 
@@ -45,7 +45,7 @@ From a Shell:
 amisqueeze SERVER=192.168.1.10
 ```
 
-Template: `SERVER,PORT/N/K,NAME/K,MAC/K,VERBOSE/S`
+Template: `SERVER,PORT/N/K,NAME/K,MAC/K,OUTPUT/K,VERBOSE/S`
 
 | Option | Meaning | Default |
 |---|---|---|
@@ -53,6 +53,7 @@ Template: `SERVER,PORT/N/K,NAME/K,MAC/K,VERBOSE/S`
 | `PORT` | slimproto port of the server | `3483` |
 | `NAME` | player name shown in LMS | `Amiga` |
 | `MAC` | player identifier, `xx:xx:xx:xx:xx:xx` | derived from `NAME` |
+| `OUTPUT` | file receiving the audio as it is played, for checking (see below) | none |
 | `VERBOSE` | print the messages exchanged with the server and the stream events | off |
 
 `Ctrl-C` stops amisqueeze. To keep the Shell free, run it in the background: `Run >NIL: amisqueeze`, or keep its
@@ -64,6 +65,13 @@ name always gives the same player in LMS, and two Amigas with different names sh
 can also be renamed from the LMS web interface; amisqueeze takes the new name while it runs.
 
 If the connection drops or the server restarts, amisqueeze reconnects by itself (it retries every 5 seconds).
+
+**`OUTPUT=<file>`** writes the audio to a file as it is played, exactly as the server sent it: raw PCM, for LMS
+16-bit **little-endian** samples (44.1 kHz stereo: about 10 MB per minute). The file is created (or replaced) when
+amisqueeze starts and closed when it stops; everything played in between is appended, the next track right after
+the previous one, nothing while paused. It is meant for checking playback: compare it with the expected PCM, e.g.
+with `tools/pcm-compare.py` from the repository (in an emulator, write it to a volume shared with the host). Avoid
+putting it in the default options, or every run fills the disk.
 
 ### Default options
 
@@ -108,8 +116,10 @@ Rules:
 | `connection closed by the server` | the server closed the connection; amisqueeze reconnects |
 | `not enough memory for the 1024 KB stream buffer` | not enough free memory to start |
 | `stream format X not supported` | LMS sent a format other than raw PCM (no conversion rule for that format) |
+| `cannot create <file>: error N` | the `OUTPUT` file cannot be created (missing directory, write-protected disk); amisqueeze stops. On a volume that is not mounted, AmigaDOS first asks for it to be inserted; this message follows a Cancel |
+| `cannot write to <file>: error N, file closed` | writing the `OUTPUT` file failed (disk full…); playback goes on without the file |
 | `stream: cannot connect: error N` | the audio stream port of LMS (HTTP, 9000 by default) cannot be reached |
-| `stream: …`, `output: …` (with `VERBOSE`) | stream events: parameters, connection, headers received, end of the track data; output: track started, buffer empty, end of playback |
+| `stream: …`, `output: …` (with `VERBOSE`) | stream events: parameters, connection, headers received, end of the track data; output: track started, buffer empty, end of playback, `OUTPUT` file opened and bytes written to it |
 
 ## amilms
 

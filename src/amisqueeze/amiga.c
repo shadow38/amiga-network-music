@@ -1,7 +1,8 @@
 /*
  * amiga.c - amisqueeze on AmigaOS 3.x: entry point and the system services of platform.h
  *
- * Usage: amisqueeze [SERVER=<ip|name>] [PORT=3483] [NAME=<name>] [MAC=xx:xx:xx:xx:xx:xx] [VERBOSE]
+ * Usage: amisqueeze [SERVER=<ip|name>] [PORT=3483] [NAME=<name>] [MAC=xx:xx:xx:xx:xx:xx] [OUTPUT=<file>]
+ *                   [VERBOSE]
  * Ctrl-C to quit. Default options come from ENV:amisqueeze.prefs (same syntax as the command line, which
  * takes precedence); see docs/user-guide.md.
  *
@@ -32,8 +33,8 @@
 static const char version[] __attribute__((used)) = "$VER: amisqueeze 0.1 (18.10.2026)";
 
 /* Used for the command line and for the prefs variable */
-#define TEMPLATE "SERVER,PORT/N/K,NAME/K,MAC/K,VERBOSE/S"
-enum { ARG_SERVER, ARG_PORT, ARG_NAME, ARG_MAC, ARG_VERBOSE, ARG_COUNT };
+#define TEMPLATE "SERVER,PORT/N/K,NAME/K,MAC/K,OUTPUT/K,VERBOSE/S"
+enum { ARG_SERVER, ARG_PORT, ARG_NAME, ARG_MAC, ARG_OUTPUT, ARG_VERBOSE, ARG_COUNT };
 
 /* Global variable ENV:amisqueeze.prefs (saved in ENVARC: to survive a reboot) */
 #define PREFS_VAR "amisqueeze.prefs"
@@ -176,6 +177,32 @@ void plat_close(int sock)
     CloseSocket(sock);
 }
 
+/* File handles (BPTR) are passed as int: 32 bits, and positive (a BCPL pointer is an address divided by 4) */
+int plat_file_create(const char *name)
+{
+    BPTR fh = Open((STRPTR)name, MODE_NEWFILE);
+
+    if (fh == 0) {
+        last_error = IoErr();
+        return -1;
+    }
+    return (int)fh;
+}
+
+int plat_file_write(int file, const void *buf, int len)
+{
+    LONG n = Write((BPTR)file, (APTR)buf, len);
+
+    if (n != len)
+        last_error = IoErr();
+    return n;
+}
+
+void plat_file_close(int file)
+{
+    Close((BPTR)file);
+}
+
 int plat_error(void)
 {
     return last_error;
@@ -290,6 +317,7 @@ int main(void)
     o.port = args[ARG_PORT] ? (uint16_t)*(LONG *)args[ARG_PORT] : 0;
     o.name = (const char *)args[ARG_NAME];
     o.mac = (const char *)args[ARG_MAC];
+    o.output = (const char *)args[ARG_OUTPUT];
     o.verbose = args[ARG_VERBOSE] != 0;
 
     if (OpenDevice(TIMERNAME, UNIT_MICROHZ, (struct IORequest *)&timer_io, 0) != 0) {
