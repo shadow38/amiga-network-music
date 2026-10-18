@@ -141,8 +141,47 @@ belongs to the task that opened it; packets serialised field by field; buffers a
 
 - **Goal**: stop depending on server-side conversion (a regular LMS has no MP3 → PCM rule).
 - **Content**: FLAC then MP3 decoders in portable C (lightweight, MIT-compatible libraries, e.g. dr_flac and
-  minimp3), tested on the host first; advertised in `HELO` only once validated; build options for the PiStorm (68040/FPU) if needed.
-- **Criterion**: direct playback of a FLAC and an MP3 file without conversion; acceptable CPU load on the target.
+  minimp3), tested on the host first; advertised in `HELO` only once validated.
+  - **Decoder interface** (`decoder.h`): compressed bytes in, 16-bit PCM out; integers and pointers only across
+    it, so a decoder can be built with other CPU options than the rest of the program.
+  - **FLAC**: one 68020 build for every CPU (integer only, no FPU needed). Watch the 32×32→64 multiply
+    (`muls.l dx,dh:dl`): the 68060 has none in hardware and `68060.library` traps it (very slow). The 32-bit
+    prediction path is enough for 16-bit audio (to check in dr_flac, which seems to pick it by itself); a check of
+    the generated assembly, like `tools/check-saves.py`, fails the build if a 64-bit `muls.l` appears in the hot
+    loop.
+  - **MP3**: minimp3 computes in floating point, so it needs an FPU. Two executables at most:
+    `amisqueeze` (`-m68020`, no FPU: MP3 through `mpega.library` if installed, otherwise not advertised and left
+    to the server) and `amisqueeze.fpu` (`-m68020 -m68881`: minimp3; checks `AttnFlags` at start-up and exits
+    with a clear message without an FPU). `mpega.library` is opened at run time, never linked or shipped; its
+    per-CPU versions are its own business; its licence is to be checked.
+  - **Other variants only on measured gain**: `-m68040 -m68881` (emits `fdmul`/`fdadd`, 040/060 only) or
+    `-m68060` (`___muldi3` instead of the 64-bit `muls.l`). Facts checked with the toolchain (2026-10-18):
+    `-m68030` and `-m68040` generate the same integer code as `-m68020` and link the same `libm020`; `-m68040`
+    alone stays **soft-float** (`___muldf3`): the FPU needs `-m68881`; multilibs are 68000, 68020, 68020+68881
+    and 68060.
+  - **Rejected**: one executable holding several builds of a decoder picked at run time (with `-m68881`, floating
+    point values are returned in `fp0` instead of `d0`/`d1`: mixing both ABIs and their libraries invites silent
+    bugs); one executable per Amiga model (too many builds to test).
+  - **Build and release**: a `CPU` variable in the Makefile, one output directory per variant; both executables in
+    the release archive, with a table in the user guide saying which one to pick for which CPU. The host build is
+    unchanged.
+  - **Server-side conversion stays the fallback** for MP3 when the CPU is too slow. LMS 9.1.1 has no default
+    `mp3 flc` nor `mp3 pcm` rule (checked in its `convert.conf`: MP3 is only passed through, or re-encoded by
+    `lame` to limit the bitrate), so the server's owner must add one, as on the test server (`mp3 pcm` with
+    `sox`); an `mp3 flc` rule would halve the network bandwidth, at a `flac` compression level to choose for the
+    CPU. Music Assistant sends FLAC by default.
+- **Expected CPU** (estimates, not measured; 44.1 kHz stereo): FLAC levels 5–8 (LPC, about 8–12 multiplies per
+  sample) need a 68040 (25 MHz borderline, 40 MHz comfortable) or a 68060; FLAC levels 0–2 (fixed predictors, no
+  multiply) are within reach of a 50 MHz 68030; MP3 with minimp3 needs an FPU and roughly a 68040 at 50 MHz or
+  better, with little margin. Reference point: the MiSTer Minimig pipelined AP68040 core in development
+  (2026-10-17, SysInfo 4.4: 42.04 MIPS, 13.15 MFLOPS; xsysinfo 0.12.0: 45 MIPS, 8.99 MFLOPS; figures from
+  different tools are not comparable).
+- **Measurement**: a decode-only benchmark (file in, PCM discarded, time and real-time factor printed), run on
+  the host, in WinUAE in 68020/68030 cycle-exact mode (faithful timings; 040/060 timings are not), then on real
+  hardware or the FPGA core; each variant compared on the same machine. A decoder is kept for a CPU if it runs at
+  least twice real time (margin for the network stack and AHI).
+- **Criterion**: direct playback of a FLAC and an MP3 file without conversion; acceptable CPU load on the target;
+  benchmark figures recorded here for each variant and machine tested.
 
 ## 1.9 Real machine ⬜
 
