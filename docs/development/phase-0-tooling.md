@@ -41,11 +41,13 @@ Back to the [plan](README.md).
 
 ## 0.4 WinUAE test configuration 🔶
 
-- **Goal**: an emulated machine that reproduces the target (PiStorm, AHI sound card) with emulated networking.
+- **Goal**: emulated machines that reproduce the targets, with emulated networking.
 - **Done (provisional)**: a local configuration, 68020 running AmigaOS 3.2, CPU at maximum speed,
   `bsdsocket_emu=true`, build output mounted as an Amiga volume. Enough for networking (step 1.1).
 - **To do**:
-  - a machine close to the PiStorm: 68040 with FPU, 32-bit addressing, Zorro III memory (tens of MB);
+  - two profiles (decided 2026-10-18): **fast**, close to a PiStorm with Emu68 (68040 with FPU, 32-bit
+    addressing, Zorro III memory, tens of MB); **slow**, a 68020 accelerator without FPU at its real speed (not
+    "as fast as possible", so that CPU load can be measured: Paula mixing, later the decoders);
   - a versioned configuration template in `winuae/`, with machine-specific paths kept in a local, unversioned file.
 - **Criterion**: the configuration boots, `bsdsocket.library` is available, amisqueeze connects to the server.
 
@@ -53,12 +55,15 @@ Back to the [plan](README.md).
 
 - **Goal**: be able to test audio output (step 1.4) in WinUAE.
 - **Content**: the AHI package (Aminet) installed in the emulated Amiga, AHI mode set in the preferences; notes for
-  the real sound card. Two drivers, both kept for the tests (decided 2026-10-18):
+  the real outputs. Two drivers, both kept for the tests (decided 2026-10-18), Paula first:
   - **Paula** (`paula.audio`, Amiga chipset): what an Amiga without a sound card plays; 8 bits per channel
     (14 bits with AHI's combined modes), about 28 kHz at most with a 15 kHz screen mode (AHI resamples 44.1 kHz
     down), mixing done by the CPU;
   - **Toccata** (Zorro II card emulated by WinUAE, `toccata.audio` from the AHI package): a real 16-bit sound card,
-    up to 48 kHz stereo, close to the target (an AHI sound card).
+    up to 48 kHz stereo; a 16-bit reference, to tell a fault of the player from Paula's limits (a Zorro II card,
+    not available on every Amiga: not a target as such).
+  - The PiStorm's own AHI outputs (I2S DAC of the PiStorm32-lite FPGA firmware, HDMI with `emu68-hdmi-audio` on a
+    Pi 4) cannot be emulated: tested on the real machine (1.9).
 - **Criterion**: an AHI test program (or `Play16` on a WAV file) plays a correct sound, with each of the two
   drivers.
 - **Prerequisite of**: 1.4.

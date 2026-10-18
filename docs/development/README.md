@@ -21,8 +21,8 @@ success criterion and a way to check it.
      tested against examples taken from squeezelite and LMS; a fake server replays scenarios;
   2. **in WinUAE**: emulated networking (`bsdsocket_emu`), a test LMS server, the program's log readable from the
      host;
-  3. **on the real machine** (PiStorm, AHI sound card): at the end of each phase only (listening, stability,
-     performance).
+  3. **on the real machines** (PiStorm, 68020 accelerator; Paula or another AHI output): at the end of each
+     phase only (listening, stability, performance).
 - **Reference.** squeezelite, the reference player for the protocol, runs alongside on the PC: it shows how the
   server and the messages are expected to behave.
 - **Only promise what works.** The player advertises to the server (`HELO`) only the formats it can actually

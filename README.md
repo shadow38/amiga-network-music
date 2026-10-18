@@ -6,8 +6,9 @@ Network music for classic Amiga (AmigaOS 3.x, 68020+), built around Lyrion Music
   It works with LMS and with Music Assistant, which both speak slimproto;
 - **amilms**: a remote control, using the LMS text CLI (TCP 9090).
 
-Target machine: an Amiga with a PiStorm and an AHI sound card, plus a TCP/IP stack providing `bsdsocket.library`
-(Roadshow, AmiTCP, AmiNetXDuo, or WinUAE's emulation). Cross-compiled C, tested in WinUAE.
+Target machines: an Amiga with a 68020 or better (from a plain 68020 accelerator to a PiStorm), sound through AHI
+(Paula or a sound card), plus a TCP/IP stack providing `bsdsocket.library` (Roadshow, AmiTCP, AmiNetXDuo, or
+WinUAE's emulation). Cross-compiled C, tested in WinUAE.
 
 **Status:** under development, in testable steps described in the
 [development plan](docs/development/README.md). amisqueeze: shows up as a player in LMS and receives the audio
@@ -173,8 +174,8 @@ https://github.com/ralph-irving/squeezelite) and LMS (`Slim/Networking/Slimproto
   is reachable from the Amiga (`127.0.0.1` is the host's loopback).
 - Mount `out/` as an Amiga volume (`filesystem2=rw,<DEVICE>:<Volume>:<path to out>,-128`), then run the program
   from a Shell, e.g. `NM:amisqueeze SERVER=127.0.0.1 VERBOSE` with the volume mounted as `NM:`.
-- A dedicated test configuration (a machine close to the PiStorm, AHI, automated runs) is planned: steps 0.4 to
-  0.7 of the [tooling plan](docs/development/phase-0-tooling.md).
+- Dedicated test configurations (a fast machine like a PiStorm, a slow 68020, AHI, automated runs) are planned:
+  steps 0.4 to 0.7 of the [tooling plan](docs/development/phase-0-tooling.md).
 
 ## Debugging
 

@@ -19,11 +19,12 @@ Only raw PCM streams are accepted for now (LMS converts the other formats, see t
 
 On the Amiga:
 
-- AmigaOS 3.x, 68020 or better (a PiStorm is the intended target);
+- AmigaOS 3.x, 68020 or better (from a plain 68020 accelerator to a PiStorm);
 - about 1.1 MB of free memory (1 MB stream buffer, about 6 s of CD-quality audio);
 - a TCP/IP stack providing `bsdsocket.library`: Roadshow, AmiTCP, AmiNetXDuo, or WinUAE's emulation
   (`bsdsocket_emu=true`) in an emulator;
-- later, for audio: AHI and a driver for your sound card.
+- later, for audio: AHI (4.x or 6.x) and a driver: Paula's (`paula.audio`, no sound card needed) or your sound
+  card's.
 
 On the server:
 

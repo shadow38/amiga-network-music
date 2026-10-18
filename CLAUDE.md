@@ -18,8 +18,11 @@ licence (public domain, MIT, BSD, zlib…; e.g. dr_flac, minimp3), not GPL (no l
 
 ## Project: amisqueeze and amilms
 
-Target: a classic Amiga with a **PiStorm** and an **AHI** sound card; the WinUAE test configuration must
-reproduce that machine.
+Targets (2026-10-18): classic Amigas, 68020 or better, of two kinds: **fast** (PiStorm with Emu68: a 68040 with
+FPU) and **slow** (a 68020 accelerator without FPU); sound through **AHI**: Paula (`paula.audio`, Amigas without a
+sound card) or an AHI driver (sound card, or the PiStorm's own outputs: I2S DAC of the PiStorm32-lite FPGA
+firmware, HDMI with a Pi 4). Code only `ahi.device` features of AHI 4 (works with AHI 4.x and 6.x). The WinUAE
+test configurations reproduce both kinds (step 0.4); Paula is the main audio test, Toccata a 16-bit reference.
 
 Decided (2026-10-18): two programs in this repository, one `src/<prog>/` directory each, shared code in
 `src/common/`:

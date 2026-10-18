@@ -110,12 +110,14 @@ belongs to the task that opened it; packets serialised field by field; buffers a
 
 - **Goal**: hear the sound, and hear it right.
 - **Content**: `ahi.device`, double-buffered `CMD_WRITE`, `AHIST_S16S`; byte swapping when the stream is
-  little-endian; honour the sample size, rate and channel count announced by `strm`.
+  little-endian; honour the sample size, rate and channel count announced by `strm`. Only `ahi.device` features
+  of AHI 4 (works with AHI 4.x and 6.x). User guide: set the AHI mode to the stream's rate (44.1 kHz for LMS) to
+  avoid resampling.
 - **Prerequisite**: 0.5 (AHI in the emulated Amiga).
 - **Criterion**: correct test tones (440 Hz at the right pitch, left/right in the right place, no noise); a whole
-  track without crackling.
-- **Test**: WinUAE with both AHI drivers of step 0.5, Toccata (16-bit card) and Paula (Amiga chipset, for
-  Amigas without a sound card), then the real machine.
+  track without crackling; CPU load measured with Paula on the slow profile (0.4).
+- **Test**: WinUAE with both AHI drivers of step 0.5, Paula first (Amiga chipset, the output of Amigas without a
+  sound card) and Toccata (16-bit reference), then the real machines (1.9).
 
 ## 1.5 Commands and volume ⬜
 
@@ -186,8 +188,10 @@ belongs to the task that opened it; packets serialised field by field; buffers a
 
 ## 1.9 Real machine ⬜
 
-- **Content**: PiStorm + AHI sound card + TCP/IP stack (AmiNetXDuo or Roadshow); LMS server reachable from the
-  local network.
+- **Content**: both kinds of target with a TCP/IP stack (AmiNetXDuo or Roadshow) and an LMS server reachable
+  from the local network: a PiStorm with Emu68, sound through its own AHI outputs (I2S DAC of the PiStorm32-lite
+  FPGA firmware, announced, to check; HDMI with `emu68-hdmi-audio` on a Pi 4) or Paula; a 68020 accelerator
+  without FPU, sound through Paula.
 - **Criterion**: the criteria of 1.4 to 1.6 met on the real machine.
 
 ## 1.10 Finishing touches ⬜
