@@ -54,6 +54,20 @@ int plat_file_create(const char *name);
 int plat_file_write(int file, const void *buf, int len);
 void plat_file_close(int file);
 
+/* Audio output (ahi.device on the Amiga): AUDIO_BLOCKS requests, numbered 0 to AUDIO_BLOCKS - 1, playing 16-bit
+ * big-endian PCM. A request linked to another (link >= 0) starts when that one ends, at once if it already
+ * ended. plat_wait() also returns when a request ends. */
+/* Opens the given unit; 0 if impossible (message printed) */
+int plat_audio_open(int unit);
+void plat_audio_close(void);
+/* Queues request i: len bytes at data, rate in Hz, 1 or 2 channels, linked to request link (-1 = none) */
+void plat_audio_send(int i, const void *data, uint32_t len, uint32_t rate, int channels, int link);
+/* 1 if request i has ended (it is then free again) */
+int plat_audio_done(int i);
+/* Aborts request i and waits for it; returns the bytes it played, or -1 if the device cannot tell (AHI before
+ * version 6) */
+int32_t plat_audio_abort(int i);
+
 /* Waits until one of the n sockets is ready, the timeout expires or the user interrupts (Ctrl-C). n may be 0
  * (plain delay that can be interrupted). Returns 1 = something ready, 0 = timeout, -1 = interrupted,
  * -2 = error (already reported). */

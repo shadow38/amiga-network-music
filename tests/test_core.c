@@ -110,6 +110,7 @@ static void setup(struct player *p, const char *name)
 static void teardown(struct player *p)
 {
     slim_disconnect(p);
+    audio_close(p);
     stream_free(p);
 }
 
@@ -736,6 +737,308 @@ static void test_output_file_errors(void)
     teardown(&p);
 }
 
+/* ---- audio output (AHI) ---- */
+
+#define BLOCK ((uint32_t)AUDIO_BLOCK_SIZE)
+
+static uint8_t expect[2 * 1024 * 1024];
+
+/* What the device must receive: 16-bit samples made big-endian, left and right swapped if asked */
+static void to_device(uint8_t *dst, const uint8_t *src, uint32_t n, int swap_lr)
+{
+    uint32_t i;
+
+    for (i = 0; i + 1 < n; i += 2) {
+        dst[i] = src[i + 1];
+        dst[i + 1] = src[i];
+    }
+    if (swap_lr)
+        for (i = 0; i + 3 < n; i += 4) {
+            uint8_t t0 = dst[i], t1 = dst[i + 1];
+            dst[i] = dst[i + 2];
+            dst[i + 1] = dst[i + 3];
+            dst[i + 2] = t0;
+            dst[i + 3] = t1;
+        }
+}
+
+static void setup_audio(struct player *p, int swap)
+{
+    setup(p, "Amiga");
+    stub_audio_fails = 0;
+    stub_audio_abort_played = 0;
+    CHECK(audio_open(p, 2, swap) && stub_audio_open && stub_audio_unit == 2);
+    stub_audio_clear();
+    CHECK(slim_connect(p, 0));
+}
+
+/* Ends the request playing now, then lets the output collect it and refill */
+static int finish(struct player *p)
+{
+    int b = stub_audio_finish();
+
+    stub_now += 10;
+    output_tick(p, stub_now);
+    return b;
+}
+
+/* A whole track: blocks of 32 KB linked one to the other, converted, played in order; STMu after the last one */
+static void test_audio_blocks(void)
+{
+    struct player p;
+    int order[8], n, guard;
+
+    fill(track_a, sizeof(track_a), 3);
+    setup_audio(&p, 0);
+    open_stream(&p, '1', 1);
+    stub_feed_stream(track_a, sizeof(track_a));          /* 1 s, little-endian stereo */
+    drain_stream(&p);
+    CHECK(p.out.state == OUTPUT_RUNNING);
+    output_tick(&p, stub_now);
+    n = stub_audio_queue(order);
+    CHECK(n == 2 && stub_audio_sends == 2);            /* two with the device, the third one filled */
+    CHECK(stub_audio[order[0]].link == -1 && stub_audio[order[1]].link == order[0]);
+    CHECK(stub_audio[order[0]].len == BLOCK && stub_audio[order[0]].rate == 44100 &&
+          stub_audio[order[0]].channels == 2);
+    CHECK(ring_used(&p.ring) == sizeof(track_a) - AUDIO_BLOCKS * BLOCK && audio_pending(&p) == AUDIO_BLOCKS);
+    stub_now += 100;
+    CHECK(output_elapsed_ms(&p) == 100);                /* estimated within the block playing */
+
+    CHECK(finish(&p) == order[0]);                      /* the first block ends: the third one is sent, linked */
+    n = stub_audio_queue(order);                        /* to the one now playing; the first one is refilled */
+    CHECK(n == 2 && stub_audio_sends == 3 && stub_audio[order[1]].link == order[0]);
+    CHECK(audio_pending(&p) == AUDIO_BLOCKS);
+
+    stub_stream_end();
+    stream_io(&p, PLAT_READ);
+    clear_tx();
+    for (guard = 0; guard < 20 && p.out.state == OUTPUT_RUNNING; guard++) {
+        CHECK(strstr(trace(), "STMu") == NULL);         /* not before the last block ended */
+        finish(&p);
+    }
+    CHECK(p.out.state == OUTPUT_STOPPED && strstr(trace(), "STAT:STMu") != NULL);
+    CHECK(stub_audio_out_len == (int)sizeof(track_a));
+    to_device(expect, track_a, sizeof(track_a), 0);
+    CHECK(!memcmp(stub_audio_out, expect, sizeof(track_a)));
+    CHECK(stub_audio_sends == 6);                       /* 5 full blocks, then the 12560 bytes left */
+    CHECK(stub_audio_bad == 0);
+    teardown(&p);
+}
+
+/* SWAP: left and right swapped after the byte swap; a big-endian mono track is sent as is */
+static void test_audio_swap_mono(void)
+{
+    struct player p;
+    char mono_be[7] = { '1', 'p', '1', '3', '1', '0', 1 };
+
+    setup_audio(&p, 1);
+    open_stream(&p, '1', 1);
+    stub_feed_stream(track_a, 4000);
+    drain_stream(&p);
+    stub_stream_end();
+    stream_io(&p, PLAT_READ);
+    output_tick(&p, stub_now);
+    while (finish(&p) >= 0)
+        ;
+    to_device(expect, track_a, 4000, 1);
+    CHECK(stub_audio_out_len == 4000 && !memcmp(stub_audio_out, expect, 4000));
+    teardown(&p);
+
+    setup_audio(&p, 1);
+    feed_strm('s', mono_be, 0, 9000, 0, request);
+    drain(&p);
+    stream_io(&p, PLAT_WRITE);
+    stub_feed_stream(http_ok, (int)strlen(http_ok));
+    stub_feed_stream(track_a, 4000);
+    drain_stream(&p);
+    stub_stream_end();
+    stream_io(&p, PLAT_READ);
+    output_tick(&p, stub_now);
+    CHECK(stub_audio[0].channels == 1);
+    while (finish(&p) >= 0)
+        ;
+    CHECK(stub_audio_out_len == 4000 && !memcmp(stub_audio_out, track_a, 4000));
+    teardown(&p);
+}
+
+/* Pause: the queued blocks are aborted (sound cut at once), what they did not play is sent again on resume */
+static void test_audio_pause(void)
+{
+    struct player p;
+    int order[8];
+
+    setup_audio(&p, 0);
+    open_stream(&p, '1', 1);
+    stub_feed_stream(track_a, sizeof(track_a));
+    drain_stream(&p);
+    output_tick(&p, stub_now);
+    stub_audio_abort_played = 1000;
+
+    clear_tx();
+    feed_strm('p', NULL, 0, 0, 0, NULL);
+    drain(&p);
+    CHECK(!strcmp(trace(), "STAT:STMp"));
+    CHECK(stub_audio_queue(order) == 0);                /* nothing left playing */
+    stub_now += 2000;
+    CHECK(output_elapsed_ms(&p) == 1000 * 1000 / PCM_BPS);   /* 1000 bytes played: time stands still */
+
+    feed_strm('u', NULL, 0, 0, 0, NULL);
+    drain(&p);
+    CHECK(stub_audio_queue(order) == 2);
+    CHECK(stub_audio[order[0]].len == BLOCK - 1000 && stub_audio[order[0]].link == -1);
+    CHECK(stub_audio[order[1]].len == BLOCK && stub_audio[order[1]].link == order[0]);
+    stub_stream_end();
+    stream_io(&p, PLAT_READ);
+    while (finish(&p) >= 0)
+        ;
+    to_device(expect, track_a, sizeof(track_a), 0);
+    CHECK(stub_audio_out_len == (int)sizeof(track_a) && !memcmp(stub_audio_out, expect, sizeof(track_a)));
+    CHECK(stub_audio_bad == 0);
+    teardown(&p);
+}
+
+/* AHI 4 does not tell how much an aborted request played: the clock says (frame-aligned), and the resumed data
+ * follows on */
+static void test_audio_pause_ahi4(void)
+{
+    struct player p;
+    int order[8];
+
+    setup_audio(&p, 0);
+    open_stream(&p, '1', 1);
+    stub_feed_stream(track_a, sizeof(track_a));
+    drain_stream(&p);
+    output_tick(&p, stub_now);
+    stub_audio_abort_played = -1;
+    stub_audio_abort_real = PCM_BPS / 10;               /* what the device really played in 100 ms */
+    stub_now += 100;
+    feed_strm('p', NULL, 0, 0, 0, NULL);
+    drain(&p);
+    CHECK(p.audio.block[p.audio.order[0]].done == PCM_BPS / 10);     /* whole frames */
+    CHECK(audio_played(&p, stub_now, 1) == PCM_BPS / 10 && output_elapsed_ms(&p) == 100);
+    stub_audio_abort_played = 0;
+    feed_strm('u', NULL, 0, 0, 0, NULL);
+    drain(&p);
+    CHECK(stub_audio_queue(order) == 2 && stub_audio[order[0]].len == BLOCK - PCM_BPS / 10);
+    stub_stream_end();
+    stream_io(&p, PLAT_READ);
+    while (finish(&p) >= 0)
+        ;
+    to_device(expect, track_a, sizeof(track_a), 0);
+    CHECK(stub_audio_out_len == (int)sizeof(track_a) && !memcmp(stub_audio_out, expect, sizeof(track_a)));
+    CHECK(stub_audio_bad == 0);
+    stub_audio_abort_played = 0;
+    stub_audio_abort_real = 0;
+    teardown(&p);
+}
+
+/* Stop: everything queued is aborted, positions start again from 0 */
+static void test_audio_stop(void)
+{
+    struct player p;
+    int order[8];
+
+    setup_audio(&p, 0);
+    open_stream(&p, '1', 1);
+    stub_feed_stream(track_a, sizeof(track_a));
+    drain_stream(&p);
+    output_tick(&p, stub_now);
+    feed_strm('q', NULL, 0, 0, 0, NULL);
+    drain(&p);
+    CHECK(stub_audio_queue(order) == 0 && audio_pending(&p) == 0 && audio_played(&p, stub_now, 1) == 0);
+    CHECK(p.out.state == OUTPUT_STOPPED && ring_used(&p.ring) == 0);
+    CHECK(stub_audio_bad == 0);                         /* the one playing aborted first */
+
+    stub_reset();                                       /* play again: the blocks are used again */
+    stub_audio_clear();
+    open_stream(&p, '1', 1);
+    stub_feed_stream(track_b, sizeof(track_b));
+    drain_stream(&p);
+    stub_stream_end();
+    stream_io(&p, PLAT_READ);
+    output_tick(&p, stub_now);
+    while (finish(&p) >= 0)
+        ;
+    to_device(expect, track_b, sizeof(track_b), 0);
+    CHECK(stub_audio_out_len == (int)sizeof(track_b) && !memcmp(stub_audio_out, expect, sizeof(track_b)));
+    CHECK(p.out.state == OUTPUT_STOPPED && stub_audio_bad == 0);
+    teardown(&p);
+}
+
+/* Two tracks: no block spans the boundary; STMs for the second one once the first has been played */
+static void test_audio_gapless(void)
+{
+    struct player p;
+    int order[8];
+
+    setup_audio(&p, 0);
+    open_stream(&p, '1', 1);
+    stub_feed_stream(track_a, 40000);                   /* track A: 32768 + 7232 bytes */
+    drain_stream(&p);
+    stub_stream_end();
+    stream_io(&p, PLAT_READ);
+    stub_reset();
+    open_stream(&p, '1', 1);
+    stub_feed_stream(track_b, 30000);                   /* track B */
+    drain_stream(&p);
+    stub_stream_end();
+    stream_io(&p, PLAT_READ);
+
+    clear_tx();
+    output_tick(&p, stub_now);
+    CHECK(stub_audio_queue(order) == 2 && audio_pending(&p) == 3);
+    CHECK(stub_audio[order[0]].len == BLOCK && stub_audio[order[1]].len == 40000 - BLOCK);
+    CHECK(strstr(trace(), "STMs") == NULL);             /* B handed over, not played yet */
+    finish(&p);
+    stub_audio_queue(order);
+    CHECK(stub_audio[order[1]].len == 30000);           /* B, in a block of its own */
+    CHECK(strstr(trace(), "STMs") == NULL);
+    finish(&p);                                         /* end of A */
+    CHECK(strstr(trace(), "STAT:STMs") != NULL && output_elapsed_ms(&p) == 0);
+    CHECK(stub_audio_bad == 0);
+    teardown(&p);
+}
+
+/* While the stream goes on, a block is sent only when full, unless the device is about to run dry */
+static void test_audio_wait_full_block(void)
+{
+    struct player p;
+
+    setup_audio(&p, 0);
+    open_stream(&p, '1', 1);
+    stub_feed_stream(track_a, 100000);                  /* 3 blocks + 1696 bytes, more to come */
+    drain_stream(&p);
+    output_tick(&p, stub_now);
+    CHECK(stub_audio_sends == 2 && audio_pending(&p) == 3);
+    finish(&p);
+    CHECK(stub_audio_sends == 3 && audio_pending(&p) == 2);   /* 1696 bytes, 2 blocks left: wait */
+    finish(&p);
+    CHECK(stub_audio_sends == 4 && audio_pending(&p) == 2);   /* 1 block left: sent as it is */
+    CHECK(stub_audio_bad == 0);
+    teardown(&p);
+}
+
+/* No AHI; a sample size the audio output does not take */
+static void test_audio_errors(void)
+{
+    struct player p;
+    char pcm24[7] = { '1', 'p', '2', '3', '2', '1', 1 };
+
+    setup(&p, "Amiga");
+    stub_audio_fails = 1;
+    CHECK(!audio_open(&p, 0, 0) && !p.audio.enabled);
+    CHECK(strstr(stub_out, "cannot open ahi.device unit 0") != NULL);
+    teardown(&p);
+
+    setup_audio(&p, 0);
+    clear_tx();
+    feed_strm('s', pcm24, 0, 9000, 0, request);
+    drain(&p);
+    CHECK(!strcmp(trace(), "STAT:STMf STAT:STMn"));
+    CHECK(strstr(stub_out, "24-bit samples not supported") != NULL);
+    teardown(&p);
+}
+
 int main(void)
 {
     test_ring();
@@ -758,6 +1061,14 @@ int main(void)
     test_output_file();
     test_output_file_stop();
     test_output_file_errors();
+    test_audio_blocks();
+    test_audio_swap_mono();
+    test_audio_pause();
+    test_audio_pause_ahi4();
+    test_audio_stop();
+    test_audio_gapless();
+    test_audio_wait_full_block();
+    test_audio_errors();
     printf("test_core: %d checks, %d failed\n", checks, failures);
     return failures ? 1 : 0;
 }

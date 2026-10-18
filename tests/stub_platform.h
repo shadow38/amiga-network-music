@@ -2,7 +2,8 @@
  * stub_platform.h - fake platform for the unit tests of the portable core: no network, packets sent by the
  * player are captured, packets from the "server" are fed in, the clock is set by the test.
  * Socket 3 is the control connection, socket 4 the stream (HTTP) connection; handle 5 is the OUTPUT file, captured
- * in memory.
+ * in memory. The audio device plays requests in the order sent; the test ends them (stub_audio_finish) or a
+ * pause aborts them; what they "played" is captured in stub_audio_out.
  */
 #ifndef STUB_PLATFORM_H
 #define STUB_PLATFORM_H
@@ -27,6 +28,29 @@ extern int      stub_file_len;
 extern int      stub_file_open;         /* 1 while the file is open */
 extern int      stub_file_fails;        /* 1: plat_file_create() fails */
 extern int      stub_file_limit;        /* writes stop at this file size, like a full disk (0 = no limit) */
+
+struct stub_audio_req {
+    const uint8_t *data;
+    uint32_t       len, rate;
+    int            channels, link, queued, ended;
+};
+extern struct stub_audio_req stub_audio[8];
+extern int      stub_audio_fails;       /* 1: plat_audio_open() fails */
+extern int      stub_audio_unit;        /* unit given to plat_audio_open() */
+extern int      stub_audio_open;
+extern int32_t  stub_audio_abort_played;  /* bytes the playing request has played when aborted (-1 = unknown) */
+extern int32_t  stub_audio_abort_real;  /* with -1 (AHI 4): bytes it really played, captured but not returned */
+extern uint8_t  stub_audio_out[2 * 1024 * 1024];  /* what the device played, in order */
+extern int      stub_audio_out_len;
+extern int      stub_audio_sends;       /* requests sent since stub_audio_clear() */
+extern int      stub_audio_bad;         /* requests sent against ahi.device's rules: linked to a request that is not
+                                           playing, unlinked while one is queued, or a third one at once */
+/* Clears the captured output and the counters (not the requests) */
+void stub_audio_clear(void);
+/* The request playing now ends: its data goes to stub_audio_out; returns its number, or -1 if none is queued */
+int stub_audio_finish(void);
+/* Requests queued, in playing order */
+int stub_audio_queue(int *order);
 
 /* Clears everything sent, printed and still to be received */
 void stub_reset(void);

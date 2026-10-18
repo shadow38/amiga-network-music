@@ -9,10 +9,10 @@
  *     STMs is sent again when the output reaches it (gapless);
  *   buffer empty: STMo while still streaming, STMu once everything was played.
  * Single buffer: raw PCM needs no decoding, so the ring buffer is both the stream and the output buffer.
- * The output hands the buffer's bytes to a sink: the virtual output, which consumes them at the PCM rate like a
- * sound card (AHI comes with step 1.4b); with the OUTPUT option, what it hands over is also written to a file
- * (plan step 1.3, checked byte by byte). Track boundaries, elapsed time and the end of playback follow the bytes
- * the sink has played.
+ * The output hands the buffer's bytes to a sink: the platform's audio output (AHI, blocks managed by audio.c),
+ * or the virtual output, which consumes them at the PCM rate like a sound card (host build, NOAUDIO, OUTPUT); with
+ * the OUTPUT option, what it hands over is also written to a file (plan step 1.3, checked byte by byte). Track
+ * boundaries, elapsed time and the end of playback follow the bytes the sink has played.
  */
 #include <string.h>
 
@@ -48,6 +48,8 @@ void stream_free(struct player *p)
 static void output_reset(struct player *p)
 {
     ring_clear(&p->ring);
+    if (p->audio.enabled)
+        audio_reset(p);
     p->out.queued = 0;
     p->out.cur.start = 0;
     p->out.carry = 0;
@@ -139,7 +141,7 @@ uint32_t pcm_bytes_per_sec(const struct pcm_format *f)
     return f->rate * f->channels * f->sample_bytes;
 }
 
-/* ---- sink: where the output's bytes go (the virtual output; AHI with step 1.4b) ---- */
+/* ---- sink: where the output's bytes go (the audio output, or the virtual output) ---- */
 
 /* Bytes the sink takes now. Virtual output: the bytes due since the last tick, at the PCM rate of the data handed
  * over next. */
@@ -153,10 +155,31 @@ static uint32_t sink_space(struct player *p, const struct pcm_format *f, uint32_
     return (uint32_t)(want / 1000);
 }
 
-/* Bytes played since the last output_reset(). Virtual output: everything handed over is played at once. */
+/* Bytes played since the last output_reset(), with an estimate of the audio block playing now. Virtual output:
+ * everything handed over is played at once. */
 static uint64_t sink_played(const struct player *p)
 {
+    if (p->audio.enabled)
+        return audio_played(p, plat_now_ms(), 1);
     return p->ring.total_out;
+}
+
+/* 1 when everything handed over was played */
+static int sink_drained(const struct player *p)
+{
+    return !p->audio.enabled || audio_pending(p) == 0;
+}
+
+static int streaming(const struct player *p)
+{
+    int s = p->stream.state;
+
+    return s == STREAM_CONNECTING || s == STREAM_HEADERS || s == STREAM_BODY;
+}
+
+int output_format_ok(const struct player *p, const struct pcm_format *f)
+{
+    return !p->audio.enabled || f->sample_bytes == 2;
 }
 
 /* Format of the data at the buffer's read position, the next bytes handed to the sink */
@@ -277,55 +300,114 @@ static void check_start(struct player *p)
     }
 }
 
-void output_tick(struct player *p, uint32_t now)
+/* Buffer and sink empty: STMo while still streaming (the network is too slow), STMu once everything was played */
+static void output_empty(struct player *p)
 {
     struct output *o = &p->out;
-    struct ring *r = &p->ring;
-    uint32_t bytes;
 
-    if (o->state != OUTPUT_RUNNING) {
-        o->last_tick = now;
-        return;
+    o->carry = 0;
+    if (streaming(p)) {
+        if (!o->starved) {
+            o->starved = 1;
+            if (p->verbose)
+                msg("output: buffer empty, waiting for data\n");
+            slim_send_stat(p, "STMo", 0);
+        }
+    } else {
+        o->state = OUTPUT_STOPPED;
+        if (p->verbose)
+            msg("output: end of playback\n");
+        slim_send_stat(p, "STMu", 0);
     }
-    /* Track boundaries already played (the virtual output reaches them as it hands the bytes over) */
-    while (o->queued > 0 && sink_played(p) >= o->queue[0].start)
-        next_track(p);
-    bytes = sink_space(p, submit_format(p), now);
+}
+
+/* Audio output: fills the free blocks. A block holds whole frames of one track; it is sent full, or with what
+ * there is when the track's data is complete or when the device is about to run dry (fewer than two blocks
+ * queued). */
+static void feed_audio(struct player *p, uint32_t now)
+{
+    struct ring *r = &p->ring;
+
+    for (;;) {
+        const struct pcm_format *f;
+        uint32_t frame, n, avail;
+        int b;
+
+        if (p->out.queued > 0 && sink_played(p) >= p->out.queue[0].start) {
+            next_track(p);
+            continue;
+        }
+        avail = ring_used(r);
+        if (avail == 0) {
+            if (sink_drained(p))
+                output_empty(p);
+            return;
+        }
+        p->out.starved = 0;
+        b = audio_free_block(p);
+        if (b < 0)
+            return;
+        f = submit_format(p);
+        frame = (uint32_t)f->channels * f->sample_bytes;
+        n = until_next_track(p, avail < AUDIO_BLOCK_SIZE ? avail : AUDIO_BLOCK_SIZE);
+        if (n < frame) {
+            if (until_next_track(p, avail) < avail || !streaming(p)) {
+                ring_consume(r, n);         /* a partial frame at the end of a track: dropped */
+                p->audio.played += n;
+                continue;
+            }
+            return;                         /* the rest of the frame is still to come */
+        }
+        n -= n % frame;
+        if (n < AUDIO_BLOCK_SIZE && audio_pending(p) >= 2 && streaming(p) && until_next_track(p, avail) == avail)
+            return;                         /* more of this track to come: wait to fill a whole block */
+        audio_submit(p, b, n, f, now);
+    }
+}
+
+/* Virtual output: hands over the bytes due since the last tick */
+static void feed_virtual(struct player *p, uint32_t now)
+{
+    struct ring *r = &p->ring;
+    uint32_t bytes = sink_space(p, submit_format(p), now);
 
     for (;;) {
         uint32_t n;
 
-        if (o->queued > 0 && sink_played(p) >= o->queue[0].start) {
+        if (p->out.queued > 0 && sink_played(p) >= p->out.queue[0].start) {
             next_track(p);
             continue;
         }
         if (bytes == 0)
             break;
-        if (ring_used(r) == 0 && sink_played(p) == r->total_out) {     /* buffer and sink empty */
-            o->carry = 0;
-            if (p->stream.state == STREAM_CONNECTING || p->stream.state == STREAM_HEADERS ||
-                p->stream.state == STREAM_BODY) {
-                if (!o->starved) {      /* still streaming: the network is too slow */
-                    o->starved = 1;
-                    if (p->verbose)
-                        msg("output: buffer empty, waiting for data\n");
-                    slim_send_stat(p, "STMo", 0);
-                }
-            } else {                    /* everything was played */
-                o->state = OUTPUT_STOPPED;
-                if (p->verbose)
-                    msg("output: end of playback\n");
-                slim_send_stat(p, "STMu", 0);
-            }
+        if (ring_used(r) == 0) {
+            output_empty(p);
             break;
         }
-        o->starved = 0;
+        p->out.starved = 0;
         n = until_next_track(p, bytes < ring_used(r) ? bytes : ring_used(r));
-        if (n == 0)                     /* handed over, not played yet (never with the virtual output) */
-            break;
         consume(p, n);
         bytes -= n;
     }
+}
+
+void output_tick(struct player *p, uint32_t now)
+{
+    struct output *o = &p->out;
+
+    if (o->state != OUTPUT_RUNNING) {
+        o->last_tick = now;
+        return;
+    }
+    if (p->audio.enabled)
+        audio_poll(p, now);
+    /* Track boundaries already played */
+    while (o->queued > 0 && sink_played(p) >= o->queue[0].start)
+        next_track(p);
+    if (p->audio.enabled)
+        feed_audio(p, now);
+    else
+        feed_virtual(p, now);
 
     if (o->state == OUTPUT_RUNNING && (uint32_t)(now - o->last_stmt) >= 1000) {
         o->last_stmt = now;
@@ -335,8 +417,11 @@ void output_tick(struct player *p, uint32_t now)
 
 void output_pause(struct player *p)
 {
-    if (p->out.state == OUTPUT_RUNNING)
+    if (p->out.state == OUTPUT_RUNNING) {
         p->out.state = OUTPUT_PAUSED;
+        if (p->audio.enabled)
+            audio_pause(p, plat_now_ms());  /* the sound stops at once */
+    }
 }
 
 void output_resume(struct player *p)
@@ -344,6 +429,8 @@ void output_resume(struct player *p)
     struct output *o = &p->out;
 
     if (o->state == OUTPUT_PAUSED || o->state == OUTPUT_LOADED) {
+        if (o->state == OUTPUT_PAUSED && p->audio.enabled)
+            audio_resume(p, plat_now_ms());
         o->state = OUTPUT_RUNNING;
         o->last_tick = o->last_stmt = plat_now_ms();
         o->carry = 0;
@@ -362,7 +449,7 @@ uint32_t output_elapsed_ms(const struct player *p)
 
 int player_busy(const struct player *p)
 {
-    return p->stream.sock >= 0 || p->out.state == OUTPUT_RUNNING;
+    return p->stream.sock >= 0 || p->out.state == OUTPUT_RUNNING || audio_pending(p) > 0;
 }
 
 /* ---- HTTP stream ---- */

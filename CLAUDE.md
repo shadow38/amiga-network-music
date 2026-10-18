@@ -21,8 +21,9 @@ licence (public domain, MIT, BSD, zlib…; e.g. dr_flac, minimp3), not GPL (no l
 Targets (2026-10-18): classic Amigas, 68020 or better, of two kinds: **fast** (PiStorm with Emu68: a 68040 with
 FPU) and **slow** (a 68020 accelerator without FPU); sound through **AHI**: Paula (`paula.audio`, Amigas without a
 sound card) or an AHI driver (sound card, or the PiStorm's own outputs: I2S DAC of the PiStorm32-lite FPGA
-firmware, HDMI with a Pi 4). Code only `ahi.device` features of AHI 4 (works with AHI 4.x and 6.x). The WinUAE
-test configurations reproduce both kinds (step 0.4); Paula is the main audio test, Toccata a 16-bit reference.
+firmware, HDMI with a Pi 4). Code only `ahi.device` features of AHI 4 (tested with AHI 6.6; 4.x expected to
+work, not checked). The WinUAE test configurations reproduce both kinds (step 0.4); Paula is the main audio test,
+Toccata a 16-bit reference.
 
 Decided (2026-10-18): two programs in this repository, one `src/<prog>/` directory each, shared code in
 `src/common/`:
@@ -36,7 +37,7 @@ Work proceeds in testable steps, each validated with the user **before** writing
 `docs/development/` (keep the statuses up to date). User-facing behaviour (options, messages) is documented in
 `docs/user-guide.md`: update it with every change visible to users. Steps 1.1b (default options in
 `ENV:amisqueeze.prefs`), 1.2 (stream received, virtual output) and 1.3 (`OUTPUT` file) validated on 2026-10-18.
-Next: amisqueeze step 1.4 (AHI, needs 0.5).
+Step 1.4: 1.4a and 1.4b done (AHI output); next 1.4c (listening, CPU load on a slow 68020 profile).
 
 Step 1.2 (stream.c, ring.c): HTTP stream with a non-blocking connection; one 1 MB ring buffer, reported to LMS
 as both the stream and the output buffer (raw PCM needs no decoding); a virtual output consumes it at the PCM rate
@@ -50,8 +51,16 @@ Step 1.3: `OUTPUT=<file>` writes what the virtual output consumes (`consume()` i
 where data leaves the buffer), as received, one file per run. Byte-exact checks with `tools/pcm-compare.py`:
 a counter pattern in FLAC (decoded losslessly by LMS) and MP3s decoded by the server's own `sox` command. Start
 playback with a single `play`, and compare only after the output has drained (`output: end of playback`) and
-amisqueeze has stopped. LMS strips an MP3's ID3v1 tag before conversion, and `sox` then drops the last frame:
-test MP3s without ID3v1 (`lame --id3v2-only`).
+amisqueeze has stopped. With AHI, `OUTPUT` keeps the virtual output (no sound). LMS strips an MP3's ID3v1 tag
+before conversion, and `sox` then drops the last frame: test MP3s without ID3v1 (`lame --id3v2-only`).
+
+Step 1.4 (AHI): the output hands bytes to a sink, the virtual output (host build, `NOAUDIO`, `OUTPUT`) or the
+audio output (`audio.c`, portable: blocks, conversion, played bytes, pause; `ahi.device` calls in `amiga.c`).
+`ahi.device` rules learnt from its source (AHI 6.0), to keep: chain a request (`ahir_Link`) only to one already
+**playing** (linked to a waiting one, it never plays nor ends), so at most two requests with the device; abort the
+**playing** one first (it takes the linked one along; the reverse order leaves a stale reference that hangs the
+device); `CMD_STOP` does not pause what is playing (pause = abort, then send the rest again); a non-real-time mode
+("Filesave") on a device unit writes only silence. The test stub enforces the first two rules (`stub_audio_bad`).
 
 amisqueeze state: control connection (step 1.1) validated on 2026-10-18 in WinUAE (`bsdsocket_emu`,
 `SERVER=127.0.0.1`) with LMS 9.1.1: the player shows up in LMS and reconnects by itself after a server restart.

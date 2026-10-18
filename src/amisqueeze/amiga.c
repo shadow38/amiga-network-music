@@ -2,11 +2,12 @@
  * amiga.c - amisqueeze on AmigaOS 3.x: entry point and the system services of platform.h
  *
  * Usage: amisqueeze [SERVER=<ip|name>] [PORT=3483] [NAME=<name>] [MAC=xx:xx:xx:xx:xx:xx] [OUTPUT=<file>]
- *                   [VERBOSE]
+ *                   [UNIT=<n>] [NOAUDIO] [SWAP] [VERBOSE]
  * Ctrl-C to quit. Default options come from ENV:amisqueeze.prefs (same syntax as the command line, which
  * takes precedence); see docs/user-guide.md.
  *
- * Needs a TCP/IP stack (Roadshow, AmiTCP, AmiNetXDuo, or WinUAE's bsdsocket emulation). Everything runs in one
+ * Needs a TCP/IP stack (Roadshow, AmiTCP, AmiNetXDuo, or WinUAE's bsdsocket emulation) and, for the sound, AHI
+ * (ahi.device, version 4 or later). Everything runs in one
  * task: the SocketBase belongs to the task that opened bsdsocket.library. Printed strings stay ASCII: the
  * Amiga uses ISO-8859-1.
  */
@@ -15,6 +16,7 @@
 #include <dos/rdargs.h>
 #include <dos/var.h>
 #include <devices/timer.h>
+#include <devices/ahi.h>
 #include <proto/exec.h>
 #include <proto/dos.h>
 #include <proto/timer.h>
@@ -33,8 +35,8 @@
 static const char version[] __attribute__((used)) = "$VER: amisqueeze 0.1 (18.10.2026)";
 
 /* Used for the command line and for the prefs variable */
-#define TEMPLATE "SERVER,PORT/N/K,NAME/K,MAC/K,OUTPUT/K,VERBOSE/S"
-enum { ARG_SERVER, ARG_PORT, ARG_NAME, ARG_MAC, ARG_OUTPUT, ARG_VERBOSE, ARG_COUNT };
+#define TEMPLATE "SERVER,PORT/N/K,NAME/K,MAC/K,OUTPUT/K,UNIT/N/K,NOAUDIO/S,SWAP/S,VERBOSE/S"
+enum { ARG_SERVER, ARG_PORT, ARG_NAME, ARG_MAC, ARG_OUTPUT, ARG_UNIT, ARG_NOAUDIO, ARG_SWAP, ARG_VERBOSE, ARG_COUNT };
 
 /* Global variable ENV:amisqueeze.prefs (saved in ENVARC: to survive a reboot) */
 #define PREFS_VAR "amisqueeze.prefs"
@@ -43,6 +45,11 @@ struct Library *SocketBase;
 struct Device *TimerBase;
 static struct timerequest timer_io;
 static int last_error;
+
+/* ahi.device: one request per audio block, all replied to audio_port */
+static struct MsgPort *audio_port;
+static struct AHIRequest *audio_req[AUDIO_BLOCKS];
+static int audio_v6;                        /* io_Actual valid for an aborted request from version 6 */
 
 /* static: holds a 4 KB buffer, and the default stack is small */
 static struct player player;
@@ -208,11 +215,102 @@ int plat_error(void)
     return last_error;
 }
 
+int plat_audio_open(int unit)
+{
+    int i;
+
+    audio_port = CreateMsgPort();
+    if (audio_port != NULL)
+        audio_req[0] = (struct AHIRequest *)CreateIORequest(audio_port, sizeof(struct AHIRequest));
+    if (audio_req[0] == NULL) {
+        msg("amisqueeze: not enough memory for the audio output\n");
+        plat_audio_close();
+        return 0;
+    }
+    audio_req[0]->ahir_Version = 4;
+    if (OpenDevice(AHINAME, (ULONG)unit, (struct IORequest *)audio_req[0], 0) != 0) {
+        msg("amisqueeze: cannot open ahi.device unit %d (is AHI installed? NOAUDIO plays without sound)\n", unit);
+        DeleteIORequest((struct IORequest *)audio_req[0]);
+        audio_req[0] = NULL;
+        plat_audio_close();
+        return 0;
+    }
+    audio_v6 = audio_req[0]->ahir_Std.io_Device->dd_Library.lib_Version >= 6;
+    for (i = 1; i < AUDIO_BLOCKS; i++) {    /* copies of the opened request: same device and unit */
+        audio_req[i] = AllocVec(sizeof(struct AHIRequest), MEMF_PUBLIC);
+        if (audio_req[i] == NULL) {
+            msg("amisqueeze: not enough memory for the audio output\n");
+            plat_audio_close();
+            return 0;
+        }
+        CopyMem(audio_req[0], audio_req[i], sizeof(struct AHIRequest));
+    }
+    return 1;
+}
+
+/* The core has aborted every request before (audio_reset) */
+void plat_audio_close(void)
+{
+    int i;
+
+    for (i = 1; i < AUDIO_BLOCKS; i++) {
+        FreeVec(audio_req[i]);
+        audio_req[i] = NULL;
+    }
+    if (audio_req[0] != NULL) {
+        CloseDevice((struct IORequest *)audio_req[0]);
+        DeleteIORequest((struct IORequest *)audio_req[0]);
+        audio_req[0] = NULL;
+    }
+    if (audio_port != NULL) {
+        DeleteMsgPort(audio_port);
+        audio_port = NULL;
+    }
+}
+
+void plat_audio_send(int i, const void *data, uint32_t len, uint32_t rate, int channels, int link)
+{
+    struct AHIRequest *r = audio_req[i];
+
+    r->ahir_Std.io_Message.mn_Node.ln_Pri = 0;
+    r->ahir_Std.io_Command = CMD_WRITE;
+    r->ahir_Std.io_Data = (APTR)data;
+    r->ahir_Std.io_Length = len;
+    r->ahir_Std.io_Offset = 0;
+    r->ahir_Frequency = rate;
+    r->ahir_Type = channels == 2 ? AHIST_S16S : AHIST_M16S;
+    r->ahir_Volume = 0x10000;               /* full volume (audg comes with step 1.5) */
+    r->ahir_Position = 0x8000;              /* centre */
+    r->ahir_Link = link >= 0 ? audio_req[link] : NULL;
+    SendIO((struct IORequest *)r);
+}
+
+int plat_audio_done(int i)
+{
+    if (CheckIO((struct IORequest *)audio_req[i]) == NULL)
+        return 0;
+    WaitIO((struct IORequest *)audio_req[i]);
+    return 1;
+}
+
+int32_t plat_audio_abort(int i)
+{
+    struct AHIRequest *r = audio_req[i];
+
+    if (CheckIO((struct IORequest *)r) == NULL)
+        AbortIO((struct IORequest *)r);
+    WaitIO((struct IORequest *)r);
+    if (r->ahir_Std.io_Error != 0 && !audio_v6)
+        return -1;
+    return (int32_t)r->ahir_Std.io_Actual;
+}
+
 int plat_wait(struct plat_fd *fds, int n, uint32_t timeout_ms)
 {
     fd_set rfds, wfds;
     struct timeval tv;
-    ULONG sigs = SIGBREAKF_CTRL_C;
+    ULONG audio_sig = audio_port != NULL ? 1UL << audio_port->mp_SigBit : 0;
+    ULONG sigs = SIGBREAKF_CTRL_C | audio_sig;
     LONG r;
     int i, maxfd = -1;
 
@@ -240,6 +338,8 @@ int plat_wait(struct plat_fd *fds, int n, uint32_t timeout_ms)
     r = WaitSelect(maxfd + 1, &rfds, &wfds, NULL, &tv, &sigs);
     if (sigs & SIGBREAKF_CTRL_C)
         return -1;
+    if (r >= 0 && (sigs & audio_sig))       /* an audio block ended */
+        r++;
     if (r < 0) {
         msg("amisqueeze: WaitSelect: error %ld\n", (long)Errno());
         return -2;
@@ -318,6 +418,9 @@ int main(void)
     o.name = (const char *)args[ARG_NAME];
     o.mac = (const char *)args[ARG_MAC];
     o.output = (const char *)args[ARG_OUTPUT];
+    o.audio = args[ARG_NOAUDIO] == 0;
+    o.unit = args[ARG_UNIT] ? (int)*(LONG *)args[ARG_UNIT] : 0;
+    o.swap = args[ARG_SWAP] != 0;
     o.verbose = args[ARG_VERBOSE] != 0;
 
     if (OpenDevice(TIMERNAME, UNIT_MICROHZ, (struct IORequest *)&timer_io, 0) != 0) {

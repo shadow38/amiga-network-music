@@ -23,6 +23,18 @@ int      stub_file_open;
 int      stub_file_fails;
 int      stub_file_limit;
 
+struct stub_audio_req stub_audio[8];
+int      stub_audio_fails;
+int      stub_audio_unit;
+int      stub_audio_open;
+int32_t  stub_audio_abort_played;
+int32_t  stub_audio_abort_real;
+uint8_t  stub_audio_out[2 * 1024 * 1024];
+int      stub_audio_out_len;
+int      stub_audio_sends;
+int      stub_audio_bad;
+static int audio_fifo[64], audio_fifo_len;     /* queued requests, in playing order */
+
 struct queue {
     uint8_t data[2 * 1024 * 1024];
     int     len, pos;
@@ -176,6 +188,117 @@ void plat_close(int sock)
 int plat_error(void)
 {
     return 0;
+}
+
+void stub_audio_clear(void)
+{
+    stub_audio_out_len = 0;
+    stub_audio_sends = 0;
+    stub_audio_bad = 0;
+}
+
+static void audio_capture(const uint8_t *d, uint32_t n)
+{
+    memcpy(stub_audio_out + stub_audio_out_len, d, n);
+    stub_audio_out_len += (int)n;
+}
+
+static void audio_unqueue(int i)
+{
+    int k;
+
+    for (k = 0; k < audio_fifo_len; k++)
+        if (audio_fifo[k] == i) {
+            memmove(audio_fifo + k, audio_fifo + k + 1, (size_t)(audio_fifo_len - k - 1) * sizeof(int));
+            audio_fifo_len--;
+            break;
+        }
+    stub_audio[i].queued = 0;
+}
+
+int stub_audio_finish(void)
+{
+    int i;
+
+    if (audio_fifo_len == 0)
+        return -1;
+    i = audio_fifo[0];
+    audio_capture(stub_audio[i].data, stub_audio[i].len);
+    audio_unqueue(i);
+    stub_audio[i].ended = 1;
+    return i;
+}
+
+int stub_audio_queue(int *order)
+{
+    memcpy(order, audio_fifo, (size_t)audio_fifo_len * sizeof(int));
+    return audio_fifo_len;
+}
+
+int plat_audio_open(int unit)
+{
+    stub_audio_unit = unit;
+    if (stub_audio_fails) {
+        msg("amisqueeze: cannot open ahi.device unit %d\n", unit);
+        return 0;
+    }
+    memset(stub_audio, 0, sizeof(stub_audio));
+    audio_fifo_len = 0;
+    stub_audio_open = 1;
+    return 1;
+}
+
+void plat_audio_close(void)
+{
+    stub_audio_open = 0;
+}
+
+void plat_audio_send(int i, const void *data, uint32_t len, uint32_t rate, int channels, int link)
+{
+    /* ahi.device plays a linked request only if the one it is linked to is playing (the first queued) */
+    if (link >= 0 ? audio_fifo_len != 1 || audio_fifo[0] != link : audio_fifo_len != 0)
+        stub_audio_bad++;
+    stub_audio[i].data = data;
+    stub_audio[i].len = len;
+    stub_audio[i].rate = rate;
+    stub_audio[i].channels = channels;
+    stub_audio[i].link = link;
+    stub_audio[i].queued = 1;
+    stub_audio[i].ended = 0;
+    audio_fifo[audio_fifo_len++] = i;
+    stub_audio_sends++;
+}
+
+int plat_audio_done(int i)
+{
+    if (!stub_audio[i].ended)
+        return 0;
+    stub_audio[i].ended = 0;
+    return 1;
+}
+
+/* The playing request (first queued) has played stub_audio_abort_played bytes; the others nothing */
+int32_t plat_audio_abort(int i)
+{
+    int32_t played = 0;
+
+    if (stub_audio[i].ended) {              /* ended before the abort: all of it */
+        stub_audio[i].ended = 0;
+        return (int32_t)stub_audio[i].len;
+    }
+    if (!stub_audio[i].queued)              /* already aborted with the one it was linked to */
+        return 0;
+    if (audio_fifo[0] != i)                 /* ahi.device: abort the one playing first */
+        stub_audio_bad++;
+    played = stub_audio_abort_played;
+    if (played > 0)
+        audio_capture(stub_audio[i].data, (uint32_t)played);
+    else if (played < 0 && stub_audio_abort_real > 0)
+        audio_capture(stub_audio[i].data, (uint32_t)stub_audio_abort_real);
+    audio_unqueue(i);
+    while (audio_fifo_len > 0)              /* the request linked to it goes with it */
+        audio_unqueue(audio_fifo[0]);
+    return played;
 }
 
 int plat_file_create(const char *name)

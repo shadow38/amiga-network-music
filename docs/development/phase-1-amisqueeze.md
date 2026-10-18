@@ -106,35 +106,53 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   that frame. A reference decoded from the whole file is then one frame too long: decode the file without its
   ID3v1 tag, or use test MP3s without one (`lame --id3v2-only`).
 
-## 1.4 AHI audio output ⬜ (next step)
+## 1.4 AHI audio output 🔶 (1.4a, 1.4b done; 1.4c next)
 
 - **Goal**: hear the sound, and hear it right.
 - **Content**: `ahi.device`, double-buffered `CMD_WRITE`, `AHIST_S16S`; byte swapping when the stream is
   little-endian; honour the sample size, rate and channel count announced by `strm`. Only `ahi.device` features
-  of AHI 4 (works with AHI 4.x and 6.x). User guide: a **stereo++** mode (a plain "stereo" mode plays a stereo
-  stream on one side only, seen in 0.5), at the stream's rate when the driver allows it (44.1 kHz for LMS) to
-  avoid resampling; a warning at start-up if the unit's mode cannot pan (to check: reading the unit's mode
-  through the device API). Automated check of what reaches AHI with the "Filesave" driver (WAV file).
+  of AHI 4 (tested with AHI 6.6; 4.x expected to work, not checked). User guide: a **stereo++** mode (a plain
+  "stereo" mode plays a stereo stream on one side only, seen in 0.5), at the stream's rate when the driver allows
+  it (44.1 kHz for LMS) to avoid resampling; a warning at start-up if the unit's mode cannot pan (to check:
+  reading the unit's mode through the device API).
 - **Prerequisite**: 0.5 (AHI in the emulated Amiga) ✅.
 - **Design** (agreed 2026-10-18):
   - an output ("sink") interface in the core: how many bytes it can take now, take these bytes, how many bytes
     were really played. The virtual output (clock) stays for the host build, the tests and `NOAUDIO`; AHI is the
     other sink. Elapsed time, `STMs` at a track boundary and `STMu` follow the bytes **played**, not the bytes
     handed over (AHI is about 0.6 s ahead);
-  - AHI: three blocks of about 0.2 s (32 KB, size defined in one place) queued and linked (`ahir_Link`), each
-    block carrying its rate and sample type, never spanning two tracks; the conversion (byte swap of
-    little-endian streams, `SWAP`) done by the core while copying into the block (unit tested); the AHI reply
-    port's signal added to the main wait; stop, flush and seek abort the queued blocks (sound cut at once);
-    pause through `CMD_STOP`/`CMD_START` (to check with AHI 6); 16-bit PCM (other sizes refused for now, 1.7);
+  - AHI: three blocks of about 0.2 s (32 KB, size defined in one place), each carrying its rate and sample
+    type, never spanning two tracks; the conversion (byte swap of little-endian streams, `SWAP`) done by the core
+    while copying into the block (unit tested); the AHI reply port's signal added to the main wait; stop, flush
+    and seek abort the blocks (sound cut at once); 16-bit PCM (other sizes refused for now, 1.7);
   - options: `UNIT=n` (AHI unit, 0 by default), `NOAUDIO` (virtual output), `SWAP` (swaps left and right, off by
     default: for an AHI driver that swaps them, as `paula.audio` does in WinUAE, see 0.5); AHI missing: error
     message, return code 20.
 - **Sub-steps**: 1.4a the sink interface with the virtual output only, no change of behaviour (`make test` and the
-  `OUTPUT` comparisons unchanged); 1.4b the AHI sink, checked automatically through the "Filesave" driver
-  (file compared with the counter pattern: byte order, left/right, content) and unit tests with a fake AHI
-  (blocks, track boundary, played time, `STMs`/`STMu`, stop, pause); 1.4c listening (Toccata, then Paula; test
-  tones from LMS, a whole track), LMS timing criteria of 1.2, no leak, 2 KB stack, and CPU load with Paula on a
-  slow 68020 profile of WinUAE (created then, see 0.4).
+  `OUTPUT` comparisons unchanged); 1.4b the AHI sink, unit tests with a fake AHI (blocks, conversion, track
+  boundary, played time, `STMs`/`STMu`, stop, pause) and a command scenario against LMS; 1.4c listening
+  (Toccata, then Paula; test tones from LMS, a whole track), LMS timing criteria of 1.2, no leak, 2 KB stack, and
+  CPU load with Paula on a slow 68020 profile of WinUAE (created then, see 0.4).
+- **1.4a done** (2026-10-18): sink interface, played positions, track format kept from `strm s`; no change of
+  behaviour (`make test`, `OUTPUT` comparisons against LMS on both builds).
+- **1.4b done** (2026-10-18): `audio.c` (portable: blocks, conversion, played bytes, pause), `ahi.device` calls in
+  `amiga.c`, options `UNIT`, `NOAUDIO`, `SWAP`; `OUTPUT` keeps the virtual output (decided 2026-10-18: the file
+  holds exactly what was played). What `ahi.device` taught (its source, AHI 6.0):
+  - a request is chained (`ahir_Link`) only to one **already playing**: a request linked to one that is itself
+    waiting is never played nor ended (the first version hung on the third block). So at most two blocks are
+    with the device, the playing one and the next one linked to it; the third one is filled in advance and sent
+    when the first one ends;
+  - aborting the playing request also aborts the one linked to it; aborting the linked one first leaves a stale
+    reference in the device, which then hangs (`CloseDevice`) and slows the whole system: abort from the first;
+  - `CMD_STOP` only holds back the requests sent after it, for every program: a pause aborts the blocks (AHI 6
+    gives the bytes played in `io_Actual`; AHI 4: estimated from the clock) and sends the rest again on resume;
+  - a "Filesave" mode set by hand on a device unit writes only silence (not real-time): no automated check of
+    the AHI output this way; the byte-exact checks are the unit tests' (fake device enforcing the two rules
+    above).
+- **Validated (1.4b)**: `make test` 245 unit checks (the AHI 4 pause path included, by the fake device); WinUAE
+  against LMS 9.1.1, Toccata (unit 1) and Paula (unit 0): play (`time ?` +3.00 s in 3 s), pause (time frozen),
+  resume (+3.01 s in 3 s), stop, a 10 s track played to its end in 10.3 s, clean exit; `OUTPUT` on the Amiga
+  build keeps the virtual output and its file stays identical to the counter pattern (twice, 7,056,000 bytes).
 - **Criterion**: correct test tones (440 Hz at the right pitch, left/right in the right place, no noise); a whole
   track without crackling; CPU load measured with Paula on the slow profile (0.4).
 - **Test**: WinUAE with both AHI drivers of step 0.5, Paula first (Amiga chipset, the output of Amigas without a

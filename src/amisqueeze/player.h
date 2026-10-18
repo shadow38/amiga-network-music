@@ -31,7 +31,10 @@ struct options {
     uint16_t    port;                   /* 0 = SLIMPROTO_PORT */
     const char *name;                   /* NULL = "Amiga" */
     const char *mac;                    /* "xx:xx:xx:xx:xx:xx", NULL = derived from the name */
-    const char *output;                 /* file receiving the audio played, NULL = none */
+    const char *output;                 /* file receiving the audio played, NULL = none (implies no audio) */
+    int         audio;                  /* 1 = play through the platform's audio output (AHI), 0 = virtual */
+    int         unit;                   /* audio unit (AHI unit) */
+    int         swap;                   /* swap left and right */
     int         verbose;
 };
 
@@ -58,8 +61,8 @@ struct stream {
     int      autostart;                 /* 1 = start by itself, 0 = wait for strm u */
 };
 
-/* Virtual output: consumes the buffer at the PCM rate, as a sound card would (replaced by AHI later); with the
- * OUTPUT option, every byte consumed is also written to a file, as received (no conversion) */
+/* Output: the buffer's bytes go to a sink, the virtual output (consumed at the PCM rate, as a sound card would;
+ * with the OUTPUT option also written to a file, as received) or the platform's audio output (AHI) */
 enum output_state {
     OUTPUT_STOPPED,                     /* nothing to play */
     OUTPUT_LOADED,                      /* autostart 0: ready, waiting for strm u */
@@ -99,6 +102,39 @@ struct output {
     uint64_t     written;               /* bytes written to it */
 };
 
+/* Audio output through the platform (AHI on the Amiga): blocks of converted PCM played one after the other, two at
+ * most with the device and one filled in advance. About 0.6 s ahead: enough to ride out a busy moment, short
+ * enough for the volume (1.5). */
+#define AUDIO_BLOCKS     3
+#define AUDIO_BLOCK_SIZE 32768UL        /* about 0.19 s of 44.1 kHz 16-bit stereo; a multiple of every frame size */
+
+enum block_state {
+    BLOCK_FREE,
+    BLOCK_READY,                        /* filled, waiting for its turn (or taken back by a pause) */
+    BLOCK_SENT                          /* with the device */
+};
+
+struct audio_block {
+    uint8_t *buf;
+    uint32_t len;                       /* bytes of PCM in buf */
+    uint32_t done;                      /* bytes already played (a pause stopped it there) */
+    uint32_t sent;                      /* bytes sent with the last request (len - done) */
+    int      state;                     /* enum block_state */
+    uint32_t rate;
+    int      channels;
+};
+
+struct audio {
+    int                enabled;
+    int                swap;
+    struct audio_block block[AUDIO_BLOCKS];
+    int                order[AUDIO_BLOCKS];    /* non-free blocks, in playing order (the sent ones first) */
+    int                count;
+    uint64_t           played;         /* bytes played by finished (or paused) blocks since the last reset */
+    uint32_t           head_ms;        /* when the first block started playing */
+    int                paused;
+};
+
 struct player {
     int      sock;                      /* control connection, -1 when closed */
     uint32_t server_ip;                 /* host byte order */
@@ -117,6 +153,7 @@ struct player {
     struct ring   ring;
     struct stream stream;
     struct output out;
+    struct audio  audio;
 };
 
 /* player.c */
@@ -159,6 +196,28 @@ void output_resume(struct player *p);
 uint32_t output_elapsed_ms(const struct player *p);
 /* 1 if the loop must wake up often (stream or output active) */
 int player_busy(const struct player *p);
+/* 0 if the output cannot play this format (the audio output takes 16-bit PCM only for now) */
+int output_format_ok(const struct player *p, const struct pcm_format *f);
+
+/* audio.c: the audio output's blocks (portable; the device itself is behind platform.h) */
+/* Opens the platform's audio output and allocates the blocks; 0 on failure (message printed) */
+int audio_open(struct player *p, int unit, int swap);
+void audio_close(struct player *p);
+/* Aborts everything queued; positions start again from 0 */
+void audio_reset(struct player *p);
+/* Collects the blocks the device has finished */
+void audio_poll(struct player *p, uint32_t now);
+/* A free block, or -1 */
+int audio_free_block(const struct player *p);
+/* Blocks queued or held: 0 = nothing left to play */
+int audio_pending(const struct player *p);
+/* Copies n bytes (whole frames, n <= AUDIO_BLOCK_SIZE) from the ring buffer into block b, converts them for the
+ * device (16-bit big-endian, left/right swapped with SWAP) and queues the block */
+void audio_submit(struct player *p, int b, uint32_t n, const struct pcm_format *f, uint32_t now);
+/* Bytes played since the last reset: exact (finished blocks), or with an estimate of the block playing now */
+uint64_t audio_played(const struct player *p, uint32_t now, int estimate);
+void audio_pause(struct player *p, uint32_t now);
+void audio_resume(struct player *p, uint32_t now);
 /* Offset just after the blank line ending HTTP headers ("\r\n\r\n" or "\n\n"), 0 if not there yet */
 int http_header_end(const char *buf, int len);
 

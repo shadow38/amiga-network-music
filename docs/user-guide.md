@@ -10,10 +10,9 @@ protocol of Logitech's Squeezebox players, so LMS (and its web interface or apps
 other player.
 
 **Current state (version 0.1, in development):** amisqueeze connects to the server, shows up as a player and
-**receives the audio stream** of what LMS plays: in LMS, playback progresses, moves on to the next track, pauses,
-seeks and stops as with any player. But **there is no sound yet**: the audio is received and discarded at the
-playing pace (or written to a file with `OUTPUT`, to check it). Sound through AHI is the next part of the work.
-Only raw PCM streams are accepted for now (LMS converts the other formats, see the requirements).
+**plays what LMS plays through AHI**: in LMS, playback progresses, moves on to the next track, pauses, seeks and
+stops as with any player. Only raw 16-bit PCM streams are accepted for now (LMS converts the other formats, see
+the requirements). The sound is still being validated by ear (plan step 1.4c).
 
 ### Requirements
 
@@ -23,8 +22,8 @@ On the Amiga:
 - about 1.1 MB of free memory (1 MB stream buffer, about 6 s of CD-quality audio);
 - a TCP/IP stack providing `bsdsocket.library`: Roadshow, AmiTCP, AmiNetXDuo, or WinUAE's emulation
   (`bsdsocket_emu=true`) in an emulator;
-- later, for audio: AHI (4.x or 6.x) and a driver: Paula's (`paula.audio`, no sound card needed) or your sound
-  card's.
+- for the sound: AHI (tested with 6.x; 4.x expected to work, not checked yet) and a driver: Paula's
+  (`paula.audio`, no sound card needed) or your sound card's; see "Sound (AHI)" below.
 
 On the server:
 
@@ -46,7 +45,7 @@ From a Shell:
 amisqueeze SERVER=192.168.1.10
 ```
 
-Template: `SERVER,PORT/N/K,NAME/K,MAC/K,OUTPUT/K,VERBOSE/S`
+Template: `SERVER,PORT/N/K,NAME/K,MAC/K,OUTPUT/K,UNIT/N/K,NOAUDIO/S,SWAP/S,VERBOSE/S`
 
 | Option | Meaning | Default |
 |---|---|---|
@@ -54,7 +53,10 @@ Template: `SERVER,PORT/N/K,NAME/K,MAC/K,OUTPUT/K,VERBOSE/S`
 | `PORT` | slimproto port of the server | `3483` |
 | `NAME` | player name shown in LMS | `Amiga` |
 | `MAC` | player identifier, `xx:xx:xx:xx:xx:xx` | derived from `NAME` |
-| `OUTPUT` | file receiving the audio as it is played, for checking (see below) | none |
+| `OUTPUT` | file receiving the audio as it is played, for checking (see below); no sound with it | none |
+| `UNIT` | AHI unit to play through (0 to 3, set in the AHI preferences) | `0` |
+| `NOAUDIO` | no sound: the audio is received and consumed at the playing pace, as if played | off |
+| `SWAP` | swaps left and right (for an AHI driver that swaps them, see below) | off |
 | `VERBOSE` | print the messages exchanged with the server and the stream events | off |
 
 `Ctrl-C` stops amisqueeze. To keep the Shell free, run it in the background: `Run >NIL: amisqueeze`, or keep its
@@ -71,8 +73,25 @@ If the connection drops or the server restarts, amisqueeze reconnects by itself 
 16-bit **little-endian** samples (44.1 kHz stereo: about 10 MB per minute). The file is created (or replaced) when
 amisqueeze starts and closed when it stops; everything played in between is appended, the next track right after
 the previous one, nothing while paused. It is meant for checking playback: compare it with the expected PCM, e.g.
-with `tools/pcm-compare.py` from the repository (in an emulator, write it to a volume shared with the host). Avoid
-putting it in the default options, or every run fills the disk.
+with `tools/pcm-compare.py` from the repository (in an emulator, write it to a volume shared with the host). With
+`OUTPUT` there is no sound (as with `NOAUDIO`): the file holds exactly what was "played", which AHI could not
+promise (it is given the audio about 0.6 s ahead, and a stop cuts that short). Avoid putting it in the default
+options, or every run fills the disk.
+
+### Sound (AHI)
+
+amisqueeze plays through `ahi.device` (tested with AHI 6.x: `ahi.device` 6.6), on the unit given by `UNIT` (0 by
+default). Set that unit in the AHI preferences (`SYS:Prefs/AHI`):
+
+- **a "stereo++" mode**: in a plain "stereo" mode, AHI puts each sound entirely on one side, and a stereo stream
+  plays on one side only;
+- **at 44100 Hz** if the driver allows it (the rate LMS sends): otherwise AHI converts the rate. Paula is limited
+  to about 28 kHz with a 15 kHz screen mode (27,429 Hz in PAL);
+- 1 channel is enough (amisqueeze plays one sound at a time); more lets other programs play at the same time.
+
+AHI is given about 0.6 s of audio ahead; pause, stop and seek cut the sound at once, and the playing time shown by
+LMS follows what was actually played. If left and right come out swapped (seen in WinUAE with `paula.audio` 4.30,
+in 8 and 14 bits, while Paula itself is right: not checked on a real Amiga yet), add `SWAP`.
 
 ### Default options
 
@@ -117,10 +136,13 @@ Rules:
 | `connection closed by the server` | the server closed the connection; amisqueeze reconnects |
 | `not enough memory for the 1024 KB stream buffer` | not enough free memory to start |
 | `stream format X not supported` | LMS sent a format other than raw PCM (no conversion rule for that format) |
+| `N-bit samples not supported by the audio output` | the stream is not 16-bit; LMS normally sends 16-bit PCM |
+| `cannot open ahi.device unit N (is AHI installed? NOAUDIO plays without sound)` | AHI missing, or that unit cannot be opened; amisqueeze stops |
+| `not enough memory for the audio blocks` | the 3 audio blocks (96 KB) cannot be allocated; amisqueeze stops |
 | `cannot create <file>: error N` | the `OUTPUT` file cannot be created (missing directory, write-protected disk); amisqueeze stops. On a volume that is not mounted, AmigaDOS first asks for it to be inserted; this message follows a Cancel |
 | `cannot write to <file>: error N, file closed` | writing the `OUTPUT` file failed (disk full…); playback goes on without the file |
 | `stream: cannot connect: error N` | the audio stream port of LMS (HTTP, 9000 by default) cannot be reached |
-| `stream: …`, `output: …` (with `VERBOSE`) | stream events: parameters, connection, headers received, end of the track data; output: track started, buffer empty, end of playback, `OUTPUT` file opened and bytes written to it |
+| `stream: …`, `output: …` (with `VERBOSE`) | stream events: parameters, connection, headers received, end of the track data; output: AHI unit or virtual output, track started, buffer empty, end of playback, `OUTPUT` file opened and bytes written to it |
 
 ## amilms
 

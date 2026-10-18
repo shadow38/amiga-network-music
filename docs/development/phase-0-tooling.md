@@ -82,8 +82,9 @@ Back to the [plan](README.md).
     (1.9);
   - "stereo" modes without "++" put each sound entirely on one side: a stereo stream sent at the centre plays one
     channel only, on one side. amisqueeze needs a **stereo++** mode (1.4).
-  - The `filesave.audio` driver ("Filesave" modes) writes what AHI plays to a file (WAV, AIFF…): a way to check
-    the AHI output of 1.4 without listening.
+  - The `filesave.audio` driver ("Filesave" modes) writes what AHI plays to a file (WAV, AIFF…), but only for
+    programs using AHI's library interface: its modes are not real-time, the preferences offer them only for
+    the "Music" unit, and an `ahi.device` unit set to one by hand writes silence (tried in 1.4b).
 - **Prerequisite of**: 1.4.
 
 ## 0.6 Host-side tests ✅ (2026-10-18)

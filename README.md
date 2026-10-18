@@ -155,13 +155,14 @@ Tasks (`.vscode/tasks.json`, calling `tools/amiga-make.sh`, through WSL on Windo
 amisqueeze SERVER=192.168.1.10 NAME=Amiga VERBOSE
 ```
 
-Options (`SERVER`, `PORT`, `NAME`, `MAC`, `OUTPUT`, `VERBOSE`) and default options stored in `ENV:amisqueeze.prefs` are
+Options (`SERVER`, `PORT`, `NAME`, `MAC`, `OUTPUT`, `UNIT`, `NOAUDIO`, `SWAP`, `VERBOSE`) and default options
+stored in `ENV:amisqueeze.prefs` are
 described in the **[user guide](docs/user-guide.md)**.
 
-Current state (steps 1.1 to 1.3 of the plan): control connection, player name, default options, and PCM
-streams received into a 1 MB buffer consumed at the playing pace by a virtual output (progress reported to LMS,
-gapless next track, pause, stop), optionally written to a file (`OUTPUT`) to check it byte by byte; no sound
-yet. What comes next is in the
+Current state (steps 1.1 to 1.4b of the plan): control connection, player name, default options, and 16-bit PCM
+streams received into a 1 MB buffer and played through AHI (progress reported to LMS, gapless next track, pause,
+stop), or consumed by a virtual output (`NOAUDIO`, host build) and optionally written to a file (`OUTPUT`) to
+check it byte by byte. Listening tests (1.4c) still to do. What comes next is in the
 [amisqueeze plan](docs/development/phase-1-amisqueeze.md).
 
 Protocol references: squeezelite (`slimproto.c`, `slimproto.h`, `stream.c`, `pcm.c`,

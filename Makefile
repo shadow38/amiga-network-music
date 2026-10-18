@@ -60,7 +60,7 @@ endef
 $(foreach p,$(HOST_PROGS),$(eval $(call HOST_template,$(p))))
 
 # Unit tests: the portable core of amisqueeze on a fake platform (tests/stub_platform.c)
-TEST_CORE := player slimproto stream ring
+TEST_CORE := player slimproto stream ring audio
 out-host/test_core: obj-host/tests/test_core.o obj-host/tests/stub_platform.o \
                     $(patsubst %,obj-host/amisqueeze/%.o,$(TEST_CORE))
 	@mkdir -p $(dir $@)

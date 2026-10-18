@@ -135,12 +135,24 @@ int player_main(struct player *p, const struct options *o)
         stream_free(p);
         return PLAYER_FAIL;
     }
+    /* OUTPUT checks the data: it keeps the virtual output (what AHI aborts on a stop would be in the file) */
+    if (o->audio && !o->output) {
+        if (!audio_open(p, o->unit, o->swap)) {
+            output_file_close(p);
+            stream_free(p);
+            return PLAYER_FAIL;
+        }
+        if (p->verbose)
+            msg("output: AHI unit %d%s\n", o->unit, o->swap ? ", left and right swapped" : "");
+    } else if (p->verbose)
+        msg("output: virtual (no sound)\n");
     msg("player \"%s\" (%02X:%02X:%02X:%02X:%02X:%02X), server %s port %u\n",
         p->name, p->mac[0], p->mac[1], p->mac[2], p->mac[3], p->mac[4], p->mac[5],
         o->server, (unsigned)p->server_port);
 
     run(p);
     slim_disconnect(p);
+    audio_close(p);
     output_file_close(p);
     stream_free(p);
     msg("stopped\n");

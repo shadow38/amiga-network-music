@@ -2,7 +2,10 @@
  * posix.c - amisqueeze on Linux (or another POSIX system), for host-side tests: entry point and the system
  * services of platform.h. Same behaviour as the Amiga build; the arguments use the same KEY=value syntax:
  *
- *   amisqueeze [SERVER=]<ip|name> [PORT=3483] [NAME=<name>] [MAC=xx:xx:xx:xx:xx:xx] [OUTPUT=<file>] [VERBOSE]
+ *   amisqueeze [SERVER=]<ip|name> [PORT=3483] [NAME=<name>] [MAC=xx:xx:xx:xx:xx:xx] [OUTPUT=<file>] [UNIT=<n>]
+ *              [NOAUDIO] [SWAP] [VERBOSE]
+ *
+ * No audio output: always the virtual output (UNIT, NOAUDIO and SWAP are accepted for the same command lines).
  *
  * Ctrl-C (SIGINT) or SIGTERM stops it, like Ctrl-C on the Amiga. No default options file.
  */
@@ -157,6 +160,35 @@ void plat_close(int sock)
     close(sock);
 }
 
+/* No audio output on the host: the core keeps the virtual output (options.audio is always 0) */
+int plat_audio_open(int unit)
+{
+    (void)unit;
+    msg("amisqueeze: no audio output in the host build\n");
+    return 0;
+}
+
+void plat_audio_close(void)
+{
+}
+
+void plat_audio_send(int i, const void *data, uint32_t len, uint32_t rate, int channels, int link)
+{
+    (void)i; (void)data; (void)len; (void)rate; (void)channels; (void)link;
+}
+
+int plat_audio_done(int i)
+{
+    (void)i;
+    return 1;
+}
+
+int32_t plat_audio_abort(int i)
+{
+    (void)i;
+    return 0;
+}
+
 int plat_file_create(const char *name)
 {
     int fd = open(name, O_WRONLY | O_CREAT | O_TRUNC, 0644);
@@ -257,12 +289,18 @@ static int parse_args(int argc, char **argv, struct options *o)
                 o->mac = v;
             else if (k == 6 && !strncasecmp(a, "OUTPUT", 6))
                 o->output = v;
+            else if (k == 4 && !strncasecmp(a, "UNIT", 4))
+                o->unit = atoi(v);
             else {
                 msg("amisqueeze: unknown option %s\n", a);
                 return 0;
             }
         } else if (!strcasecmp(a, "VERBOSE"))
             o->verbose = 1;
+        else if (!strcasecmp(a, "NOAUDIO"))
+            o->audio = 0;
+        else if (!strcasecmp(a, "SWAP"))
+            o->swap = 1;
         else if (o->server == NULL)
             o->server = a;
         else {
