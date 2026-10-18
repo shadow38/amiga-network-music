@@ -10,9 +10,9 @@ Target machine: an Amiga with a PiStorm and an AHI sound card, plus a TCP/IP sta
 (Roadshow, AmiTCP, AmiNetXDuo, or WinUAE's emulation). Cross-compiled C, tested in WinUAE.
 
 **Status:** under development, in testable steps described in the
-[development plan](docs/development/README.md). amisqueeze: the control connection works (validated in WinUAE with
-emulated networking and LMS 9.1.1: the player shows up in LMS), default options in `ENV:amisqueeze.prefs`; no
-streaming or audio yet. amilms: not started.
+[development plan](docs/development/README.md). amisqueeze: shows up as a player in LMS and receives the audio
+stream (playback progresses, next track, pause, seek, stop; validated in WinUAE with emulated networking and LMS
+9.1.1), default options in `ENV:amisqueeze.prefs`; no sound yet (AHI output is the next part). amilms: not started.
 
 ## Requirements
 
@@ -156,8 +156,9 @@ amisqueeze SERVER=192.168.1.10 NAME=Amiga VERBOSE
 Options (`SERVER`, `PORT`, `NAME`, `MAC`, `VERBOSE`) and default options stored in `ENV:amisqueeze.prefs` are
 described in the **[user guide](docs/user-guide.md)**.
 
-Current state (steps 1.1 and 1.1b of the plan): control connection, `HELO`, `STAT` replies (`STMt`…), player
-name, default options; streams are refused (`STMn`) and their parameters printed. What comes next is in the
+Current state (steps 1.1, 1.1b and 1.2 of the plan): control connection, player name, default options, and PCM
+streams received into a 1 MB buffer consumed at the playing pace by a virtual output (progress reported to LMS,
+gapless next track, pause, stop); no sound yet. What comes next is in the
 [amisqueeze plan](docs/development/phase-1-amisqueeze.md).
 
 Protocol references: squeezelite (`slimproto.c`, `slimproto.h`, `stream.c`, `pcm.c`,

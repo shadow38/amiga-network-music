@@ -2,12 +2,14 @@
  * test_core.c - unit tests of the amisqueeze portable core (host build, see "make test")
  *
  * The core runs on stub_platform.c: no network, the packets the player sends are captured and checked byte by
- * byte against the protocol definitions (squeezelite slimproto.h, LMS Slim/Networking/Slimproto.pm). Expected
- * values marked "seen in WinUAE" come from the Amiga build talking to a real LMS 9.1.1.
+ * byte against the protocol definitions (squeezelite slimproto.h, LMS Slim/Networking/Slimproto.pm), and the
+ * clock is set by the tests (virtual output timing). Expected values marked "seen in WinUAE" come from the Amiga
+ * build talking to a real LMS 9.1.1.
  */
 #include <stdio.h>
 #include <string.h>
 
+#include "platform.h"
 #include "player.h"
 #include "stub_platform.h"
 
@@ -21,6 +23,22 @@ static int checks, failures;
         } \
     } while (0)
 
+/* STAT packet offsets (8-byte header included) */
+#define STAT_EVENT       8
+#define STAT_BUF_SIZE    15
+#define STAT_BUF_FULL    19
+#define STAT_BYTES_LOW   27
+#define STAT_JIFFIES     33
+#define STAT_ELAPSED_S   45
+#define STAT_ELAPSED_MS  51
+#define STAT_SERVER_TS   55
+
+#define PCM_BPS 176400                  /* 44.1 kHz, 16 bits, stereo */
+
+static const char http_ok[] = "HTTP/1.0 200 OK\r\nContent-Type: audio/L16;rate=44100;channels=2\r\n\r\n";
+static const char request[] = "GET /stream.mp3?player=02:41:4d:d4:ca:84 HTTP/1.0\r\n\r\n";
+static uint8_t pcm[PCM_BPS];            /* one second of "audio" */
+
 static uint32_t be16(const uint8_t *b) { return (uint32_t)b[0] << 8 | b[1]; }
 static uint32_t be32(const uint8_t *b)
 {
@@ -29,6 +47,49 @@ static uint32_t be32(const uint8_t *b)
 static void set32(uint8_t *b, uint32_t v)
 {
     b[0] = (uint8_t)(v >> 24); b[1] = (uint8_t)(v >> 16); b[2] = (uint8_t)(v >> 8); b[3] = (uint8_t)v;
+}
+
+/* Packets sent on the control connection since the last clear, e.g. "STAT:STMf RESP DSCO:0" */
+static const char *trace(void)
+{
+    static char t[2048];
+    int pos = 0;
+
+    t[0] = '\0';
+    while (pos + 8 <= stub_tx_len) {
+        char item[32];
+        if (!memcmp(stub_tx + pos, "STAT", 4))
+            snprintf(item, sizeof(item), "STAT:%.4s", (const char *)stub_tx + pos + 8);
+        else if (!memcmp(stub_tx + pos, "DSCO", 4))
+            snprintf(item, sizeof(item), "DSCO:%d", stub_tx[pos + 8]);
+        else
+            snprintf(item, sizeof(item), "%.4s", (const char *)stub_tx + pos);
+        if (t[0])
+            strcat(t, " ");
+        strcat(t, item);
+        pos += 8 + (int)be32(stub_tx + pos + 4);
+    }
+    return t;
+}
+
+/* Last STAT packet with this event, NULL if none */
+static const uint8_t *last_stat(const char *event)
+{
+    const uint8_t *found = NULL;
+    int pos = 0;
+
+    while (pos + 8 <= stub_tx_len) {
+        if (!memcmp(stub_tx + pos, "STAT", 4) && !memcmp(stub_tx + pos + 8, event, 4))
+            found = stub_tx + pos;
+        pos += 8 + (int)be32(stub_tx + pos + 4);
+    }
+    return found;
+}
+
+static void clear_tx(void)
+{
+    stub_tx_len = 0;
+    stub_out[0] = '\0';
 }
 
 static void setup(struct player *p, const char *name)
@@ -41,10 +102,18 @@ static void setup(struct player *p, const char *name)
     p->server_port = SLIMPROTO_PORT;
     stub_reset();
     stub_chunk = 0;
+    stub_connect_fails = 0;
     stub_now = 1000;
+    CHECK(stream_init(p));
 }
 
-/* Lets the player read everything queued */
+static void teardown(struct player *p)
+{
+    slim_disconnect(p);
+    stream_free(p);
+}
+
+/* Lets the player read everything queued on the control connection */
 static void drain(struct player *p)
 {
     while (stub_pending() > 0)
@@ -54,9 +123,18 @@ static void drain(struct player *p)
         }
 }
 
+/* Lets the player read everything queued on the stream connection */
+static void drain_stream(struct player *p)
+{
+    int guard = 1000;
+
+    while (stub_stream_pending() > 0 && stream_events(p) && guard--)
+        stream_io(p, PLAT_READ);
+}
+
 /* strm packet body (after the opcode): 24-byte header, then the HTTP request */
 static void feed_strm(char cmd, const char *fmt7, uint32_t replay_gain, uint16_t port, uint32_t ip,
-                      const char *request)
+                      const char *req)
 {
     uint8_t b[24 + 256];
     int n = 24;
@@ -69,11 +147,67 @@ static void feed_strm(char cmd, const char *fmt7, uint32_t replay_gain, uint16_t
     b[18] = (uint8_t)(port >> 8);
     b[19] = (uint8_t)port;
     set32(b + 20, ip);
-    if (request) {
-        memcpy(b + 24, request, strlen(request));
-        n += (int)strlen(request);
+    if (req) {
+        memcpy(b + 24, req, strlen(req));
+        n += (int)strlen(req);
     }
     stub_feed_packet("strm", b, n);
+}
+
+/* strm s for 44.1 kHz 16-bit stereo little-endian PCM, as seen in WinUAE, with the given autostart and
+ * threshold (KB) */
+static void strm_pcm(struct player *p, char autostart, int threshold_kb)
+{
+    char fmt[7] = { autostart, 'p', '1', '3', '2', '1', (char)threshold_kb };
+
+    feed_strm('s', fmt, 0, 9000, 0, request);
+    drain(p);
+}
+
+/* strm s, connection, response headers: the stream is ready to receive the body */
+static void open_stream(struct player *p, char autostart, int threshold_kb)
+{
+    strm_pcm(p, autostart, threshold_kb);
+    stream_io(p, PLAT_WRITE);
+    stub_feed_stream(http_ok, (int)strlen(http_ok));
+    drain_stream(p);
+}
+
+static void test_ring(void)
+{
+    struct ring r;
+    uint8_t *w, out[16];
+    uint32_t n;
+
+    CHECK(ring_init(&r, 16));
+    n = ring_write_space(&r, &w);
+    CHECK(n == 16);
+    memcpy(w, "0123456789", 10);
+    ring_commit(&r, 10);
+    ring_consume(&r, 6);                /* "6789" left, write position 10 */
+    n = ring_write_space(&r, &w);
+    CHECK(n == 6);                      /* contiguous up to the end */
+    memcpy(w, "abcdef", 6);
+    ring_commit(&r, 6);
+    n = ring_write_space(&r, &w);
+    CHECK(n == 6 && w == r.buf);        /* wrapped around: free up to the read position (6) */
+    memcpy(w, "gh", 2);
+    ring_commit(&r, 2);
+    CHECK(ring_used(&r) == 12 && ring_space(&r) == 4);
+    CHECK(ring_read(&r, out, 16) == 12 && !memcmp(out, "6789abcdefgh", 12));
+    CHECK(r.total_in == 18 && r.total_out == 18 && ring_used(&r) == 0);
+    ring_clear(&r);
+    CHECK(r.total_in == 0 && r.total_out == 0);
+    ring_free(&r);
+}
+
+static void test_http_header_end(void)
+{
+    CHECK(http_header_end(http_ok, (int)strlen(http_ok)) == (int)strlen(http_ok));
+    CHECK(http_header_end("HTTP/1.0 200 OK\r\n\r\nDATA", 23) == 19);
+    CHECK(http_header_end("HTTP/1.0 200 OK\n\nDATA", 21) == 17);
+    CHECK(http_header_end("HTTP/1.0 200 OK\r\n\r", 18) == 0);   /* not complete yet */
+    CHECK(http_header_end("", 0) == 0);
 }
 
 static void test_mac(void)
@@ -112,9 +246,10 @@ static void test_helo(void)
     CHECK(strstr(stub_out, "connected to the server") != NULL);
 
     slim_disconnect(&p);
-    stub_reset();
+    clear_tx();
     CHECK(slim_connect(&p, 1));
     CHECK(be16(stub_tx + 32) == 0x4000);                /* reconnection */
+    teardown(&p);
 }
 
 static void test_strm_t(void)
@@ -123,37 +258,19 @@ static void test_strm_t(void)
 
     setup(&p, "Amiga");
     CHECK(slim_connect(&p, 0));
-    stub_reset();
+    clear_tx();
     stub_now = 0x01020304;
     feed_strm('t', NULL, 0xDEADBEEF, 0, 0, NULL);
     drain(&p);
     CHECK(stub_tx_len == 8 + 53);
     CHECK(!memcmp(stub_tx, "STAT", 4) && be32(stub_tx + 4) == 53);
-    CHECK(!memcmp(stub_tx + 8, "STMt", 4));
+    CHECK(!memcmp(stub_tx + STAT_EVENT, "STMt", 4));
+    CHECK(be32(stub_tx + STAT_BUF_SIZE) == STREAM_BUFFER_SIZE);
     CHECK(be16(stub_tx + 31) == 0xffff);                /* signal strength: wired */
-    CHECK(be32(stub_tx + 33) == 0x01020304);            /* jiffies */
-    CHECK(be32(stub_tx + 55) == 0xDEADBEEF);            /* server timestamp echoed */
+    CHECK(be32(stub_tx + STAT_JIFFIES) == 0x01020304);
+    CHECK(be32(stub_tx + STAT_SERVER_TS) == 0xDEADBEEF);        /* server timestamp echoed */
     CHECK(be16(stub_tx + 59) == 0);                     /* error code */
-}
-
-static void test_strm_s(void)
-{
-    struct player p;
-    const char *req = "GET /stream.mp3?player=02:41:4d:d4:ca:84 HTTP/1.0\r\n\r\n";
-
-    setup(&p, "Amiga");
-    p.verbose = 1;
-    CHECK(slim_connect(&p, 0));
-    stub_reset();
-    /* As seen in WinUAE for an MP3 transcoded by LMS: PCM 16 bits, 44.1 kHz, stereo, little-endian */
-    feed_strm('s', "1p1321\xff", 0, 9002, 0, req);
-    drain(&p);
-    CHECK(strstr(stub_out, "stream: format p, size 1, rate 3, channels 2, endian 1, autostart 1\n") != NULL);
-    CHECK(strstr(stub_out, "stream: http://127.0.0.1:9002\n") != NULL);   /* address 0 = control connection */
-    CHECK(strstr(stub_out, req) != NULL);
-    CHECK(stub_tx_len == 2 * (8 + 53));
-    CHECK(!memcmp(stub_tx + 8, "STMf", 4));
-    CHECK(!memcmp(stub_tx + 61 + 8, "STMn", 4));
+    teardown(&p);
 }
 
 static void test_setd(void)
@@ -162,17 +279,18 @@ static void test_setd(void)
 
     setup(&p, "Amiga");
     CHECK(slim_connect(&p, 0));
-    stub_reset();
+    clear_tx();
     stub_feed_packet("setd", "\0Renamed", 8);           /* id 0 = player name */
     drain(&p);
     CHECK(!strcmp(p.name, "Renamed"));
     CHECK(!memcmp(stub_tx, "SETD", 4) && be32(stub_tx + 4) == 1 + 8);
     CHECK(stub_tx[8] == 0 && !memcmp(stub_tx + 9, "Renamed", 8));   /* NUL-terminated */
 
-    stub_reset();
+    clear_tx();
     stub_feed_packet("setd", "\0", 1);                  /* query: the player answers with its name */
     drain(&p);
     CHECK(!memcmp(stub_tx, "SETD", 4) && !memcmp(stub_tx + 9, "Renamed", 8));
+    teardown(&p);
 }
 
 static void test_quiet_packets(void)
@@ -182,13 +300,14 @@ static void test_quiet_packets(void)
 
     setup(&p, "Amiga");
     CHECK(slim_connect(&p, 0));
-    stub_reset();
+    clear_tx();
     memset(audg, 0, sizeof(audg));
     stub_feed_packet("audg", audg, sizeof(audg));
     stub_feed_packet("aude", "\1\1", 2);
     drain(&p);
     CHECK(stub_tx_len == 0);                            /* nothing to answer */
     CHECK(stub_out[0] == '\0');                         /* nothing printed without VERBOSE */
+    teardown(&p);
 }
 
 /* Packets split across reads, one byte at a time */
@@ -198,14 +317,15 @@ static void test_fragmented(void)
 
     setup(&p, "Amiga");
     CHECK(slim_connect(&p, 0));
-    stub_reset();
+    clear_tx();
     stub_chunk = 1;
     feed_strm('t', NULL, 0x11223344, 0, 0, NULL);
     feed_strm('t', NULL, 0x55667788, 0, 0, NULL);
     drain(&p);
     CHECK(stub_tx_len == 2 * (8 + 53));
-    CHECK(be32(stub_tx + 55) == 0x11223344);
-    CHECK(be32(stub_tx + 61 + 55) == 0x55667788);
+    CHECK(be32(stub_tx + STAT_SERVER_TS) == 0x11223344);
+    CHECK(be32(stub_tx + 61 + STAT_SERVER_TS) == 0x55667788);
+    teardown(&p);
 }
 
 static void test_bad_length(void)
@@ -216,28 +336,257 @@ static void test_bad_length(void)
 
     setup(&p, "Amiga");
     CHECK(slim_connect(&p, 0));
-    stub_reset();
+    clear_tx();
     stub_feed(zero, 2);
     CHECK(slim_receive(&p) == 0);                       /* length 0: invalid */
+    teardown(&p);
 
     setup(&p, "Amiga");
     CHECK(slim_connect(&p, 0));
-    stub_reset();
+    clear_tx();
     stub_feed(huge, 2);
     CHECK(slim_receive(&p) == 0);                       /* larger than the receive buffer */
     CHECK(strstr(stub_out, "invalid packet size") != NULL);
+    teardown(&p);
+}
+
+/* A whole track: strm s, connection, headers, body, end of data, end of playback */
+static void test_stream_sequence(void)
+{
+    struct player p;
+    const uint8_t *st;
+    uint32_t i;
+
+    setup(&p, "Amiga");
+    p.verbose = 1;
+    CHECK(slim_connect(&p, 0));
+    clear_tx();
+    strm_pcm(&p, '1', 1);                               /* threshold: 1 KB */
+    CHECK(!strcmp(trace(), "STAT:STMf"));
+    CHECK(strstr(stub_out, "stream: format p, size 1, rate 3, channels 2, endian 1, autostart 1") != NULL);
+    CHECK(strstr(stub_out, "stream: http://127.0.0.1:9000\n") != NULL);   /* address 0 = control connection */
+    CHECK(p.stream.state == STREAM_CONNECTING && stream_events(&p) == PLAT_WRITE);
+
+    clear_tx();
+    stream_io(&p, PLAT_WRITE);
+    CHECK(!strcmp(trace(), "STAT:STMc"));
+    CHECK(stub_stream_tx_len == (int)strlen(request) && !memcmp(stub_stream_tx, request, strlen(request)));
+    CHECK(p.stream.state == STREAM_HEADERS);
+
+    for (i = 0; i < sizeof(pcm); i++)
+        pcm[i] = (uint8_t)i;
+    clear_tx();
+    stub_feed_stream(http_ok, (int)strlen(http_ok));
+    stub_feed_stream(pcm, 500);                         /* body bytes in the same read as the headers */
+    drain_stream(&p);
+    CHECK(!strcmp(trace(), "RESP"));
+    CHECK(be32(stub_tx + 4) == strlen(http_ok) && !memcmp(stub_tx + 8, http_ok, strlen(http_ok)));
+    CHECK(p.stream.state == STREAM_BODY && ring_used(&p.ring) == 500);
+    CHECK(p.out.state == OUTPUT_STOPPED);               /* below the threshold */
+
+    clear_tx();
+    stub_feed_stream(pcm + 500, 1000);
+    drain_stream(&p);
+    CHECK(!strcmp(trace(), "STAT:STMs"));               /* threshold reached: the output starts */
+    CHECK(p.out.state == OUTPUT_RUNNING);
+
+    stub_feed_stream(pcm + 1500, sizeof(pcm) - 1500);
+    drain_stream(&p);
+    CHECK(p.stream.bytes == sizeof(pcm) && ring_used(&p.ring) == sizeof(pcm));
+
+    clear_tx();
+    stub_now += 500;
+    output_tick(&p, stub_now);
+    CHECK(output_elapsed_ms(&p) == 500 && ring_used(&p.ring) == sizeof(pcm) / 2);
+    CHECK(stub_tx_len == 0);                            /* no STMt before one second */
+
+    stub_stream_end();
+    stream_io(&p, PLAT_READ);
+    CHECK(!strcmp(trace(), "DSCO:0 STAT:STMd"));        /* end of the data: next track welcome */
+    CHECK(p.stream.state == STREAM_DONE && !stub_stream_open);
+
+    clear_tx();
+    stub_now += 500;
+    output_tick(&p, stub_now);
+    CHECK(!strcmp(trace(), "STAT:STMt"));               /* one second since the start */
+    st = last_stat("STMt");
+    CHECK(st && be32(st + STAT_ELAPSED_MS) == 1000 && be32(st + STAT_ELAPSED_S) == 1);
+    CHECK(st && be32(st + STAT_BYTES_LOW) == sizeof(pcm));
+    CHECK(st && be32(st + STAT_BUF_FULL) == 0);
+
+    clear_tx();
+    stub_now += 100;
+    output_tick(&p, stub_now);
+    CHECK(!strcmp(trace(), "STAT:STMu"));               /* everything played */
+    CHECK(p.out.state == OUTPUT_STOPPED);
+    teardown(&p);
+}
+
+/* The next track is appended while the previous one plays: STMs again at the boundary */
+static void test_gapless(void)
+{
+    struct player p;
+
+    setup(&p, "Amiga");
+    CHECK(slim_connect(&p, 0));
+    open_stream(&p, '1', 1);
+    stub_feed_stream(pcm, sizeof(pcm));                 /* track A: 1 s */
+    drain_stream(&p);
+    stub_stream_end();
+    stream_io(&p, PLAT_READ);
+    stub_now += 300;
+    output_tick(&p, stub_now);
+    CHECK(output_elapsed_ms(&p) == 300);
+
+    clear_tx();
+    stub_reset();
+    open_stream(&p, '1', 1);                            /* track B, received while A plays */
+    CHECK(p.out.state == OUTPUT_RUNNING && p.out.queued == 1);
+    stub_feed_stream(pcm, sizeof(pcm) / 2);             /* track B: 0.5 s */
+    drain_stream(&p);
+    stub_stream_end();
+    stream_io(&p, PLAT_READ);
+    CHECK(output_elapsed_ms(&p) == 300);                /* still in track A */
+
+    clear_tx();
+    stub_now += 700;                                    /* end of track A */
+    output_tick(&p, stub_now);
+    CHECK(strstr(trace(), "STAT:STMs") != NULL && p.out.queued == 0);
+    CHECK(output_elapsed_ms(&p) == 0);
+    stub_now += 250;
+    output_tick(&p, stub_now);
+    CHECK(output_elapsed_ms(&p) == 250);                /* time of track B */
+
+    clear_tx();
+    stub_now += 300;
+    output_tick(&p, stub_now);
+    stub_now += 100;
+    output_tick(&p, stub_now);
+    CHECK(strstr(trace(), "STAT:STMu") != NULL && p.out.state == OUTPUT_STOPPED);
+    teardown(&p);
+}
+
+static void test_pause(void)
+{
+    struct player p;
+    uint32_t used;
+
+    setup(&p, "Amiga");
+    CHECK(slim_connect(&p, 0));
+    open_stream(&p, '1', 1);
+    stub_feed_stream(pcm, sizeof(pcm));
+    drain_stream(&p);
+    stub_now += 100;
+    output_tick(&p, stub_now);
+
+    clear_tx();
+    feed_strm('p', NULL, 0, 0, 0, NULL);                /* interval 0: pause now */
+    drain(&p);
+    CHECK(!strcmp(trace(), "STAT:STMp") && p.out.state == OUTPUT_PAUSED);
+    used = ring_used(&p.ring);
+    stub_now += 1000;
+    output_tick(&p, stub_now);
+    CHECK(ring_used(&p.ring) == used && output_elapsed_ms(&p) == 100);  /* time stands still */
+
+    clear_tx();
+    feed_strm('u', NULL, 0, 0, 0, NULL);
+    drain(&p);
+    CHECK(!strcmp(trace(), "STAT:STMr") && p.out.state == OUTPUT_RUNNING);
+    stub_now += 100;
+    output_tick(&p, stub_now);
+    CHECK(output_elapsed_ms(&p) == 200);
+    teardown(&p);
+}
+
+static void test_stop(void)
+{
+    struct player p;
+
+    setup(&p, "Amiga");
+    CHECK(slim_connect(&p, 0));
+    open_stream(&p, '1', 1);
+    stub_feed_stream(pcm, 50000);
+    drain_stream(&p);
+    CHECK(p.out.state == OUTPUT_RUNNING && stub_stream_open);
+
+    clear_tx();
+    feed_strm('q', NULL, 0, 0, 0, NULL);
+    drain(&p);
+    CHECK(!strcmp(trace(), "STAT:STMf"));
+    CHECK(!stub_stream_open && p.stream.state == STREAM_IDLE && stream_events(&p) == 0);
+    CHECK(ring_used(&p.ring) == 0 && p.out.state == OUTPUT_STOPPED && p.out.queued == 0);
+    teardown(&p);
+}
+
+static void test_connect_failure(void)
+{
+    struct player p;
+
+    setup(&p, "Amiga");
+    CHECK(slim_connect(&p, 0));
+    stub_connect_fails = 1;
+    strm_pcm(&p, '1', 1);
+    clear_tx();
+    stream_io(&p, PLAT_WRITE);
+    CHECK(!strcmp(trace(), "DSCO:3"));                  /* unreachable */
+    CHECK(p.stream.state == STREAM_IDLE && p.out.queued == 0 && !stub_stream_open);
+    teardown(&p);
+}
+
+static void test_not_pcm(void)
+{
+    struct player p;
+    char fmt[7] = { '1', 'f', '?', '?', '?', '?', 10 };     /* FLAC: not decoded yet */
+
+    setup(&p, "Amiga");
+    CHECK(slim_connect(&p, 0));
+    clear_tx();
+    feed_strm('s', fmt, 0, 9000, 0, request);
+    drain(&p);
+    CHECK(!strcmp(trace(), "STAT:STMf STAT:STMn"));
+    CHECK(p.stream.state == STREAM_IDLE && !stub_stream_open);
+    teardown(&p);
+}
+
+/* autostart 0: STMl once buffered, playback starts on strm u */
+static void test_autostart_0(void)
+{
+    struct player p;
+
+    setup(&p, "Amiga");
+    CHECK(slim_connect(&p, 0));
+    open_stream(&p, '0', 1);
+    clear_tx();
+    stub_feed_stream(pcm, 2000);
+    drain_stream(&p);
+    CHECK(!strcmp(trace(), "STAT:STMl") && p.out.state == OUTPUT_LOADED);
+
+    clear_tx();
+    feed_strm('u', NULL, 0, 0, 0, NULL);
+    drain(&p);
+    output_tick(&p, stub_now);
+    CHECK(!strcmp(trace(), "STAT:STMr STAT:STMs") && p.out.state == OUTPUT_RUNNING);
+    teardown(&p);
 }
 
 int main(void)
 {
+    test_ring();
+    test_http_header_end();
     test_mac();
     test_helo();
     test_strm_t();
-    test_strm_s();
     test_setd();
     test_quiet_packets();
     test_fragmented();
     test_bad_length();
+    test_stream_sequence();
+    test_gapless();
+    test_pause();
+    test_stop();
+    test_connect_failure();
+    test_not_pcm();
+    test_autostart_0();
     printf("test_core: %d checks, %d failed\n", checks, failures);
     return failures ? 1 : 0;
 }

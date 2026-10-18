@@ -1,8 +1,9 @@
 /*
  * player.c - portable core of amisqueeze: player setup and main loop.
  *
- * One loop around plat_wait(): the control socket, with a one-second timeout that also serves as a timer, and
- * interruption by the user (Ctrl-C). Reconnects every RECONNECT_DELAY_S seconds while the server is unreachable.
+ * One loop around plat_wait(): the control socket and the stream socket, interruption by the user (Ctrl-C), and
+ * a timeout that also serves as a timer (100 ms while streaming or playing, for the virtual output and STMt;
+ * one second otherwise). Reconnects every RECONNECT_DELAY_S seconds while the server is unreachable.
  */
 #include <string.h>
 
@@ -52,7 +53,7 @@ static int wait_seconds(uint32_t s)
     uint32_t t;
 
     for (t = 0; t < s * 10; t++)
-        if (plat_wait(NULL, 0, NULL, 100) == -1)
+        if (plat_wait(NULL, 0, 100) == -1)
             return 0;
     return 1;
 }
@@ -62,7 +63,8 @@ static void run(struct player *p)
     int reconnect = 0;
 
     for (;;) {
-        int ready, r;
+        struct plat_fd fds[2];
+        int n = 0, r, events;
 
         if (p->sock < 0) {
             if (!slim_connect(p, reconnect)) {
@@ -74,17 +76,30 @@ static void run(struct player *p)
             reconnect = 1;
         }
 
-        r = plat_wait(&p->sock, 1, &ready, 1000);
+        fds[n].sock = p->sock;
+        fds[n].events = PLAT_READ;
+        n++;
+        events = stream_events(p);
+        if (events) {
+            fds[n].sock = p->stream.sock;
+            fds[n].events = events;
+            n++;
+        }
+        r = plat_wait(fds, n, player_busy(p) ? 100 : 1000);
         if (r == -1)
             return;
         if (r == -2) {
             slim_disconnect(p);
             continue;
         }
-        if (r > 0 && ready && !slim_receive(p)) {
+        if ((fds[0].ready & PLAT_READ) && !slim_receive(p)) {
             slim_disconnect(p);
             continue;
         }
+        /* The control packet may have closed or replaced the stream: only use a ready state that is still valid */
+        if (n > 1 && fds[1].ready && fds[1].sock == p->stream.sock)
+            stream_io(p, fds[1].ready);
+        output_tick(p, plat_now_ms());
         if ((uint32_t)(plat_now_ms() - p->last_rx) > RX_TIMEOUT_MS) {
             msg("amisqueeze: no news from the server, reconnecting\n");
             slim_disconnect(p);
@@ -111,12 +126,18 @@ int player_main(struct player *p, const struct options *o)
         msg("amisqueeze: server %s not found\n", o->server);
         return PLAYER_FAIL;
     }
+    if (!stream_init(p)) {
+        msg("amisqueeze: not enough memory for the %lu KB stream buffer\n",
+            (unsigned long)(STREAM_BUFFER_SIZE / 1024));
+        return PLAYER_FAIL;
+    }
     msg("player \"%s\" (%02X:%02X:%02X:%02X:%02X:%02X), server %s port %u\n",
         p->name, p->mac[0], p->mac[1], p->mac[2], p->mac[3], p->mac[4], p->mac[5],
         o->server, (unsigned)p->server_port);
 
     run(p);
     slim_disconnect(p);
+    stream_free(p);
     msg("stopped\n");
     return PLAYER_OK;
 }

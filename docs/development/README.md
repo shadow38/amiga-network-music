@@ -50,11 +50,12 @@ success criterion and a way to check it.
 | 0.7 Automated runs in WinUAE | 🔶 serial shell working |
 | 1.1 amisqueeze: control connection | ✅ 2026-10-18 |
 | 1.1b amisqueeze: default options (`ENV:amisqueeze.prefs`) | ✅ 2026-10-18 |
-| **1.2 amisqueeze: receiving the stream** | ⬜ **next step** |
-| 1.3 to 1.10 | ⬜ |
+| 1.2 amisqueeze: receiving the stream (virtual output) | ✅ 2026-10-18 |
+| **1.3 amisqueeze: output to a file** | ⬜ **next step** |
+| 1.4 to 1.10 | ⬜ |
 | 2.1 to 2.7 amilms | ⬜ |
 | 3.1 Licence and user documentation | 🔶 licence: MIT |
 | 3.2 to 3.3 release | ⬜ |
 
 Phase 0 moves forward as needed: a tooling step is done when a step of phase 1 or 2 needs it. Phases 1 and 2 can
-progress in parallel; the current priority is amisqueeze (1.2).
+progress in parallel; the current priority is amisqueeze (1.3, then 1.4 with AHI, which needs 0.5).

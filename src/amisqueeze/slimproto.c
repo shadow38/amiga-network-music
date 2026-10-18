@@ -7,7 +7,8 @@
  *   client -> server: 4-byte opcode, 4-byte length, then data.
  * Fields are serialised one by one (no packed structures), big-endian (network order), whatever the CPU.
  *
- * Plan step 1.1: HELO, STAT (STMt, STMf), player name (setd). Streams (strm s) are refused (STMn).
+ * Plan steps 1.1 and 1.2: HELO, STAT, player name (setd), PCM streams (strm s, handled by stream.c), stop,
+ * flush, pause and unpause; RESP (stream response headers) and DSCO (stream disconnection).
  */
 #include <string.h>
 
@@ -77,32 +78,62 @@ static int send_helo(struct player *p, int reconnect)
     return send_all(p, pkt, (int)(b - pkt));
 }
 
-/* server_ts: echoed unchanged (reply to strm t) */
-static int send_stat(struct player *p, const char *event, uint32_t server_ts)
+/* server_ts: echoed unchanged (reply to strm t). Single buffer: it is reported as both the stream buffer and
+ * the output buffer. */
+void slim_send_stat(struct player *p, const char *event, uint32_t server_ts)
 {
     uint8_t pkt[8 + 53];
     uint8_t *b = put_header(pkt, "STAT", 53);
+    uint32_t elapsed = output_elapsed_ms(p);
 
+    if (p->sock < 0)
+        return;
     b = putn(b, event, 4);
     b = put8(b, 0);                         /* num_crlf */
     b = put8(b, 0);                         /* mas_initialized */
     b = put8(b, 0);                         /* mas_mode */
-    b = put32(b, 0);                        /* stream buffer size */
-    b = put32(b, 0);                        /* stream buffer fullness */
-    b = put32(b, 0);                        /* bytes received (high word) */
-    b = put32(b, 0);                        /* bytes received (low word) */
+    b = put32(b, p->ring.size);             /* stream buffer size */
+    b = put32(b, ring_used(&p->ring));      /* stream buffer fullness */
+    b = put32(b, (uint32_t)(p->stream.bytes >> 32));    /* bytes received (high word) */
+    b = put32(b, (uint32_t)p->stream.bytes);            /* bytes received (low word) */
     b = put16(b, 0xffff);                   /* signal strength: wired */
     b = put32(b, plat_now_ms());            /* jiffies */
-    b = put32(b, 0);                        /* output buffer size */
-    b = put32(b, 0);                        /* output buffer fullness */
-    b = put32(b, 0);                        /* elapsed seconds */
+    b = put32(b, p->ring.size);             /* output buffer size */
+    b = put32(b, ring_used(&p->ring));      /* output buffer fullness */
+    b = put32(b, elapsed / 1000);           /* elapsed seconds */
     b = put16(b, 0);                        /* voltage */
-    b = put32(b, 0);                        /* elapsed milliseconds */
+    b = put32(b, elapsed);                  /* elapsed milliseconds */
     b = put32(b, server_ts);
     b = put16(b, 0);                        /* error code */
-    if (p->verbose)
+    if (p->verbose && strncmp(event, "STMt", 4))
         msg("-> STAT %.4s\n", event);
-    return send_all(p, pkt, (int)(b - pkt));
+    send_all(p, pkt, (int)(b - pkt));
+}
+
+/* Response headers of the stream, passed on to the server */
+void slim_send_resp(struct player *p, const char *headers, int len)
+{
+    uint8_t pkt[8];
+
+    if (p->sock < 0)
+        return;
+    put_header(pkt, "RESP", (uint32_t)len);
+    if (send_all(p, pkt, 8))
+        send_all(p, (const uint8_t *)headers, len);
+}
+
+/* Stream disconnected: reason DSCO_OK (end of the data), DSCO_LOCAL, DSCO_REMOTE, DSCO_UNREACHABLE */
+void slim_send_dsco(struct player *p, int reason)
+{
+    uint8_t pkt[8 + 1];
+    uint8_t *b = put_header(pkt, "DSCO", 1);
+
+    if (p->sock < 0)
+        return;
+    b = put8(b, (uint32_t)reason);
+    if (p->verbose)
+        msg("-> DSCO %d\n", reason);
+    send_all(p, pkt, (int)(b - pkt));
 }
 
 static int send_setd_name(struct player *p)
@@ -118,6 +149,54 @@ static int send_setd_name(struct player *p)
 
 /* ---- incoming packets (pkt = opcode + data, len = total length) ---- */
 
+/* PCM sample rates by strm code '0'..'9' (squeezelite pcm.c) */
+static const uint32_t pcm_rates[10] = { 11025, 22050, 32000, 44100, 48000, 8000, 12000, 16000, 24000, 96000 };
+
+/* Bytes per second of a PCM strm (format 'p'), 0 if the format is not supported */
+static uint32_t pcm_bytes_per_sec(const uint8_t *pkt)
+{
+    int size = pkt[7] - '0' + 1;            /* '0'..'3' = 8, 16, 24, 32 bits */
+    int rate = pkt[8] - '0';
+    int channels = pkt[9] - '0';
+
+    if (pkt[6] != 'p' || size < 1 || size > 4 || rate < 0 || rate > 9 || channels < 1 || channels > 2)
+        return 0;
+    return pcm_rates[rate] * (uint32_t)channels * (uint32_t)size;
+}
+
+static void process_strm_s(struct player *p, const uint8_t *pkt, int len)
+{
+    uint32_t ip = get32(pkt + 24);
+    uint32_t port = get16(pkt + 22);
+    uint32_t bps = pcm_bytes_per_sec(pkt);
+    int autostart = pkt[5] - '0';
+
+    if (ip == 0)                            /* 0 = the address of the control connection */
+        ip = p->server_ip;
+    if (p->verbose) {
+        msg("stream: format %c, size %c, rate %c, channels %c, endian %c, autostart %c, threshold %u KB\n",
+            pkt[6], pkt[7], pkt[8], pkt[9], pkt[10], pkt[5], (unsigned)pkt[11]);
+        msg("stream: http://%u.%u.%u.%u:%u\n",
+            (unsigned)(ip >> 24), (unsigned)((ip >> 16) & 0xff), (unsigned)((ip >> 8) & 0xff),
+            (unsigned)(ip & 0xff), (unsigned)port);
+        msg_raw(pkt + 28, len - 28);        /* HTTP request, sent as is (not NUL-terminated) */
+    }
+    slim_send_stat(p, "STMf", 0);
+    if (bps == 0) {                         /* only raw PCM for now */
+        msg("amisqueeze: stream format %c not supported\n", pkt[6]);
+        slim_send_stat(p, "STMn", 0);
+        return;
+    }
+    if (autostart < 0 || autostart > 3)
+        autostart = 1;
+    if (autostart >= 2) {                   /* would wait for "cont" (radio metadata): not supported yet */
+        if (p->verbose)
+            msg("stream: autostart %d (cont) handled as %d\n", autostart, autostart - 2);
+        autostart -= 2;
+    }
+    stream_start(p, ip, (uint16_t)port, pkt + 28, len - 28, (uint32_t)pkt[11] * 1024, autostart, bps);
+}
+
 static void process_strm(struct player *p, const uint8_t *pkt, int len)
 {
     char cmd;
@@ -132,38 +211,28 @@ static void process_strm(struct player *p, const uint8_t *pkt, int len)
 
     switch (cmd) {
     case 't':                               /* timer: the server expects STMt */
-        send_stat(p, "STMt", get32(pkt + 18));
+        slim_send_stat(p, "STMt", get32(pkt + 18));
         break;
     case 'q':                               /* stop */
-        send_stat(p, "STMf", 0);
-        break;
     case 'f':                               /* flush */
-        send_stat(p, "STMf", 0);
+        stream_stop(p);
+        slim_send_stat(p, "STMf", 0);
         break;
-    case 'p':                               /* pause */
-        send_stat(p, "STMp", 0);
+    case 'p':                               /* pause; a non-zero interval (synchronised players) is ignored */
+        if (get32(pkt + 18) == 0) {
+            output_pause(p);
+            slim_send_stat(p, "STMp", 0);
+        }
         break;
-    case 'u':                               /* unpause */
-        send_stat(p, "STMr", 0);
+    case 'u':                               /* unpause (or start after STMl) */
+        output_resume(p);
+        slim_send_stat(p, "STMr", 0);
         break;
-    case 's': {                             /* start a stream */
-        uint32_t ip = get32(pkt + 24);
-        uint32_t port = get16(pkt + 22);
-
-        if (ip == 0)
-            ip = p->server_ip;
-        msg("stream: format %c, size %c, rate %c, channels %c, endian %c, autostart %c\n",
-            pkt[6], pkt[7], pkt[8], pkt[9], pkt[10], pkt[5]);
-        msg("stream: http://%u.%u.%u.%u:%u\n",
-            (unsigned)(ip >> 24), (unsigned)((ip >> 16) & 0xff), (unsigned)((ip >> 8) & 0xff),
-            (unsigned)(ip & 0xff), (unsigned)port);
-        /* HTTP request to send as is (not NUL-terminated) */
-        msg_raw(pkt + 28, len - 28);
-        /* Playback not implemented yet */
-        send_stat(p, "STMf", 0);
-        send_stat(p, "STMn", 0);
+    case 'a':                               /* skip ahead (synchronised players): ignored */
         break;
-    }
+    case 's':                               /* start a stream */
+        process_strm_s(p, pkt, len);
+        break;
     default:
         msg("amisqueeze: strm %c not handled\n", cmd);
         break;
@@ -240,12 +309,14 @@ int slim_connect(struct player *p, int reconnect)
     return 1;
 }
 
+/* Closes the control connection; the current stream stops with it (the server restarts it after HELO) */
 void slim_disconnect(struct player *p)
 {
     if (p->sock >= 0) {
         plat_close(p->sock);
         p->sock = -1;
     }
+    stream_stop(p);
 }
 
 int slim_receive(struct player *p)

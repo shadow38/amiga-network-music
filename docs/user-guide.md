@@ -9,15 +9,18 @@ amisqueeze turns the Amiga into a network music player for Lyrion Music Server (
 protocol of Logitech's Squeezebox players, so LMS (and its web interface or apps) sees and controls it like any
 other player.
 
-**Current state (version 0.1):** amisqueeze connects to the server, shows up as a player and follows its
-commands, but **does not play audio yet**: streams are refused. Audio output through AHI is the next part of the
-work.
+**Current state (version 0.1, in development):** amisqueeze connects to the server, shows up as a player and
+**receives the audio stream** of what LMS plays: in LMS, playback progresses, moves on to the next track, pauses,
+seeks and stops as with any player. But **there is no sound yet**: the audio is received and discarded at the
+playing pace. Sound through AHI is the next part of the work. Only raw PCM streams are accepted for now (LMS
+converts the other formats, see the requirements).
 
 ### Requirements
 
 On the Amiga:
 
 - AmigaOS 3.x, 68020 or better (a PiStorm is the intended target);
+- about 1.1 MB of free memory (1 MB stream buffer, about 6 s of CD-quality audio);
 - a TCP/IP stack providing `bsdsocket.library`: Roadshow, AmiTCP, AmiNetXDuo, or WinUAE's emulation
   (`bsdsocket_emu=true`) in an emulator;
 - later, for audio: AHI and a driver for your sound card.
@@ -25,7 +28,7 @@ On the Amiga:
 On the server:
 
 - Lyrion Music Server (tested with 9.1.1), reachable from the Amiga on TCP ports 3483 (players) and 9000 (audio
-  streams; or whatever its HTTP port is);
+  streams; or whatever its HTTP port is: LMS tells the player which one);
 - a conversion rule from MP3 to raw PCM, see the [README](../README.md#lms-server). FLAC and WAV are converted by
   LMS's default rules.
 
@@ -50,7 +53,7 @@ Template: `SERVER,PORT/N/K,NAME/K,MAC/K,VERBOSE/S`
 | `PORT` | slimproto port of the server | `3483` |
 | `NAME` | player name shown in LMS | `Amiga` |
 | `MAC` | player identifier, `xx:xx:xx:xx:xx:xx` | derived from `NAME` |
-| `VERBOSE` | print the messages exchanged with the server | off |
+| `VERBOSE` | print the messages exchanged with the server and the stream events | off |
 
 `Ctrl-C` stops amisqueeze. To keep the Shell free, run it in the background: `Run >NIL: amisqueeze`, or keep its
 messages in a file, written as they come: `Run amisqueeze >RAM:amisqueeze.log VERBOSE` (the redirection goes
@@ -103,7 +106,10 @@ Rules:
 | `cannot connect: error N` | the server does not answer on that address and port; amisqueeze retries every 5 s |
 | `no news from the server, reconnecting` | the server stayed silent for 35 s; amisqueeze reconnects |
 | `connection closed by the server` | the server closed the connection; amisqueeze reconnects |
-| `stream: …` (with `VERBOSE`) | the server asked to play something; the parameters are printed, the stream is refused for now |
+| `not enough memory for the 1024 KB stream buffer` | not enough free memory to start |
+| `stream format X not supported` | LMS sent a format other than raw PCM (no conversion rule for that format) |
+| `stream: cannot connect: error N` | the audio stream port of LMS (HTTP, 9000 by default) cannot be reached |
+| `stream: …`, `output: …` (with `VERBOSE`) | stream events: parameters, connection, headers received, end of the track data; output: track started, buffer empty, end of playback |
 
 ## amilms
 

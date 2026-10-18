@@ -39,7 +39,7 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   return code 20; no server anywhere → "no server", return code 20; after a reboot, `amisqueeze` alone connects
   as "Amiga" (prefs restored from `ENVARC:`).
 
-## 1.2 Receiving the stream, without playing it ⬜ (next step)
+## 1.2 Receiving the stream, without playing it ✅ (2026-10-18)
 
 - **Goal**: receive the stream and keep the server informed like a real player, without producing sound yet.
 - **Content**:
@@ -53,13 +53,29 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   - `strm q`/`f`: stop and flush; `cont` and `autostart` handled as in squeezelite.
 - **Criterion**, measured on the server through its CLI, not on the web page (its progress bar animates by itself
   between refreshes, even when nothing plays): `waitingToPlay` goes back to 0 once the player reports the start;
-  `<player> time ?` increases by about 60 s in 60 s (less than 1 s off), since it comes from the player's reports;
+  `<player> time ?` increases by about 60 s in 60 s (less than 1 s off);
   with two tracks in the playlist, LMS moves on to the second one and stops after it, driven by the player's
   `STMd`/`STMu`; stop then play again works; no error in `server.log`; no memory leak (`Avail` before/after).
 - **Test**: host first (`make test`: stream scenarios in the fake server; then the host build against a real
   LMS), then WinUAE; state sequence compared with squeezelite's on the same scenario.
+- **Done**: `stream.c` (HTTP stream, virtual output, gapless next track, pause), `ring.c` (1 MB ring buffer),
+  non-blocking connection in both platform layers; single buffer reported as both stream and output buffer.
+- **Validated**:
+  - `make test`: 124 unit checks (ring buffer, HTTP headers, whole stream sequence on a simulated clock,
+    gapless, pause, stop, connection failure, unsupported format, autostart 0) and fake server scenarios streaming
+    real PCM over HTTP (state order, 3 s of audio played in 2.97 s, elapsed time within 0.05 s of the clock,
+    counters, pause, stop);
+  - host build and Amiga build (WinUAE) against LMS 9.1.1: `time ?` advances 60.0 s in 60.0 s (LMS may partly
+    extrapolate it from STMs with its own clock); pause: `mode` pause and time frozen, then advancing again after
+    unpause; after a seek to 185 s of a track of about 195 s, LMS moves on to the second track, which is at about
+    7 s seventeen seconds after the seek: the player consumed the remaining 10 s of data (about 1.76 MB) at the
+    PCM rate before reporting the boundary, the independent evidence of the output pacing on the Amiga (the fake
+    server measures it for the host build: under 0.05 s drift); then LMS stops at the end of the playlist; play
+    again, stop; no error in `server.log`;
+  - WinUAE: no memory leak (same free memory after three play/stop cycles), and still working with a 2 KB stack;
+    Amiga executable: 21,488 bytes.
 
-## 1.3 Output to a file ⬜
+## 1.3 Output to a file ⬜ (next step)
 
 - **Goal**: check the received data byte by byte before listening to anything.
 - **Content**: an `OUTPUT=<file>` option that writes the received PCM (after any conversion) to a file.

@@ -9,6 +9,7 @@ import socket
 import struct
 import subprocess
 import sys
+import threading
 import time
 
 TIMEOUT = 8
@@ -117,6 +118,165 @@ def scenario_session():
     check("connection closed by the server" in out, "disconnect reported")
 
 
+PCM_BPS = 176400                        # 44.1 kHz, 16 bits, stereo
+HTTP_HEADERS = b"HTTP/1.0 200 OK\r\nContent-Type: audio/L16;rate=44100;channels=2\r\n\r\n"
+HTTP_REQUEST = b"GET /test.pcm?player=test HTTP/1.0\r\n\r\n"
+
+
+class HttpServer(threading.Thread):
+    """Serves one PCM track: `seconds` of audio, sent in chunks of `chunk` bytes every `pause` seconds"""
+
+    def __init__(self, seconds, chunk=65536, pause=0.0):
+        super().__init__(daemon=True)
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        self.sock.bind(("127.0.0.1", 0))
+        self.sock.listen(1)
+        self.port = self.sock.getsockname()[1]
+        self.data = bytes(i & 0xFF for i in range(int(PCM_BPS * seconds)))
+        self.chunk, self.pause = chunk, pause
+        self.request = b""
+        self.closed_by_player = False
+
+    def run(self):
+        self.sock.settimeout(TIMEOUT)
+        conn, _ = self.sock.accept()
+        conn.settimeout(TIMEOUT)
+        while not self.request.endswith(b"\r\n\r\n"):
+            self.request += conn.recv(1)
+        try:
+            conn.sendall(HTTP_HEADERS)
+            for i in range(0, len(self.data), self.chunk):
+                conn.sendall(self.data[i:i + self.chunk])
+                time.sleep(self.pause)
+        except OSError:
+            self.closed_by_player = True
+        conn.close()
+        self.sock.close()
+
+
+class Session:
+    """Control connection with the player, packets timestamped as they arrive"""
+
+    def __init__(self, conn):
+        self.conn, self.t0, self.log = conn, time.time(), []
+
+    def until(self, wanted, timeout=TIMEOUT):
+        """Reads packets up to the first one named `wanted` ("STAT:STMs", "RESP", "DSCO"...); returns it"""
+        end = time.time() + timeout
+        while time.time() < end:
+            opcode, body = read_packet(self.conn)
+            name = opcode.decode() + (":" + body[0:4].decode() if opcode == b"STAT" else "")
+            self.log.append((time.time() - self.t0, name, body))
+            if name == wanted:
+                return self.log[-1]
+        raise TimeoutError(wanted)
+
+    def names(self):
+        return [name for _, name, _ in self.log if name != "STAT:STMt"]
+
+
+def stat_elapsed_ms(body):
+    return struct.unpack(">I", body[43:47])[0]
+
+
+def stat_bytes(body):
+    high, low = struct.unpack(">II", body[15:23])
+    return high << 32 | low
+
+
+def start_session(name):
+    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    server.bind(("127.0.0.1", 0))
+    server.listen(1)
+    proc = start(server.getsockname()[1], "NAME=" + name, "VERBOSE")
+    conn = accept(server)
+    read_packet(conn)                   # HELO
+    return server, proc, Session(conn)
+
+
+def send_strm_s(session, http, threshold_kb=64):
+    fmt7 = b"1p1321" + bytes([threshold_kb])   # autostart 1, PCM 16 bits 44.1 kHz stereo little-endian
+    send_packet(session.conn, b"strm", strm("s", port=http.port, ip=0, fmt7=fmt7, request=HTTP_REQUEST))
+
+
+def scenario_stream():
+    print("-- stream: 3 s of PCM, states, timing, counters")
+    http = HttpServer(3.0)
+    http.start()
+    server, proc, s = start_session("Stream")
+    try:
+        send_strm_s(s, http)
+        t_start, _, _ = s.until("STAT:STMs")
+        _, _, body_d = s.until("STAT:STMd")
+        t_end, _, _ = s.until("STAT:STMu", timeout=6)
+        names = s.names()
+        check(names[:4] == ["STAT:STMf", "STAT:STMc", "RESP", "STAT:STMs"],
+              "STMf, STMc, RESP, STMs in this order (%s)" % names[:4])
+        dsco = [b for _, n, b in s.log if n == "DSCO"]
+        check(len(dsco) == 1 and dsco[0] == b"\0", "DSCO 0 (end of the data)")
+        check(names.index("DSCO") < names.index("STAT:STMd") < names.index("STAT:STMu"), "DSCO, STMd, then STMu")
+        resp = [b for _, n, b in s.log if n == "RESP"][0]
+        check(resp == HTTP_HEADERS, "RESP carries the response headers")
+        check(http.request == HTTP_REQUEST, "HTTP request sent as received in strm")
+        check(stat_bytes(body_d) == len(http.data), "bytes received counted (%d)" % stat_bytes(body_d))
+        check(2.85 <= t_end - t_start <= 3.4, "3 s of audio played in %.2f s" % (t_end - t_start))
+        stmt = [(t, b) for t, n, b in s.log if n == "STAT:STMt"]
+        check(len(stmt) >= 2, "STMt every second while playing (%d)" % len(stmt))
+        drift = max(abs(stat_elapsed_ms(b) / 1000 - (t - t_start)) for t, b in stmt)
+        check(drift < 0.25, "elapsed time follows the clock (max drift %.3f s)" % drift)
+    finally:
+        rc, out = stop(proc)
+        server.close()
+    check(rc == 0 and "end of playback" in out, "end of playback reported, clean exit")
+
+
+def scenario_pause():
+    print("-- stream: pause 1 s, then resume")
+    http = HttpServer(2.0)
+    http.start()
+    server, proc, s = start_session("Pause")
+    try:
+        send_strm_s(s, http)
+        t_start, _, _ = s.until("STAT:STMs")
+        time.sleep(0.5)
+        send_packet(s.conn, b"strm", strm("p"))
+        t_pause, _, _ = s.until("STAT:STMp")
+        time.sleep(1.0)
+        send_packet(s.conn, b"strm", strm("u"))
+        t_resume, _, _ = s.until("STAT:STMr")
+        t_end, _, _ = s.until("STAT:STMu", timeout=6)
+        played = (t_end - t_start) - (t_resume - t_pause)
+        check(1.85 <= played <= 2.4, "2 s of audio played in %.2f s, plus %.2f s of pause"
+              % (played, t_resume - t_pause))
+    finally:
+        stop(proc)
+        server.close()
+
+
+def scenario_stop():
+    print("-- stream: stop while receiving")
+    http = HttpServer(10.0, chunk=17640, pause=0.1)     # sent in real time
+    http.start()
+    server, proc, s = start_session("Stop")
+    try:
+        send_strm_s(s, http, threshold_kb=16)
+        s.until("STAT:STMs")
+        time.sleep(1.0)
+        send_packet(s.conn, b"strm", strm("q"))
+        s.until("STAT:STMf")
+        http.join(timeout=TIMEOUT)
+        check(http.closed_by_player, "stream connection closed by the player")
+        time.sleep(1.5)
+        send_packet(s.conn, b"strm", strm("t", replay_gain=1))
+        _, _, body = s.until("STAT:STMt")
+        check(stat_elapsed_ms(body) == 0 and "STAT:STMu" not in s.names(), "stopped: no more playback")
+    finally:
+        stop(proc)
+        server.close()
+
+
 def scenario_no_server():
     print("-- no server listening: retries, Ctrl-C during the wait")
     probe = socket.socket()
@@ -145,6 +305,9 @@ if __name__ == "__main__":
     if len(sys.argv) != 2:
         sys.exit(__doc__)
     scenario_session()
+    scenario_stream()
+    scenario_pause()
+    scenario_stop()
     scenario_no_server()
     scenario_arguments()
     print("fake_server: %d failed" % failures)

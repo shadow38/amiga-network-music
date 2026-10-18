@@ -18,7 +18,9 @@
 #include <proto/dos.h>
 #include <proto/timer.h>
 #include <proto/bsdsocket.h>
+#include <sys/filio.h>
 
+#include <errno.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
@@ -99,15 +101,19 @@ int plat_resolve(const char *host, uint32_t *ip)
     return 1;
 }
 
-int plat_connect(uint32_t ip, uint16_t port)
+/* Socket and connection; non-blocking: the connection may still be in progress on return */
+static int connect_socket(uint32_t ip, uint16_t port, int nonblocking)
 {
     struct sockaddr_in sa;
+    LONG one = 1;
     LONG s = socket(AF_INET, SOCK_STREAM, 0);
 
     if (s < 0) {
         last_error = Errno();
         return -1;
     }
+    if (nonblocking)
+        IoctlSocket(s, FIONBIO, (char *)&one);
     memset(&sa, 0, sizeof(sa));
     sa.sin_len = sizeof(sa);
     sa.sin_family = AF_INET;
@@ -115,10 +121,36 @@ int plat_connect(uint32_t ip, uint16_t port)
     sa.sin_addr.s_addr = htonl(ip);
     if (connect(s, (struct sockaddr *)&sa, sizeof(sa)) < 0) {
         last_error = Errno();
-        CloseSocket(s);
-        return -2;
+        if (!(nonblocking && last_error == EINPROGRESS)) {
+            CloseSocket(s);
+            return -2;
+        }
     }
     return s;
+}
+
+int plat_connect(uint32_t ip, uint16_t port)
+{
+    return connect_socket(ip, port, 0);
+}
+
+int plat_connect_start(uint32_t ip, uint16_t port)
+{
+    return connect_socket(ip, port, 1);
+}
+
+int plat_connect_finish(int sock)
+{
+    LONG err = 0, len = sizeof(err), zero = 0;
+
+    if (getsockopt(sock, SOL_SOCKET, SO_ERROR, &err, &len) < 0)
+        err = Errno();
+    if (err != 0) {
+        last_error = err;
+        return 0;
+    }
+    IoctlSocket(sock, FIONBIO, (char *)&zero);
+    return 1;
 }
 
 int plat_send(int sock, const void *buf, int len)
@@ -149,9 +181,9 @@ int plat_error(void)
     return last_error;
 }
 
-int plat_wait(const int *socks, int n, int *ready, uint32_t timeout_ms)
+int plat_wait(struct plat_fd *fds, int n, uint32_t timeout_ms)
 {
-    fd_set rfds;
+    fd_set rfds, wfds;
     struct timeval tv;
     ULONG sigs = SIGBREAKF_CTRL_C;
     LONG r;
@@ -166,22 +198,31 @@ int plat_wait(const int *socks, int n, int *ready, uint32_t timeout_ms)
     }
 
     FD_ZERO(&rfds);
+    FD_ZERO(&wfds);
     for (i = 0; i < n; i++) {
-        FD_SET(socks[i], &rfds);
-        if (socks[i] > maxfd)
-            maxfd = socks[i];
+        fds[i].ready = 0;
+        if (fds[i].events & PLAT_READ)
+            FD_SET(fds[i].sock, &rfds);
+        if (fds[i].events & PLAT_WRITE)
+            FD_SET(fds[i].sock, &wfds);
+        if (fds[i].sock > maxfd)
+            maxfd = fds[i].sock;
     }
     tv.tv_sec = timeout_ms / 1000;
     tv.tv_usec = (timeout_ms % 1000) * 1000;
-    r = WaitSelect(maxfd + 1, &rfds, NULL, NULL, &tv, &sigs);
+    r = WaitSelect(maxfd + 1, &rfds, &wfds, NULL, &tv, &sigs);
     if (sigs & SIGBREAKF_CTRL_C)
         return -1;
     if (r < 0) {
         msg("amisqueeze: WaitSelect: error %ld\n", (long)Errno());
         return -2;
     }
-    for (i = 0; i < n; i++)
-        ready[i] = FD_ISSET(socks[i], &rfds) ? 1 : 0;
+    for (i = 0; i < n; i++) {
+        if ((fds[i].events & PLAT_READ) && FD_ISSET(fds[i].sock, &rfds))
+            fds[i].ready |= PLAT_READ;
+        if ((fds[i].events & PLAT_WRITE) && FD_ISSET(fds[i].sock, &wfds))
+            fds[i].ready |= PLAT_WRITE;
+    }
     return r > 0 ? 1 : 0;
 }
 

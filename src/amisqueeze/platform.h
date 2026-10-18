@@ -22,17 +22,35 @@ void msg_raw(const void *buf, int len);
 /* Host name or dotted address; returns 1 and *ip, or 0 if it cannot be resolved */
 int plat_resolve(const char *host, uint32_t *ip);
 
-/* TCP connection: returns a socket (>= 0), -1 if the socket cannot be created, -2 if the connection fails.
- * After a failure, plat_error() gives the system error code. */
+/* Blocking TCP connection: returns a socket (>= 0), -1 if the socket cannot be created, -2 if the connection
+ * fails. After a failure, plat_error() gives the system error code. */
 int plat_connect(uint32_t ip, uint16_t port);
+
+/* Non-blocking TCP connection: returns a socket (>= 0) whose connection is in progress, -1 if the socket cannot
+ * be created, -2 if the connection fails at once. Wait until the socket is writable (PLAT_WRITE), then call
+ * plat_connect_finish(): 1 = connected (the socket is blocking again), 0 = failed (plat_error(); the socket is
+ * still open). */
+int plat_connect_start(uint32_t ip, uint16_t port);
+int plat_connect_finish(int sock);
+
 int plat_send(int sock, const void *buf, int len);     /* bytes sent, <= 0 on error */
 int plat_recv(int sock, void *buf, int len);           /* bytes received, 0 = closed, < 0 = error */
 void plat_close(int sock);
 int plat_error(void);
 
-/* Waits until one of the n sockets is readable, the timeout expires or the user interrupts (Ctrl-C);
- * ready[i] is set to 1 for each readable socket. n may be 0 (plain delay that can be interrupted).
- * Returns 1 = something readable, 0 = timeout, -1 = interrupted, -2 = error (already reported). */
-int plat_wait(const int *socks, int n, int *ready, uint32_t timeout_ms);
+/* Sockets to wait for: events = PLAT_READ and/or PLAT_WRITE; plat_wait() sets ready to the events that occurred */
+#define PLAT_READ  1
+#define PLAT_WRITE 2
+
+struct plat_fd {
+    int sock;
+    int events;
+    int ready;
+};
+
+/* Waits until one of the n sockets is ready, the timeout expires or the user interrupts (Ctrl-C). n may be 0
+ * (plain delay that can be interrupted). Returns 1 = something ready, 0 = timeout, -1 = interrupted,
+ * -2 = error (already reported). */
+int plat_wait(struct plat_fd *fds, int n, uint32_t timeout_ms);
 
 #endif
