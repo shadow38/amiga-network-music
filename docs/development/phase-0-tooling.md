@@ -57,16 +57,23 @@ Back to the [plan](README.md).
 - **Criterion**: an AHI test program (or `Play16` on a WAV file) plays a correct sound.
 - **Prerequisite of**: 1.4.
 
-## 0.6 Host-side tests ⬜
+## 0.6 Host-side tests ✅ (2026-10-18)
 
 - **Goal**: test without an emulator whatever can be tested that way.
 - **Content**:
-  - portable code isolated in files without Amiga dependencies (slimproto serialisation, HTTP and WAV parsing, PCM
-    conversion);
-  - a test program compiled natively (host or container gcc), with examples taken from squeezelite and LMS;
-  - a fake slimproto server in Python that replays scenarios and checks the player's replies.
-- **Criterion**: `make test` passes; a known regression (swapped bytes, wrong `STAT` field) makes it fail.
-- **Recommended before**: 1.2.
+  - amisqueeze split into a **portable core** (`player.c`, `slimproto.c`, `player.h`: standard C, no Amiga or
+    POSIX header) and a **platform layer** (`platform.h`: clock, output, resolution, sockets, wait):
+    `amiga.c` (AmigaOS) and `posix.c` (Linux/POSIX). Messages use the standard printf format on both builds
+    (libnix `vsnprintf` on the Amiga, about 8 KB larger);
+  - `make host`: the same core on the build machine (`$(HOSTCC)`), with AddressSanitizer and UBSan;
+  - `make test`: unit tests of the core on a fake platform (`tests/test_core.c`, `tests/stub_platform.c`: packets
+    checked byte by byte, fragmented reads, invalid lengths, MAC derivation against values seen in WinUAE), then a
+    fake slimproto server in Python driving the host build (`tests/fake_server.py`: HELO, `strm t`, renaming,
+    disconnection and reconnection, Ctrl-C, argument errors). No LMS needed.
+- **Criterion**: `make test` passes; a known regression makes it fail. Validated: 51 unit checks and 17 scenario
+  checks pass; a `STAT` length of 52 instead of 53, and swapped bytes in 16-bit fields, both make it fail. The
+  Amiga build replayed the 1.1/1.1b cases in WinUAE with the same messages as before the split, and the host
+  build connects to a real LMS 9.1.1 with the same MAC as the Amiga build.
 
 ## 0.7 Logging and automated runs in WinUAE 🔶
 

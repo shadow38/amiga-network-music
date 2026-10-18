@@ -26,6 +26,11 @@
 #include "platform.h"
 #include "player.h"
 
+/* Not on every system (e.g. macOS): SIGPIPE is ignored anyway (see main) */
+#ifndef MSG_NOSIGNAL
+#define MSG_NOSIGNAL 0
+#endif
+
 static volatile sig_atomic_t interrupted;
 static int last_error;
 static struct player player;

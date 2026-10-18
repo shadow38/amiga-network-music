@@ -29,6 +29,17 @@ Two ways to get the toolchain:
   `m68k-amigaos-gcc10` (a historical name: it follows the AmigaPorts toolchain, now GCC 16). It also ships gdb,
   vasm and vamos.
 
+### Host-side tests (`make host`, `make test`)
+
+- a **native C compiler** for the build machine (`$(HOSTCC)`, default `cc`) with AddressSanitizer and
+  UndefinedBehaviorSanitizer support, POSIX sockets;
+- `python3` (fake server).
+
+Tested with gcc 14 on Linux. clang, macOS and other POSIX systems should work but have not been tried.
+
+Note that in the `amigadev/crosstools` image, `gcc` is the Amiga cross-compiler: use another environment, or set
+`HOSTCC` to a native compiler.
+
 ### LMS server
 
 - Ports: 3483/tcp (players), 9000/tcp (web UI and audio streams; set `HTTP_PORT` if you move it), 9090/tcp (CLI).
@@ -55,17 +66,21 @@ Two ways to get the toolchain:
 
 ```
 src/<prog>/           C sources, one directory per program -> out/<prog>
-obj/, out/            objects and executables (generated)
+src/amisqueeze/       portable core (player.c, slimproto.c, player.h), system services behind platform.h:
+                      amiga.c (AmigaOS, Amiga build only), posix.c (Linux/POSIX, host build only)
+tests/                unit tests of the core (test_core.c on stub_platform.c), fake server (fake_server.py)
+obj/, out/            Amiga objects and executables (generated)
+obj-host/, out-host/  host objects and executables (generated)
 .sdk/                 copy of the toolchain headers, for IntelliSense (generated)
 .vscode/              tasks (build, clean, headers) and IntelliSense configuration
 docs/user-guide.md    user guide
 docs/development/     development plan
-Makefile              build (m68k-amigaos-gcc must be in the PATH)
+Makefile              build (m68k-amigaos-gcc must be in the PATH; HOSTCC for the host build)
 tools/amiga-make.sh   runs make with whichever toolchain is available (see "Building")
 tools/check-saves.py  checks the generated assembly (safeguard against a gcc bug, see "Building")
 ```
 
-`obj/`, `out/` and `.sdk/` are generated (ignored by `.gitignore`).
+`obj/`, `out/`, `obj-host/`, `out-host/` and `.sdk/` are generated (ignored by `.gitignore`).
 
 ## Building
 
@@ -101,6 +116,24 @@ checks before assembling. The build fails if a function modifies a register the 
 (d2-d7, a2-a6) without saving it. This was a bug in `m68k-amigaos-gcc` 16.1.1b (image
 `wischner/gcc-m68k-amiga:1.1.0`): programs crashed with an *address error* `#80000003`. It is fixed in 16.2, but
 the GCC 16 port is recent.
+
+### Host build and tests
+
+amisqueeze is split into a **portable core** in standard C (no Amiga headers) and a thin **platform layer**
+(`platform.h`): `amiga.c` on AmigaOS, `posix.c` on Linux and other POSIX systems. The same core therefore also
+runs on the build machine, where it is fast to test:
+
+```sh
+make host                         # out-host/amisqueeze, with AddressSanitizer and UBSan
+out-host/amisqueeze SERVER=192.168.1.10 NAME=Test VERBOSE     # same arguments as on the Amiga; Ctrl-C stops it
+make test                         # unit tests of the core, then scenarios against out-host/amisqueeze
+make test HOSTCC=clang            # another native compiler (untested)
+```
+
+`make test` needs no LMS server: the unit tests run the core on a fake platform (`tests/stub_platform.c`), and
+`tests/fake_server.py` plays a slimproto server on localhost (handshake, `strm t`, renaming, disconnection and
+reconnection, Ctrl-C, argument errors). The Amiga build must still be checked in WinUAE: the platform layers
+differ.
 
 ## VS Code
 

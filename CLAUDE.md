@@ -45,13 +45,23 @@ decoding later (step 1.8).
 
 ## Design choices (player)
 
-- One task and one loop around `WaitSelect()` (a `SocketBase` belongs to the task that opened it).
-- Fields serialised byte by byte, no packed structures.
+- **Portable core + platform layer** (step 0.6, 2026-10-18): `player.c`, `slimproto.c`, `player.h` are standard
+  C (`<stdint.h>`, no Amiga or POSIX header); everything system-related goes through `platform.h`, implemented by
+  `amiga.c` (Amiga build only) and `posix.c` (host build only). Keep the core free of system calls; keep the
+  platform layers thin. The main loop (timeouts, reconnection) lives in the core.
+- One task and one loop around `plat_wait()` (`WaitSelect()` on the Amiga: a `SocketBase` belongs to the task
+  that opened it; `select()` on POSIX, SIGINT/SIGTERM without `SA_RESTART` = Ctrl-C).
+- Addresses and ports in **host byte order** in the core; `htonl`/`ntohl` only in the platform layers (no-ops on
+  68k, essential on x86).
+- Fields serialised byte by byte, no packed structures; 32-bit values are `uint32_t` (the MAC hash too, so both
+  builds derive the same MAC).
 - Advertise in `HELO` only the formats actually decoded.
 - Framing: server → client = 2-byte length + opcode; client → server = opcode + 4-byte length.
-- Output goes through `msg()` (`VPrintf` then `Flush(Output())`), never `Printf`/`PutStr` directly: AmigaDOS
-  buffers file output, and a log redirected to a file must be readable while the program runs. RawDoFmt format:
-  `%ld`/`%lc` with LONG arguments are mandatory, no `%.*s`.
+- Output goes through `msg()` with the **standard printf format** (`format(printf)` attribute, `-Werror=format`
+  on both builds; on the Amiga: libnix `vsnprintf` into a static buffer, then `Write()` to `Output()`, unbuffered,
+  so a log redirected to a file is readable while the program runs); raw bytes through `msg_raw()`. Never
+  `Printf`/`PutStr`/`printf` directly. Cast 32-bit values to the type the specifier names (`(unsigned long)` with
+  `%lX`); `%c` for chars (not `%lc`).
 - Music Assistant: per-player output codecs `flac` (default), `mp3`, `aac`, `wav` (seen in `constants.py`,
   `CONF_ENTRY_OUTPUT_CODEC`); not verified yet: the solo playback path (`play_media`) and the `strm` format sent for
   `wav` (explicit values, or `?` plus header parsing).
@@ -62,9 +72,15 @@ decoding later (step 1.8).
   AHI), libnix, `make`, `python3`; reference image `amigadev/crosstools:m68k-amigaos-gcc10` (historical tag that
   follows GCC 16; prefix `/opt/m68k-amigaos`, with vasm, gdb, vamos). The repository stays **generic**: how the
   toolchain is installed on a given machine is not described here.
-- **Building**: `sh tools/amiga-make.sh [all|clean|sdk|<prog>]`, which tries in order `$AMIGA_MAKE`, the toolchain
-  in the `PATH`, `../amiga-make.local.sh` (outside the repository), then Docker (untested). On Windows: through WSL
-  (VS Code tasks: `wsl.exe --cd ${workspaceFolder} --exec sh tools/amiga-make.sh …`, default distribution).
+- **Building**: `sh tools/amiga-make.sh [all|clean|sdk|host|test|<prog>]`, which tries in order `$AMIGA_MAKE`,
+  the toolchain in the `PATH`, `../amiga-make.local.sh` (outside the repository), then Docker (untested). On
+  Windows: through WSL (VS Code tasks: `wsl.exe --cd ${workspaceFolder} --exec sh tools/amiga-make.sh …`, default
+  distribution).
+- **Host build and tests**: `make host` (core + `posix.c`, `$(HOSTCC)`, default `cc`, with ASan + UBSan) and
+  `make test` (`tests/test_core.c` on `tests/stub_platform.c`, then `tests/fake_server.py` against
+  `out-host/amisqueeze`; needs a native compiler and python3, no LMS). Run `make test` after every change to the
+  core; extend the tests with each step (1.2: stream scenarios in the fake server). The Amiga build is still
+  checked in WinUAE (different platform layer).
 - **VS Code**: open each repository on its own (task names are the same everywhere, shortcuts can target them by
   name); extensions `prb28.amiga-assembly`, `ms-vscode.cpptools` and `spencerwmiles.vscode-task-buttons`.
 - **WinUAE** 6.0; Kickstart ROMs are not versioned (licensed). No test configuration in the repository yet (plan
@@ -80,6 +96,10 @@ decoding later (step 1.8).
   stub makes amisqueeze retry forever: kill it). Use `vamos -C 68020` for 68020 builds (otherwise alert
   `00068020`). Its `GetVar` ignores global variables (`ENV:`) and returns 0. Useful for argument parsing only;
   test the rest in WinUAE.
+- **Stack**: the default Shell stack is 4 KB and AmigaOS does not detect overflows (silent corruption). Big buffers
+  are static or allocated, never on the stack. Margin check: `Stack 2048` in the Shell, then replay the WinUAE
+  scenario; passed on 2026-10-18 after the switch to `vsnprintf` (step 0.6). Redo it whenever call depth or
+  local variables grow (step 1.2).
 - Strings shown on the Amiga and files read by the Amiga: ASCII only (ISO-8859-1 on the Amiga), LF line endings.
 - WinUAE syntax checked in `cfgfile.cpp`: `filesystem2=rw,DEVICE:Volume:path,bootpri`; `chipmem_size` in 512 KB
   units, `fastmem_size` in MB; networking emulation `bsdsocket_emu=true`.

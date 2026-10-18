@@ -6,6 +6,8 @@
 #
 #   make [all]    Amiga build (out/)
 #   make host     host build of the programs listed in HOST_PROGS (out-host/), native compiler $(HOSTCC)
+#   make test     host build, unit tests of the portable core (tests/test_core.c), then scenarios against the
+#                 host build of amisqueeze driven by a fake server (tests/fake_server.py, python3)
 #   make clean    removes every build directory
 #   make sdk      copies the toolchain headers into .sdk/ (IntelliSense)
 
@@ -37,7 +39,7 @@ host_srcs  = $(filter-out src/$(1)/amiga.c,$(wildcard src/$(1)/*.c))
 TOOLCHAIN = $(abspath $(dir $(shell command -v $(CC)))..)
 GCC_INC   = $(shell $(CC) -print-file-name=include)
 
-.PHONY: all clean sdk host $(PROGS)
+.PHONY: all clean sdk host test $(PROGS)
 
 all: $(PROGS)
 
@@ -57,6 +59,17 @@ out-host/$(1): $(patsubst src/%.c,obj-host/%.o,$(call host_srcs,$(1)))
 endef
 $(foreach p,$(HOST_PROGS),$(eval $(call HOST_template,$(p))))
 
+# Unit tests: the portable core of amisqueeze on a fake platform (tests/stub_platform.c)
+TEST_CORE := player slimproto
+out-host/test_core: obj-host/tests/test_core.o obj-host/tests/stub_platform.o \
+                    $(patsubst %,obj-host/amisqueeze/%.o,$(TEST_CORE))
+	@mkdir -p $(dir $@)
+	$(HOSTCC) $(HOST_LDFLAGS) -o $@ $^
+
+test: host out-host/test_core
+	out-host/test_core
+	python3 tests/fake_server.py out-host/amisqueeze
+
 # Check of the generated assembly (kept in obj/<prog>/*.s): tools/check-saves.py fails the build if a function
 # modifies a d2-d7/a2-a6 register without saving it (gcc 16.1 bug, fixed in 16.2; kept as a safeguard).
 # -MMD -MP: header dependencies in obj/<prog>/*.d
@@ -69,6 +82,10 @@ obj/%.o: src/%.c
 obj-host/%.o: src/%.c
 	@mkdir -p $(dir $@)
 	$(HOSTCC) $(HOST_CFLAGS) -MMD -MP -c -o $@ $<
+
+obj-host/tests/%.o: tests/%.c
+	@mkdir -p $(dir $@)
+	$(HOSTCC) $(HOST_CFLAGS) -Isrc/amisqueeze -MMD -MP -c -o $@ $<
 
 -include $(wildcard obj/*/*.d) $(wildcard obj-host/*/*.d)
 

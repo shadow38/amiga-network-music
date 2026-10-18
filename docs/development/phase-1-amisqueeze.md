@@ -45,13 +45,19 @@ belongs to the task that opened it; packets serialised field by field; buffers a
 - **Content**:
   - on `strm s`: HTTP connection (address 0 = the control connection's), send the provided request, read the
     response headers and pass them to the server (`RESP`);
-  - receive the data into a ring buffer, consumed at real-time speed (PCM rate), byte counters;
+  - receive the data into a ring buffer (1 MB, about 6 s of 44.1 kHz 16-bit stereo PCM; size defined in one
+    place, a `BUFFER` option may come with step 1.6), consumed at real-time speed (PCM rate) by a virtual output
+    that later steps replace with a file (1.3) and AHI (1.4); byte counters;
   - states: `STMc` (connected), `STMs` (playback started), `STMd` (end of data), `STMu` (buffer empty), buffer
     fullness and elapsed time in `STAT`;
   - `strm q`/`f`: stop and flush; `cont` and `autostart` handled as in squeezelite.
-- **Criterion**: in LMS, the track progress advances at the right pace on the Amiga player; at the end of the
-  track, LMS moves on to the next one; no error in `server.log`.
-- **Test**: WinUAE + test server; messages compared with squeezelite.
+- **Criterion**, measured on the server through its CLI, not on the web page (its progress bar animates by itself
+  between refreshes, even when nothing plays): `waitingToPlay` goes back to 0 once the player reports the start;
+  `<player> time ?` increases by about 60 s in 60 s (less than 1 s off), since it comes from the player's reports;
+  with two tracks in the playlist, LMS moves on to the second one and stops after it, driven by the player's
+  `STMd`/`STMu`; stop then play again works; no error in `server.log`; no memory leak (`Avail` before/after).
+- **Test**: host first (`make test`: stream scenarios in the fake server; then the host build against a real
+  LMS), then WinUAE; state sequence compared with squeezelite's on the same scenario.
 
 ## 1.3 Output to a file ⬜
 
