@@ -39,7 +39,7 @@ static BOOL send_all(struct player *p, const UBYTE *buf, LONG len)
     while (len > 0) {
         LONG n = send(p->sock, (APTR)buf, len, 0);
         if (n <= 0) {
-            Printf("amisqueeze: send: error %ld\n", Errno());
+            msg("amisqueeze: send: error %ld\n", Errno());
             return FALSE;
         }
         buf += n;
@@ -98,7 +98,7 @@ static BOOL send_stat(struct player *p, const char *event, ULONG server_ts)
     b = put32(b, server_ts);
     b = put16(b, 0);                        /* error code */
     if (p->verbose)
-        Printf("-> STAT %.4s\n", (LONG)event);
+        msg("-> STAT %.4s\n", (LONG)event);
     return send_all(p, pkt, b - pkt);
 }
 
@@ -120,12 +120,12 @@ static void process_strm(struct player *p, const UBYTE *pkt, ULONG len)
     char cmd;
 
     if (len < 28) {
-        Printf("amisqueeze: strm too short (%ld)\n", len);
+        msg("amisqueeze: strm too short (%ld)\n", len);
         return;
     }
     cmd = pkt[4];
     if (p->verbose && cmd != 't')
-        Printf("<- strm %lc\n", (LONG)cmd);
+        msg("<- strm %lc\n", (LONG)cmd);
 
     switch (cmd) {
     case 't':                               /* timer: the server expects STMt */
@@ -149,19 +149,20 @@ static void process_strm(struct player *p, const UBYTE *pkt, ULONG len)
 
         if (ip == 0)
             ip = p->server_ip;
-        Printf("stream: format %lc, size %lc, rate %lc, channels %lc, endian %lc, autostart %lc\n",
+        msg("stream: format %lc, size %lc, rate %lc, channels %lc, endian %lc, autostart %lc\n",
                (LONG)pkt[6], (LONG)pkt[7], (LONG)pkt[8], (LONG)pkt[9], (LONG)pkt[10], (LONG)pkt[5]);
-        Printf("stream: http://%ld.%ld.%ld.%ld:%ld\n",
+        msg("stream: http://%ld.%ld.%ld.%ld:%ld\n",
                ip >> 24, (ip >> 16) & 0xff, (ip >> 8) & 0xff, ip & 0xff, port);
         /* HTTP request to send as is (RawDoFmt has no %.*s) */
         Write(Output(), (APTR)(pkt + 28), len - 28);
+        Flush(Output());
         /* Playback not implemented yet */
         send_stat(p, "STMf", 0);
         send_stat(p, "STMn", 0);
         break;
     }
     default:
-        Printf("amisqueeze: strm %lc not handled\n", (LONG)cmd);
+        msg("amisqueeze: strm %lc not handled\n", (LONG)cmd);
         break;
     }
 }
@@ -172,7 +173,7 @@ static void process_audg(struct player *p, const UBYTE *pkt, ULONG len)
         return;
     /* 16.16 gain, 0x10000 = 1.0; adjust = 0: fixed volume */
     if (p->verbose)
-        Printf("<- audg adjust %ld left $%08lx right $%08lx\n", (LONG)pkt[12], get32(pkt + 14), get32(pkt + 18));
+        msg("<- audg adjust %ld left $%08lx right $%08lx\n", (LONG)pkt[12], get32(pkt + 14), get32(pkt + 18));
 }
 
 static void process_setd(struct player *p, const UBYTE *pkt, ULONG len)
@@ -185,7 +186,7 @@ static void process_setd(struct player *p, const UBYTE *pkt, ULONG len)
             n = PLAYER_NAME_LEN;
         memcpy(p->name, pkt + 5, n);
         p->name[n] = '\0';
-        Printf("player name: %s\n", (LONG)p->name);
+        msg("player name: %s\n", (LONG)p->name);
     }
     send_setd_name(p);                      /* answer to the query, or confirmation */
 }
@@ -193,7 +194,7 @@ static void process_setd(struct player *p, const UBYTE *pkt, ULONG len)
 static void process(struct player *p, const UBYTE *pkt, ULONG len)
 {
     if (len < 4) {
-        Printf("amisqueeze: packet too short (%ld)\n", len);
+        msg("amisqueeze: packet too short (%ld)\n", len);
         return;
     }
     if (!memcmp(pkt, "strm", 4))
@@ -204,9 +205,9 @@ static void process(struct player *p, const UBYTE *pkt, ULONG len)
         process_setd(p, pkt, len);
     else if (!memcmp(pkt, "aude", 4)) {
         if (p->verbose && len >= 6)
-            Printf("<- aude spdif %ld dac %ld\n", (LONG)pkt[4], (LONG)pkt[5]);
+            msg("<- aude spdif %ld dac %ld\n", (LONG)pkt[4], (LONG)pkt[5]);
     } else
-        Printf("amisqueeze: %.4s not handled (%ld bytes)\n", (LONG)pkt, len);
+        msg("amisqueeze: %.4s not handled (%ld bytes)\n", (LONG)pkt, len);
 }
 
 /* ---- connection ---- */
@@ -217,7 +218,7 @@ BOOL slim_connect(struct player *p, BOOL reconnect)
 
     p->sock = socket(AF_INET, SOCK_STREAM, 0);
     if (p->sock < 0) {
-        Printf("amisqueeze: socket: error %ld\n", Errno());
+        msg("amisqueeze: socket: error %ld\n", Errno());
         return FALSE;
     }
     memset(&sa, 0, sizeof(sa));
@@ -226,14 +227,14 @@ BOOL slim_connect(struct player *p, BOOL reconnect)
     sa.sin_port = p->server_port;
     sa.sin_addr.s_addr = p->server_ip;
     if (connect(p->sock, (struct sockaddr *)&sa, sizeof(sa)) < 0) {
-        Printf("amisqueeze: cannot connect: error %ld\n", Errno());
+        msg("amisqueeze: cannot connect: error %ld\n", Errno());
         slim_disconnect(p);
         return FALSE;
     }
     p->rx_expect = 0;
     p->rx_got = 0;
     p->last_rx = now_ms();
-    Printf("connected to the server\n");
+    msg("connected to the server\n");
     if (!send_helo(p, reconnect)) {
         slim_disconnect(p);
         return FALSE;
@@ -262,7 +263,7 @@ BOOL slim_receive(struct player *p)
             p->rx_expect = get16(p->rx_len);
             p->rx_got = 0;
             if (p->rx_expect == 0 || p->rx_expect > sizeof(p->rx_buf)) {
-                Printf("amisqueeze: invalid packet size (%ld)\n", (LONG)p->rx_expect);
+                msg("amisqueeze: invalid packet size (%ld)\n", (LONG)p->rx_expect);
                 return FALSE;
             }
         }
@@ -283,8 +284,8 @@ BOOL slim_receive(struct player *p)
 
 lost:
     if (n == 0)
-        Printf("amisqueeze: connection closed by the server\n");
+        msg("amisqueeze: connection closed by the server\n");
     else
-        Printf("amisqueeze: recv: error %ld\n", Errno());
+        msg("amisqueeze: recv: error %ld\n", Errno());
     return FALSE;
 }

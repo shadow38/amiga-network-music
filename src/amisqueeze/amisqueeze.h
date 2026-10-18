@@ -30,6 +30,9 @@ struct player {
 
 /* main.c */
 ULONG now_ms(void);
+/* Printf (RawDoFmt format: %ld, %lc, %s with LONG arguments), then Flush: output redirected to a file is
+ * readable at once (AmigaDOS buffers file output). */
+void msg(const char *fmt, ...);
 
 /* slimproto.c */
 BOOL slim_connect(struct player *p, BOOL reconnect);

@@ -52,7 +52,9 @@ Template: `SERVER,PORT/N/K,NAME/K,MAC/K,VERBOSE/S`
 | `MAC` | player identifier, `xx:xx:xx:xx:xx:xx` | derived from `NAME` |
 | `VERBOSE` | print the messages exchanged with the server | off |
 
-`Ctrl-C` stops amisqueeze. To keep the Shell free, run it in the background: `Run >NIL: amisqueeze`.
+`Ctrl-C` stops amisqueeze. To keep the Shell free, run it in the background: `Run >NIL: amisqueeze`, or keep its
+messages in a file, written as they come: `Run amisqueeze >RAM:amisqueeze.log VERBOSE` (the redirection goes
+right after the command name). `Status` then shows its process number, and `Break <number>` stops it.
 
 LMS identifies players by their MAC address. Without `MAC`, amisqueeze derives a stable one from the name: the same
 name always gives the same player in LMS, and two Amigas with different names show up as two players. The player

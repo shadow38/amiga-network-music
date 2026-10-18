@@ -19,6 +19,7 @@
 #include <proto/timer.h>
 #include <proto/bsdsocket.h>
 
+#include <stdarg.h>
 #include <string.h>
 
 #include "amisqueeze.h"
@@ -46,6 +47,17 @@ static struct player player;
 
 /* Prefs line; the parsed strings point into it until the end */
 static char prefs_line[512];
+
+void msg(const char *fmt, ...)
+{
+    va_list ap;
+
+    /* On m68k, va_list points to the arguments on the stack: the LONG array RawDoFmt expects */
+    va_start(ap, fmt);
+    VPrintf(fmt, (APTR)ap);
+    va_end(ap);
+    Flush(Output());
+}
 
 /* Monotonic clock (E-Clock, since boot): the system time can jump (clock set, SNTP) */
 ULONG now_ms(void)
@@ -160,7 +172,7 @@ static void run(struct player *p)
 
         if (p->sock < 0) {
             if (!slim_connect(p, reconnect)) {
-                Printf("retrying in %ld s\n", (LONG)RECONNECT_DELAY_S);
+                msg("retrying in %ld s\n", (LONG)RECONNECT_DELAY_S);
                 if (!wait_seconds(RECONNECT_DELAY_S))
                     return;
                 continue;
@@ -177,7 +189,7 @@ static void run(struct player *p)
         if (sigs & SIGBREAKF_CTRL_C)
             return;
         if (n < 0) {
-            Printf("amisqueeze: WaitSelect: error %ld\n", Errno());
+            msg("amisqueeze: WaitSelect: error %ld\n", Errno());
             slim_disconnect(p);
             continue;
         }
@@ -186,7 +198,7 @@ static void run(struct player *p)
             continue;
         }
         if (now_ms() - p->last_rx > RX_TIMEOUT_MS) {
-            Printf("amisqueeze: no news from the server, reconnecting\n");
+            msg("amisqueeze: no news from the server, reconnecting\n");
             slim_disconnect(p);
         }
     }
@@ -213,7 +225,7 @@ int main(void)
         if (args[i] == 0)
             args[i] = prefs[i];
     if (args[ARG_SERVER] == 0) {
-        PutStr("amisqueeze: no server: give SERVER=<ip|name>, or set it in ENV:" PREFS_VAR "\n");
+        msg("amisqueeze: no server: give SERVER=<ip|name>, or set it in ENV:" PREFS_VAR "\n");
         goto out_args;
     }
 
@@ -224,35 +236,35 @@ int main(void)
     p->name[PLAYER_NAME_LEN] = '\0';
     if (args[ARG_MAC]) {
         if (!parse_mac((char *)args[ARG_MAC], p->mac)) {
-            PutStr("amisqueeze: invalid MAC (expected xx:xx:xx:xx:xx:xx)\n");
+            msg("amisqueeze: invalid MAC (expected xx:xx:xx:xx:xx:xx)\n");
             goto out_args;
         }
     } else
         mac_from_name(p->name, p->mac);
 
     if (OpenDevice(TIMERNAME, UNIT_MICROHZ, (struct IORequest *)&timer_io, 0) != 0) {
-        PutStr("amisqueeze: timer.device unavailable\n");
+        msg("amisqueeze: timer.device unavailable\n");
         goto out_args;
     }
     TimerBase = timer_io.tr_node.io_Device;
 
     SocketBase = OpenLibrary("bsdsocket.library", 4);
     if (SocketBase == NULL) {
-        PutStr("amisqueeze: bsdsocket.library not found (is a TCP/IP stack running?)\n");
+        msg("amisqueeze: bsdsocket.library not found (is a TCP/IP stack running?)\n");
         goto out_timer;
     }
 
     if (!resolve((char *)args[ARG_SERVER], &p->server_ip)) {
-        Printf("amisqueeze: server %s not found\n", args[ARG_SERVER]);
+        msg("amisqueeze: server %s not found\n", args[ARG_SERVER]);
         goto out_socket;
     }
-    Printf("player \"%s\" (%02lx:%02lx:%02lx:%02lx:%02lx:%02lx), server %s port %ld\n",
+    msg("player \"%s\" (%02lx:%02lx:%02lx:%02lx:%02lx:%02lx), server %s port %ld\n",
            (LONG)p->name, (LONG)p->mac[0], (LONG)p->mac[1], (LONG)p->mac[2],
            (LONG)p->mac[3], (LONG)p->mac[4], (LONG)p->mac[5], args[ARG_SERVER], (LONG)p->server_port);
 
     run(p);
     slim_disconnect(p);
-    PutStr("stopped\n");
+    msg("stopped\n");
     rc = RETURN_OK;
 
 out_socket:

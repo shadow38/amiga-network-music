@@ -49,7 +49,9 @@ decoding later (step 1.8).
 - Fields serialised byte by byte, no packed structures.
 - Advertise in `HELO` only the formats actually decoded.
 - Framing: server → client = 2-byte length + opcode; client → server = opcode + 4-byte length.
-- dos.library `Printf` (RawDoFmt): `%ld`/`%lc` are mandatory, no `%.*s`.
+- Output goes through `msg()` (`VPrintf` then `Flush(Output())`), never `Printf`/`PutStr` directly: AmigaDOS
+  buffers file output, and a log redirected to a file must be readable while the program runs. RawDoFmt format:
+  `%ld`/`%lc` with LONG arguments are mandatory, no `%.*s`.
 - Music Assistant: per-player output codecs `flac` (default), `mp3`, `aac`, `wav` (seen in `constants.py`,
   `CONF_ENTRY_OUTPUT_CODEC`); not verified yet: the solo playback path (`play_media`) and the `strm` format sent for
   `wav` (explicit values, or `?` plus header parsing).
