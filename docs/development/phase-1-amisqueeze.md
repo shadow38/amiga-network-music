@@ -109,5 +109,9 @@ belongs to the task that opened it; packets serialised field by field; buffers a
 
 - **Content**: automatic server discovery (UDP broadcast on port 3483); start from the Workbench with an icon and
   ToolTypes (read with the same template; precedence: built-in defaults, `ENV:amisqueeze.prefs`, ToolTypes,
-  command line), with a console window or quiet mode; running in the background (`Run`, or at startup).
-- **Criterion**: started without arguments, the player finds the server and shows up under the chosen name.
+  command line), with a console window or quiet mode; running in the background (`Run`, or at startup);
+  `LOG=<file>` option: every message written both to the console and to the file (AmigaDOS has no `tee`; today a
+  redirection `>file` sends the messages to the file only), appended and flushed after each message like the
+  console, usable from the default options too.
+- **Criterion**: started without arguments, the player finds the server and shows up under the chosen name; with
+  `LOG=<file>`, the messages appear in the Shell window and, at the same time, in the file.
