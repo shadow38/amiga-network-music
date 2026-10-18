@@ -392,6 +392,8 @@ static void test_stream_sequence(void)
     drain_stream(&p);
     CHECK(!strcmp(trace(), "STAT:STMs"));               /* threshold reached: the output starts */
     CHECK(p.out.state == OUTPUT_RUNNING);
+    CHECK(p.out.cur.fmt.rate == 44100 && p.out.cur.fmt.channels == 2 && p.out.cur.fmt.sample_bytes == 2 &&
+          !p.out.cur.fmt.big_endian);
 
     stub_feed_stream(pcm + 1500, sizeof(pcm) - 1500);
     drain_stream(&p);
@@ -466,6 +468,41 @@ static void test_gapless(void)
     stub_now += 100;
     output_tick(&p, stub_now);
     CHECK(strstr(trace(), "STAT:STMu") != NULL && p.out.state == OUTPUT_STOPPED);
+    teardown(&p);
+}
+
+/* The next track has another format (22.05 kHz mono, big-endian): its time counts at its own rate */
+static void test_gapless_format(void)
+{
+    struct player p;
+    char fmt_b[7] = { '1', 'p', '1', '1', '1', '0', 1 };
+
+    setup(&p, "Amiga");
+    CHECK(slim_connect(&p, 0));
+    open_stream(&p, '1', 1);
+    stub_feed_stream(pcm, sizeof(pcm));                 /* track A: 1 s at 176400 bytes/s */
+    drain_stream(&p);
+    stub_stream_end();
+    stream_io(&p, PLAT_READ);
+
+    stub_reset();
+    feed_strm('s', fmt_b, 0, 9000, 0, request);         /* track B: 44100 bytes/s */
+    drain(&p);
+    stream_io(&p, PLAT_WRITE);
+    stub_feed_stream(http_ok, (int)strlen(http_ok));
+    stub_feed_stream(pcm, 44100);                       /* 1 s of B */
+    drain_stream(&p);
+    stub_stream_end();
+    stream_io(&p, PLAT_READ);
+
+    clear_tx();
+    stub_now += 1000;                                   /* end of A */
+    output_tick(&p, stub_now);
+    CHECK(strstr(trace(), "STAT:STMs") != NULL);
+    CHECK(p.out.cur.fmt.rate == 22050 && p.out.cur.fmt.channels == 1 && p.out.cur.fmt.big_endian);
+    stub_now += 500;
+    output_tick(&p, stub_now);
+    CHECK(output_elapsed_ms(&p) == 500 && ring_used(&p.ring) == 22050);
     teardown(&p);
 }
 
@@ -712,6 +749,7 @@ int main(void)
     test_bad_length();
     test_stream_sequence();
     test_gapless();
+    test_gapless_format();
     test_pause();
     test_stop();
     test_connect_failure();

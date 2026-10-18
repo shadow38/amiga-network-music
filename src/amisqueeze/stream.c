@@ -9,8 +9,10 @@
  *     STMs is sent again when the output reaches it (gapless);
  *   buffer empty: STMo while still streaming, STMu once everything was played.
  * Single buffer: raw PCM needs no decoding, so the ring buffer is both the stream and the output buffer.
- * The virtual output consumes it at the PCM rate, like a sound card; with the OUTPUT option, what it consumes is
- * also written to a file (plan step 1.3: what AHI will play, checked byte by byte). AHI comes with step 1.4.
+ * The output hands the buffer's bytes to a sink: the virtual output, which consumes them at the PCM rate like a
+ * sound card (AHI comes with step 1.4b); with the OUTPUT option, what it hands over is also written to a file
+ * (plan step 1.3, checked byte by byte). Track boundaries, elapsed time and the end of playback follow the bytes
+ * the sink has played.
  */
 #include <string.h>
 
@@ -42,14 +44,21 @@ void stream_free(struct player *p)
     ring_free(&p->ring);
 }
 
+/* Empties the buffer and the sink, forgets the queued tracks: positions start again from 0 */
+static void output_reset(struct player *p)
+{
+    ring_clear(&p->ring);
+    p->out.queued = 0;
+    p->out.cur.start = 0;
+    p->out.carry = 0;
+}
+
 void stream_stop(struct player *p)
 {
     stream_close(p);
     p->stream.state = STREAM_IDLE;
-    ring_clear(&p->ring);
+    output_reset(p);
     p->out.state = OUTPUT_STOPPED;
-    p->out.queued = 0;
-    p->out.played = 0;
     p->out.starved = 0;
 }
 
@@ -66,7 +75,7 @@ static void stream_fail(struct player *p, int reason)
 }
 
 void stream_start(struct player *p, uint32_t ip, uint16_t port, const uint8_t *request, int request_len,
-                  uint32_t threshold, int autostart, uint32_t bytes_per_sec)
+                  uint32_t threshold, int autostart, const struct pcm_format *fmt)
 {
     struct stream *s = &p->stream;
     struct output *o = &p->out;
@@ -76,10 +85,8 @@ void stream_start(struct player *p, uint32_t ip, uint16_t port, const uint8_t *r
         return;
     }
     stream_close(p);                    /* a stream still running is abandoned */
-    if (o->state == OUTPUT_STOPPED) {   /* nothing playing: start from an empty buffer */
-        ring_clear(&p->ring);
-        o->queued = 0;
-    }
+    if (o->state == OUTPUT_STOPPED)     /* nothing playing: start from an empty buffer */
+        output_reset(p);
     memcpy(s->request, request, (size_t)request_len);
     s->request_len = request_len;
     s->ip = ip;
@@ -94,7 +101,7 @@ void stream_start(struct player *p, uint32_t ip, uint16_t port, const uint8_t *r
         o->queued--;
     }
     o->queue[o->queued].start = p->ring.total_in;
-    o->queue[o->queued].bytes_per_sec = bytes_per_sec;
+    o->queue[o->queued].fmt = *fmt;
     o->queued++;
 
     s->sock = plat_connect_start(ip, port);
@@ -125,7 +132,59 @@ int stream_events(const struct player *p)
     }
 }
 
-/* ---- virtual output ---- */
+/* ---- output ---- */
+
+uint32_t pcm_bytes_per_sec(const struct pcm_format *f)
+{
+    return f->rate * f->channels * f->sample_bytes;
+}
+
+/* ---- sink: where the output's bytes go (the virtual output; AHI with step 1.4b) ---- */
+
+/* Bytes the sink takes now. Virtual output: the bytes due since the last tick, at the PCM rate of the data handed
+ * over next. */
+static uint32_t sink_space(struct player *p, const struct pcm_format *f, uint32_t now)
+{
+    struct output *o = &p->out;
+    uint64_t want = (uint64_t)(uint32_t)(now - o->last_tick) * pcm_bytes_per_sec(f) + o->carry;
+
+    o->last_tick = now;
+    o->carry = (uint32_t)(want % 1000);
+    return (uint32_t)(want / 1000);
+}
+
+/* Bytes played since the last output_reset(). Virtual output: everything handed over is played at once. */
+static uint64_t sink_played(const struct player *p)
+{
+    return p->ring.total_out;
+}
+
+/* Format of the data at the buffer's read position, the next bytes handed to the sink */
+static const struct pcm_format *submit_format(const struct player *p)
+{
+    const struct output *o = &p->out;
+    const struct pcm_format *f = &o->cur.fmt;
+    int i;
+
+    for (i = 0; i < o->queued && o->queue[i].start <= p->ring.total_out; i++)
+        f = &o->queue[i].fmt;
+    return f;
+}
+
+/* At most n bytes, stopping where the next track begins (what the sink takes never spans two tracks) */
+static uint32_t until_next_track(const struct player *p, uint32_t n)
+{
+    const struct output *o = &p->out;
+    int i;
+
+    for (i = 0; i < o->queued; i++)
+        if (o->queue[i].start > p->ring.total_out) {
+            if (o->queue[i].start - p->ring.total_out < n)
+                n = (uint32_t)(o->queue[i].start - p->ring.total_out);
+            break;
+        }
+    return n;
+}
 
 int output_file_open(struct player *p, const char *name)
 {
@@ -155,8 +214,8 @@ void output_file_close(struct player *p)
         msg("output: %lu bytes written to %s\n", (unsigned long)o->written, o->file_name);
 }
 
-/* Plays n bytes (n <= ring_used): written to the OUTPUT file if any, then dropped from the buffer. A write error
- * closes the file; playback goes on without it. */
+/* Hands n bytes (n <= ring_used) to the sink: written to the OUTPUT file if any, then dropped from the buffer. A
+ * write error closes the file; playback goes on without it. */
 static void consume(struct player *p, uint32_t n)
 {
     struct output *o = &p->out;
@@ -186,8 +245,7 @@ static void next_track(struct player *p)
 {
     struct output *o = &p->out;
 
-    o->bytes_per_sec = o->queue[0].bytes_per_sec;
-    o->played = 0;
+    o->cur = o->queue[0];
     o->queued--;
     memmove(o->queue, o->queue + 1, (size_t)o->queued * sizeof(o->queue[0]));
     if (p->verbose)
@@ -223,31 +281,27 @@ void output_tick(struct player *p, uint32_t now)
 {
     struct output *o = &p->out;
     struct ring *r = &p->ring;
-    uint64_t want;
     uint32_t bytes;
 
     if (o->state != OUTPUT_RUNNING) {
         o->last_tick = now;
         return;
     }
-    want = (uint64_t)(uint32_t)(now - o->last_tick) * o->bytes_per_sec + o->carry;
-    o->last_tick = now;
-    bytes = (uint32_t)(want / 1000);
-    o->carry = (uint32_t)(want % 1000);
+    /* Track boundaries already played (the virtual output reaches them as it hands the bytes over) */
+    while (o->queued > 0 && sink_played(p) >= o->queue[0].start)
+        next_track(p);
+    bytes = sink_space(p, submit_format(p), now);
 
     for (;;) {
-        uint32_t avail, n;
+        uint32_t n;
 
-        if (o->queued > 0 && r->total_out >= o->queue[0].start) {
+        if (o->queued > 0 && sink_played(p) >= o->queue[0].start) {
             next_track(p);
             continue;
         }
         if (bytes == 0)
             break;
-        avail = ring_used(r);
-        if (o->queued > 0 && o->queue[0].start - r->total_out < avail)
-            avail = (uint32_t)(o->queue[0].start - r->total_out);
-        if (avail == 0) {               /* buffer empty */
+        if (ring_used(r) == 0 && sink_played(p) == r->total_out) {     /* buffer and sink empty */
             o->carry = 0;
             if (p->stream.state == STREAM_CONNECTING || p->stream.state == STREAM_HEADERS ||
                 p->stream.state == STREAM_BODY) {
@@ -266,9 +320,10 @@ void output_tick(struct player *p, uint32_t now)
             break;
         }
         o->starved = 0;
-        n = bytes < avail ? bytes : avail;
+        n = until_next_track(p, bytes < ring_used(r) ? bytes : ring_used(r));
+        if (n == 0)                     /* handed over, not played yet (never with the virtual output) */
+            break;
         consume(p, n);
-        o->played += n;
         bytes -= n;
     }
 
@@ -297,9 +352,12 @@ void output_resume(struct player *p)
 
 uint32_t output_elapsed_ms(const struct player *p)
 {
-    if (p->out.bytes_per_sec == 0)
+    uint32_t bps = pcm_bytes_per_sec(&p->out.cur.fmt);
+    uint64_t played = sink_played(p);
+
+    if (bps == 0 || played < p->out.cur.start)
         return 0;
-    return (uint32_t)(p->out.played * 1000 / p->out.bytes_per_sec);
+    return (uint32_t)((played - p->out.cur.start) * 1000 / bps);
 }
 
 int player_busy(const struct player *p)

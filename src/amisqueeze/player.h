@@ -69,20 +69,30 @@ enum output_state {
 
 #define MAX_TRACKS 4
 
-struct track {                          /* a track whose data is in the buffer, not started yet */
-    uint64_t start;                     /* ring total_in where its data begins */
-    uint32_t bytes_per_sec;
+/* PCM format of a track, announced by strm s */
+struct pcm_format {
+    uint32_t rate;                      /* Hz */
+    uint8_t  channels;                  /* 1 or 2 */
+    uint8_t  sample_bytes;              /* 1 to 4 (8 to 32 bits) */
+    uint8_t  big_endian;
 };
 
+struct track {
+    uint64_t          start;            /* position of its first byte in the stream (ring total_in) */
+    struct pcm_format fmt;
+};
+
+/* The output hands the buffer's bytes to a sink (the virtual output for now; AHI with step 1.4b). Positions are
+ * counted from the last ring_clear(): bytes handed over = ring total_out; bytes played <= that. Elapsed time,
+ * STMs at a track boundary and STMu follow the bytes played. */
 struct output {
     int          state;                 /* enum output_state */
-    uint32_t     bytes_per_sec;         /* of the track being played */
-    uint64_t     played;                /* bytes of the current track consumed */
-    uint32_t     last_tick;             /* ms of the last consumption */
-    uint32_t     carry;                 /* remainder of bytes_per_sec * ms / 1000 */
+    struct track cur;                   /* track being played */
+    uint32_t     last_tick;             /* virtual output: ms of the last consumption */
+    uint32_t     carry;                 /* virtual output: remainder of bytes_per_sec * ms / 1000 */
     uint32_t     last_stmt;             /* ms of the last STMt */
     int          starved;               /* buffer empty while still streaming (STMo sent) */
-    struct track queue[MAX_TRACKS];
+    struct track queue[MAX_TRACKS];     /* tracks in the buffer, not started yet */
     int          queued;
     int          file;                  /* OUTPUT file, -1 = none */
     const char  *file_name;
@@ -128,9 +138,10 @@ void slim_send_dsco(struct player *p, int reason);
 /* Initial state (and buffer allocation); 0 if there is not enough memory */
 int stream_init(struct player *p);
 void stream_free(struct player *p);
-/* strm s: starts receiving a PCM track (bytes_per_sec > 0) from ip:port with the given HTTP request */
+/* strm s: starts receiving a PCM track from ip:port with the given HTTP request */
 void stream_start(struct player *p, uint32_t ip, uint16_t port, const uint8_t *request, int request_len,
-                  uint32_t threshold, int autostart, uint32_t bytes_per_sec);
+                  uint32_t threshold, int autostart, const struct pcm_format *fmt);
+uint32_t pcm_bytes_per_sec(const struct pcm_format *f);
 /* strm q / f: closes the stream and empties the buffer */
 void stream_stop(struct player *p);
 /* The stream socket became readable / writable (PLAT_READ, PLAT_WRITE) */

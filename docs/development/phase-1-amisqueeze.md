@@ -116,6 +116,25 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   avoid resampling; a warning at start-up if the unit's mode cannot pan (to check: reading the unit's mode
   through the device API). Automated check of what reaches AHI with the "Filesave" driver (WAV file).
 - **Prerequisite**: 0.5 (AHI in the emulated Amiga) ✅.
+- **Design** (agreed 2026-10-18):
+  - an output ("sink") interface in the core: how many bytes it can take now, take these bytes, how many bytes
+    were really played. The virtual output (clock) stays for the host build, the tests and `NOAUDIO`; AHI is the
+    other sink. Elapsed time, `STMs` at a track boundary and `STMu` follow the bytes **played**, not the bytes
+    handed over (AHI is about 0.6 s ahead);
+  - AHI: three blocks of about 0.2 s (32 KB, size defined in one place) queued and linked (`ahir_Link`), each
+    block carrying its rate and sample type, never spanning two tracks; the conversion (byte swap of
+    little-endian streams, `SWAP`) done by the core while copying into the block (unit tested); the AHI reply
+    port's signal added to the main wait; stop, flush and seek abort the queued blocks (sound cut at once);
+    pause through `CMD_STOP`/`CMD_START` (to check with AHI 6); 16-bit PCM (other sizes refused for now, 1.7);
+  - options: `UNIT=n` (AHI unit, 0 by default), `NOAUDIO` (virtual output), `SWAP` (swaps left and right, off by
+    default: for an AHI driver that swaps them, as `paula.audio` does in WinUAE, see 0.5); AHI missing: error
+    message, return code 20.
+- **Sub-steps**: 1.4a the sink interface with the virtual output only, no change of behaviour (`make test` and the
+  `OUTPUT` comparisons unchanged); 1.4b the AHI sink, checked automatically through the "Filesave" driver
+  (file compared with the counter pattern: byte order, left/right, content) and unit tests with a fake AHI
+  (blocks, track boundary, played time, `STMs`/`STMu`, stop, pause); 1.4c listening (Toccata, then Paula; test
+  tones from LMS, a whole track), LMS timing criteria of 1.2, no leak, 2 KB stack, and CPU load with Paula on a
+  slow 68020 profile of WinUAE (created then, see 0.4).
 - **Criterion**: correct test tones (440 Hz at the right pitch, left/right in the right place, no noise); a whole
   track without crackling; CPU load measured with Paula on the slow profile (0.4).
 - **Test**: WinUAE with both AHI drivers of step 0.5, Paula first (Amiga chipset, the output of Amigas without a
