@@ -114,7 +114,8 @@ belongs to the task that opened it; packets serialised field by field; buffers a
 - **Prerequisite**: 0.5 (AHI in the emulated Amiga).
 - **Criterion**: correct test tones (440 Hz at the right pitch, left/right in the right place, no noise); a whole
   track without crackling.
-- **Test**: WinUAE, then the real machine.
+- **Test**: WinUAE with both AHI drivers of step 0.5, Toccata (16-bit card) and Paula (Amiga chipset, for
+  Amigas without a sound card), then the real machine.
 
 ## 1.5 Commands and volume ⬜
 

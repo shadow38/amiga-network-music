@@ -52,9 +52,15 @@ Back to the [plan](README.md).
 ## 0.5 AHI in the emulated Amiga ⬜
 
 - **Goal**: be able to test audio output (step 1.4) in WinUAE.
-- **Content**: the AHI package (Aminet) installed in the emulated Amiga, WinUAE's audio driver, AHI mode set in the
-  preferences; notes for the real sound card.
-- **Criterion**: an AHI test program (or `Play16` on a WAV file) plays a correct sound.
+- **Content**: the AHI package (Aminet) installed in the emulated Amiga, AHI mode set in the preferences; notes for
+  the real sound card. Two drivers, both kept for the tests (decided 2026-10-18):
+  - **Paula** (`paula.audio`, Amiga chipset): what an Amiga without a sound card plays; 8 bits per channel
+    (14 bits with AHI's combined modes), about 28 kHz at most with a 15 kHz screen mode (AHI resamples 44.1 kHz
+    down), mixing done by the CPU;
+  - **Toccata** (Zorro II card emulated by WinUAE, `toccata.audio` from the AHI package): a real 16-bit sound card,
+    up to 48 kHz stereo, close to the target (an AHI sound card).
+- **Criterion**: an AHI test program (or `Play16` on a WAV file) plays a correct sound, with each of the two
+  drivers.
 - **Prerequisite of**: 1.4.
 
 ## 0.6 Host-side tests ✅ (2026-10-18)
