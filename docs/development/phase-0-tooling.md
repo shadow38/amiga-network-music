@@ -51,7 +51,7 @@ Back to the [plan](README.md).
   - a versioned configuration template in `winuae/`, with machine-specific paths kept in a local, unversioned file.
 - **Criterion**: the configuration boots, `bsdsocket.library` is available, amisqueeze connects to the server.
 
-## 0.5 AHI in the emulated Amiga ⬜
+## 0.5 AHI in the emulated Amiga ✅ (2026-10-18)
 
 - **Goal**: be able to test audio output (step 1.4) in WinUAE.
 - **Content**: the AHI package (Aminet) installed in the emulated Amiga, AHI mode set in the preferences; notes for
@@ -66,6 +66,24 @@ Back to the [plan](README.md).
     Pi 4) cannot be emulated: tested on the real machine (1.9).
 - **Criterion**: an AHI test program (or `Play16` on a WAV file) plays a correct sound, with each of the two
   drivers.
+- **Done**: AHI 6.0 from Aminet (`m68k-amigaos-ahiusr` and `m68k-amigaos-ahidrv`: `ahi.device` 6.6,
+  `paula.audio` 4.30, `toccata.audio` 4.7), copied by hand as its readme describes (AHI 6 has no installer);
+  `toccata.audio` needs `toccata.library` (v12, MacroSystem, Aminet `util/libs/toclib12`); the AHI 6 preferences
+  need MUI (`muimaster.library` v19, MUI 3.8 from Aminet); the `emu10kx` driver (PCI card) is left out, otherwise
+  the preferences complain about `openpci.library`. Toccata emulated by WinUAE (`toccata=true`), Paula stereo
+  separation set to 100 % (`sound_stereo_separation=10`; the default mixes the channels). Test sound: 16-bit
+  big-endian PCM sent to `AUDIO:` (AHI's handler, `Mount SYS:Storage/DOSDrivers/AUDIO`): 440 Hz on both sides,
+  then 1 kHz on the left only, then on the right only.
+- **Validated**, by ear, against a left/right reference played by the host:
+  - Toccata 16 bit stereo++ at 44.1 kHz: correct;
+  - Paula through AHI (14 bit and 8 bit stereo++ at 27,429 Hz, the maximum with a 15 kHz screen mode): correct
+    sound, **left and right swapped**; Paula played directly through `audio.device` (channels 0 and 3 left, 1 and
+    2 right) is correct, so the swap comes from `paula.audio`, not from the emulation: to check on a real Amiga
+    (1.9);
+  - "stereo" modes without "++" put each sound entirely on one side: a stereo stream sent at the centre plays one
+    channel only, on one side. amisqueeze needs a **stereo++** mode (1.4).
+  - The `filesave.audio` driver ("Filesave" modes) writes what AHI plays to a file (WAV, AIFF…): a way to check
+    the AHI output of 1.4 without listening.
 - **Prerequisite of**: 1.4.
 
 ## 0.6 Host-side tests ✅ (2026-10-18)

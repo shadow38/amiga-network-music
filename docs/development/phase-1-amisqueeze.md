@@ -111,9 +111,11 @@ belongs to the task that opened it; packets serialised field by field; buffers a
 - **Goal**: hear the sound, and hear it right.
 - **Content**: `ahi.device`, double-buffered `CMD_WRITE`, `AHIST_S16S`; byte swapping when the stream is
   little-endian; honour the sample size, rate and channel count announced by `strm`. Only `ahi.device` features
-  of AHI 4 (works with AHI 4.x and 6.x). User guide: set the AHI mode to the stream's rate (44.1 kHz for LMS) to
-  avoid resampling.
-- **Prerequisite**: 0.5 (AHI in the emulated Amiga).
+  of AHI 4 (works with AHI 4.x and 6.x). User guide: a **stereo++** mode (a plain "stereo" mode plays a stereo
+  stream on one side only, seen in 0.5), at the stream's rate when the driver allows it (44.1 kHz for LMS) to
+  avoid resampling; a warning at start-up if the unit's mode cannot pan (to check: reading the unit's mode
+  through the device API). Automated check of what reaches AHI with the "Filesave" driver (WAV file).
+- **Prerequisite**: 0.5 (AHI in the emulated Amiga) ✅.
 - **Criterion**: correct test tones (440 Hz at the right pitch, left/right in the right place, no noise); a whole
   track without crackling; CPU load measured with Paula on the slow profile (0.4).
 - **Test**: WinUAE with both AHI drivers of step 0.5, Paula first (Amiga chipset, the output of Amigas without a

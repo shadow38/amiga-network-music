@@ -45,18 +45,19 @@ success criterion and a way to check it.
 | 0.2 Test LMS server | ✅ 2026-10-18 |
 | 0.3 Reference player | ✅ 2026-10-18 |
 | 0.4 WinUAE test configuration | 🔶 provisional (networking, no AHI) |
-| 0.5, 0.8 | ⬜ |
+| 0.5 AHI in the emulated Amiga (Paula, Toccata) | ✅ 2026-10-18 |
+| 0.8 | ⬜ |
 | 0.6 Host-side tests (`make test`) | ✅ 2026-10-18 |
 | 0.7 Automated runs in WinUAE | 🔶 serial shell working |
 | 1.1 amisqueeze: control connection | ✅ 2026-10-18 |
 | 1.1b amisqueeze: default options (`ENV:amisqueeze.prefs`) | ✅ 2026-10-18 |
 | 1.2 amisqueeze: receiving the stream (virtual output) | ✅ 2026-10-18 |
 | 1.3 amisqueeze: output to a file | ✅ 2026-10-18 |
-| **1.4 amisqueeze: AHI audio output** | ⬜ **next step** (needs 0.5) |
+| **1.4 amisqueeze: AHI audio output** | ⬜ **next step** |
 | 1.5 to 1.10 | ⬜ |
 | 2.1 to 2.7 amilms | ⬜ |
 | 3.1 Licence and user documentation | 🔶 licence: MIT |
 | 3.2 to 3.3 release | ⬜ |
 
 Phase 0 moves forward as needed: a tooling step is done when a step of phase 1 or 2 needs it. Phases 1 and 2 can
-progress in parallel; the current priority is amisqueeze (1.4 with AHI, which needs 0.5).
+progress in parallel; the current priority is amisqueeze (1.4, AHI audio output).
