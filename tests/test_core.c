@@ -577,7 +577,7 @@ static void test_connect_failure(void)
 static void test_not_pcm(void)
 {
     struct player p;
-    char fmt[7] = { '1', 'f', '?', '?', '?', '?', 10 };     /* FLAC: not decoded yet */
+    char fmt[7] = { '1', 'm', '?', '?', '?', '?', 10 };     /* MP3: not decoded yet */
 
     setup(&p, "Amiga");
     CHECK(slim_connect(&p, 0));
@@ -1336,12 +1336,12 @@ static void test_audio_volume_pause(void)
 /* "Widening" decoder, for the tests only: each byte of input becomes a 16-bit little-endian sample
  * ((byte - 128) * 256), so the output is twice the input. With raw PCM, input and output have the same size and a
  * position of the stream used for the output (or the reverse) would go unnoticed; here it shows. */
-static int widen_start(struct decoder *d, const struct pcm_format *in, struct pcm_format *out)
+static int widen_start(struct decoder *d, const struct pcm_format *in)
 {
-    out->rate = in->rate;
-    out->channels = in->channels;
-    out->sample_bytes = 2;
-    out->big_endian = 0;
+    d->out.rate = in->rate;
+    d->out.channels = in->channels;
+    d->out.sample_bytes = 2;
+    d->out.big_endian = 0;
     d->in_frame = in->channels;             /* one byte per sample */
     return 1;
 }
@@ -1373,6 +1373,11 @@ static uint32_t widen_run(struct decoder *d, struct ring *r, uint32_t avail, int
     return 2 * n;
 }
 
+static void widen_stop(struct decoder *d)
+{
+    (void)d;
+}
+
 static uint32_t widen_input_for(const struct decoder *d, uint32_t out)
 {
     (void)d;
@@ -1385,8 +1390,14 @@ static uint32_t widen_buffered(const struct decoder *d)
     return 0;
 }
 
-static const struct decoder_ops decoder_widen = { "widen", widen_start, widen_run, widen_input_for,
-                                                  widen_buffered };
+static int widen_finished(const struct decoder *d)
+{
+    (void)d;
+    return 1;
+}
+
+static const struct decoder_ops decoder_widen = { "widen", widen_start, widen_stop, widen_run,
+                                                  widen_input_for, widen_buffered, widen_finished };
 
 /* What the widening decoder makes of n bytes */
 static void widen(uint8_t *dst, const uint8_t *src, uint32_t n)

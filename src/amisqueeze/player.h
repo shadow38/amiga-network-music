@@ -73,14 +73,6 @@ enum output_state {
 
 #define MAX_TRACKS 4
 
-/* PCM format of a track, announced by strm s */
-struct pcm_format {
-    uint32_t rate;                      /* Hz */
-    uint8_t  channels;                  /* 1 or 2 */
-    uint8_t  sample_bytes;              /* 1 to 4 (8 to 32 bits) */
-    uint8_t  big_endian;
-};
-
 #define OUT_START_UNKNOWN UINT64_MAX
 
 struct track {

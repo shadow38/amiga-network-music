@@ -152,20 +152,28 @@ static int send_setd_name(struct player *p)
 /* PCM sample rates by strm code '0'..'9' (squeezelite pcm.c) */
 static const uint32_t pcm_rates[10] = { 11025, 22050, 32000, 44100, 48000, 8000, 12000, 16000, 24000, 96000 };
 
-/* PCM format of a strm s (format 'p'); 0 if the format is not supported */
-static int parse_pcm_format(const uint8_t *pkt, struct pcm_format *f)
+/* Format and decoder of a strm s; NULL if the format is not supported. Raw PCM ('p') comes with its parameters;
+ * FLAC ('f') carries them in its own header (the decoder reads them there). */
+static const struct decoder_ops *parse_format(const uint8_t *pkt, struct pcm_format *f)
 {
     int size = pkt[7] - '0' + 1;            /* '0'..'3' = 8, 16, 24, 32 bits */
     int rate = pkt[8] - '0';
     int channels = pkt[9] - '0';
 
+    if (pkt[6] == 'f') {
+        f->rate = 0;
+        f->channels = 2;
+        f->sample_bytes = 2;
+        f->big_endian = (uint8_t)host_big_endian();
+        return &decoder_flac;
+    }
     if (pkt[6] != 'p' || size < 1 || size > 4 || rate < 0 || rate > 9 || channels < 1 || channels > 2)
-        return 0;
+        return NULL;
     f->rate = pcm_rates[rate];
     f->channels = (uint8_t)channels;
     f->sample_bytes = (uint8_t)size;
     f->big_endian = pkt[10] == '0';         /* '0' = big-endian, '1' = little-endian */
-    return 1;
+    return &decoder_pcm;
 }
 
 static void process_strm_s(struct player *p, const uint8_t *pkt, int len)
@@ -173,7 +181,7 @@ static void process_strm_s(struct player *p, const uint8_t *pkt, int len)
     uint32_t ip = get32(pkt + 24);
     uint32_t port = get16(pkt + 22);
     struct pcm_format fmt;
-    int supported = parse_pcm_format(pkt, &fmt);
+    const struct decoder_ops *ops = parse_format(pkt, &fmt);
     int autostart = pkt[5] - '0';
 
     if (ip == 0)                            /* 0 = the address of the control connection */
@@ -187,7 +195,7 @@ static void process_strm_s(struct player *p, const uint8_t *pkt, int len)
         msg_raw(pkt + 28, len - 28);        /* HTTP request, sent as is (not NUL-terminated) */
     }
     slim_send_stat(p, "STMf", 0);
-    if (!supported) {                       /* only raw PCM for now */
+    if (ops == NULL) {                      /* raw PCM and FLAC only for now */
         msg("amisqueeze: stream format %c not supported\n", pkt[6]);
         slim_send_stat(p, "STMn", 0);
         return;
@@ -199,8 +207,7 @@ static void process_strm_s(struct player *p, const uint8_t *pkt, int len)
             msg("stream: autostart %d (cont) handled as %d\n", autostart, autostart - 2);
         autostart -= 2;
     }
-    stream_start(p, ip, (uint16_t)port, pkt + 28, len - 28, (uint32_t)pkt[11] * 1024, autostart, &fmt,
-                 &decoder_pcm);
+    stream_start(p, ip, (uint16_t)port, pkt + 28, len - 28, (uint32_t)pkt[11] * 1024, autostart, &fmt, ops);
 }
 
 static void process_strm(struct player *p, const uint8_t *pkt, int len)

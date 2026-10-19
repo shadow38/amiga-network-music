@@ -15,21 +15,29 @@
 
 CC      := m68k-amigaos-gcc
 # No -m68020 by default: executables run on every CPU supported by AmigaOS 3.2 (68000+).
-CFLAGS  := -Os -Wall -Wextra -noixemul -fomit-frame-pointer
-LDFLAGS := -noixemul -s
+# One section per function, unused ones dropped at link time: third-party code brings functions we do not call
+# (dr_flac's float output would need soft-float helpers libnix does not link).
+CFLAGS  := -Os -Wall -Wextra -noixemul -fomit-frame-pointer -ffunction-sections -fdata-sections
+LDFLAGS := -noixemul -s -Wl,--gc-sections
 
 PROGS   := $(notdir $(wildcard src/*))
 
 # Per-program options
 # amisqueeze (slimproto player): targets 68020+ (WinUAE, PiStorm); no FPU until there is a decoder.
 # -Wno-pointer-sign: dos.library prototypes expect UBYTE * strings. -Werror=format: msg() format checks.
-amisqueeze_CFLAGS := -m68020 -Wno-pointer-sign -Werror=format
+amisqueeze_CFLAGS := -m68020 -Wno-pointer-sign -Werror=format -Ithird_party/dr_flac
+
+# Third-party code (third_party/): built without our warnings, in a file of its own
+THIRD_PARTY := dr_flac
+$(foreach t,$(THIRD_PARTY),$(eval obj/amisqueeze/$(t).o: CFLAGS += -w))
+$(foreach t,$(THIRD_PARTY),$(eval obj-host/amisqueeze/$(t).o: HOST_CFLAGS += -w))
 
 # Host build: the portable core with posix.c, for tests on the developer's machine. AddressSanitizer and
 # UndefinedBehaviorSanitizer stop the program at the first memory error or undefined behaviour.
 HOST_PROGS   := amisqueeze
 HOSTCC       ?= cc
-HOST_CFLAGS  := -O1 -g -Wall -Wextra -Werror=format -fno-omit-frame-pointer -fsanitize=address,undefined
+HOST_CFLAGS  := -O1 -g -Wall -Wextra -Werror=format -fno-omit-frame-pointer -fsanitize=address,undefined \
+                -Ithird_party/dr_flac
 HOST_LDFLAGS := -fsanitize=address,undefined
 
 amiga_srcs = $(filter-out src/$(1)/posix.c,$(wildcard src/$(1)/*.c))
@@ -62,7 +70,7 @@ endef
 $(foreach p,$(HOST_PROGS),$(eval $(call HOST_template,$(p))))
 
 # Unit tests: the portable core of amisqueeze on a fake platform (tests/stub_platform.c)
-TEST_CORE := player slimproto stream ring audio decoder
+TEST_CORE := player slimproto stream ring audio decoder flac dr_flac
 out-host/test_core: obj-host/tests/test_core.o obj-host/tests/stub_platform.o \
                     $(patsubst %,obj-host/amisqueeze/%.o,$(TEST_CORE))
 	@mkdir -p $(dir $@)
