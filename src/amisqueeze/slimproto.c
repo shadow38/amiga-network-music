@@ -7,8 +7,9 @@
  *   client -> server: 4-byte opcode, 4-byte length, then data.
  * Fields are serialised one by one (no packed structures), big-endian (network order), whatever the CPU.
  *
- * Plan steps 1.1 and 1.2: HELO, STAT, player name (setd), PCM streams (strm s, handled by stream.c), stop,
- * flush, pause and unpause; RESP (stream response headers) and DSCO (stream disconnection).
+ * HELO (with the formats decoded here: pcm, flc and mp3 as decided at start-up), STAT, player name (setd),
+ * streams (strm s: raw PCM, FLAC, MP3, handled by stream.c and the decoders), stop, flush, pause and unpause,
+ * volume (audg); RESP (stream response headers) and DSCO (stream disconnection).
  */
 #include <string.h>
 

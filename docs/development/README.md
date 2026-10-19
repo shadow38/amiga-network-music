@@ -44,11 +44,11 @@ success criterion and a way to check it.
 | 0.1 Toolchain | ✅ 2026-10-18 |
 | 0.2 Test LMS server | ✅ 2026-10-18 |
 | 0.3 Reference player | ✅ 2026-10-18 |
-| 0.4 WinUAE test configuration | 🔶 provisional (networking, no AHI) |
+| 0.4 WinUAE test configuration | 🔶 local profiles (slow 68020, fast JIT), no versioned template |
 | 0.5 AHI in the emulated Amiga (Paula, Toccata) | ✅ 2026-10-18 |
-| 0.8 | ⬜ |
 | 0.6 Host-side tests (`make test`) | ✅ 2026-10-18 |
-| 0.7 Automated runs in WinUAE | 🔶 serial shell working |
+| 0.7 Automated runs in WinUAE | 🔶 serial shell and scenarios, local only |
+| 0.8 Source-level debugging (optional) | ⬜ |
 | 1.1 amisqueeze: control connection | ✅ 2026-10-18 |
 | 1.1b amisqueeze: default options (`ENV:amisqueeze.prefs`) | ✅ 2026-10-18 |
 | 1.2 amisqueeze: receiving the stream (virtual output) | ✅ 2026-10-18 |
@@ -66,8 +66,9 @@ success criterion and a way to check it.
 | 2.1 to 2.7 remote: LMS | ⬜ |
 | 2.8 to 2.11 remote: Music Assistant | ⬜ after version 0.2 |
 | 2.12 remote: MPD | ⬜ idea, after Music Assistant |
-| 3.1 Licence and user documentation | 🔶 licence: MIT |
-| 3.2 to 3.3 release | ⬜ |
+| 3.1 Licence and user documentation | 🔶 licence: MIT; user guide kept up to date |
+| 3.2 Aminet archive | ⬜ |
+| 3.3 Public versions | 🔶 0.1 and 0.2 published (tags, GitHub releases); CI to decide |
 | 3.4 Setup guides: minimal server, the Amiga on the network | ⬜ before 1.0 |
 
 Phase 0 moves forward as needed: a tooling step is done when a step of phase 1 or 2 needs it. Phases 1 and 2 can
@@ -76,6 +77,22 @@ current priority is amisqueeze for LMS towards version 0.3: MP3 is done (1.8c, 2
 (1.9) or the finishing touches (1.10), to agree with the user.
 Music Assistant (0.9, 1.7b, 2.8 to 2.11) was put after 0.2 (decided 2026-10-19): it is no longer waiting on a
 release, when to start it is still to be decided.
+
+## Open points (review of 2026-10-19)
+
+Announced in the plan, not done, and not dropped in writing either: to decide with the user.
+
+- **AHI mode warning** (1.4): a warning at start-up when the unit's mode cannot pan (a plain "stereo" mode plays
+  one side only). Not implemented: today the user guide alone says to pick a "stereo++" mode.
+- **64-bit multiplies in dr_flac** (1.8): the planned check of the generated assembly (a 64-bit `muls.l` in the
+  hot loop fails the build) was not written. dr_flac's assembly holds such multiplies (481, most in the decoding
+  of the residuals); whether 16-bit audio goes through them is to check. They are emulated, slowly, by the 68060's
+  CPU library: to measure on a 68060 if one is at hand (1.9).
+- **`BUFFER` option** (1.2: "may come with step 1.6"): the 1 MB stream buffer is fixed; not done in 1.6.
+- **MP3 gapless** (1.8c): the encoder delay and the LAME header frame are not trimmed (about 50 ms of silence at
+  the start of each MP3 file); no step yet.
+- **Continuous integration** (3.3): GitHub Actions (host tests on each push, then the Amiga build for releases),
+  discussed before release 0.1; no step yet.
 
 ## Ideas outside the phases (noted 2026-10-19)
 

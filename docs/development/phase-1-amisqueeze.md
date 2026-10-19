@@ -74,6 +74,8 @@ belongs to the task that opened it; packets serialised field by field; buffers a
     again, stop; no error in `server.log`;
   - WinUAE: no memory leak (same free memory after three play/stop cycles), and still working with a 2 KB stack;
     Amiga executable: 21,488 bytes.
+- The `BUFFER` option mentioned in Content did not come with 1.6: an open point of the
+  [plan](README.md#open-points-review-of-2026-10-19).
 
 ## 1.3 Output to a file ✅ (2026-10-18)
 
@@ -181,7 +183,8 @@ belongs to the task that opened it; packets serialised field by field; buffers a
     of the CPU is left on such a machine: to keep in mind for local FLAC decoding (1.8).
 - **Validated with the user** (2026-10-19): Paula's crackles left to the real machine (1.9); the CPU load accepted
   for now (lighter AHI settings to look at in 1.8 if decoding does not fit); `SWAP` stays a manual option until
-  the real machine shows whether its channels are swapped too (1.9).
+  the real machine shows whether its channels are swapped too (1.9). Not done: the start-up warning for a mode that
+  cannot pan (Content above); an open point of the [plan](README.md#open-points-review-of-2026-10-19).
 - **Criterion**: correct test tones (440 Hz at the right pitch, left/right in the right place, no noise); a whole
   track without crackling; CPU load measured with Paula on the slow profile (0.4).
 - **Test**: WinUAE with both AHI drivers of step 0.5, Paula first (Amiga chipset, the output of Amigas without a
@@ -273,7 +276,7 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   memory. Test configuration: `win32.iconified_pause=false`, `win32.inactive_pause=false` (an emulation paused
   by a stray key had stopped an earlier run).
 
-## 1.7 Other PCM formats and Music Assistant ⬜
+## 1.7 Other PCM formats and Music Assistant 🔶 (1.7a done, 1.7b after version 0.2)
 
 - **Content**: WAV and AIFF headers (format `?` + header parsing, or explicit values); 48 kHz; mono; 8 and 24 bits
   if the server sends them. Music Assistant: the player's `wav` output codec (MA offers no raw PCM); check what MA
@@ -304,7 +307,10 @@ belongs to the task that opened it; packets serialised field by field; buffers a
 
 - **Goal**: stop depending on server-side conversion (a regular LMS has no MP3 → PCM rule).
 - **Content**: FLAC then MP3 decoders in portable C (lightweight, MIT-compatible libraries, e.g. dr_flac and
-  minimp3), tested on the host first; advertised in `HELO` only once validated.
+  minimp3), tested on the host first; advertised in `HELO` only once validated. (Written before the design
+  further down; where they differ, the design and what was done prevail: no `mpega.library` in `amisqueeze`, which
+  leaves MP3 to the server; no `CPU` variable in the Makefile, but a second set of flags for `amisqueeze.fpu`; the
+  64-bit `muls.l` check below was not written, see the open points of the [plan](README.md#open-points-review-of-2026-10-19).)
   - **Decoder interface** (`decoder.h`): compressed bytes in, 16-bit PCM out; integers and pointers only across
     it, so a decoder can be built with other CPU options than the rest of the program.
   - **FLAC**: one 68020 build for every CPU (integer only, no FPU needed). Watch the 32×32→64 multiply

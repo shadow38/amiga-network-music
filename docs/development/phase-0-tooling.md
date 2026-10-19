@@ -19,16 +19,20 @@ Back to the [plan](README.md).
   Ports: 3483/tcp (players), 9000/tcp (web UI + audio streams; set `HTTP_PORT` if the port is taken), 9090/tcp
   (CLI). With `bsdsocket_emu`, the emulated Amiga uses the host's network stack: a server reachable from the host
   is reachable from the Amiga.
-- **MP3 to PCM conversion**: LMS 9.1 has no `mp3 pcm` rule (regular players decode MP3 themselves). As long as
-  amisqueeze only advertises `pcm`, add one in a `custom-convert.conf` (LMS root directory, or the root of a
-  plugins directory), modelled on the `ogg pcm` rule and using the `sox` shipped with LMS:
+- **MP3 to PCM conversion**: LMS 9.1 has no `mp3 pcm` rule (regular players decode MP3 themselves). The test
+  server needs one for every build that does not decode MP3 itself (`amisqueeze`, or `amisqueeze.fpu` on a CPU too
+  slow for it, 1.8c), in a `custom-convert.conf` (LMS root directory, or the root of a plugins directory),
+  modelled on the `ogg pcm` rule and using the `sox` shipped with LMS:
 
   ```
   mp3 pcm * *
-  	[sox] -q -t mp3 $FILE$ -t raw -r 44100 -c 2 -2 -s -
+  	# FT:{START=trim %s}
+  	[sox] -q -t mp3 $FILE$ -t raw -c 2 -2 -s - $START$
   ```
 
   Without it, `server.log` says "Couldn't create command line for mp3 playback" and the player receives nothing.
+  No `-r 44100` (unlike `ogg pcm`): LMS announces the source file's rate in `strm`, so a forced rate played 48 kHz
+  files 9 % too fast (found in 1.4c); `FT:{START=trim %s}` lets LMS start within a track (seek).
 - **Criterion**: web UI reachable, CLI answering `version ?`, library scanned.
 - **Validated with**: LMS 9.1.1.
 
@@ -52,6 +56,13 @@ Back to the [plan](README.md).
 - **Slow profile, local** (2026-10-19, for step 1.4c): the provisional configuration started with the CPU
   settings overridden (`-s cpu_compatible=true -s cpu_speed=real -s cpu_multiplier=4`, a 68020 at about
   28 MHz, as a typical A1200 accelerator); no versioned template yet.
+- **Fast profile, local** (2026-10-19, for steps 1.8b and 1.8c): not a 68040 (its CPU library is missing from the
+  test installation) but a 68020 with WinUAE's JIT compiler, 32-bit addressing
+  and no cycle-exact emulation (`cpu_24bit_addressing=false`, `cachesize=16384`, `cycle_exact=false`,
+  `cpu_compatible=false`, `cpu_speed=max`): about 230 times the slow profile, the order of a PiStorm. For
+  `amisqueeze.fpu`, a 68882 (`fpu_model=68882`) and the JIT's FPU compiler (`compfpu=true`; without it FPU
+  instructions are interpreted: MP3 at 1.8x real time instead of 74x). Speeds measured there are not those of a
+  real machine (1.9). No versioned template yet.
 - **Criterion**: the configuration boots, `bsdsocket.library` is available, amisqueeze connects to the server.
 
 ## 0.5 AHI in the emulated Amiga ✅ (2026-10-18)
@@ -92,6 +103,9 @@ Back to the [plan](README.md).
 
 ## 0.6 Host-side tests ✅ (2026-10-18)
 
+Since then, the core grew (stream, ring buffer, audio output, decoders) and the tests with it, at each step of
+phase 1; the figures below are those of 0.6.
+
 - **Goal**: test without an emulator whatever can be tested that way.
 - **Content**:
   - amisqueeze split into a **portable core** (`player.c`, `slimproto.c`, `player.h`: standard C, no Amiga or
@@ -118,8 +132,11 @@ Back to the [plan](README.md).
   background (`Run NM:amisqueeze >T:log …`), `Status`, `Break <n>`, reading the log. Pitfalls: send one character at
   a time (no flow control, characters get lost otherwise); the console wraps the prompt in control sequences
   (`CSI 20h`, `SI`) to filter out.
-- **To do**: start WinUAE from the host and wait for the shell; a generic version of the host script in
-  `tools/`; scripted test scenarios.
+- **Done since, local setup only** (2026-10-19): a script that restarts WinUAE in a given profile and waits for the
+  shell; scripted scenarios for the steps (commands through LMS's CLI, robustness through a TCP relay, `OUTPUT`
+  comparisons, listening runs), all outside the repository.
+- **To do**: a generic version of the host scripts in `tools/` (the serial shell, the restart, a scenario), so
+  that the criterion holds from the repository alone.
 - **Criterion**: one command on the host starts WinUAE, waits, runs a scenario and prints its result.
 
 ## 0.8 Source-level debugging ⬜ (optional)
@@ -127,15 +144,15 @@ Back to the [plan](README.md).
 - **Goal**: breakpoints and stepping in C.
 - **Approach**: `bgdbserver` (Aminet `dev/debug/bgdbserver`) in the emulated Amiga, WinUAE's emulated networking,
   `m68k-amigaos-gdb` (`target remote …:2345`) driven by VS Code (cpptools); build with `-g`.
-- **Criterion**: stops on a breakpoint in `main.c`, variables readable.
+- **Criterion**: stops on a breakpoint in a function of amisqueeze (e.g. in `player.c`), variables readable.
 
 ## 0.9 Test Music Assistant server ⬜ (after version 0.2)
 
 - **Goal**: a Music Assistant server reachable from the emulated Amiga, for the Music Assistant back end of the
-  remote (2.8 to 2.11) and for amisqueeze as a Music Assistant player (1.7).
+  remote (2.8 to 2.11) and for amisqueeze as a Music Assistant player (1.7b).
 - **Content**: any Music Assistant server will do (Docker image, Home Assistant add-on…), with a small local
   library and an access token for the API. To check: the server's ports (web UI and API, its slimproto port for
   players) and whether they collide with a test LMS on the same machine (both servers use 3483 for players: two
   addresses, or one server at a time).
 - **Criterion**: web UI reachable, API answering with the token, squeezelite (0.3) playing a track from it.
-- **Prerequisite of**: 1.7 (Music Assistant part), 2.8.
+- **Prerequisite of**: 1.7b, 2.8.

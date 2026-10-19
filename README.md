@@ -81,8 +81,9 @@ Note that in the `amigadev/crosstools` image, `gcc` is the Amiga cross-compiler:
 
 ```
 src/<prog>/           C sources, one directory per program -> out/<prog>
-src/amisqueeze/       portable core (player.c, slimproto.c, player.h), system services behind platform.h:
-                      amiga.c (AmigaOS, Amiga build only), posix.c (Linux/POSIX, host build only)
+src/amisqueeze/       portable core (player, slimproto, stream, ring, audio, decoders: decoder, flac, mp3, bench),
+                      system services behind platform.h: amiga.c (AmigaOS, Amiga build only), posix.c
+                      (Linux/POSIX, host build only)
 tests/                unit tests of the core (test_core.c on stub_platform.c), fake server (fake_server.py),
                       test files (data/: FLAC and MP3 made from the signals of flac_data.py)
 third_party/          decoders by others, unmodified, with their version and licence: dr_flac, minimp3
@@ -96,6 +97,8 @@ Makefile              build (m68k-amigaos-gcc must be in the PATH; HOSTCC for th
 tools/amiga-make.sh   runs make with whichever toolchain is available (see "Building")
 tools/check-saves.py  checks the generated assembly (safeguard against a gcc bug, see "Building")
 tools/pcm-compare.py  compares the PCM written by amisqueeze (OUTPUT option) with a reference, byte by byte
+tools/make-dist.py    builds the release archive (make dist)
+tools/bin2c.py        turns a file into a C array (the built-in FLAC and MP3 samples of the speed measurement)
 ```
 
 `obj/`, `out/`, `obj-host/`, `out-host/` and `.sdk/` are generated (ignored by `.gitignore`).
@@ -154,9 +157,10 @@ make test HOSTCC=clang            # another native compiler (untested)
 ```
 
 `make test` needs no LMS server: the unit tests run the core on a fake platform (`tests/stub_platform.c`), and
-`tests/fake_server.py` plays a slimproto server on localhost (handshake, `strm t`, renaming, disconnection and
-reconnection, Ctrl-C, argument errors). The Amiga build must still be checked in WinUAE: the platform layers
-differ.
+`tests/fake_server.py` plays a slimproto server and its HTTP streams on localhost (handshake, renaming,
+disconnection and reconnection, Ctrl-C, argument errors; streams played, paused, stopped, held, cut; the `OUTPUT`
+file compared with what was sent; FLAC and MP3 test files decoded from `tests/data/`, back to back with raw PCM).
+The Amiga build must still be checked in WinUAE: the platform layers differ.
 
 ## VS Code
 
@@ -176,15 +180,18 @@ Tasks (`.vscode/tasks.json`, calling `tools/amiga-make.sh`, through WSL on Windo
 amisqueeze SERVER=192.168.1.10 NAME=Amiga VERBOSE
 ```
 
-Options (`SERVER`, `PORT`, `NAME`, `MAC`, `OUTPUT`, `UNIT`, `NOAUDIO`, `SWAP`, `FLAC`, `BENCH`, `VERBOSE`) and default options
-stored in `ENV:amisqueeze.prefs` are
-described in the **[user guide](docs/user-guide.md)**.
+Options (`SERVER`, `PORT`, `NAME`, `MAC`, `OUTPUT`, `UNIT`, `NOAUDIO`, `SWAP`, `FLAC`, `MP3`, `BENCH`,
+`VERBOSE`), default options stored in `ENV:amisqueeze.prefs`, and the choice between the two executables
+(`amisqueeze`, `amisqueeze.fpu`) are described in the **[user guide](docs/user-guide.md)**.
 
-Current state (steps 1.1 to 1.5 of the plan): control connection, player name, default options, and 16-bit PCM
-streams received into a 1 MB buffer and played through AHI (progress reported to LMS, gapless next track, pause,
-seek, stop, volume and mute from LMS), or consumed by a virtual output (`NOAUDIO`, host build) and optionally written to a file (`OUTPUT`) to
-check it byte by byte. Listening tests done in WinUAE (1.4c); on a 28 MHz 68020, sound through AHI and Paula takes
-about two thirds of the CPU (AHI's mixing, amisqueeze itself a few percent). What comes next is in the
+Current state (steps 1.1 to 1.8 of the plan): control connection, player name, default options; streams received
+into a 1 MB buffer and played through AHI (progress reported to LMS, gapless next track, pause, seek, stop, volume
+and mute from LMS), or consumed by a virtual output (`NOAUDIO`, host build) and optionally written to a file
+(`OUTPUT`) to check it byte by byte; raw PCM of 8 to 32 bits, mono or stereo, converted to 16 bits for AHI; FLAC
+decoded on the Amiga (dr_flac) and MP3 too in `amisqueeze.fpu` (minimp3), when a start-up measure shows the CPU is
+fast enough; recovery from a slow or broken stream and from a server restart. Tested in WinUAE (listening, one hour
+of playback, Ctrl-C at every moment); on a 28 MHz 68020, sound through AHI and Paula takes about two thirds of the
+CPU (AHI's mixing, amisqueeze itself a few percent at full volume). What comes next is in the
 [amisqueeze plan](docs/development/phase-1-amisqueeze.md).
 
 Protocol references: squeezelite (`slimproto.c`, `slimproto.h`, `stream.c`, `pcm.c`,
@@ -219,4 +226,4 @@ with `-g`.
 MIT, see [LICENSE](LICENSE). amisqueeze is written from scratch from the protocol description; squeezelite and
 LMS (GPL) are used as references for the protocol's behaviour, not as a source of code. Third-party code, in
 `third_party/` (each with a README giving its origin and licence): dr_flac (FLAC decoding), public domain or MIT No
-Attribution.
+Attribution; minimp3 (MP3 decoding), CC0 1.0 (public domain dedication).

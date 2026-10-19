@@ -22,7 +22,8 @@ Amiga.
 On the Amiga:
 
 - AmigaOS 3.x, 68020 or better (from a plain 68020 accelerator to a PiStorm);
-- about 1.1 MB of free memory (1 MB stream buffer, about 6 s of CD-quality audio);
+- about 1.1 MB of free memory (1 MB stream buffer, about 6 s of CD-quality audio), a little more for
+  `amisqueeze.fpu` when it decodes MP3 (about 60 KB: its decoder and a larger stack, which it sets up itself);
 - a TCP/IP stack providing `bsdsocket.library`: Roadshow, AmiTCP, AmiNetXDuo, or WinUAE's emulation
   (`bsdsocket_emu=true`) in an emulator;
 - for the sound: AHI (tested with 6.x; 4.x expected to work, not checked yet) and a driver: Paula's
@@ -177,6 +178,9 @@ Rules:
 |---|---|
 | `connected to the server` | the control connection is up; the player should appear in LMS |
 | `no server: give SERVER=<ip\|name>, or set it in ENV:amisqueeze.prefs` | no server on the command line nor in the default options |
+| `invalid MAC (expected xx:xx:xx:xx:xx:xx)` | the `MAC` option is not six hexadecimal pairs; amisqueeze stops |
+| `FLAC=…: expected AUTO, ON or OFF` (or `MP3=…`) | a wrong value for that option; amisqueeze stops |
+| `ENV:amisqueeze.prefs: …` | the default options cannot be read (unknown option, syntax error); amisqueeze stops |
 | `bsdsocket.library not found (is a TCP/IP stack running?)` | no TCP/IP stack started |
 | `server … not found` | the host name cannot be resolved |
 | `cannot connect: error N` | the server does not answer on that address and port; amisqueeze retries every 5 s |
@@ -190,6 +194,8 @@ Rules:
 | `MP3=ON: this build does not decode MP3 …` | `MP3=ON` given to `amisqueeze`: MP3 stays with the server |
 | `flac: … , track skipped` | a FLAC stream that cannot be decoded (not FLAC, no STREAMINFO, more than 2 channels): the next track follows |
 | `mp3: no MP3 frame found, track skipped` | an MP3 stream without a single MP3 frame: the next track follows |
+| `flac: not enough memory`, `mp3: not enough memory`, then `…: cannot decode this track, skipped` | not enough free memory for the decoder of that track: the next track follows |
+| `the FLAC decoding speed cannot be measured` (or MP3) | `BENCH` could not run the measure (not enough memory) |
 | `cannot open ahi.device unit N (is AHI installed? NOAUDIO plays without sound)` | AHI missing, or that unit cannot be opened; amisqueeze stops |
 | `not enough memory for the audio blocks` | the 3 audio blocks (96 KB) cannot be allocated; amisqueeze stops |
 | `cannot create <file>: error N` | the `OUTPUT` file cannot be created (missing directory, write-protected disk); amisqueeze stops. On a volume that is not mounted, AmigaDOS first asks for it to be inserted; this message follows a Cancel |

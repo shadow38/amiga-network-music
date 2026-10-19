@@ -17,10 +17,16 @@ Back to the [plan](README.md).
   version numbers (`$VER:`).
 - **Criterion**: the archive installs on a clean machine (WinUAE) and the programs work.
 
-## 3.3 Public versions ⬜
+## 3.3 Public versions 🔶
 
 - **Content**: Git version tags, release notes, public repository up to date.
 - **Criterion**: each published version matches a tag and release notes.
+- **Done**: amisqueeze 0.1 and 0.2 (2026-10-19), each a tag `amisqueeze-<version>` and a GitHub release (marked
+  as a pre-release) holding the zip of `make dist` (`tools/make-dist.py`: the executables, `LICENSE`, the README
+  and the user guide) and short notes approved by the user; between releases the version reads `<next>-dev`.
+  From 0.3 on, the zip holds both executables (`amisqueeze`, `amisqueeze.fpu`).
+- **To decide**: continuous integration with GitHub Actions (host tests on each push, then the Amiga build for
+  releases), discussed before 0.1; see the open points of the [plan](README.md#open-points-review-of-2026-10-19).
 
 ## 3.4 Setup guides: server and network (noted 2026-10-19) ⬜
 

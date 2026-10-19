@@ -4,7 +4,7 @@
 #   2. m68k-amigaos-gcc in the PATH: plain make;
 #   3. ../amiga-make.local.sh (next to the repository, outside Git), if present: same role as $AMIGA_MAKE;
 #   4. Docker: image $AMIGA_IMAGE (default amigadev/crosstools:m68k-amigaos-gcc10).
-# Usage: sh tools/amiga-make.sh [all|clean|sdk|<prog>]
+# Usage: sh tools/amiga-make.sh [all|clean|sdk|host|test|dist|<prog>]
 set -e
 
 cd "$(dirname "$0")/.."

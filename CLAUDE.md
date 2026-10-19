@@ -13,8 +13,9 @@ executables, `LICENSE`, `README.md`, the user guide) and short notes, made with 
 approved the notes; the `$VER:` date is the release date. Between releases the number reads `<next>-dev`, so that
 a build in between is not taken for the last release. 0.1 = first release (2026-10-19: AHI audio, volume,
 robustness, tested in WinUAE only); 0.2 = second release (2026-10-19: FLAC decoded on fast Amigas, 8/24/32-bit
-PCM, tested in WinUAE only), followed by 0.3-dev; the first public push of 2026-10-18 had no tag. The number appears in the
-`$VER:` string (`amiga.c`), in `Firmware=` of the `HELO` capabilities (`slimproto.c`) and in the user guide.
+PCM, tested in WinUAE only), followed by 0.3-dev; the first public push of 2026-10-18 had no tag. The number
+appears in the two `$VER:` strings (`amiga.c`: `amisqueeze` and `amisqueeze.fpu`), in `Firmware=` of the `HELO`
+capabilities (`slimproto.c`) and in the user guide.
 
 **Licence: MIT** (`LICENSE`, "Copyright (c) 2026 shadow38"), decided 2026-10-18. squeezelite and LMS are GPL:
 read them to **understand** the protocol and its expected behaviour (message layouts, when to send which state),
@@ -31,15 +32,15 @@ work, not checked). The WinUAE test configurations reproduce both kinds (step 0.
 Toccata a 16-bit reference.
 
 Decided (2026-10-18): two programs in this repository, one `src/<prog>/` directory each, shared code in
-`src/common/`:
+`src/common/` (to create with amilms; none yet):
 
 - **amisqueeze**: slimproto player with AHI output, for LMS (Music Assistant speaks slimproto too; decided
   2026-10-19: Music Assistant is tested only after version 0.2; 0.2 is out, when to start it is still to be
   decided, see the plan);
 - **amilms** (working name; **amiremote** proposed, to be decided by study step 2.0): remote control, one
   portable core with two server back ends behind a common interface, LMS text CLI (TCP 9090) first, then the
-  Music Assistant API (JSON over WebSocket, token), an MPD back end noted as an idea (step 2.12); a Shell front end first, then a GUI front end calling the same
-  core in the same program (not a GUI driving a CLI program). Decided 2026-10-19: study 2.0 (common interface, MA
+  Music Assistant API (JSON over WebSocket, token), an MPD back end noted as an idea (step 2.12); a Shell front
+  end first, then a GUI front end calling the same core in the same program (not a GUI driving a CLI program). Decided 2026-10-19: study 2.0 (common interface, MA
   feasibility, name) before any amilms code. Track search is one of its main goals (step 2.4). For Music
   Assistant, the existing Home Assistant client ami2ha already offers basic control (play/pause, next, volume, no
   search): noted in the phase 2 plan.
@@ -57,8 +58,10 @@ validated on 2026-10-19. Step 1.5 (volume from `audg`) validated on 2026-10-19. 
 Step 1.7a (8, 24 and 32-bit samples converted to 16 bits for AHI; LMS strips WAV/AIFF headers, files
 above 48 kHz not playable until FLAC decoding) done on 2026-10-19. Step 1.8 on the branch `decoding` (merged into
 `main` after each validated sub-step): 1.8a done (decoder stage, see below); 1.8b done (FLAC with dr_flac,
-`FLAC=AUTO|ON|OFF`, `BENCH`); release 0.2 published on 2026-10-19, then 0.3-dev; 1.8c done on 2026-10-19 (MP3 with minimp3 in `amisqueeze.fpu`, `MP3=AUTO|ON|OFF`).
-Next: 1.9 (real machine) or 1.10, to agree with the user.
+`FLAC=AUTO|ON|OFF`, `BENCH`); release 0.2 published on 2026-10-19, then 0.3-dev; 1.8c done on 2026-10-19 (MP3
+with minimp3 in `amisqueeze.fpu`, `MP3=AUTO|ON|OFF`). Next: 1.9 (real machine) or 1.10, to agree with the user.
+Documentation review of 2026-10-19: points announced in the plan but neither done nor dropped are listed under
+"Open points" in `docs/development/README.md`, for the user to decide (never implement them unasked).
 
 Step 1.8c (mp3.c, minimp3.c, `amisqueeze.fpu`): two Amiga executables from the same sources, `amisqueeze`
 (68020) and `amisqueeze.fpu` (`-m68881`, `AMISQUEEZE_FPU`; `AMISQUEEZE_MP3` compiles the MP3 decoder, also in the
@@ -113,15 +116,17 @@ amisqueeze state: control connection (step 1.1) validated on 2026-10-18 in WinUA
 `HELO` advertises `Model=squeezelite` (so LMS recognises it) and `ModelName=AmiSqueeze`. Observed `strm s` for an
 MP3 transcoded by LMS: format `p`, size `1` (16 bits), rate `3` (44.1 kHz), channels `2`, endianness `1`
 (**little-endian**: to be swapped for AHI on 68k), autostart `1`, stream address = the control connection's
-address, request `GET /stream.mp3?player=<mac> HTTP/1.0`. LMS 9.1 has no default `mp3 pcm` rule: a test server
-needs one (documented in the README and in plan step 0.2); a regular user's server won't have it, hence local MP3
-decoding later (step 1.8).
+address, request `GET /stream.mp3?player=<mac> HTTP/1.0`. LMS 9.1 has no default `mp3 pcm` rule: a regular
+user's server won't have it, hence local MP3 decoding (step 1.8c, `amisqueeze.fpu`); for the builds that leave MP3
+to the server, the rule is documented in the README and in plan step 0.2 (without `-r`, with `trim` for seeking).
+With `flc` and `mp3` advertised, LMS sends FLAC and MP3 files as they are (format `f`, `m`), WAV as PCM.
 
 ## Design choices (player)
 
-- **Portable core + platform layer** (step 0.6, 2026-10-18): `player.c`, `slimproto.c`, `player.h` are standard
-  C (`<stdint.h>`, no Amiga or POSIX header); everything system-related goes through `platform.h`, implemented by
-  `amiga.c` (Amiga build only) and `posix.c` (host build only). Keep the core free of system calls; keep the
+- **Portable core + platform layer** (step 0.6, 2026-10-18): every file of `src/amisqueeze/` but `amiga.c` and
+  `posix.c` (player, slimproto, stream, ring, audio, decoder, flac, mp3, bench) is standard C (`<stdint.h>`, no
+  Amiga or POSIX header); everything system-related goes through `platform.h`, implemented by `amiga.c` (Amiga
+  build only) and `posix.c` (host build only). Keep the core free of system calls; keep the
   platform layers thin. The main loop (timeouts, reconnection) lives in the core.
 - One task and one loop around `plat_wait()` (`WaitSelect()` on the Amiga: a `SocketBase` belongs to the task
   that opened it; `select()` on POSIX, SIGINT/SIGTERM without `SA_RESTART` = Ctrl-C).
