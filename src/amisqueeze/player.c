@@ -47,6 +47,80 @@ static int same_word(const char *s, const char *upper)
     return *s == '\0' && *upper == '\0';
 }
 
+static char upper_char(char c)
+{
+    return c >= 'a' && c <= 'z' ? (char)(c - 'a' + 'A') : c;
+}
+
+/* 1 if key (len characters, any case) is a keyword of the template ("NAME/K" gives NAME) */
+static int in_template(const char *template, const char *key, int len)
+{
+    const char *t = template;
+
+    while (*t) {
+        const char *word = t;
+        int i;
+
+        while (*t && *t != ',' && *t != '/')
+            t++;
+        if (t - word == len) {
+            for (i = 0; i < len && upper_char(key[i]) == word[i]; i++)
+                ;
+            if (i == len)
+                return 1;
+        }
+        while (*t && *t != ',')
+            t++;
+        if (*t == ',')
+            t++;
+    }
+    return 0;
+}
+
+int tooltypes_line(const char *template, const char *const *tooltypes, int n, char *line, int size)
+{
+    int pos = 0, i;
+
+    for (i = 0; i < n; i++) {
+        const char *tt = tooltypes[i], *eq, *value = NULL;
+        int key, need, quote = 0;
+
+        if (tt == NULL || tt[0] == '\0' || tt[0] == '(')
+            continue;                           /* empty, or disabled */
+        eq = strchr(tt, '=');
+        key = eq != NULL ? (int)(eq - tt) : (int)strlen(tt);
+        if (!in_template(template, tt, key))
+            continue;                           /* a Workbench ToolType (DONOTWAIT...) or WINDOW, QUIET */
+        need = key + 1;
+        if (eq != NULL) {
+            value = eq + 1;
+            if (strchr(value, '"') != NULL)
+                continue;                       /* cannot be quoted */
+            quote = value[0] == '\0' || strchr(value, ' ') != NULL;
+            need += 1 + (int)strlen(value) + (quote ? 2 : 0);
+        }
+        if (pos + need + 2 > size)
+            return 0;
+        memcpy(line + pos, tt, (size_t)key);
+        pos += key;
+        if (value != NULL) {
+            line[pos++] = '=';
+            if (quote)
+                line[pos++] = '"';
+            memcpy(line + pos, value, strlen(value));
+            pos += (int)strlen(value);
+            if (quote)
+                line[pos++] = '"';
+        }
+        line[pos++] = ' ';
+    }
+    if (pos + 2 > size)
+        return 0;
+    line[pos++] = '\n';                         /* ReadArgs parses a line */
+    line[pos] = '\0';
+    return 1;
+}
+
 int parse_decode_mode(const char *s)
 {
     if (same_word(s, "AUTO"))

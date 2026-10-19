@@ -1614,6 +1614,22 @@ static void test_ahi_mode(void)
     CHECK(audio_check_mode(2, &m) && strstr(stub_out, "a mono mode: the music will play in mono"));
 }
 
+/* Workbench start: an icon's ToolTypes turned into a command line for the template */
+static void test_tooltypes(void)
+{
+    static const char *const tt[] = {
+        "SERVER=192.168.1.10", "(NAME=Disabled)", "DONOTWAIT", "name=Living room", "QUIET",
+        "WINDOW=CON:0/20/640/120/amisqueeze", "verbose", "UNIT=1", "", "LOG=bad\"quote",
+    };
+    const char *template = "SERVER,PORT/N/K,NAME/K,LOG/K,UNIT/N/K,VERBOSE/S";
+    char line[128], tiny[16];
+
+    CHECK(tooltypes_line(template, tt, 10, line, sizeof(line)));
+    CHECK(!strcmp(line, "SERVER=192.168.1.10 name=\"Living room\" verbose UNIT=1 \n"));
+    CHECK(!tooltypes_line(template, tt, 10, tiny, sizeof(tiny)));             /* does not fit */
+    CHECK(tooltypes_line(template, tt, 0, line, sizeof(line)) && !strcmp(line, "\n"));
+}
+
 int main(void)
 {
     test_ring();
@@ -1655,6 +1671,7 @@ int main(void)
     test_decoder_audio_pause();
     test_decoder_virtual();
     test_ahi_mode();
+    test_tooltypes();
     printf("test_core: %d checks, %d failed\n", checks, failures);
     return failures ? 1 : 0;
 }

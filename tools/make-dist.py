@@ -33,6 +33,9 @@ def main():
              ("CHANGELOG.md", "CHANGELOG.md"), ("docs/user-guide.md", "user-guide.md")]
     if os.path.isfile(f"out/{prog}.fpu"):       # the FPU build, when the program has one
         files.insert(1, (f"out/{prog}.fpu", f"{prog}.fpu"))
+    for exe in (prog, f"{prog}.fpu"):           # their Workbench icons (tools/make-icon.py)
+        if os.path.isfile(f"out/{exe}.info"):
+            files.append((f"out/{exe}.info", f"{exe}.info"))
     if os.path.isdir("docs/images"):             # the user guide's images, at the same place relative to it
         files += [(f"docs/images/{n}", f"images/{n}") for n in sorted(os.listdir("docs/images"))]
     for src, _ in files:

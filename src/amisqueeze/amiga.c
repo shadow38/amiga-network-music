@@ -24,6 +24,11 @@
 #include <proto/timer.h>
 #include <proto/bsdsocket.h>
 #include <proto/ahi.h>
+#include <proto/icon.h>
+#include <proto/commodities.h>
+#include <libraries/commodities.h>
+#include <workbench/startup.h>
+#include <workbench/workbench.h>
 #include <utility/tagitem.h>
 #include <sys/filio.h>
 
@@ -96,6 +101,22 @@ static char msg_line[512];
 static BPTR log_file;
 static const char *log_name;
 
+/* Workbench start (plan step 1.10): libnix's start-up code sets _WBenchMsg (NULL from a Shell). It would open the
+ * console named by __stdiowin before main(); none here: amisqueeze opens its own once it has read its icon's
+ * ToolTypes (WINDOW, QUIET). */
+extern struct WBStartup *_WBenchMsg;
+char *__stdiowin = NULL;
+#define DEFAULT_WINDOW "CON:0/20/640/120/amisqueeze/AUTO/CLOSE/WAIT/SMART"
+struct Library *IconBase;
+static struct DiskObject *wb_icon;
+static BPTR wb_console;                     /* the message window, 0 with QUIET */
+static char tt_line[512];                   /* the icon's ToolTypes as a command line */
+
+/* Commodity: amisqueeze shows in Exchange, which can stop it; one at a time */
+struct Library *CxBase;
+static struct MsgPort *cx_port;
+static CxObj *broker;
+
 /* ---- platform.h ---- */
 
 /* Appends to the LOG file, if any; a write error closes it (said in the window only), playback goes on */
@@ -113,7 +134,7 @@ static void log_write(const void *buf, int len)
     log_file = 0;
     n = snprintf(msg_line, sizeof(msg_line), "amisqueeze: cannot write to the log %s: error %ld, log closed\n",
                  log_name, (long)error);
-    if (n > 0)
+    if (n > 0 && Output() != 0)
         Write(Output(), msg_line, n < (int)sizeof(msg_line) ? n : (int)sizeof(msg_line) - 1);
 }
 
@@ -163,14 +184,17 @@ void msg(const char *fmt, ...)
         return;
     if (len >= (int)sizeof(msg_line))
         len = sizeof(msg_line) - 1;
-    /* Write() is unbuffered: the text reaches a redirected file at once */
-    Write(Output(), msg_line, len);
+    /* Write() is unbuffered: the text reaches a redirected file at once. No output: started from the Workbench
+     * with QUIET (the LOG file only) */
+    if (Output() != 0)
+        Write(Output(), msg_line, len);
     log_write(msg_line, len);
 }
 
 void msg_raw(const void *buf, int len)
 {
-    Write(Output(), (APTR)buf, len);
+    if (Output() != 0)
+        Write(Output(), (APTR)buf, len);
     log_write(buf, len);
 }
 
@@ -431,21 +455,87 @@ int32_t plat_audio_abort(int i)
     return (int32_t)r->ahir_Std.io_Actual;
 }
 
+/* Commodity (plan step 1.10, decided with the user): amisqueeze shows in Exchange, whose "Remove" stops it, and
+ * runs once (NBU_UNIQUE). Started again while it runs: nothing happens to the running one (CXCMD_UNIQUE ignored),
+ * the new one quits. Returns 0 if another amisqueeze runs; without commodities.library, 1 and no commodity. */
+static int cx_open(void)
+{
+    struct NewBroker nb;
+    LONG error = 0;
+
+    CxBase = OpenLibrary("commodities.library", 37);
+    if (CxBase == NULL || (cx_port = CreateMsgPort()) == NULL)
+        return 1;
+    memset(&nb, 0, sizeof(nb));
+    nb.nb_Version = NB_VERSION;
+    nb.nb_Name = (STRPTR)"amisqueeze";
+    nb.nb_Title = (STRPTR)(version + 6);   /* "amisqueeze 0.5 (20.10.2026)": within CBD_TITLELEN */
+    nb.nb_Descr = (STRPTR)"Network music player for LMS";
+    nb.nb_Unique = NBU_UNIQUE | NBU_NOTIFY;
+    nb.nb_Port = cx_port;
+    broker = CxBroker(&nb, &error);
+    if (broker == NULL)
+        return error != CBERR_DUP;
+    ActivateCxObj(broker, TRUE);
+    return 1;
+}
+
+static void cx_close(void)
+{
+    struct Message *m;
+
+    if (broker != NULL)
+        DeleteCxObjAll(broker);
+    broker = NULL;
+    if (cx_port != NULL) {
+        while ((m = GetMsg(cx_port)) != NULL)
+            ReplyMsg(m);
+        DeleteMsgPort(cx_port);
+        cx_port = NULL;
+    }
+    if (CxBase != NULL)
+        CloseLibrary(CxBase);
+    CxBase = NULL;
+}
+
+/* Commands from Exchange; 1 if asked to stop ("Remove") */
+static int cx_killed(void)
+{
+    CxMsg *m;
+    int kill = 0;
+
+    if (cx_port == NULL)
+        return 0;
+    while ((m = (CxMsg *)GetMsg(cx_port)) != NULL) {
+        ULONG id = CxMsgID(m), type = CxMsgType(m);
+
+        ReplyMsg((struct Message *)m);
+        if (type != CXM_COMMAND)
+            continue;
+        if (id == CXCMD_KILL)
+            kill = 1;
+        else if (id == CXCMD_DISABLE || id == CXCMD_ENABLE)
+            ActivateCxObj(broker, id == CXCMD_ENABLE);  /* shown in Exchange; the music is not affected */
+    }                                           /* CXCMD_UNIQUE: started again, nothing to do */
+    return kill;
+}
+
 int plat_wait(struct plat_fd *fds, int n, uint32_t timeout_ms)
 {
     fd_set rfds, wfds;
     struct timeval tv;
     ULONG audio_sig = audio_port != NULL ? 1UL << audio_port->mp_SigBit : 0;
-    ULONG sigs = SIGBREAKF_CTRL_C | audio_sig;
+    ULONG cx_sig = cx_port != NULL ? 1UL << cx_port->mp_SigBit : 0;
+    ULONG sigs = SIGBREAKF_CTRL_C | audio_sig | cx_sig;
     LONG r;
     int i, maxfd = -1;
 
     if (n == 0) {
         /* No socket: a plain delay (WaitSelect without any socket is not reliable with every stack) */
-        if (SetSignal(0, SIGBREAKF_CTRL_C) & SIGBREAKF_CTRL_C)
+        if ((SetSignal(0, SIGBREAKF_CTRL_C) & SIGBREAKF_CTRL_C) || cx_killed())
             return -1;
         Delay((timeout_ms + 19) / 20);
-        return (SetSignal(0, SIGBREAKF_CTRL_C) & SIGBREAKF_CTRL_C) ? -1 : 0;
+        return ((SetSignal(0, SIGBREAKF_CTRL_C) & SIGBREAKF_CTRL_C) || cx_killed()) ? -1 : 0;
     }
 
     FD_ZERO(&rfds);
@@ -462,8 +552,8 @@ int plat_wait(struct plat_fd *fds, int n, uint32_t timeout_ms)
     tv.tv_sec = timeout_ms / 1000;
     tv.tv_usec = (timeout_ms % 1000) * 1000;
     r = WaitSelect(maxfd + 1, &rfds, &wfds, NULL, &tv, &sigs);
-    if (sigs & SIGBREAKF_CTRL_C)
-        return -1;
+    if ((sigs & SIGBREAKF_CTRL_C) || ((sigs & cx_sig) && cx_killed()))
+        return -1;                          /* Ctrl-C, Break, or "Remove" in Exchange */
     if (r >= 0 && (sigs & audio_sig))       /* an audio block ended */
         r++;
     if (r < 0) {
@@ -481,8 +571,30 @@ int plat_wait(struct plat_fd *fds, int n, uint32_t timeout_ms)
 
 /* ---- entry point ---- */
 
-/* Parses ENV:amisqueeze.prefs with the command line template into args. Returns the RDArgs to free at the end,
- * or NULL if the variable does not exist; *error is set if it cannot be parsed. */
+/* Parses a line (ended by a newline) with the command line template into args. Returns the RDArgs to free at the
+ * end (FreeArgs, FreeDosObject), or NULL with a message naming where the line came from. */
+static struct RDArgs *parse_line(char *line, LONG args[], const char *where)
+{
+    struct RDArgs *rda = AllocDosObject(DOS_RDARGS, NULL);
+    char fault[100];
+
+    if (rda == NULL)
+        return NULL;
+    rda->RDA_Source.CS_Buffer = (STRPTR)line;
+    rda->RDA_Source.CS_Length = strlen(line);
+    rda->RDA_Source.CS_CurChr = 0;
+    rda->RDA_Flags |= RDAF_NOPROMPT;
+    if (ReadArgs(TEMPLATE, args, rda) == NULL) {
+        Fault(IoErr(), NULL, (STRPTR)fault, sizeof(fault));
+        msg("amisqueeze: %s: %s\n", where, fault);
+        FreeDosObject(DOS_RDARGS, rda);
+        return NULL;
+    }
+    return rda;
+}
+
+/* Parses ENV:amisqueeze.prefs into args. Returns the RDArgs to free at the end, or NULL if the variable does not
+ * exist; *error is set if it cannot be parsed. */
 static struct RDArgs *read_prefs(LONG args[], BOOL *error)
 {
     struct RDArgs *rda;
@@ -494,53 +606,104 @@ static struct RDArgs *read_prefs(LONG args[], BOOL *error)
         return NULL;
     prefs_line[len++] = '\n';               /* ReadArgs parses a line */
     prefs_line[len] = '\0';
-
-    rda = AllocDosObject(DOS_RDARGS, NULL);
-    if (rda == NULL) {
-        *error = TRUE;
-        return NULL;
-    }
-    rda->RDA_Source.CS_Buffer = prefs_line;
-    rda->RDA_Source.CS_Length = len;
-    rda->RDA_Source.CS_CurChr = 0;
-    rda->RDA_Flags |= RDAF_NOPROMPT;
-    if (ReadArgs(TEMPLATE, args, rda) == NULL) {
-        PrintFault(IoErr(), "amisqueeze: ENV:" PREFS_VAR);
-        FreeDosObject(DOS_RDARGS, rda);
-        *error = TRUE;
-        return NULL;
-    }
+    rda = parse_line(prefs_line, args, "ENV:" PREFS_VAR);
+    *error = rda == NULL;
     return rda;
+}
+
+/* Workbench start: reads the icon's ToolTypes, the options into tt_line (for the template), WINDOW and QUIET for
+ * the message window, which it opens (AUTO: it shows at the first message). Returns 0 if the ToolTypes are too
+ * long to be read. */
+static int wb_start(void)
+{
+    struct WBArg *wa = _WBenchMsg->sm_ArgList;
+    const char *window = DEFAULT_WINDOW;
+    int quiet = 0, ok = 1;
+
+    strcpy(tt_line, "\n");
+    IconBase = OpenLibrary("icon.library", 36);
+    if (IconBase != NULL) {
+        BPTR old = CurrentDir(wa->wa_Lock);
+
+        wb_icon = GetDiskObject(wa->wa_Name);
+        CurrentDir(old);
+    }
+    if (wb_icon != NULL && wb_icon->do_ToolTypes != NULL) {
+        STRPTR *tt = wb_icon->do_ToolTypes;
+        STRPTR w;
+        int n = 0;
+
+        while (tt[n] != NULL)
+            n++;
+        quiet = FindToolType(tt, (STRPTR)"QUIET") != NULL;
+        w = FindToolType(tt, (STRPTR)"WINDOW");
+        if (w != NULL && *w != '\0')
+            window = (const char *)w;
+        ok = tooltypes_line(TEMPLATE, (const char *const *)tt, n, tt_line, sizeof(tt_line));
+    }
+    if (!quiet) {
+        wb_console = Open((STRPTR)window, MODE_NEWFILE);
+        if (wb_console == 0)
+            wb_console = Open((STRPTR)DEFAULT_WINDOW, MODE_NEWFILE);    /* a WINDOW that cannot be opened */
+        if (wb_console != 0)
+            SelectOutput(wb_console);
+    }
+    if (!ok)
+        msg("amisqueeze: the icon's ToolTypes are too long\n");
+    return ok;
+}
+
+/* Closes what wb_start() opened; the window stays until the user closes it if something was written (WAIT) */
+static void wb_end(void)
+{
+    if (wb_console != 0) {
+        SelectOutput(0);
+        Close(wb_console);
+    }
+    if (wb_icon != NULL)
+        FreeDiskObject(wb_icon);
+    if (IconBase != NULL)
+        CloseLibrary(IconBase);
 }
 
 int main(void)
 {
     LONG args[ARG_COUNT] = { 0 }, prefs[ARG_COUNT] = { 0 };
-    struct RDArgs *rda, *prefs_rda;
+    struct RDArgs *rda = NULL, *prefs_rda = NULL;
     struct options o;
     BOOL prefs_error;
-    int i, rc = RETURN_FAIL;
+    int i, rc = RETURN_FAIL, wb = _WBenchMsg != NULL;
 
+    if (wb && !wb_start())
+        goto out_wb;
 #ifdef AMISQUEEZE_FPU
     /* Before anything uses floating point: built for a 68881/68882, this one would crash without an FPU */
     if (!(SysBase->AttnFlags & (AFF_68881 | AFF_68882 | AFF_FPU40))) {
         msg("amisqueeze.fpu needs an FPU (68881, 68882, or a 68040/68060 with FPU): use amisqueeze instead\n");
-        return RETURN_FAIL;
+        goto out_wb;
     }
 #endif
     prefs_rda = read_prefs(prefs, &prefs_error);
     if (prefs_error)
-        return RETURN_FAIL;
-    rda = ReadArgs(TEMPLATE, args, NULL);
-    if (rda == NULL) {
+        goto out_wb;
+    /* From a Shell the command line, from the Workbench the icon's ToolTypes, read with the same template */
+    if (wb)
+        rda = parse_line(tt_line, args, "the icon's ToolTypes");
+    else if ((rda = ReadArgs(TEMPLATE, args, NULL)) == NULL)
         PrintFault(IoErr(), "amisqueeze");
+    if (rda == NULL)
         goto out_prefs;
-    }
-    /* The command line wins; a switch (VERBOSE) set in the prefs cannot be turned off from it */
+    /* They win over the prefs; a switch (VERBOSE) set in the prefs cannot be turned off from them */
     for (i = 0; i < ARG_COUNT; i++)
         if (args[i] == 0)
             args[i] = prefs[i];
 
+    if (!args[ARG_BENCH] && !cx_open()) {
+        /* Another amisqueeze runs: from the Workbench nothing happens (decided with the user), from a Shell a word */
+        if (!wb)
+            msg("amisqueeze: amisqueeze is already running (Exchange lists it and can stop it)\n");
+        goto out_args;
+    }
     if (args[ARG_LOG])
         log_open((const char *)args[ARG_LOG]);
     memset(&o, 0, sizeof(o));
@@ -591,12 +754,18 @@ int main(void)
 out_timer:
     CloseDevice((struct IORequest *)&timer_io);
 out_args:
+    cx_close();
     log_close();                            /* before FreeArgs: its name lives in the arguments */
     FreeArgs(rda);
+    if (wb)
+        FreeDosObject(DOS_RDARGS, rda);     /* allocated by parse_line */
 out_prefs:
     if (prefs_rda != NULL) {
         FreeArgs(prefs_rda);
         FreeDosObject(DOS_RDARGS, prefs_rda);
     }
+out_wb:
+    if (wb)
+        wb_end();
     return rc;
 }

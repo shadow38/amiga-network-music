@@ -495,6 +495,28 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   be opened is said and amisqueeze goes on; a write error closes it, said in the window only. Fake server: two runs
   appended to one file, the console without the start line, a log in a missing directory. WinUAE: two runs into
   `RAM:amisqueeze.log`, read with `Type` while running, `RAM:nodir/...` (error 205) without stopping.
+- **Workbench start done** (2026-10-20, version 0.5, design agreed with the user; the user chose a commodity, the
+  standard way, over a double-click toggle first proposed here, and that a second start does nothing):
+  - libnix's start-up code sets `_WBenchMsg` and would open the console named by `__stdiowin` before `main()`;
+    `amiga.c` sets it to NULL and opens its own once the icon is read (`icon.library` `GetDiskObject`). The
+    ToolTypes become a command line (`tooltypes_line()` in the core, host-tested: keywords of the template only, so
+    `DONOTWAIT` and the like are left alone; disabled ones in parentheses skipped; a value with a space quoted, not
+    a number, which a `/N` option refuses quoted) parsed with the same template; they win over `ENV:` prefs.
+    `WINDOW` (default `CON:0/20/640/120/amisqueeze/AUTO/CLOSE/WAIT/SMART`) and `QUIET` (no window, no output:
+    `msg()` writes only to the log) are read with `FindToolType`. `SMART` is needed: without it the console window
+    lost its text when uncovered.
+  - Commodity (`commodities.library` v37): broker "amisqueeze", `NBU_UNIQUE | NBU_NOTIFY`, no Show/Hide; its port's
+    signal is in the `WaitSelect` mask; `CXCMD_KILL` ("Remove") stops it as Ctrl-C does, `CXCMD_UNIQUE` (started
+    again) is ignored; a second start gets `CBERR_DUP` and quits (with a message from a Shell, silently from the
+    Workbench). Not for `BENCH`.
+  - Icons: `tools/make-icon.py` draws a classic tool icon (DiskObject, a 2-bitplane image: a speaker with three
+    waves; stack 16384; example ToolTypes disabled, and `DONOTWAIT`), built into `out/` with the executables and put
+    in the archive.
+  - Tests: 375 unit checks. WinUAE, driven through amiagent: double-click (window, connected), Exchange lists it
+    with its description and stops it ("Remove"), Ctrl-C in the window, `QUIET` with `LOG` (no window, the log
+    fills, player named by the icon), a second double-click while running (nothing changes), a bad ToolType
+    (`PORT=abc`: the error in a window that stays), `WINDOW` and `UNIT=1` taken, a second start from a Shell
+    refused. Clicks in MUI or Workbench windows through amiagent: see the local notes.
 - **Volume modes** (noted 2026-10-19, to decide when the step starts): an option such as `VOLUME=LMS|FIXED|MIXER`.
   `LMS` (default, as now): the gain sent by the server (`audg`) scales the samples, at a CPU cost on a slow 68020
   (1.6). `FIXED`: `audg` ignored, full output, no scaling; advertise `HasDigitalOut` in `HELO` so that LMS accepts

@@ -60,6 +60,9 @@ spoken by free software on both sides.
    Copy ENV:amisqueeze.prefs ENVARC:
    ```
 
+   Or from the **Workbench**: double-click its icon (the options can also go in the icon's ToolTypes). Exchange,
+   the system's list of background programs, stops it ("Remove"), as does Ctrl-C in its window.
+
 On the server side: LMS reachable from the Amiga (ports 3483 and 9000), and, for MP3 files on an Amiga that does
 not decode them, a conversion rule: see [server setup](docs/user-guide.md#server-setup).
 

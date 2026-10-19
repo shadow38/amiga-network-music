@@ -185,6 +185,12 @@ int player_bench(void);
 /* Value of the FLAC or MP3 option (AUTO, ON, OFF, any case); -1 if it is none of them */
 int parse_decode_mode(const char *s);
 int parse_mac(const char *s, uint8_t mac[6]);
+/* Workbench start: turns an icon's ToolTypes (n strings) into a command line for the template (an AmigaDOS
+ * ReadArgs template, "SERVER,PORT/N/K,..."): the ToolTypes whose keyword is in the template, in order; a disabled
+ * one "(KEY=...)" and any other keyword (DONOTWAIT, WINDOW, QUIET...) left out; a value with a space quoted (not a
+ * number: a /N option may refuse quotes). Writes at most size
+ * bytes, ended by a newline and a NUL; 0 if they do not fit. */
+int tooltypes_line(const char *template, const char *const *tooltypes, int n, char *line, int size);
 
 /* bench.c */
 /* FLAC decoding speed on this machine, in % of real time (300 = three times faster than playing): a built-in

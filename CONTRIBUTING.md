@@ -74,6 +74,7 @@ tools/check-saves.py  checks the generated assembly (safeguard against a gcc bug
 tools/pcm-compare.py  compares the PCM written by amisqueeze (OUTPUT option) with a reference, byte by byte
 tools/make-dist.py    builds the release archive (make dist)
 tools/bin2c.py        turns a file into a C array (the built-in FLAC and MP3 samples of the speed measurement)
+tools/make-icon.py    draws the Workbench icons (out/<prog>.info, classic AmigaOS format) built with the programs
 ```
 
 `obj/`, `out/`, `obj-host/`, `out-host/` and `.sdk/` are generated (ignored by `.gitignore`).
@@ -105,8 +106,8 @@ wsl --cd $PWD --exec sh tools/amiga-make.sh
 Run `make sdk` (task **Amiga: sync headers (.sdk)**) after installing or updating the toolchain, for IntelliSense.
 
 `make dist` (`sh tools/amiga-make.sh dist`) builds the release archive `out/amisqueeze-<version>.zip`: the Amiga
-executables, `LICENSE`, the README, the changelog and the user guide with its images (`docs/images/`), the version
-read from the program's `$VER:` string. Before a release, the "Unreleased" part of `CHANGELOG.md` gets the version
+executables and their icons, `LICENSE`, the README, the changelog and the user guide with its images
+(`docs/images/`), the version read from the program's `$VER:` string. Before a release, the "Unreleased" part of `CHANGELOG.md` gets the version
 number and the date.
 
 Per-program options live in the `Makefile` (`<prog>_CFLAGS`): network programs target the 68020 (`-m68020`).

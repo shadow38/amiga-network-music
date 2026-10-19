@@ -84,8 +84,10 @@ The archive holds two executables of the same program; take the one that suits t
 | `amisqueeze.fpu` | an Amiga with an FPU: 68881 or 68882, or a 68040/68060 with its FPU (a PiStorm with Emu68, for instance) | the same, and MP3 when the CPU is fast enough |
 
 `amisqueeze.fpu` refuses to start without an FPU (`amisqueeze.fpu needs an FPU`). Copy the chosen one anywhere,
-ideally into a directory of the Shell's command path (for instance `C:`), so that it can be run by name; it may be
-renamed `amisqueeze`. Both read the same default options (below).
+with its icon (`amisqueeze.info` or `amisqueeze.fpu.info`) if it is to be started from the Workbench: ideally into
+a directory of the Shell's command path (for instance `C:`) so that it can be run by name, or into a drawer of
+your choice. It may be renamed `amisqueeze` (rename its icon the same way). Both read the same default options
+(below).
 
 ### Running
 
@@ -115,7 +117,9 @@ Template: `SERVER,PORT/N/K,NAME/K,MAC/K,OUTPUT/K,LOG/K,UNIT/N/K,NOAUDIO/S,SWAP/S
 
 `Ctrl-C` stops amisqueeze. To keep the Shell free, run it in the background: `Run >NIL: amisqueeze`, or keep its
 messages in a file, written as they come: `Run amisqueeze >RAM:amisqueeze.log VERBOSE` (the redirection goes
-right after the command name). `Status` then shows its process number, and `Break <number>` stops it.
+right after the command name). `Status` then shows its process number, and `Break <number>` stops it; Exchange can
+stop it too (see [stopping amisqueeze](#stopping-amisqueeze)). Only one amisqueeze runs at a time: a second one
+says `amisqueeze is already running` and quits.
 
 **`LOG=<file>`** keeps a copy of every message in a file while they still appear in the window (a redirection
 `>file` sends them to the file only). Each run is appended to the file, after a line with the date and time, for
@@ -130,6 +134,46 @@ name always gives the same player in LMS, and two Amigas with different names sh
 can also be renamed from the LMS web interface; amisqueeze takes the new name while it runs.
 
 If the connection drops or the server restarts, amisqueeze reconnects by itself (it retries every 5 seconds).
+
+### From the Workbench
+
+Double-click the icon of `amisqueeze` (or `amisqueeze.fpu`). A window titled "amisqueeze" opens at its first
+message and shows the messages as a Shell would; the player then shows up in LMS.
+
+**Options in the icon.** Select the icon, then *Icons > Information…* (Amiga-I): its **ToolTypes** take the same
+options as the command line, one per line: `SERVER=192.168.1.10`, `NAME=Kitchen`, `UNIT=0`, `LOG=…`, `VERBOSE`… A
+ToolType in parentheses is disabled: the icon comes with examples written that way, such as
+`(SERVER=192.168.1.10)`; remove the parentheses to use one. The ToolTypes win over the default options of
+`ENV:amisqueeze.prefs`, which still apply to what they leave out. Two ToolTypes are for the Workbench only:
+
+| ToolType | Meaning |
+|---|---|
+| `WINDOW=CON:…` | the message window: position, size, title, e.g. `CON:0/20/640/120/amisqueeze/AUTO/CLOSE/WAIT/SMART` (the default) |
+| `QUIET` | no window at all: amisqueeze runs silently; add `LOG=<file>` to keep its messages |
+
+Other ToolTypes, such as the Workbench's own `DONOTWAIT`, are left alone. An error in the ToolTypes (an unknown
+value, a bad number) is shown in the window, which stays open until it is closed.
+
+**Starting with the Amiga.** Copy the program and its icon into `SYS:WBStartup`: the Workbench starts it at every
+boot (the icon carries `DONOTWAIT`, so the Workbench does not wait for it). With `QUIET` and `LOG`, it then plays in
+the background without a window. From a Shell script instead, add to `S:User-Startup`, once the TCP/IP stack is up:
+`Run >NIL: amisqueeze`.
+
+### Stopping amisqueeze
+
+amisqueeze is a **commodity**: while it runs, it shows in **Exchange** (`SYS:Tools/Commodities/Exchange`; once
+Exchange runs, Ctrl-Alt-Help brings its window back), the system's list of background programs, as "amisqueeze",
+"Network music player for LMS". To stop it, however it was started:
+
+- in **Exchange**: select "amisqueeze", then **Remove**; this is the way to stop it when it runs without a window
+  (`QUIET`);
+- in its **window** (started from the Workbench) or its **Shell**: **Ctrl-C**;
+- from another Shell: `Status` gives its process number (when started from a Shell), then `Break <number>`.
+
+It always stops cleanly: the sound stops, the connection is closed, `stopped` is printed. Its window then stays
+open until it is closed, so that the last messages can be read. Exchange's Active/Inactive switch is shown but does
+not affect the music. Starting it again from its icon while it runs does nothing: the running one goes on, and the
+new one quits at once.
 
 ### Decoding on the Amiga (`FLAC`, `MP3`, `BENCH`)
 
@@ -347,6 +391,9 @@ Rules:
 | `cannot create <file>: error N` | the `OUTPUT` file cannot be created (missing directory, write-protected disk); amisqueeze stops. On a volume that is not mounted, AmigaDOS first asks for it to be inserted; this message follows a Cancel |
 | `cannot write to <file>: error N, file closed` | writing the `OUTPUT` file failed (disk full…); playback goes on without the file |
 | `cannot open the log <file>: error N, going on without it` | the `LOG` file cannot be opened (missing directory, write-protected disk); amisqueeze plays without a log |
+| `amisqueeze is already running (Exchange lists it and can stop it)` | started from a Shell while another amisqueeze runs: the new one quits (from the Workbench it quits without a word) |
+| `the icon's ToolTypes: …` | started from the Workbench, a ToolType cannot be read (unknown value, bad number…); shown in the window, which stays open |
+| `the icon's ToolTypes are too long` | the ToolTypes together exceed what amisqueeze reads (about 500 characters) |
 | `cannot write to the log <file>: error N, log closed` | writing the `LOG` file failed (disk full…); playback goes on without the log |
 | `stream: cannot connect: error N` | the audio stream port of LMS (HTTP, 9000 by default) cannot be reached |
 | `stream: …`, `output: …` (with `VERBOSE`) | stream events: parameters, connection, headers received, end of the track data; output: AHI unit or virtual output, track started, buffer empty, end of playback, `OUTPUT` file opened and bytes written to it |

@@ -11,6 +11,11 @@ are previews, tested in WinUAE only, not yet on a real Amiga.
 
 - **`LOG=<file>`**: a copy of every message in a file while they still appear in the window; each run is appended
   after a line with its date and time. A log that cannot be opened or written does not stop the music.
+- **Start from the Workbench**: an icon for each executable. Double-clicked, amisqueeze reads its options in the
+  icon's ToolTypes (the same as the command line; `WINDOW` sets the message window, `QUIET` opens none) and shows
+  its messages in a window.
+- **A commodity**: amisqueeze shows in Exchange, whose "Remove" stops it, with or without a window. One runs at a
+  time: started again, the running one goes on and the new one quits.
 
 ## [0.4] - 2026-10-20
 

@@ -68,7 +68,10 @@ obj/$(1)/%.o: CFLAGS += $$($(1)_CFLAGS)
 endef
 $(foreach p,$(PROGS),$(eval $(call PROG_template,$(p))))
 
-amisqueeze: out/amisqueeze.fpu
+amisqueeze: out/amisqueeze.fpu out/amisqueeze.info out/amisqueeze.fpu.info
+# Workbench icons (classic AmigaOS format), drawn by tools/make-icon.py
+out/%.info: tools/make-icon.py | out
+	python3 tools/make-icon.py $@
 out/amisqueeze.fpu: $(patsubst src/amisqueeze/%.c,obj/amisqueeze-fpu/%.o,$(call amiga_srcs,amisqueeze)) | out
 	$(CC) $(LDFLAGS) $(amisqueeze_fpu_LDFLAGS) $(amisqueeze_fpu_CFLAGS) -o $@ $^
 obj/amisqueeze-fpu/%.o: src/amisqueeze/%.c
@@ -95,7 +98,7 @@ test: host out-host/test_core
 	out-host/test_core
 	python3 tests/fake_server.py out-host/amisqueeze
 
-dist: out/amisqueeze out/amisqueeze.fpu
+dist: out/amisqueeze out/amisqueeze.fpu out/amisqueeze.info out/amisqueeze.fpu.info
 	python3 tools/make-dist.py amisqueeze
 
 # Check of the generated assembly (kept in obj/<prog>/*.s): tools/check-saves.py fails the build if a function
