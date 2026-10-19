@@ -61,8 +61,9 @@ How to build and test: [CONTRIBUTING.md](../../CONTRIBUTING.md).
 | 1.7a amisqueeze: other PCM formats (LMS) | ✅ 2026-10-19 |
 | 1.7b amisqueeze: Music Assistant | ⬜ after version 0.2 |
 | 1.8 amisqueeze: local decoding (FLAC, then MP3) | ✅ 2026-10-19 (FLAC; MP3 in `amisqueeze.fpu`) |
-| 1.8d amisqueeze: MP3 without gaps between tracks | ⬜ after version 0.3 |
-| 1.9 to 1.10 | ⬜ |
+| 1.8d amisqueeze: MP3 without gaps between tracks | ⬜ version 0.4 |
+| 1.9 amisqueeze: real machine | ⬜ version 0.6 |
+| 1.10 amisqueeze: finishing touches | ⬜ versions 0.4 to 0.6 (see below) |
 | 1.11 amisqueeze: direct Paula output, without AHI | ⬜ idea (CPU load on a slow 68020) |
 | 0.9 Test Music Assistant server | ⬜ after version 0.2 |
 | 2.0 remote: study (common interface, Music Assistant feasibility, name) | ⬜ before any amilms code |
@@ -76,8 +77,21 @@ How to build and test: [CONTRIBUTING.md](../../CONTRIBUTING.md).
 
 Phase 0 moves forward as needed: a tooling step is done when a step of phase 1 or 2 needs it. Phases 1 and 2 can
 progress in parallel. Release 0.3 was published on 2026-10-20 (MP3 decoded by `amisqueeze.fpu`, two executables,
-documentation reworked; 0.2 on 2026-10-19: FLAC, 8/24/32-bit PCM). Next, as agreed on 2026-10-19: MP3 without
-gaps (1.8d); after that the real machine (1.9) or the finishing touches (1.10), to agree with the user.
+documentation reworked; 0.2 on 2026-10-19: FLAC, 8/24/32-bit PCM).
+
+**Next releases** (decided with the user on 2026-10-20): what can be tested to the end from the development machine
+(host tests, WinUAE) comes first, what needs the real Amiga and a home network last.
+
+| Version | Content | Tested |
+|---|---|---|
+| 0.4 | MP3 without gaps (1.8d); volume modes `VOLUME=LMS\|FIXED` and the AHI mode warning (1.10) | host and WinUAE |
+| 0.5 | `LOG=<file>`, start from the Workbench with an icon and ToolTypes (1.10) | host and WinUAE |
+| 0.6 | automatic server discovery (1.10), with the real machine (1.9): the first version tried on a real Amiga | host for the code; validated on the real machine and network |
+
+Server discovery waits for 0.6 because the test setup cannot check it: the test LMS runs in a container behind
+forwarded TCP ports, which a UDP broadcast from the emulated Amiga does not cross. Each step keeps the method:
+design agreed with the user, then code, tests, a line in `CHANGELOG.md`. The remote's study (2.0) comes after these
+releases, or alongside if the user wants it.
 Music Assistant (0.9, 1.7b, 2.8 to 2.11) was put after 0.2 (decided 2026-10-19): it is no longer waiting on a
 release, when to start it is still to be decided.
 

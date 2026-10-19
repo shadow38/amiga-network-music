@@ -440,7 +440,7 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   - **For 1.9**: the synthesis uses `fintrz` and `fmovecr` (from `-m68881`), emulated by the CPU library on a real
     68040 or 68060 (one trap per sample: slow); fine on a 68881/68882, Emu68 to check. `MP3=AUTO` would measure it.
 
-## 1.8d MP3 without gaps between tracks ⬜ (after version 0.3)
+## 1.8d MP3 without gaps between tracks ⬜ (version 0.4)
 
 - **Why**: an MP3 file begins with the encoder's delay and, from LAME, a header frame (Xing/Info) decoded as
   silence; it ends with padding. Played as they are (1.8c), two tracks meant to follow each other without a pause
@@ -454,7 +454,7 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   instead of 1105 or 2257 frames) and keep its length; two MP3 tracks back to back without gap, byte for byte;
   heard by the user on a track that flows into the next one.
 
-## 1.9 Real machine ⬜
+## 1.9 Real machine ⬜ (version 0.6)
 
 - **Content**: both kinds of target with a TCP/IP stack (AmiNetXDuo or Roadshow) and an LMS server reachable
   from the local network: a PiStorm with Emu68, sound through its own AHI outputs (I2S DAC of the PiStorm32-lite
@@ -462,8 +462,12 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   without FPU, sound through Paula.
 - **Criterion**: the criteria of 1.4 to 1.6 met on the real machine.
 
-## 1.10 Finishing touches ⬜
+## 1.10 Finishing touches ⬜ (versions 0.4 to 0.6)
 
+- **Split** (decided 2026-10-20, see the [plan](README.md)): **0.4** the volume modes (`LMS` and `FIXED`;
+  `MIXER` left for later) and the AHI mode warning; **0.5** `LOG=<file>` and the start from the Workbench; **0.6**
+  the automatic server discovery, with the real machine (1.9), since the test setup cannot check a UDP broadcast.
+  The `BUFFER` option only if 1.9 shows a need. Each part is designed with the user when it starts.
 - **Content**: automatic server discovery (UDP broadcast on port 3483); start from the Workbench with an icon and
   ToolTypes (read with the same template; precedence: built-in defaults, `ENV:amisqueeze.prefs`, ToolTypes,
   command line), with a console window or quiet mode; running in the background (`Run`, or at startup);
