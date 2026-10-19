@@ -10,13 +10,21 @@ amisqueeze turns the Amiga into a network music player for the music servers tha
 Logitech's Squeezebox players: [Lyrion Music Server](https://lyrion.org) (LMS), tested, and Music Assistant, not
 tested yet. The server (and its web interface or apps) sees and controls it like any other player.
 
-**Current state (version 0.3 in development; 0.2, the latest release, is a preview tested in WinUAE only):** amisqueeze connects to the server, shows up as a player and
-**plays what LMS plays through AHI**: in LMS, playback progresses, moves on to the next track, pauses, seeks,
-stops and changes volume as with any player. It takes raw PCM streams, which LMS makes from the files (see the
-requirements): 8, 16, 24 or 32-bit samples (24-bit "high resolution" FLAC included), mono or stereo, up to
-48 kHz, converted to 16 bits for AHI. On a fast Amiga it also decodes **FLAC** itself, and **MP3** with an FPU
-(see [decoding on the Amiga](#decoding-on-the-amiga-flac-mp3-bench)). The sound has been checked by ear in WinUAE
-(Paula and Toccata), not yet on a real Amiga.
+### Current state
+
+Version 0.3 in development. The latest release, 0.2, is a preview: tested in WinUAE only, not yet on a real Amiga.
+
+What amisqueeze does:
+
+- **connects to the server** and shows up as a player;
+- **plays what LMS plays, through AHI**: in LMS, playback progresses, moves on to the next track, pauses, seeks,
+  stops and changes volume as with any player;
+- **plays raw PCM**, which LMS makes from the files: 8, 16, 24 or 32-bit samples (24-bit "high resolution" FLAC
+  included), mono or stereo, up to 48 kHz, converted to 16 bits for AHI;
+- **decodes FLAC itself** on a fast Amiga, and **MP3** too with an FPU (see
+  [decoding on the Amiga](#decoding-on-the-amiga-flac-mp3-bench)).
+
+The sound has been checked by ear in WinUAE, with Paula and with a 16-bit sound card (Toccata).
 
 ### Requirements
 
