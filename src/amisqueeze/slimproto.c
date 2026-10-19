@@ -199,7 +199,8 @@ static void process_strm_s(struct player *p, const uint8_t *pkt, int len)
             msg("stream: autostart %d (cont) handled as %d\n", autostart, autostart - 2);
         autostart -= 2;
     }
-    stream_start(p, ip, (uint16_t)port, pkt + 28, len - 28, (uint32_t)pkt[11] * 1024, autostart, &fmt);
+    stream_start(p, ip, (uint16_t)port, pkt + 28, len - 28, (uint32_t)pkt[11] * 1024, autostart, &fmt,
+                 &decoder_pcm);
 }
 
 static void process_strm(struct player *p, const uint8_t *pkt, int len)

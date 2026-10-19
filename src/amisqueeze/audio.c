@@ -246,22 +246,16 @@ int audio_pending(const struct player *p)
     return p->audio.count;
 }
 
+uint8_t *audio_block_data(struct player *p, int b)
+{
+    return p->audio.block[b].buf;
+}
+
 void audio_submit(struct player *p, int b, uint32_t n, const struct pcm_format *f, uint32_t now)
 {
     struct audio *a = &p->audio;
     struct audio_block *bl = &a->block[b];
-    uint32_t got = 0;
 
-    while (got < n) {                       /* the ring buffer may wrap around: two copies */
-        const uint8_t *d;
-        uint32_t len = ring_read_space(&p->ring, &d);
-
-        if (len > n - got)
-            len = n - got;
-        memcpy(bl->buf + got, d, len);
-        ring_consume(&p->ring, len);
-        got += len;
-    }
     bl->len = n / f->sample_bytes * 2;      /* what the device will get: 16-bit samples */
     bl->done = 0;
     bl->rate = f->rate;

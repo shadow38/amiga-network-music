@@ -7,6 +7,7 @@
 
 #include <stdint.h>
 
+#include "decoder.h"
 #include "ring.h"
 
 #define SLIMPROTO_PORT 3483
@@ -80,14 +81,21 @@ struct pcm_format {
     uint8_t  big_endian;
 };
 
+#define OUT_START_UNKNOWN UINT64_MAX
+
 struct track {
-    uint64_t          start;            /* position of its first byte in the stream (ring total_in) */
-    struct pcm_format fmt;
+    uint64_t                  start;     /* position of its first byte in the stream (ring total_in) */
+    struct pcm_format         fmt;       /* as announced by strm s */
+    const struct decoder_ops *ops;       /* its decoder */
+    struct pcm_format         out_fmt;   /* what the decoder produces (set when it starts the track) */
+    uint64_t                  out_start; /* position of its first decoded byte in the output (handed), or
+                                            OUT_START_UNKNOWN until the decoder reaches the track */
 };
 
-/* The output hands the buffer's bytes to a sink (the virtual output for now; AHI with step 1.4b). Positions are
- * counted from the last ring_clear(): bytes handed over = ring total_out; bytes played <= that. Elapsed time,
- * STMs at a track boundary and STMu follow the bytes played. */
+/* The output asks the decoder for PCM and hands it to a sink (the virtual output, or the audio output). Positions
+ * are counted from the last reset, in bytes of decoded PCM: handed over (handed); played <= that. Elapsed time,
+ * STMs at a track boundary and STMu follow the bytes played. The decoder reads the ring buffer, whose positions
+ * are bytes of the stream (track starts). */
 struct output {
     int          state;                 /* enum output_state */
     struct track cur;                   /* track being played */
@@ -100,6 +108,8 @@ struct output {
     int          file;                  /* OUTPUT file, -1 = none */
     const char  *file_name;
     uint64_t     written;               /* bytes written to it */
+    uint64_t     handed;                /* bytes of decoded PCM handed to the sink since the last reset */
+    struct decoder dec;                 /* decoder of the track at the buffer's read position */
 };
 
 /* Audio output through the platform (AHI on the Amiga): blocks of converted PCM played one after the other, two at
@@ -183,9 +193,9 @@ void slim_send_dsco(struct player *p, int reason);
 /* Initial state (and buffer allocation); 0 if there is not enough memory */
 int stream_init(struct player *p);
 void stream_free(struct player *p);
-/* strm s: starts receiving a PCM track from ip:port with the given HTTP request */
+/* strm s: starts receiving a track from ip:port with the given HTTP request, decoded by ops */
 void stream_start(struct player *p, uint32_t ip, uint16_t port, const uint8_t *request, int request_len,
-                  uint32_t threshold, int autostart, const struct pcm_format *fmt);
+                  uint32_t threshold, int autostart, const struct pcm_format *fmt, const struct decoder_ops *ops);
 uint32_t pcm_bytes_per_sec(const struct pcm_format *f);
 /* strm q / f: closes the stream and empties the buffer */
 void stream_stop(struct player *p);
@@ -217,9 +227,11 @@ void audio_poll(struct player *p, uint32_t now);
 int audio_free_block(const struct player *p);
 /* Blocks queued or held: 0 = nothing left to play */
 int audio_pending(const struct player *p);
-/* Copies n bytes (whole frames; n <= AUDIO_BLOCK_SIZE, half of it for 8-bit samples, which double in size) from
- * the ring buffer into block b and queues the block; it is converted for the device (16-bit big-endian, volume,
- * left/right swapped with SWAP) when sent */
+/* Buffer of block b (AUDIO_BLOCK_SIZE bytes), where the output writes the PCM before audio_submit() */
+uint8_t *audio_block_data(struct player *p, int b);
+/* Queues block b, holding n bytes of PCM in format f (whole frames; n <= AUDIO_BLOCK_SIZE, half of it for 8-bit
+ * samples, which double in size); it is converted for the device (16-bit big-endian, volume, left/right swapped
+ * with SWAP) when sent */
 void audio_submit(struct player *p, int b, uint32_t n, const struct pcm_format *f, uint32_t now);
 /* Bytes played since the last reset: exact (finished blocks), or with an estimate of the block playing now */
 uint64_t audio_played(const struct player *p, uint32_t now, int estimate);
