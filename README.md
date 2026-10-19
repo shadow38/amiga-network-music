@@ -29,10 +29,12 @@ spoken by free software on both sides.
   software player, without a display or infrared remote.
 - **amilms**: a remote control from the Amiga (not started yet).
 
-On the Amiga: AmigaOS 3.x, a 68020 or better (from a plain 68020 accelerator to a PiStorm), a TCP/IP stack
-providing `bsdsocket.library` (Roadshow, AmiTCP, AmiNetXDuo, or WinUAE's emulation), and **AHI**, the standard
-Amiga audio system (free on Aminet, not part of AmigaOS 3.x), with the driver of Paula or of a sound card.
-Cross-compiled C, tested in WinUAE.
+### What the Amiga needs
+
+- **AmigaOS 3.x** and a **68020 or better**: from a plain 68020 accelerator to a PiStorm.
+- A **TCP/IP stack** providing `bsdsocket.library`: Roadshow, AmiTCP, AmiNetXDuo, or WinUAE's emulation.
+- **AHI**, the standard Amiga audio system, with the driver of Paula or of a sound card. It is free, on Aminet,
+  but not part of AmigaOS 3.x.
 
 ## Quick start
 
@@ -64,15 +66,24 @@ Everything else (all the options, sound settings, volume, messages) is in the **
 
 ## Status
 
-Under development, in testable steps described in the [development plan](docs/development/README.md).
+Under development, in testable steps described in the [development plan](docs/development/README.md). Written in
+C, cross-compiled; tested in WinUAE, not yet on a real Amiga.
 
-amisqueeze shows up as a player in LMS and plays through AHI (play, pause, seek, stop, gapless next track, volume).
-It plays raw PCM (8 to 32 bits, mono or stereo, up to 48 kHz). FLAC is decoded on the Amiga when the CPU is fast
-enough (a PiStorm-class CPU; measured at start-up), otherwise converted by the server. MP3 is decoded on the Amiga
-by `amisqueeze.fpu` (Amigas with an FPU) when it is fast enough, otherwise converted by the server. It recovers
-from a slow or broken stream and from a server restart. Tested in WinUAE with emulated networking and LMS 9.1.1
-(listening, one hour of playback); on a 28 MHz 68020, sound through AHI and Paula takes about two thirds of the
-CPU. amilms: not started.
+**amisqueeze** works:
+
+- **as a player**: it shows up in LMS and plays through AHI; play, pause, seek, stop, next track without a gap,
+  volume;
+- **raw PCM**: 8 to 32 bits, mono or stereo, up to 48 kHz;
+- **FLAC**: decoded on the Amiga when the CPU is fast enough (a PiStorm-class CPU, measured at start-up), otherwise
+  converted by the server;
+- **MP3**: decoded on the Amiga by `amisqueeze.fpu` (Amigas with an FPU) when it is fast enough, otherwise
+  converted by the server;
+- **robustness**: it recovers from a slow or broken stream and from a server restart.
+
+Tested in WinUAE with emulated networking and LMS 9.1.1: listening, one hour of playback. On a 28 MHz 68020, sound
+through AHI and Paula takes about two thirds of the CPU.
+
+**amilms**: not started.
 
 ## For developers
 
