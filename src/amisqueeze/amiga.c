@@ -31,8 +31,9 @@
 #include "platform.h"
 #include "player.h"
 
-/* Read by the Version command: "Version amisqueeze" */
-static const char version[] __attribute__((used)) = "$VER: amisqueeze 0.2-dev (19.10.2026)";
+/* Read by the Version command: "Version amisqueeze". Printed with VERBOSE: a string nothing reads would be dropped
+ * at link time (--gc-sections), and Version would find nothing. */
+static const char version[] = "$VER: amisqueeze 0.2 (19.10.2026)";
 
 /* Used for the command line and for the prefs variable */
 #define TEMPLATE "SERVER,PORT/N/K,NAME/K,MAC/K,OUTPUT/K,UNIT/N/K,NOAUDIO/S,SWAP/S,FLAC/K,BENCH/S,VERBOSE/S"
@@ -411,6 +412,8 @@ int main(void)
             args[i] = prefs[i];
 
     memset(&o, 0, sizeof(o));
+    if (args[ARG_VERBOSE])
+        msg("%s\n", version + 6);           /* without "$VER: " */
     o.bench = args[ARG_BENCH] != 0;
     if (args[ARG_FLAC] && (o.flac = parse_flac_mode((const char *)args[ARG_FLAC])) < 0) {
         msg("amisqueeze: FLAC=%s: expected AUTO, ON or OFF\n", (const char *)args[ARG_FLAC]);
