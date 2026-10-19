@@ -32,7 +32,7 @@
 #include "player.h"
 
 /* Read by the Version command: "Version amisqueeze" */
-static const char version[] __attribute__((used)) = "$VER: amisqueeze 0.1 (18.10.2026)";
+static const char version[] __attribute__((used)) = "$VER: amisqueeze 0.1 (19.10.2026)";
 
 /* Used for the command line and for the prefs variable */
 #define TEMPLATE "SERVER,PORT/N/K,NAME/K,MAC/K,OUTPUT/K,UNIT/N/K,NOAUDIO/S,SWAP/S,VERBOSE/S"

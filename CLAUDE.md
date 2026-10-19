@@ -6,10 +6,14 @@ repository `shadow38/amiga-network-music`: **nothing specific to the developer's
 paths, corporate proxy, personal settings, neighbouring folders); those live in local files outside the
 repository. Documentation, code comments and program messages are in English.
 
-**Versioning** (decided 2026-10-18): 0.x until the main feature works; the version changes only for a
-**published** release (0.1 = first public push, then 0.2, 0.3…); 1.0 = first really usable version (AHI audio,
-basic commands, tested on the real machine). Never bump it on our own: ask the user. The number appears in the
-`$VER:` string (`main.c`), in `Firmware=` of the `HELO` capabilities (`slimproto.c`) and in the user guide.
+**Versioning** (decided 2026-10-18, completed 2026-10-19): 0.x until the main feature works; the version changes
+only for a **published** release; 1.0 = first really usable version (tested on the real machine). Never bump it on
+our own: ask the user. A release = a Git tag `amisqueeze-<version>` + a GitHub Release with a zip (the Amiga
+executable, `LICENSE`, `README.md`, the user guide) and short notes, made with the GitHub CLI once the user has
+approved the notes; the `$VER:` date is the release date. Between releases the number reads `<next>-dev`, so that
+a build in between is not taken for the last release. 0.1 = first release (2026-10-19: AHI audio, volume,
+robustness, tested in WinUAE only); the first public push of 2026-10-18 had no tag. The number appears in the
+`$VER:` string (`amiga.c`), in `Firmware=` of the `HELO` capabilities (`slimproto.c`) and in the user guide.
 
 **Licence: MIT** (`LICENSE`, "Copyright (c) 2026 shadow38"), decided 2026-10-18. squeezelite and LMS are GPL:
 read them to **understand** the protocol and its expected behaviour (message layouts, when to send which state),
