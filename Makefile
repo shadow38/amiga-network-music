@@ -4,11 +4,11 @@
 # One program per directory: src/<prog>/*.c -> out/<prog>. In a program directory, amiga.c is only built for
 # the Amiga and posix.c only for the host.
 #
-#   make [all]    Amiga build (out/)
+#   make [all]    Amiga build (out/): out/amisqueeze, and out/amisqueeze.fpu (68881 FPU code)
 #   make host     host build of the programs listed in HOST_PROGS (out-host/), native compiler $(HOSTCC)
 #   make test     host build, unit tests of the portable core (tests/test_core.c), then scenarios against the
 #                 host build of amisqueeze driven by a fake server (tests/fake_server.py, python3)
-#   make dist     release archive of amisqueeze: out/amisqueeze-<version>.zip (executable, LICENSE, README.md,
+#   make dist     release archive of amisqueeze: out/amisqueeze-<version>.zip (both executables, LICENSE, README.md,
 #                 user guide), the version read from its $VER: string (tools/make-dist.py, python3)
 #   make clean    removes every build directory
 #   make sdk      copies the toolchain headers into .sdk/ (IntelliSense)
@@ -23,13 +23,18 @@ LDFLAGS := -noixemul -s -Wl,--gc-sections
 PROGS   := $(notdir $(wildcard src/*))
 
 # Per-program options
-# amisqueeze (slimproto player): targets 68020+ (WinUAE, PiStorm); no FPU until there is a decoder.
+# amisqueeze (slimproto player): targets 68020+ (WinUAE, PiStorm), without FPU.
 # -Wno-pointer-sign: dos.library prototypes expect UBYTE * strings. -Werror=format: msg() format checks.
 amisqueeze_CFLAGS := -m68020 -Wno-pointer-sign -Werror=format -Ithird_party/dr_flac
+
+# amisqueeze.fpu: the same sources built for a 68881/68882 FPU (or a 68040/68060 with FPU): floating point in
+# hardware, so it can hold the MP3 decoder. Objects in obj/amisqueeze-fpu/.
+amisqueeze_fpu_CFLAGS := $(amisqueeze_CFLAGS) -m68881 -DAMISQUEEZE_FPU
 
 # Third-party code (third_party/): built without our warnings, in a file of its own
 THIRD_PARTY := dr_flac
 $(foreach t,$(THIRD_PARTY),$(eval obj/amisqueeze/$(t).o: CFLAGS += -w -O2))
+$(foreach t,$(THIRD_PARTY),$(eval obj/amisqueeze-fpu/$(t).o: CFLAGS += -w -O2))
 $(foreach t,$(THIRD_PARTY),$(eval obj-host/amisqueeze/$(t).o: HOST_CFLAGS += -w))
 
 # Host build: the portable core with posix.c, for tests on the developer's machine. AddressSanitizer and
@@ -61,6 +66,14 @@ obj/$(1)/%.o: CFLAGS += $$($(1)_CFLAGS)
 endef
 $(foreach p,$(PROGS),$(eval $(call PROG_template,$(p))))
 
+amisqueeze: out/amisqueeze.fpu
+out/amisqueeze.fpu: $(patsubst src/amisqueeze/%.c,obj/amisqueeze-fpu/%.o,$(call amiga_srcs,amisqueeze)) | out
+	$(CC) $(LDFLAGS) $(amisqueeze_fpu_CFLAGS) -o $@ $^
+obj/amisqueeze-fpu/%.o: src/amisqueeze/%.c
+	@mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) $(amisqueeze_fpu_CFLAGS) -MMD -MP -save-temps=obj -c -o $@ $<
+	python3 tools/check-saves.py obj/amisqueeze-fpu/$*.s
+
 define HOST_template
 host: out-host/$(1)
 out-host/$(1): $(patsubst src/%.c,obj-host/%.o,$(call host_srcs,$(1)))
@@ -80,7 +93,7 @@ test: host out-host/test_core
 	out-host/test_core
 	python3 tests/fake_server.py out-host/amisqueeze
 
-dist: out/amisqueeze
+dist: out/amisqueeze out/amisqueeze.fpu
 	python3 tools/make-dist.py amisqueeze
 
 # Check of the generated assembly (kept in obj/<prog>/*.s): tools/check-saves.py fails the build if a function

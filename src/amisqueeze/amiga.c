@@ -33,7 +33,19 @@
 
 /* Read by the Version command: "Version amisqueeze". Printed with VERBOSE: a string nothing reads would be dropped
  * at link time (--gc-sections), and Version would find nothing. */
+#ifdef AMISQUEEZE_FPU
+static const char version[] = "$VER: amisqueeze.fpu 0.3-dev (19.10.2026)";
+#else
 static const char version[] = "$VER: amisqueeze 0.3-dev (19.10.2026)";
+#endif
+
+#ifdef AMISQUEEZE_FPU
+/* Replaces libnix's start-up check, linked in by -m68881: without an FPU it shows an alert and quits before main(),
+ * without a word in the Shell. main() checks instead, with a message. */
+void __fpucheck(void)
+{
+}
+#endif
 
 /* Used for the command line and for the prefs variable */
 #define TEMPLATE "SERVER,PORT/N/K,NAME/K,MAC/K,OUTPUT/K,UNIT/N/K,NOAUDIO/S,SWAP/S,FLAC/K,BENCH/S,VERBOSE/S"
@@ -398,6 +410,13 @@ int main(void)
     BOOL prefs_error;
     int i, rc = RETURN_FAIL;
 
+#ifdef AMISQUEEZE_FPU
+    /* Before anything uses floating point: built for a 68881/68882, this one would crash without an FPU */
+    if (!(SysBase->AttnFlags & (AFF_68881 | AFF_68882 | AFF_FPU40))) {
+        msg("amisqueeze.fpu needs an FPU (68881, 68882, or a 68040/68060 with FPU): use amisqueeze instead\n");
+        return RETURN_FAIL;
+    }
+#endif
     prefs_rda = read_prefs(prefs, &prefs_error);
     if (prefs_error)
         return RETURN_FAIL;
