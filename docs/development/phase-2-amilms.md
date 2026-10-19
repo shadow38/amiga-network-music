@@ -19,6 +19,10 @@ Network code shared with amisqueeze (connection, line reading, logging, Ctrl-C) 
 - **Content**: player list (`players 0 <n>`), choosing a player; `play`, `pause`, `stop`, `playlist index +1/-1`,
   `mixer volume`.
 - **Criterion**: from the Amiga, the squeezelite player on the PC starts, stops, changes track and volume.
+- **Volume**: amilms changes it through LMS (`mixer volume`), which sends it to the player (`audg`), as LMS's own
+  interface does; nothing special for amisqueeze in its default mode. With amisqueeze's possible `FIXED` mode the
+  volume is set on the amplifier; a `MIXER` mode driven from the Amiga would need amilms to talk to amisqueeze
+  itself: see the volume modes of plan step 1.10.
 
 ## 2.3 Real-time state ⬜
 

@@ -11,6 +11,9 @@
  * in advance and sent as soon as the first one ends.
  * AHI's CMD_STOP only holds back the requests sent after it (and those of every program): a pause aborts the
  * blocks with the device and sends again, on resume, what they had not played yet.
+ * The volume is applied to the samples here, as a block is sent for the first time; the device always gets full
+ * volume: with ahi.device 6.6 and paula.audio, requests sent again after an abort (a resume) with a low ahir_Volume
+ * corrupted the free memory list (seen in WinUAE, plan step 1.6).
  */
 #include <stdlib.h>
 #include <string.h>
@@ -28,6 +31,7 @@ int audio_open(struct player *p, int unit, int swap)
     memset(a, 0, sizeof(*a));
     a->swap = swap;
     a->volume = AUDIO_VOLUME_FULL;
+    a->tables = AUDIO_VOLUME_FULL;          /* not built yet (not needed at full volume) */
     for (i = 0; i < AUDIO_BLOCKS; i++) {
         a->block[i].buf = malloc(AUDIO_BLOCK_SIZE);
         if (a->block[i].buf == NULL) {
@@ -70,7 +74,57 @@ static int sent_count(const struct audio *a)
     return k;
 }
 
-/* Sends the ready blocks the device can take, each linked to the one before it (which is playing) */
+/* Volume tables: a 16-bit sample is hi * 256 + lo (hi signed, lo unsigned), so sample * volume = high[hi] +
+ * low[lo], without a multiplication per sample (a 32-bit one costs about 43 cycles on a 68020: a third of a 28 MHz
+ * CPU at 44.1 kHz stereo). Built again when the volume changes. */
+static void build_tables(struct audio *a)
+{
+    int32_t v = (int32_t)a->volume;
+    int i;
+
+    for (i = 0; i < 256; i++) {
+        a->high[i] = (int32_t)(int8_t)i * 256 * v;    /* |hi * 256| <= 2^15, v < 2^16: no overflow */
+        a->low[i] = i * v;
+    }
+    a->tables = a->volume;
+}
+
+/* In place: 16-bit samples to big-endian, scaled by the volume (16.16, unchanged at full volume), then left and
+ * right swapped if asked. Byte by byte, so that the host build gives the same result. */
+static void convert(struct audio *a, uint8_t *d, uint32_t n, int big_endian, int channels)
+{
+    uint32_t i;
+
+    if (a->volume < AUDIO_VOLUME_FULL) {
+        int hi = big_endian ? 0 : 1, lo = 1 - hi;
+
+        if (a->tables != a->volume)
+            build_tables(a);
+        for (i = 0; i + 1 < n; i += 2) {
+            int32_t s = (a->high[d[i + hi]] + a->low[d[i + lo]]) >> 16;
+
+            d[i] = (uint8_t)(s >> 8);
+            d[i + 1] = (uint8_t)s;
+        }
+    } else if (!big_endian)
+        for (i = 0; i + 1 < n; i += 2) {
+            uint8_t t = d[i];
+            d[i] = d[i + 1];
+            d[i + 1] = t;
+        }
+    if (a->swap && channels == 2)
+        for (i = 0; i + 3 < n; i += 4) {
+            uint8_t t0 = d[i], t1 = d[i + 1];
+            d[i] = d[i + 2];
+            d[i + 1] = d[i + 3];
+            d[i + 2] = t0;
+            d[i + 3] = t1;
+        }
+}
+
+/* Sends the ready blocks the device can take, each linked to the one before it (which is playing). A block is
+ * converted when it is sent for the first time, at the volume of that moment: a change is heard once the blocks
+ * already with the device have played (0.2 to 0.4 s); the rest of a paused block is sent again as it is. */
 static void send_ready(struct audio *a, uint32_t now)
 {
     int k = sent_count(a);
@@ -79,12 +133,15 @@ static void send_ready(struct audio *a, uint32_t now)
         int b = a->order[k];
         struct audio_block *bl = &a->block[b];
 
+        if (!bl->converted) {
+            convert(a, bl->buf, bl->len, bl->big_endian, bl->channels);
+            bl->converted = 1;
+        }
         bl->sent = bl->len - bl->done;
         bl->state = BLOCK_SENT;
         if (k == 0)
             a->head_ms = now;               /* the device was idle: this block starts now */
-        plat_audio_send(b, bl->buf + bl->done, bl->sent, bl->rate, bl->channels, k > 0 ? a->order[k - 1] : -1,
-                        a->volume);
+        plat_audio_send(b, bl->buf + bl->done, bl->sent, bl->rate, bl->channels, k > 0 ? a->order[k - 1] : -1);
         k++;
     }
 }
@@ -152,27 +209,6 @@ int audio_pending(const struct player *p)
     return p->audio.count;
 }
 
-/* In place: 16-bit samples to big-endian, then left and right swapped if asked */
-static void convert(uint8_t *d, uint32_t n, const struct pcm_format *f, int swap)
-{
-    uint32_t i;
-
-    if (!f->big_endian)
-        for (i = 0; i + 1 < n; i += 2) {
-            uint8_t t = d[i];
-            d[i] = d[i + 1];
-            d[i + 1] = t;
-        }
-    if (swap && f->channels == 2)
-        for (i = 0; i + 3 < n; i += 4) {
-            uint8_t t0 = d[i], t1 = d[i + 1];
-            d[i] = d[i + 2];
-            d[i + 1] = d[i + 3];
-            d[i + 2] = t0;
-            d[i + 3] = t1;
-        }
-}
-
 void audio_submit(struct player *p, int b, uint32_t n, const struct pcm_format *f, uint32_t now)
 {
     struct audio *a = &p->audio;
@@ -189,11 +225,12 @@ void audio_submit(struct player *p, int b, uint32_t n, const struct pcm_format *
         ring_consume(&p->ring, len);
         got += len;
     }
-    convert(bl->buf, n, f, a->swap);
     bl->len = n;
     bl->done = 0;
     bl->rate = f->rate;
     bl->channels = f->channels;
+    bl->big_endian = f->big_endian;
+    bl->converted = 0;                      /* converted when sent, at the volume of that moment */
     bl->state = BLOCK_READY;
     a->order[a->count++] = b;
     if (!a->paused)
@@ -256,9 +293,8 @@ void audio_resume(struct player *p, uint32_t now)
     send_ready(a, now);
 }
 
-/* The device takes one volume per request and cannot amplify: the louder side, at most full volume. Blocks
- * already with the device keep theirs, so a change is heard 0.2 to 0.4 s later, at no CPU cost (scaling the
- * samples here would act at once, but cost about a tenth of a 28 MHz 68020). */
+/* One volume for both sides (no balance) and no amplification: the louder side, at most full volume. Applied to
+ * the blocks sent from now on (see send_ready). */
 int audio_set_volume(struct player *p, uint32_t left, uint32_t right, int adjust)
 {
     struct audio *a = &p->audio;

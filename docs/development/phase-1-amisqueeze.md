@@ -194,7 +194,8 @@ belongs to the task that opened it; packets serialised field by field; buffers a
 - **Criterion**: every command from the LMS UI acts on the Amiga; the displayed progress stays right after pause
   and resume.
 - **Already done in 1.4**: pause, resume, stop, flush, seek and next track, elapsed time from the bytes played.
-- **Design** (agreed 2026-10-19): the 16.16 gain of `audg` is kept by the audio output and sent with each block
+- **Design** (agreed 2026-10-19; the AHI volume replaced by scaling the samples in 1.6, see there): the 16.16 gain
+  of `audg` is kept by the audio output and sent with each block
   (`ahir_Volume`): blocks already with the device keep theirs, so a change is heard 0.2 to 0.4 s later, at no CPU
   cost (scaling the samples ourselves would act at once but cost about a tenth of a 28 MHz 68020); the louder of
   left and right (LMS sends the same value, or a balance: no balance through AHI for now), never above 1.0 (AHI
@@ -211,12 +212,66 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   0, sent as `adjust` 0) is refused for a player without `HasDigitalOut` in its capabilities, so LMS never sends
   `adjust` 0 to amisqueeze.
 
-## 1.6 Robustness ⬜
+## 1.6 Robustness ✅ (2026-10-19)
 
 - **Content**: buffer underrun (slow network) then recovery; server dropping during playback; Ctrl-C at any time
   (AHI requests aborted, sockets closed); long playback.
 - **Criterion**: one hour of playback without crash or memory leak (`Avail` before/after); Ctrl-C always returns
   cleanly.
+- **Plan** (agreed 2026-10-19): 1.6a scenarios of the fake server (`make test`); 1.6b the same against the real LMS
+  in WinUAE, through a local TCP relay between the emulated Amiga and LMS that can slow the stream down, hold it
+  or reset it, and a server restart; 1.6c Ctrl-C at every moment; 1.6d one hour on the slow profile (Paula). When
+  the server goes, playback stops at once (kept: the server decides what follows when it is back).
+- **1.6a done** (2026-10-19): the fake server's HTTP side can hold the stream (`stall_at`, `stall`) or reset it
+  (`cut_at`, RST). Scenarios: stream held 3 s after 1.5 s of audio (`STMo` once, playback resumes, 4 s played in
+  5.4 s, `OUTPUT` file identical to the data sent); stream reset after 1.5 s (`DSCO 2`, what arrived is played to
+  the end, byte for byte); control connection lost during playback (stream closed, reconnection, nothing playing
+  afterwards). Unit test of a buffer running dry with the AHI output (`STMo` once, nothing lost). 
+- **1.6b, against LMS 9.1.1** (2026-10-19, WinUAE, Paula):
+  - stream held 10 s (more than the ~6 s buffer): `STMo` once, playback resumes, LMS time right before and after;
+  - stream slowed to 68 % of the CD rate for 40 s: LMS handles it itself: on `STMo` it pauses the player (`strm
+    p`), waits for the buffer to fill again, then resumes (`strm u`); so playback goes on in long stretches with
+    pauses, not in tiny pieces; normal again as soon as the rate is;
+  - stream reset: WinUAE's networking reports it as a normal end (`DSCO 0`); what arrived is played, then LMS
+    goes on with the next track;
+  - LMS restarted during playback: playback stops, the player reconnects, LMS keeps its playlist but stays
+    stopped (its choice), a new playback works. **Found**: while LMS was down, amisqueeze connected 121 times in
+    4 s: the Incus proxy (as any relay) accepts the connection and closes it at once, and amisqueeze reconnected
+    without waiting. **Fixed**: a connection lost less than 10 s after it was made is no real session: wait 5 s
+    before the next attempt, as after a refused connection ("retrying in 5 s"); after a real session, reconnect at
+    once (fake server: 5.0 s, then 0.0 s).
+- **1.6c** (2026-10-19, WinUAE): `Break` while waiting to reconnect, connected and idle, waiting for the stream's
+  headers, playing, paused, with an empty buffer, after the end of playback, and twice in a row: always a clean
+  stop (`stopped`), AHI opens again on the next run; memory: the 1,064-byte system steps of 1.4c only.
+- **1.6d** (2026-10-19, slow profile, Paula, two tracks of 44.1 and 48 kHz in a loop): one hour without any `STMo`,
+  still playing, pause and resume still working at the end. LMS time lagged behind the clock by 16 s over the
+  hour (-0.44 %). Measured minute by minute: the lag comes in jumps (1 s once, 6.5 s once), with the music
+  following the clock in between and even catching up a little afterwards (+0.15 %); the protocol is clean (every
+  track received whole, no stop nor flush); track boundaries, both ways and back to the first track, are exact to
+  0.04 s; on the fast profile, -1.0 s in 20 min. So the slow profile's emulation (approximate CPU at real speed)
+  falls behind now and then and catches up; amisqueeze counts the bytes actually played. To check on the real
+  machine (1.9).
+- **Found at the end of the hour: AHI corrupts memory** (2026-10-19). Twice amisqueeze vanished after a stop
+  without printing `stopped`, the system slowed down for seconds, and about 7 KB were lost (AHI and the sockets
+  not closed). Reproduced on a freshly started WinUAE with: playback, pause, resume, stop. The largest free block
+  (`Avail`) shows it: intact while paused, broken right after the resume (5.7 MB down to 0.5 MB, or a bogus 537
+  MB), before any stop; the hang or crash comes later, depending on what was hit. Cause: LMS fades the volume
+  down to 0 before a pause, so the blocks sent again on resume carried `ahir_Volume` 0 (or nearly). With the
+  volume at full: no corruption; with a minimum of 1: corruption and a complete hang; low volumes without a pause:
+  none. So ahi.device 6.6 with paula.audio corrupts the free memory list when requests sent after an abort carry
+  a low volume (its source, AROS copy, does not show why). **Fixed**: the core scales the samples itself when a
+  block is first sent (the rest of a paused block goes again as it was converted), the device always gets full
+  volume (as in 1.4, where pause and resume were tested many times); unit tests check the samples bit for bit,
+  pause included. Sequence replayed twice: memory intact, clean stop. Cost on the slow profile: none at volume
+  100; at 50, Paula 14-bit 65 % to 88 % (8-bit 60 % to 84 %); a first version with one 32-bit multiplication per
+  sample (about 43 cycles on a 68020) reached 100 %, two 256-entry tables (sample = high byte * 256 + low byte)
+  brought it down. User guide: on a slow Amiga, leave LMS at 100 (agreed 2026-10-19); later possibilities: a
+  `FIXED` volume mode (1.10), a faster loop. Final build, one hour on the slow profile at volume 50 (88 % load):
+  no `STMo`, 20 tracks, pause, resume and stop clean, largest free block unchanged. While WinUAE's window was
+  minimised, the emulated machine fell behind real time (2.5 min in 10 min), the music following the Amiga's own
+  clock exactly: time measurements belong to the real machine (1.9), WinUAE only checks crashes, underruns and
+  memory. Test configuration: `win32.iconified_pause=false`, `win32.inactive_pause=false` (an emulation paused
+  by a stray key had stopped an earlier run).
 
 ## 1.7 Other PCM formats and Music Assistant ⬜
 
@@ -287,5 +342,14 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   `LOG=<file>` option: every message written both to the console and to the file (AmigaDOS has no `tee`; today a
   redirection `>file` sends the messages to the file only), appended and flushed after each message like the
   console, usable from the default options too.
+- **Volume modes** (noted 2026-10-19, to decide when the step starts): an option such as `VOLUME=LMS|FIXED|MIXER`.
+  `LMS` (default, as now): the gain sent by the server (`audg`) scales the samples, at a CPU cost on a slow 68020
+  (1.6). `FIXED`: `audg` ignored, full output, no scaling; advertise `HasDigitalOut` in `HELO` so that LMS accepts
+  its "fixed volume" setting and greys its slider instead of showing one that does nothing; the volume is set on
+  the amplifier (the simple answer for slow machines). `MIXER`, an idea to study: the volume set on the AHI output
+  itself (`AHIC_OutputVolume`), at no CPU cost; to check first: which drivers support it (`paula.audio`?
+  Toccata, the PiStorm's DAC), and who drives it: from LMS, it would be `LMS` without the cost, but only if AHI
+  does not fall into the fault seen with `ahir_Volume` (1.6); from the Amiga, amilms would have to talk to
+  amisqueeze itself (an ARexx port, for instance), not only to LMS.
 - **Criterion**: started without arguments, the player finds the server and shows up under the chosen name; with
   `LOG=<file>`, the messages appear in the Shell window and, at the same time, in the file.

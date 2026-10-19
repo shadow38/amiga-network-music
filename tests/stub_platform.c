@@ -253,8 +253,7 @@ void plat_audio_close(void)
     stub_audio_open = 0;
 }
 
-void plat_audio_send(int i, const void *data, uint32_t len, uint32_t rate, int channels, int link,
-                     uint32_t volume)
+void plat_audio_send(int i, const void *data, uint32_t len, uint32_t rate, int channels, int link)
 {
     /* ahi.device plays a linked request only if the one it is linked to is playing (the first queued) */
     if (link >= 0 ? audio_fifo_len != 1 || audio_fifo[0] != link : audio_fifo_len != 0)
@@ -262,7 +261,6 @@ void plat_audio_send(int i, const void *data, uint32_t len, uint32_t rate, int c
     stub_audio[i].data = data;
     stub_audio[i].len = len;
     stub_audio[i].rate = rate;
-    stub_audio[i].volume = volume;
     stub_audio[i].channels = channels;
     stub_audio[i].link = link;
     stub_audio[i].queued = 1;

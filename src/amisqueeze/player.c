@@ -3,7 +3,8 @@
  *
  * One loop around plat_wait(): the control socket and the stream socket, interruption by the user (Ctrl-C), and
  * a timeout that also serves as a timer (100 ms while streaming or playing, for the virtual output and STMt;
- * one second otherwise). Reconnects every RECONNECT_DELAY_S seconds while the server is unreachable.
+ * one second otherwise). Reconnects every RECONNECT_DELAY_S seconds while the server is unreachable, or while it
+ * closes the connection at once.
  */
 #include <string.h>
 
@@ -13,6 +14,8 @@
 /* Server silence after which the connection is considered dead (the server sends strm t every 5 s) */
 #define RX_TIMEOUT_MS 35000
 #define RECONNECT_DELAY_S 5
+/* A connection lost sooner was no real session: a proxy accepting while its server is down, a server restarting */
+#define SESSION_MIN_MS 10000
 
 int parse_mac(const char *s, uint8_t mac[6])
 {
@@ -58,9 +61,21 @@ static int wait_seconds(uint32_t s)
     return 1;
 }
 
+/* The connection is lost: reconnect at once after a real session, otherwise wait as after a failed connection
+ * (without it, a proxy whose server is down gets dozens of connections a second). 0 if interrupted. */
+static int connection_lost(struct player *p, uint32_t since)
+{
+    slim_disconnect(p);
+    if ((uint32_t)(plat_now_ms() - since) >= SESSION_MIN_MS)
+        return 1;
+    msg("retrying in %d s\n", RECONNECT_DELAY_S);
+    return wait_seconds(RECONNECT_DELAY_S);
+}
+
 static void run(struct player *p)
 {
     int reconnect = 0;
+    uint32_t since = 0;                     /* when the connection was established */
 
     for (;;) {
         struct plat_fd fds[2];
@@ -74,6 +89,7 @@ static void run(struct player *p)
                 continue;
             }
             reconnect = 1;
+            since = plat_now_ms();
         }
 
         fds[n].sock = p->sock;
@@ -88,12 +104,9 @@ static void run(struct player *p)
         r = plat_wait(fds, n, player_busy(p) ? 100 : 1000);
         if (r == -1)
             return;
-        if (r == -2) {
-            slim_disconnect(p);
-            continue;
-        }
-        if ((fds[0].ready & PLAT_READ) && !slim_receive(p)) {
-            slim_disconnect(p);
+        if (r == -2 || ((fds[0].ready & PLAT_READ) && !slim_receive(p))) {
+            if (!connection_lost(p, since))
+                return;
             continue;
         }
         /* The control packet may have closed or replaced the stream: only use a ready state that is still valid */
@@ -102,7 +115,8 @@ static void run(struct player *p)
         output_tick(p, plat_now_ms());
         if ((uint32_t)(plat_now_ms() - p->last_rx) > RX_TIMEOUT_MS) {
             msg("amisqueeze: no news from the server, reconnecting\n");
-            slim_disconnect(p);
+            if (!connection_lost(p, since))
+                return;
         }
     }
 }

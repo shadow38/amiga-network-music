@@ -31,7 +31,7 @@ extern int      stub_file_limit;        /* writes stop at this file size, like a
 
 struct stub_audio_req {
     const uint8_t *data;
-    uint32_t       len, rate, volume;
+    uint32_t       len, rate;
     int            channels, link, queued, ended;
 };
 extern struct stub_audio_req stub_audio[8];

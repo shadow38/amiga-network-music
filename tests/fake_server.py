@@ -111,11 +111,14 @@ def scenario_session():
         opcode, body = read_packet(conn)
         check(opcode == b"SETD" and body == b"\0Renamed\0", "setd answered with SETD and the new name")
 
-        conn.close()
+        conn.close()                    # after a few seconds: no real session, the player waits before retrying
+        t_closed = time.time()
         conn = accept(server)
+        waited = time.time() - t_closed
         opcode, body = read_packet(conn)
         check(opcode == b"HELO" and struct.unpack(">H", body[24:26])[0] == 0x4000,
               "reconnection after a disconnect, with the reconnection flag")
+        check(4.5 <= waited <= 6.5, "short session: reconnection after the 5 s delay (%.1f s)" % waited)
         conn.close()
     finally:
         rc, out = stop(proc)
@@ -125,6 +128,7 @@ def scenario_session():
     check("volume: 25.0 % of full amplitude" in out and "volume: 100.0 % of full amplitude" in out,
           "audg: volume set, then fixed volume (full)")
     check("connection closed by the server" in out, "disconnect reported")
+    check("retrying in 5 s" in out, "wait announced")
 
 
 PCM_BPS = 176400                        # 44.1 kHz, 16 bits, stereo
@@ -132,19 +136,27 @@ HTTP_HEADERS = b"HTTP/1.0 200 OK\r\nContent-Type: audio/L16;rate=44100;channels=
 HTTP_REQUEST = b"GET /test.pcm?player=test HTTP/1.0\r\n\r\n"
 
 
+def frames(seconds):
+    """Bytes of `seconds` of audio, whole frames"""
+    return int(PCM_BPS * seconds) // 4 * 4
+
+
 class HttpServer(threading.Thread):
     """Serves one PCM track: `seconds` of audio, sent in chunks of `chunk` bytes every `pause` seconds. The bytes
-    are pseudo-random (fixed `seed`): a byte lost, duplicated or moved shows in a comparison."""
+    are pseudo-random (fixed `seed`): a byte lost, duplicated or moved shows in a comparison. A slow network:
+    sending stops for `stall` seconds after `stall_at` bytes. A broken connection: it is reset (RST) after
+    `cut_at` bytes."""
 
-    def __init__(self, seconds, chunk=65536, pause=0.0, seed=1):
+    def __init__(self, seconds, chunk=65536, pause=0.0, seed=1, stall_at=None, stall=0.0, cut_at=None):
         super().__init__(daemon=True)
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.sock.bind(("127.0.0.1", 0))
         self.sock.listen(1)
         self.port = self.sock.getsockname()[1]
-        self.data = random.Random(seed).randbytes(int(PCM_BPS * seconds))
+        self.data = random.Random(seed).randbytes(frames(seconds))
         self.chunk, self.pause = chunk, pause
+        self.stall_at, self.stall, self.cut_at = stall_at, stall, cut_at
         self.request = b""
         self.closed_by_player = False
 
@@ -154,13 +166,23 @@ class HttpServer(threading.Thread):
         conn.settimeout(TIMEOUT)
         while not self.request.endswith(b"\r\n\r\n"):
             self.request += conn.recv(1)
+        end = len(self.data) if self.cut_at is None else self.cut_at
+        marks = sorted({end} | ({self.stall_at} if self.stall_at is not None else set()))
         try:
             conn.sendall(HTTP_HEADERS)
-            for i in range(0, len(self.data), self.chunk):
-                conn.sendall(self.data[i:i + self.chunk])
-                time.sleep(self.pause)
+            pos = 0
+            for mark in marks:
+                for i in range(pos, mark, self.chunk):
+                    conn.sendall(self.data[i:min(i + self.chunk, mark)])
+                    time.sleep(self.pause)
+                pos = mark
+                if mark == self.stall_at:
+                    time.sleep(self.stall)
         except OSError:
             self.closed_by_player = True
+        if self.cut_at is not None:     # RST instead of a normal end, once the data sent has arrived
+            time.sleep(0.5)
+            conn.setsockopt(socket.SOL_SOCKET, socket.SO_LINGER, struct.pack("ii", 1, 0))
         conn.close()
         self.sock.close()
 
@@ -321,6 +343,94 @@ def scenario_output():
     os.rmdir(tmp)
 
 
+def read_output(path):
+    with open(path, "rb") as f:
+        data = f.read()
+    os.remove(path)
+    os.rmdir(os.path.dirname(path))
+    return data
+
+
+def scenario_stall():
+    print("-- slow network: the stream stops for 3 s, the buffer runs dry (STMo), then playback resumes")
+    path = os.path.join(tempfile.mkdtemp(), "play.pcm")
+    http = HttpServer(4.0, stall_at=frames(1.5), stall=3.0)
+    http.start()
+    server, proc, s = start_session("Stall", "OUTPUT=" + path)
+    try:
+        send_strm_s(s, http, threshold_kb=16)
+        t_start, _, _ = s.until("STAT:STMs")
+        t_dry, _, _ = s.until("STAT:STMo")
+        t_end, _, _ = s.until("STAT:STMu", timeout=10)
+        check(1.3 <= t_dry - t_start <= 1.8, "buffer empty after the 1.5 s received (%.2f s)" % (t_dry - t_start))
+        check(s.names().count("STAT:STMo") == 1, "STMo once")
+        # 1.5 s played, a wait until the data comes back (3 s after it stopped), then the 2.5 s left
+        check(5.2 <= t_end - t_start <= 6.0, "4 s of audio played in %.2f s, including the wait" % (t_end - t_start))
+    finally:
+        rc, out = stop(proc)
+        server.close()
+    data = read_output(path)
+    check(data == http.data, "nothing lost nor repeated (%d bytes of %d, first difference at byte %d)"
+          % (len(data), len(http.data), first_difference(data, http.data)))
+    check("output: buffer empty, waiting for data" in out, "buffer empty reported")
+
+
+def scenario_cut():
+    print("-- broken stream: the connection is reset after 1.5 s of audio")
+    path = os.path.join(tempfile.mkdtemp(), "play.pcm")
+    http = HttpServer(4.0, cut_at=frames(1.5))
+    http.start()
+    server, proc, s = start_session("Cut", "OUTPUT=" + path)
+    try:
+        send_strm_s(s, http, threshold_kb=16)
+        t_start, _, _ = s.until("STAT:STMs")
+        _, _, dsco = s.until("DSCO")
+        s.until("STAT:STMd")
+        t_end, _, _ = s.until("STAT:STMu", timeout=6)
+        check(dsco == b"\2", "DSCO 2 (connection lost on the server's side), got %r" % dsco)
+        check(1.3 <= t_end - t_start <= 1.9, "what arrived is played to the end (%.2f s)" % (t_end - t_start))
+    finally:
+        rc, out = stop(proc)
+        server.close()
+    data = read_output(path)
+    check(data == http.data[:frames(1.5)], "the 1.5 s received played as sent (%d bytes, first difference at %d)"
+          % (len(data), first_difference(data, http.data)))
+    check(rc == 0 and "stream: recv: error" in out, "error reported, clean exit")
+
+
+def scenario_control_lost():
+    print("-- server lost during playback, after more than 10 s: playback stops, the player reconnects at once")
+    http = HttpServer(15.0, chunk=17640, pause=0.1)     # sent in real time: still streaming when the server goes
+    http.start()
+    server, proc, s = start_session("Lost")
+    try:
+        send_strm_s(s, http, threshold_kb=16)
+        s.until("STAT:STMs")
+        time.sleep(10.5)
+        s.conn.close()
+        t_closed = time.time()
+        conn = accept(server)
+        waited = time.time() - t_closed
+        opcode, body = read_packet(conn)
+        check(opcode == b"HELO" and struct.unpack(">H", body[24:26])[0] == 0x4000,
+              "reconnection with the reconnection flag")
+        check(waited < 1.0, "real session: reconnection at once (%.1f s)" % waited)
+        http.join(timeout=TIMEOUT)
+        check(http.closed_by_player, "stream connection closed by the player")
+        s = Session(conn)
+        time.sleep(1.0)
+        send_packet(conn, b"strm", strm("t", replay_gain=1))
+        _, _, body = s.until("STAT:STMt")
+        check(stat_elapsed_ms(body) == 0 and "STAT:STMu" not in s.names(), "nothing playing after the reconnection")
+        conn.close()
+    finally:
+        rc, out = stop(proc)
+        server.close()
+    # Closed with the player's STAT still unread, the connection may end with a reset: "recv: error"
+    reported = "connection closed by the server" in out or "amisqueeze: recv: error" in out
+    check(rc == 0 and reported, "loss reported, clean exit (exit code %s)" % rc)
+
+
 def scenario_no_server():
     print("-- no server listening: retries, Ctrl-C during the wait")
     probe = socket.socket()
@@ -357,6 +467,9 @@ if __name__ == "__main__":
     scenario_pause()
     scenario_stop()
     scenario_output()
+    scenario_stall()
+    scenario_cut()
+    scenario_control_lost()
     scenario_no_server()
     scenario_arguments()
     print("fake_server: %d failed" % failures)

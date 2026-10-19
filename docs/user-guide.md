@@ -91,18 +91,20 @@ default). Set that unit in the AHI preferences (`SYS:Prefs/AHI`):
 
 With Paula, AHI converts and mixes the sound with the CPU: on a 68020 at about 28 MHz (measured in WinUAE),
 playback takes about two thirds of the CPU, 14-bit modes a little more than 8-bit ones; amisqueeze itself takes
-only a few percent.
+only a few percent at full volume (see the volume below).
 
 AHI is given about 0.6 s of audio ahead; pause, stop and seek cut the sound at once, and the playing time shown by
 LMS follows what was actually played. If left and right come out swapped (seen in WinUAE with `paula.audio` 4.30,
 in 8 and 14 bits, while Paula itself is right: not checked on a real Amiga yet), add `SWAP`. Occasional
 crackles with `paula.audio` in WinUAE also occur without amisqueeze (AHI's own test tone).
 
-**Volume**: amisqueeze follows the volume set in LMS (slider, apps, mute), through AHI: a change is heard 0.2 to
-0.4 s later, at no CPU cost. LMS's volume scale is logarithmic: 100 is full volume, 50 is quiet (about -25 dB, 6 %
-of full amplitude), 25 very quiet; mute and unmute fade in about a second. LMS offers no "fixed volume" for this
-kind of player: for full volume, set it to 100 (and turn the amplifier down). With `VERBOSE`, each change prints
-`volume: 5.9 % of full amplitude`.
+**Volume**: amisqueeze follows the volume set in LMS (slider, apps, mute): it scales the samples itself (AHI always
+plays them at full volume) and a change is heard 0.2 to 0.4 s later. LMS's volume scale is logarithmic: 100 is
+full volume, 50 is quiet (about -25 dB, 6 % of full amplitude), 25 very quiet; mute and unmute fade in about a
+second. LMS offers no "fixed volume" for this kind of player: for full volume, set it to 100. Below 100 the
+scaling costs CPU time: on a 68020 at about 28 MHz with Paula, about a quarter of the CPU on top of AHI's two
+thirds (measured in WinUAE). **On a slow Amiga, leave LMS at 100 and set the volume on the amplifier**: at 100 the
+samples are not touched. With `VERBOSE`, each change prints `volume: 5.9 % of full amplitude`.
 
 ### Default options
 

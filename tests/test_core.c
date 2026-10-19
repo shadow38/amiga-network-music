@@ -1018,6 +1018,54 @@ static void test_audio_wait_full_block(void)
     teardown(&p);
 }
 
+static int count_in_trace(const char *name)
+{
+    const char *t = trace();
+    int n = 0;
+
+    while ((t = strstr(t, name)) != NULL) {
+        n++;
+        t += strlen(name);
+    }
+    return n;
+}
+
+/* Buffer empty while the stream goes on (slow network): STMo once, when the device has played everything; the
+ * data that comes back is played, nothing lost */
+static void test_audio_starved(void)
+{
+    struct player p;
+    int guard;
+
+    setup_audio(&p, 0);
+    open_stream(&p, '1', 1);
+    stub_feed_stream(track_a, 40000);
+    drain_stream(&p);
+    clear_tx();
+    output_tick(&p, stub_now);
+    CHECK(stub_audio_sends == 2);                       /* a full block, and the rest: the device would run dry */
+    finish(&p);
+    CHECK(count_in_trace("STMo") == 0);                 /* one block still playing */
+    finish(&p);
+    for (guard = 0; guard < 5; guard++)
+        finish(&p);
+    CHECK(count_in_trace("STMo") == 1 && p.out.state == OUTPUT_RUNNING);
+
+    stub_feed_stream(track_a + 40000, 60000);
+    drain_stream(&p);
+    output_tick(&p, stub_now);
+    CHECK(audio_pending(&p) > 0);
+    stub_stream_end();
+    stream_io(&p, PLAT_READ);
+    for (guard = 0; guard < 20 && p.out.state == OUTPUT_RUNNING; guard++)
+        finish(&p);
+    to_device(expect, track_a, 100000, 0);
+    CHECK(stub_audio_out_len == 100000 && !memcmp(stub_audio_out, expect, 100000));
+    CHECK(count_in_trace("STMo") == 1 && count_in_trace("STAT:STMu") == 1);
+    CHECK(stub_audio_bad == 0);
+    teardown(&p);
+}
+
 /* No AHI; a sample size the audio output does not take */
 static void test_audio_errors(void)
 {
@@ -1051,29 +1099,57 @@ static void feed_audg(int adjust, uint32_t left, uint32_t right)
     stub_feed_packet("audg", b, sizeof(b));
 }
 
-/* Volume (audg): sent with each block, those already with the device keep theirs; the louder side, never above
- * full; fixed volume = full; the rest of a paused block goes again at the volume of the moment */
+/* Like to_device(), with the samples scaled by a 16.16 volume first */
+static void to_device_vol(uint8_t *dst, const uint8_t *src, uint32_t n, int swap_lr, uint32_t volume)
+{
+    uint32_t i;
+
+    to_device(dst, src, n, swap_lr);
+    if (volume >= 0x10000)
+        return;
+    for (i = 0; i + 1 < n; i += 2) {
+        int32_t s = (int16_t)(dst[i] << 8 | dst[i + 1]);
+
+        s = s * (int32_t)volume >> 16;
+        dst[i] = (uint8_t)(s >> 8);
+        dst[i + 1] = (uint8_t)s;
+    }
+}
+
+/* Plays the rest of the track to its end */
+static void play_out(struct player *p)
+{
+    int guard;
+
+    stub_stream_end();
+    stream_io(p, PLAT_READ);
+    for (guard = 0; guard < 20 && p->out.state == OUTPUT_RUNNING; guard++)
+        finish(p);
+}
+
+/* Volume (audg): the samples are scaled when a block is sent, the device always gets full volume; the blocks
+ * already with the device keep theirs; the louder side, never above full; fixed volume = full */
 static void test_audio_volume(void)
 {
     struct player p;
-    int order[8];
 
-    setup_audio(&p, 0);
+    fill(track_a, sizeof(track_a), 5);
+    setup_audio(&p, 1);
     p.verbose = 1;
     open_stream(&p, '1', 1);
     stub_feed_stream(track_a, sizeof(track_a));
     drain_stream(&p);
-    output_tick(&p, stub_now);
-    CHECK(stub_audio_queue(order) == 2);
-    CHECK(stub_audio[order[0]].volume == 0x10000 && stub_audio[order[1]].volume == 0x10000);  /* before audg */
+    output_tick(&p, stub_now);                          /* two blocks sent at full volume, the third one filled */
+    CHECK(stub_audio_sends == 2);
 
     stub_out[0] = '\0';
     feed_audg(1, 0x4000, 0x4000);
     drain(&p);
     CHECK(strstr(stub_out, "volume: 25.0 % of full amplitude") != NULL);
-    CHECK(stub_audio_queue(order) == 2 && stub_audio[order[1]].volume == 0x10000);    /* already sent: as is */
-    finish(&p);
-    CHECK(stub_audio_queue(order) == 2 && stub_audio[order[1]].volume == 0x4000);     /* the next one */
+    play_out(&p);
+    to_device_vol(expect, track_a, 2 * BLOCK, 1, 0x10000);
+    to_device_vol(expect + 2 * BLOCK, track_a + 2 * BLOCK, sizeof(track_a) - 2 * BLOCK, 1, 0x4000);
+    CHECK(stub_audio_out_len == (int)sizeof(track_a) && !memcmp(stub_audio_out, expect, sizeof(track_a)));
 
     stub_out[0] = '\0';
     feed_audg(1, 0x4000, 0x4000);                       /* the same again (the server repeats it): quiet */
@@ -1091,7 +1167,24 @@ static void test_audio_volume(void)
     feed_audg(0, 0x0F00, 0x0F00);                       /* fixed volume: full, whatever the gains */
     drain(&p);
     CHECK(p.audio.volume == 0x10000);
+    CHECK(stub_audio_bad == 0);
+    teardown(&p);
+}
 
+/* Pause, volume change, resume: the rest of a block already sent goes again as it was converted (not scaled
+ * twice); the block filled but not sent yet takes the new volume; muted = silence */
+static void test_audio_volume_pause(void)
+{
+    struct player p;
+    uint32_t i;
+    int zero;
+
+    fill(track_a, sizeof(track_a), 6);
+    setup_audio(&p, 0);
+    open_stream(&p, '1', 1);
+    stub_feed_stream(track_a, sizeof(track_a));
+    drain_stream(&p);
+    output_tick(&p, stub_now);
     stub_audio_abort_played = 1000;
     feed_strm('p', NULL, 0, 0, 0, NULL);
     drain(&p);
@@ -1099,10 +1192,24 @@ static void test_audio_volume(void)
     drain(&p);
     feed_strm('u', NULL, 0, 0, 0, NULL);
     drain(&p);
-    CHECK(stub_audio_queue(order) == 2);
-    CHECK(stub_audio[order[0]].len == BLOCK - 1000 && stub_audio[order[0]].volume == 0x8000);
-    CHECK(stub_audio[order[1]].volume == 0x8000);
+    play_out(&p);
+    to_device_vol(expect, track_a, 2 * BLOCK, 0, 0x10000);
+    to_device_vol(expect + 2 * BLOCK, track_a + 2 * BLOCK, sizeof(track_a) - 2 * BLOCK, 0, 0x8000);
+    CHECK(stub_audio_out_len == (int)sizeof(track_a) && !memcmp(stub_audio_out, expect, sizeof(track_a)));
     CHECK(stub_audio_bad == 0);
+    teardown(&p);
+
+    setup_audio(&p, 0);
+    feed_audg(1, 0, 0);
+    drain(&p);
+    open_stream(&p, '1', 1);
+    stub_feed_stream(track_a, 40000);
+    drain_stream(&p);
+    output_tick(&p, stub_now);
+    play_out(&p);
+    for (i = 0, zero = 1; i < (uint32_t)stub_audio_out_len; i++)
+        zero &= stub_audio_out[i] == 0;
+    CHECK(stub_audio_out_len == 40000 && zero);
     teardown(&p);
 }
 
@@ -1135,8 +1242,10 @@ int main(void)
     test_audio_stop();
     test_audio_gapless();
     test_audio_wait_full_block();
+    test_audio_starved();
     test_audio_errors();
     test_audio_volume();
+    test_audio_volume_pause();
     printf("test_core: %d checks, %d failed\n", checks, failures);
     return failures ? 1 : 0;
 }

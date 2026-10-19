@@ -172,10 +172,9 @@ void plat_audio_close(void)
 {
 }
 
-void plat_audio_send(int i, const void *data, uint32_t len, uint32_t rate, int channels, int link,
-                     uint32_t volume)
+void plat_audio_send(int i, const void *data, uint32_t len, uint32_t rate, int channels, int link)
 {
-    (void)i; (void)data; (void)len; (void)rate; (void)channels; (void)link; (void)volume;
+    (void)i; (void)data; (void)len; (void)rate; (void)channels; (void)link;
 }
 
 int plat_audio_done(int i)

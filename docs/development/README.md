@@ -55,7 +55,8 @@ success criterion and a way to check it.
 | 1.3 amisqueeze: output to a file | ✅ 2026-10-18 |
 | 1.4 amisqueeze: AHI audio output | ✅ 2026-10-19 |
 | 1.5 amisqueeze: commands and volume | ✅ 2026-10-19 |
-| **1.6 to 1.10** | ⬜ **next: 1.6 (robustness)** |
+| 1.6 amisqueeze: robustness | ✅ 2026-10-19 |
+| 1.7 to 1.10 | ⬜ |
 | 2.1 to 2.7 amilms | ⬜ |
 | 3.1 Licence and user documentation | 🔶 licence: MIT |
 | 3.2 to 3.3 release | ⬜ |

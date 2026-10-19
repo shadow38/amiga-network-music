@@ -40,8 +40,9 @@ Work proceeds in testable steps, each validated with the user **before** writing
 Step 1.4: 1.4a and 1.4b done (AHI output); 1.4c listening done on 2026-10-19 (test tones, a whole 48 kHz track as
 MP3 and FLAC, Paula needs `SWAP` in WinUAE); rest of 1.4c measured the same day (2 KB stack OK, no leak, CPU
 load on the slow 68020 profile: 61-68 % with Paula, almost all of it AHI; 2-5 % with `NOAUDIO`). Step 1.4
-validated on 2026-10-19. Step 1.5 (volume from `audg`, sent with each AHI block) validated on 2026-10-19; next 1.6
-(robustness, one hour of playback).
+validated on 2026-10-19. Step 1.5 (volume from `audg`) validated on 2026-10-19. Step 1.6 (robustness) on
+2026-10-19: reconnection storm fixed (wait 5 s after a session shorter than 10 s), AHI memory corruption avoided
+(volume applied to the samples, see Pitfalls); validated on 2026-10-19.
 
 Step 1.2 (stream.c, ring.c): HTTP stream with a non-blocking connection; one 1 MB ring buffer, reported to LMS
 as both the stream and the output buffer (raw PCM needs no decoding); a virtual output consumes it at the PCM rate
@@ -65,6 +66,10 @@ audio output (`audio.c`, portable: blocks, conversion, played bytes, pause; `ahi
 **playing** one first (it takes the linked one along; the reverse order leaves a stale reference that hangs the
 device); `CMD_STOP` does not pause what is playing (pause = abort, then send the rest again); a non-real-time mode
 ("Filesave") on a device unit writes only silence. The test stub enforces the first two rules (`stub_audio_bad`).
+**Never send `ahir_Volume` below full** (found in step 1.6): with AHI 6.6 and `paula.audio`, requests sent again
+after an abort (a resume) with a low volume corrupt the free memory list, and the system hangs or amisqueeze dies
+later; the core scales the samples instead (two 256-entry tables, no multiplication per sample). Check memory with
+the `Largest` column of `Avail`: a jump there is the first sign of a corruption.
 
 amisqueeze state: control connection (step 1.1) validated on 2026-10-18 in WinUAE (`bsdsocket_emu`,
 `SERVER=127.0.0.1`) with LMS 9.1.1: the player shows up in LMS and reconnects by itself after a server restart.
