@@ -110,6 +110,9 @@ wsl --cd $PWD --exec sh tools/amiga-make.sh
 
 Run `make sdk` (task **Amiga: sync headers (.sdk)**) after installing or updating the toolchain, for IntelliSense.
 
+`make dist` (`sh tools/amiga-make.sh dist`) builds the release archive `out/amisqueeze-<version>.zip`: the Amiga
+executable, `LICENSE`, this README and the user guide, the version read from the program's `$VER:` string.
+
 Per-program options live in the `Makefile` (`<prog>_CFLAGS`): network programs target the 68020 (`-m68020`).
 Header dependencies are tracked (`-MMD -MP`, `obj/<prog>/*.d` files).
 

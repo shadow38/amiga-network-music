@@ -8,6 +8,8 @@
 #   make host     host build of the programs listed in HOST_PROGS (out-host/), native compiler $(HOSTCC)
 #   make test     host build, unit tests of the portable core (tests/test_core.c), then scenarios against the
 #                 host build of amisqueeze driven by a fake server (tests/fake_server.py, python3)
+#   make dist     release archive of amisqueeze: out/amisqueeze-<version>.zip (executable, LICENSE, README.md,
+#                 user guide), the version read from its $VER: string (tools/make-dist.py, python3)
 #   make clean    removes every build directory
 #   make sdk      copies the toolchain headers into .sdk/ (IntelliSense)
 
@@ -39,7 +41,7 @@ host_srcs  = $(filter-out src/$(1)/amiga.c,$(wildcard src/$(1)/*.c))
 TOOLCHAIN = $(abspath $(dir $(shell command -v $(CC)))..)
 GCC_INC   = $(shell $(CC) -print-file-name=include)
 
-.PHONY: all clean sdk host test $(PROGS)
+.PHONY: all clean sdk host test dist $(PROGS)
 
 all: $(PROGS)
 
@@ -69,6 +71,9 @@ out-host/test_core: obj-host/tests/test_core.o obj-host/tests/stub_platform.o \
 test: host out-host/test_core
 	out-host/test_core
 	python3 tests/fake_server.py out-host/amisqueeze
+
+dist: out/amisqueeze
+	python3 tools/make-dist.py amisqueeze
 
 # Check of the generated assembly (kept in obj/<prog>/*.s): tools/check-saves.py fails the build if a function
 # modifies a d2-d7/a2-a6 register without saving it (gcc 16.1 bug, fixed in 16.2; kept as a safeguard).
