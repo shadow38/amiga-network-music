@@ -19,7 +19,7 @@
 
 /* Advertised in HELO, followed by the formats played: only those really decoded (pcm always, flc when FLAC is
  * decoded here); the server converts the rest */
-#define CAPS "Model=squeezelite,ModelName=AmiSqueeze,Firmware=0.2,AccuratePlayPoints=0,HasDigitalOut=0," \
+#define CAPS "Model=squeezelite,ModelName=AmiSqueeze,Firmware=0.3-dev,AccuratePlayPoints=0,HasDigitalOut=0," \
              "MaxSampleRate=48000,"
 
 /* ---- serialisation ---- */

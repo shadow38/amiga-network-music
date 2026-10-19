@@ -33,7 +33,7 @@
 
 /* Read by the Version command: "Version amisqueeze". Printed with VERBOSE: a string nothing reads would be dropped
  * at link time (--gc-sections), and Version would find nothing. */
-static const char version[] = "$VER: amisqueeze 0.2 (19.10.2026)";
+static const char version[] = "$VER: amisqueeze 0.3-dev (19.10.2026)";
 
 /* Used for the command line and for the prefs variable */
 #define TEMPLATE "SERVER,PORT/N/K,NAME/K,MAC/K,OUTPUT/K,UNIT/N/K,NOAUDIO/S,SWAP/S,FLAC/K,BENCH/S,VERBOSE/S"
