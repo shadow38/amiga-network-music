@@ -91,7 +91,8 @@ wsl --cd $PWD --exec sh tools/amiga-make.sh
 Run `make sdk` (task **Amiga: sync headers (.sdk)**) after installing or updating the toolchain, for IntelliSense.
 
 `make dist` (`sh tools/amiga-make.sh dist`) builds the release archive `out/amisqueeze-<version>.zip`: the Amiga
-executables, `LICENSE`, the README and the user guide, the version read from the program's `$VER:` string.
+executables, `LICENSE`, the README and the user guide with its images (`docs/images/`), the version read from the
+program's `$VER:` string.
 
 Per-program options live in the `Makefile` (`<prog>_CFLAGS`): network programs target the 68020 (`-m68020`).
 amisqueeze is built twice: `out/amisqueeze` (68020, no FPU) and `out/amisqueeze.fpu` (68020 + 68881, with the MP3

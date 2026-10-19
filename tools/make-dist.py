@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Builds the release archive of a program: out/<prog>-<version>.zip, holding a <prog>-<version>/ directory with
-the Amiga executable (out/<prog>, and out/<prog>.fpu if built), LICENSE, README.md and the user guide. The version
-is read from the $VER: string of src/<prog>/amiga.c, so the archive always matches the executable.
+the Amiga executable (out/<prog>, and out/<prog>.fpu if built), LICENSE, README.md and the user guide with its
+images (docs/images/ -> images/). The version is read from the $VER: string of src/<prog>/amiga.c, so the archive
+always matches the executable.
 
 Paths inside the zip use forward slashes (the zip standard: Windows PowerShell 5.1's Compress-Archive writes
 backslashes, which other tools misread). An .lha archive for Aminet is left for later (plan step 3.2).
@@ -32,6 +33,8 @@ def main():
              ("docs/user-guide.md", "user-guide.md")]
     if os.path.isfile(f"out/{prog}.fpu"):       # the FPU build, when the program has one
         files.insert(1, (f"out/{prog}.fpu", f"{prog}.fpu"))
+    if os.path.isdir("docs/images"):             # the user guide's images, at the same place relative to it
+        files += [(f"docs/images/{n}", f"images/{n}") for n in sorted(os.listdir("docs/images"))]
     for src, _ in files:
         if not os.path.isfile(src):
             sys.exit(f"make-dist: {src} missing (build the Amiga version first)")

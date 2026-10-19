@@ -224,6 +224,12 @@ for that unit:
 Then save. With Paula, `Paula:8 bit stereo++` takes a little less CPU than the 14-bit mode, at a lower quality;
 the "HiFi" modes take more.
 
+![The AHI preferences: unit 0 chosen at the top left, the mode Paula:14 bit stereo++ selected in the list, the
+frequency at 27429 Hz and 1 channel on the right](images/ahi-prefs-unit0.png)
+
+*The AHI preferences (AHI 6, with MUI) set for amisqueeze with Paula: unit 0, `Paula:14 bit stereo++`, the
+highest frequency, 1 channel.*
+
 #### How it plays
 
 With Paula, AHI converts and mixes the sound with the CPU: on a 68020 at about 28 MHz (measured in WinUAE),
