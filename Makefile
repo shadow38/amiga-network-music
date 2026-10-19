@@ -1,5 +1,5 @@
 # Cross-compilation for AmigaOS: m68k-amigaos-gcc must be in the PATH (otherwise use tools/amiga-make.sh, which
-# finds the available toolchain; see docs/development/building.md).
+# finds the available toolchain; see CONTRIBUTING.md).
 #
 # One program per directory: src/<prog>/*.c -> out/<prog>. In a program directory, amiga.c is only built for
 # the Amiga and posix.c only for the host.

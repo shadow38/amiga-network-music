@@ -88,7 +88,7 @@ through AHI and Paula takes about two thirds of the CPU.
 ## For developers
 
 Building (cross-compiler, `make`, `make dist`), the host build and its tests (`make test`, also run by GitHub on
-each push), testing in WinUAE, the repository layout: **[building and testing](docs/development/building.md)**.
+each push), testing in WinUAE, the repository layout: **[CONTRIBUTING.md](CONTRIBUTING.md)**.
 The roadmap and the design decisions are in the [development plan](docs/development/README.md).
 
 ## Licence

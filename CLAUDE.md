@@ -1,10 +1,11 @@
 # CLAUDE.md — amiga-network-music
 
 Personal project: network music for classic Amiga (AmigaOS 3.x), in C, tested in WinUAE. The `README.md` is for
-users (what it is, quick start; decided 2026-10-19: keep it short); building, tests, layout and tasks are in
-`docs/development/building.md`, the server setup in the user guide; this file keeps context, decisions and
-pitfalls. Public GitHub
-repository `shadow38/amiga-network-music`: **nothing specific to the developer's workstation goes here** (local
+users (what it is, quick start; decided 2026-10-19: keep it short); building, tests, layout, tasks and how to
+propose a change are in `CONTRIBUTING.md` at the root (moved there from `docs/development/building.md` on
+2026-10-19, the GitHub convention); `docs/` holds the user guide and its images, `docs/development/` the plan; the
+server setup is in the user guide; this file keeps context, decisions and pitfalls. Public GitHub repository
+`shadow38/amiga-network-music`: **nothing specific to the developer's workstation goes here** (local
 paths, corporate proxy, personal settings, neighbouring folders); those live in local files outside the
 repository. Documentation, code comments and program messages are in English.
 

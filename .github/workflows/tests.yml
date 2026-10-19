@@ -1,6 +1,6 @@
 # Host tests on each push and pull request (plan step 3.3): the portable core built natively with AddressSanitizer
 # and UBSan, its unit tests, then the fake server's scenarios against the host build ("make test" in
-# docs/development/building.md).
+# CONTRIBUTING.md).
 # The Amiga build is not done here yet (planned before 1.0).
 name: tests
 

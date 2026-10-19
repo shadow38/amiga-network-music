@@ -1,7 +1,19 @@
-# Building and testing
+# Contributing
 
-For developers: how to build Amiga Network Music, test it and find one's way in the repository. Using the
-programs is covered in the [user guide](../user-guide.md); what comes next is in the [plan](README.md).
+For developers: how to build Amiga Network Music, test it, find one's way in the repository and propose a change.
+Using the programs is covered in the [user guide](docs/user-guide.md); what comes next is in the
+[development plan](docs/development/README.md).
+
+## Proposing a change
+
+- For anything more than a small fix, **open an issue first**: the work proceeds in planned steps, each with an
+  agreed content and success criterion (see the plan), and a change may already be planned, or ruled out.
+- `make test` must pass (GitHub runs it on each pull request); add tests for what you change in the portable core.
+  The Amiga build must also be tried in WinUAE (see below): the tests run the core on the build machine only.
+- Code, comments, documentation and program messages are in English; strings shown on the Amiga stay ASCII.
+- The licence is MIT: no code copied from GPL projects (squeezelite and LMS are references for the protocol's
+  behaviour, never a source of code); third-party code only under an MIT-compatible licence, in `third_party/`
+  with its origin and licence.
 
 ## Requirements
 
@@ -33,9 +45,9 @@ Note that in the `amigadev/crosstools` image, `gcc` is the Amiga cross-compiler:
 
 - WinUAE 6.0 (or a real machine), with a TCP/IP stack (see [Testing in WinUAE](#testing-in-winuae));
 - an LMS server reachable from the Amiga, set up as in the user guide's
-  [server setup](../user-guide.md#server-setup), with the `mp3 pcm` rule (to test the builds that leave MP3 to
+  [server setup](docs/user-guide.md#server-setup), with the `mp3 pcm` rule (to test the builds that leave MP3 to
   the server); the CLI port (9090/tcp) is handy to drive it from scripts; squeezelite on the PC is handy as a
-  reference player. See also steps 0.2 and 0.3 of the [tooling plan](phase-0-tooling.md).
+  reference player. See also steps 0.2 and 0.3 of the [tooling plan](docs/development/phase-0-tooling.md).
 
 ## Repository layout
 
@@ -53,7 +65,8 @@ obj-host/, out-host/  host objects and executables (generated)
 .vscode/              tasks (build, clean, headers) and IntelliSense configuration
 .github/workflows/    continuous integration: make test on GitHub (tests.yml)
 docs/user-guide.md    user guide
-docs/development/     development plan, and this page
+docs/development/     development plan (roadmap, steps, design decisions)
+CONTRIBUTING.md       this page
 Makefile              build (m68k-amigaos-gcc must be in the PATH; HOSTCC for the host build)
 tools/amiga-make.sh   runs make with whichever toolchain is available (see "Building")
 tools/check-saves.py  checks the generated assembly (safeguard against a gcc bug, see "Building")
@@ -135,7 +148,7 @@ badge at the top of the README shows the result of the latest run. The Amiga bui
 - Mount `out/` as an Amiga volume (`filesystem2=rw,<DEVICE>:<Volume>:<path to out>,-128`), then run the program
   from a Shell, e.g. `NM:amisqueeze SERVER=127.0.0.1 VERBOSE` with the volume mounted as `NM:`.
 - Dedicated test configurations (a fast machine like a PiStorm, a slow 68020, AHI, automated runs) are planned:
-  steps 0.4 to 0.7 of the [tooling plan](phase-0-tooling.md).
+  steps 0.4 to 0.7 of the [tooling plan](docs/development/phase-0-tooling.md).
 
 ## Debugging
 
