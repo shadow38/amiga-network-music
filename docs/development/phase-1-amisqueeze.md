@@ -440,6 +440,20 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   - **For 1.9**: the synthesis uses `fintrz` and `fmovecr` (from `-m68881`), emulated by the CPU library on a real
     68040 or 68060 (one trap per sample: slow); fine on a 68881/68882, Emu68 to check. `MP3=AUTO` would measure it.
 
+## 1.8d MP3 without gaps between tracks ⬜ (after version 0.3)
+
+- **Why**: an MP3 file begins with the encoder's delay and, from LAME, a header frame (Xing/Info) decoded as
+  silence; it ends with padding. Played as they are (1.8c), two tracks meant to follow each other without a pause
+  (a live album, a mix) have about 50 ms of silence between them. FLAC has no such gap.
+- **Content** (to agree when the step starts): read the LAME header of the first frame (encoder delay and padding,
+  in samples), drop the header frame and that many samples at the start, and the padding at the end, plus the
+  decoder's own delay (minimp3's `minimp3_ex.h` does the same for whole files; here, on a stream). A stream that
+  starts in the middle of a file (a seek: LMS sends the file from an offset, without the header) is played as it
+  comes, nothing dropped. Files without a LAME header are left as they are.
+- **Criterion**: on the host, the decoded test files line up with their signal from the first sample (delay 0
+  instead of 1105 or 2257 frames) and keep its length; two MP3 tracks back to back without gap, byte for byte;
+  heard by the user on a track that flows into the next one.
+
 ## 1.9 Real machine ⬜
 
 - **Content**: both kinds of target with a TCP/IP stack (AmiNetXDuo or Roadshow) and an LMS server reachable
@@ -467,6 +481,10 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   amisqueeze itself (an ARexx port, for instance), not only to LMS. Also heard in 1.8c: with Paula through AHI
   (14 bits), samples scaled down to a low volume bring out Paula's noise (a crackle at LMS volume 50, gone at 100);
   a volume set after the conversion (the output's own, or Paula's 0 to 64) would keep the full resolution.
+- **AHI mode warning** (from 1.4, decided 2026-10-19): a warning at start-up when the unit's mode cannot pan (a
+  plain "stereo" mode plays a stereo stream on one side only); first check what AHI tells about a unit's mode.
+- **`BUFFER` option** (from 1.2, decided 2026-10-19): only if the real machines (1.9) show a need for another
+  size than 1 MB.
 - **Criterion**: started without arguments, the player finds the server and shows up under the chosen name; with
   `LOG=<file>`, the messages appear in the Shell window and, at the same time, in the file.
 

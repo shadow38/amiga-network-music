@@ -59,6 +59,7 @@ success criterion and a way to check it.
 | 1.7a amisqueeze: other PCM formats (LMS) | ✅ 2026-10-19 |
 | 1.7b amisqueeze: Music Assistant | ⬜ after version 0.2 |
 | 1.8 amisqueeze: local decoding (FLAC, then MP3) | ✅ 2026-10-19 (FLAC; MP3 in `amisqueeze.fpu`) |
+| 1.8d amisqueeze: MP3 without gaps between tracks | ⬜ after version 0.3 |
 | 1.9 to 1.10 | ⬜ |
 | 1.11 amisqueeze: direct Paula output, without AHI | ⬜ idea (CPU load on a slow 68020) |
 | 0.9 Test Music Assistant server | ⬜ after version 0.2 |
@@ -68,31 +69,34 @@ success criterion and a way to check it.
 | 2.12 remote: MPD | ⬜ idea, after Music Assistant |
 | 3.1 Licence and user documentation | 🔶 licence: MIT; user guide kept up to date |
 | 3.2 Aminet archive | ⬜ |
-| 3.3 Public versions | 🔶 0.1 and 0.2 published (tags, GitHub releases); CI to decide |
+| 3.3 Public versions | 🔶 0.1 and 0.2 published (tags, GitHub releases); CI: host tests before 0.3 |
 | 3.4 Setup guides: minimal server, the Amiga on the network | ⬜ before 1.0 |
 
 Phase 0 moves forward as needed: a tooling step is done when a step of phase 1 or 2 needs it. Phases 1 and 2 can
 progress in parallel. Release 0.2 was published on 2026-10-19 (FLAC decoded on fast Amigas, 8/24/32-bit PCM); the
-current priority is amisqueeze for LMS towards version 0.3: MP3 is done (1.8c, 2026-10-19), next the real machine
-(1.9) or the finishing touches (1.10), to agree with the user.
+current priority is amisqueeze for LMS towards version 0.3: MP3 is done (1.8c, 2026-10-19); agreed order
+(2026-10-19): continuous integration of the host tests (3.3), release 0.3, then MP3 without gaps (1.8d); after
+that the real machine (1.9) or the finishing touches (1.10), to agree with the user.
 Music Assistant (0.9, 1.7b, 2.8 to 2.11) was put after 0.2 (decided 2026-10-19): it is no longer waiting on a
 release, when to start it is still to be decided.
 
 ## Open points (review of 2026-10-19)
 
-Announced in the plan, not done, and not dropped in writing either: to decide with the user.
+Announced in the plan, then neither done nor dropped; decided with the user on 2026-10-19:
 
 - **AHI mode warning** (1.4): a warning at start-up when the unit's mode cannot pan (a plain "stereo" mode plays
-  one side only). Not implemented: today the user guide alone says to pick a "stereo++" mode.
+  one side only). **Moved to 1.10**, after version 0.3: first check what AHI tells about a unit's mode.
 - **64-bit multiplies in dr_flac** (1.8): the planned check of the generated assembly (a 64-bit `muls.l` in the
   hot loop fails the build) was not written. dr_flac's assembly holds such multiplies (481, most in the decoding
-  of the residuals); whether 16-bit audio goes through them is to check. They are emulated, slowly, by the 68060's
-  CPU library: to measure on a 68060 if one is at hand (1.9).
-- **`BUFFER` option** (1.2: "may come with step 1.6"): the 1 MB stream buffer is fixed; not done in 1.6.
+  of the residuals), emulated slowly by the 68060's CPU library. **Dropped**: no 68060 among the target machines
+  (a PiStorm with Emu68 is a 68040, the accelerator a 68020), and `FLAC=AUTO` measures the speed anyway, leaving
+  FLAC to the server on a CPU too slow for it. To look at again only if a 68060 user reports a problem.
+- **`BUFFER` option** (1.2: "may come with step 1.6"): the 1 MB stream buffer is fixed. **Only if the real
+  machines show a need** (1.9: memory on a small Amiga, an unsteady network such as Wi-Fi), then in 1.10.
 - **MP3 gapless** (1.8c): the encoder delay and the LAME header frame are not trimmed (about 50 ms of silence at
-  the start of each MP3 file); no step yet.
-- **Continuous integration** (3.3): GitHub Actions (host tests on each push, then the Amiga build for releases),
-  discussed before release 0.1; no step yet.
+  the start of each MP3 file). **Step 1.8d**, after version 0.3 (which documents the limit).
+- **Continuous integration** (3.3): GitHub Actions. **Host tests on each push before version 0.3**; the Amiga
+  build and the release archive before 1.0.
 
 ## Ideas outside the phases (noted 2026-10-19)
 
