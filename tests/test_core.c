@@ -1331,6 +1331,216 @@ static void test_audio_volume_pause(void)
     teardown(&p);
 }
 
+/* ---- decoders (plan step 1.8a) ---- */
+
+/* "Widening" decoder, for the tests only: each byte of input becomes a 16-bit little-endian sample
+ * ((byte - 128) * 256), so the output is twice the input. With raw PCM, input and output have the same size and a
+ * position of the stream used for the output (or the reverse) would go unnoticed; here it shows. */
+static int widen_start(struct decoder *d, const struct pcm_format *in, struct pcm_format *out)
+{
+    out->rate = in->rate;
+    out->channels = in->channels;
+    out->sample_bytes = 2;
+    out->big_endian = 0;
+    d->in_frame = in->channels;             /* one byte per sample */
+    return 1;
+}
+
+static uint32_t widen_run(struct decoder *d, struct ring *r, uint32_t avail, int complete, uint8_t *out,
+                          uint32_t out_max)
+{
+    uint8_t in[256];
+    uint32_t frames = avail / d->in_frame, n, i = 0;
+
+    if (frames > out_max / (2 * d->in_frame))
+        frames = out_max / (2 * d->in_frame);
+    if (frames == 0) {
+        if (complete && avail > 0 && avail < d->in_frame)
+            ring_consume(r, avail);
+        return 0;
+    }
+    n = frames * d->in_frame;
+    while (i < n) {
+        uint32_t k = n - i < sizeof(in) ? n - i : sizeof(in), j;
+
+        ring_read(r, in, k);
+        for (j = 0; j < k; j++) {
+            out[2 * (i + j)] = 0;
+            out[2 * (i + j) + 1] = (uint8_t)(in[j] - 128);
+        }
+        i += k;
+    }
+    return 2 * n;
+}
+
+static uint32_t widen_input_for(const struct decoder *d, uint32_t out)
+{
+    (void)d;
+    return out / 2;
+}
+
+static uint32_t widen_buffered(const struct decoder *d)
+{
+    (void)d;
+    return 0;
+}
+
+static const struct decoder_ops decoder_widen = { "widen", widen_start, widen_run, widen_input_for,
+                                                  widen_buffered };
+
+/* What the widening decoder makes of n bytes */
+static void widen(uint8_t *dst, const uint8_t *src, uint32_t n)
+{
+    uint32_t i;
+
+    for (i = 0; i < n; i++) {
+        dst[2 * i] = 0;
+        dst[2 * i + 1] = (uint8_t)(src[i] - 128);
+    }
+}
+
+/* The track strm s just queued is decoded by the widening decoder */
+static void use_widen(struct player *p)
+{
+    p->out.queue[p->out.queued - 1].ops = &decoder_widen;
+}
+
+static uint8_t decoded[2 * PCM_BPS];
+
+/* Audio output: blocks of decoded PCM; elapsed time and bytes played in bytes of decoded PCM */
+static void test_decoder_audio(void)
+{
+    struct player p;
+    uint32_t n = 40000;
+
+    fill(track_a, sizeof(track_a), 11);
+    setup_audio(&p, 0);
+    open_stream(&p, '1', 1);
+    use_widen(&p);
+    stub_feed_stream(track_a, (int)n);
+    drain_stream(&p);
+    output_tick(&p, stub_now);
+    CHECK(stub_audio[0].len == BLOCK);                  /* 16384 bytes of input */
+    finish(&p);
+    CHECK(audio_played(&p, stub_now, 0) == BLOCK);
+    CHECK(output_elapsed_ms(&p) == BLOCK * 1000 / PCM_BPS);
+    play_out(&p);
+    widen(decoded, track_a, n);
+    to_device(expect, decoded, 2 * n, 0);
+    CHECK(stub_audio_out_len == (int)(2 * n) && !memcmp(stub_audio_out, expect, 2 * n));
+    CHECK(audio_played(&p, stub_now, 0) == 2 * n && p.out.state == OUTPUT_STOPPED);
+    CHECK(stub_audio_bad == 0);
+    teardown(&p);
+}
+
+/* Audio output, gapless from a decoded track to a raw one: STMs once the decoded track has been played (its
+ * decoded size, not its stream size), then both reach the device in order */
+static void test_decoder_audio_gapless(void)
+{
+    struct player p;
+    uint32_t na = 20000, nb = 30000;
+    int guard, seen = 0;
+
+    fill(track_a, sizeof(track_a), 12);
+    fill(track_b, sizeof(track_b), 13);
+    setup_audio(&p, 0);
+    open_stream(&p, '1', 1);
+    use_widen(&p);
+    stub_feed_stream(track_a, (int)na);
+    drain_stream(&p);
+    stub_stream_end();
+    stream_io(&p, PLAT_READ);
+    stub_reset();
+    open_stream(&p, '1', 1);
+    stub_feed_stream(track_b, (int)nb);
+    drain_stream(&p);
+    stub_stream_end();
+    stream_io(&p, PLAT_READ);
+    clear_tx();
+    output_tick(&p, stub_now);
+    for (guard = 0; guard < 20 && p.out.state == OUTPUT_RUNNING; guard++) {
+        finish(&p);
+        if (!seen && count_in_trace("STAT:STMs") == 1) {
+            seen = 1;
+            CHECK(audio_played(&p, stub_now, 0) == 2 * na);
+        }
+    }
+    CHECK(seen && count_in_trace("STAT:STMu") == 1);
+    widen(decoded, track_a, na);
+    to_device(expect, decoded, 2 * na, 0);
+    to_device(expect + 2 * na, track_b, nb, 0);
+    CHECK(stub_audio_out_len == (int)(2 * na + nb) && !memcmp(stub_audio_out, expect, 2 * na + nb));
+    CHECK(stub_audio_bad == 0);
+    teardown(&p);
+}
+
+/* A pause in the middle of a block of decoded PCM: the bytes played are counted in decoded PCM */
+static void test_decoder_audio_pause(void)
+{
+    struct player p;
+    uint32_t n = 40000;
+
+    fill(track_a, sizeof(track_a), 14);
+    setup_audio(&p, 0);
+    open_stream(&p, '1', 1);
+    use_widen(&p);
+    stub_feed_stream(track_a, (int)n);
+    drain_stream(&p);
+    output_tick(&p, stub_now);
+    stub_audio_abort_played = 1000;
+    feed_strm('p', NULL, 0, 0, 0, NULL);
+    drain(&p);
+    CHECK(audio_played(&p, stub_now, 0) == 1000 && output_elapsed_ms(&p) == 1000 * 1000 / PCM_BPS);
+    feed_strm('u', NULL, 0, 0, 0, NULL);
+    drain(&p);
+    play_out(&p);
+    widen(decoded, track_a, n);
+    to_device(expect, decoded, 2 * n, 0);
+    CHECK(stub_audio_out_len == (int)(2 * n) && !memcmp(stub_audio_out, expect, 2 * n));
+    CHECK(stub_audio_bad == 0);
+    teardown(&p);
+}
+
+/* Virtual output and OUTPUT file: the decoded PCM is played at its own rate and written to the file; the next
+ * (raw) track starts when the decoded one has been played */
+static void test_decoder_virtual(void)
+{
+    struct player p;
+    uint32_t na = PCM_BPS / 20, nb = PCM_BPS / 10;      /* 100 ms each, once decoded */
+
+    fill(track_a, sizeof(track_a), 15);
+    fill(track_b, sizeof(track_b), 16);
+    setup_file(&p);
+    open_stream(&p, '1', 1);
+    use_widen(&p);
+    stub_feed_stream(track_a, (int)na);
+    drain_stream(&p);
+    stub_stream_end();
+    stream_io(&p, PLAT_READ);
+    stub_reset();
+    open_stream(&p, '1', 1);
+    stub_feed_stream(track_b, (int)nb);
+    drain_stream(&p);
+    stub_stream_end();
+    stream_io(&p, PLAT_READ);
+    clear_tx();
+    stub_now += 50;
+    output_tick(&p, stub_now);
+    CHECK(output_elapsed_ms(&p) == 50 && count_in_trace("STAT:STMs") == 0);
+    stub_now += 50;
+    output_tick(&p, stub_now);
+    CHECK(count_in_trace("STAT:STMs") == 1 && output_elapsed_ms(&p) == 0);
+    stub_now += 50;
+    output_tick(&p, stub_now);
+    CHECK(output_elapsed_ms(&p) == 50);
+    play_for(&p, 300);
+    CHECK(p.out.state == OUTPUT_STOPPED && count_in_trace("STAT:STMu") == 1);
+    widen(decoded, track_a, na);
+    memcpy(decoded + 2 * na, track_b, nb);
+    CHECK(stub_file_len == (int)(2 * na + nb) && !memcmp(stub_file, decoded, 2 * na + nb));
+    teardown(&p);
+}
+
 int main(void)
 {
     test_ring();
@@ -1367,6 +1577,10 @@ int main(void)
     test_audio_gapless_24bit();
     test_audio_volume();
     test_audio_volume_pause();
+    test_decoder_audio();
+    test_decoder_audio_gapless();
+    test_decoder_audio_pause();
+    test_decoder_virtual();
     printf("test_core: %d checks, %d failed\n", checks, failures);
     return failures ? 1 : 0;
 }

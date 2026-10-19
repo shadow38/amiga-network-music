@@ -369,6 +369,18 @@ belongs to the task that opened it; packets serialised field by field; buffers a
     benchmark in WinUAE (68020 cycle-exact for faithful timings, then the fast profile), start-up measurement and
     `HELO`, listening; **1.8c** MP3: `amisqueeze.fpu` with minimp3, tests, benchmark, listening. Then the real
     machine (1.9) and possibly release 0.2.
+- **1.8a done** (2026-10-19, branch `decoding`): `decoder.h` (operations `start`, `run`, `input_for`,
+  `buffered`; state in the output, never on the stack) and `decoder.c` (raw PCM, copied as is: one copy, ring to
+  block, as before). Each track knows its decoder, the format it produces and where its decoded PCM starts in the
+  output (`out_start`, known once the reading reaches the track and the decoder holds nothing more of the
+  previous one); the output counts what it hands over (`handed`). Elapsed time, `STMs` at a boundary and `STMu`
+  follow the decoded PCM; the ring positions only tell the decoder where each track's data begins; `OUTPUT`
+  writes the decoded PCM. Tests: the existing ones pass unchanged (they only use raw PCM, where both kinds of
+  position are equal, so they cannot see a mix-up); a test-only "widening" decoder (each byte becomes a 16-bit
+  sample) checks the time after a block, a gapless boundary to a raw track, a pause inside a block and the
+  virtual output with `OUTPUT` (359 checks); using a ring position on the output side on purpose makes three of
+  them fail. WinUAE: command scenario, five formats, `stop-repro` (memory intact), CPU load on the slow profile
+  unchanged (65 % at volume 100).
 
 ## 1.9 Real machine ⬜
 
