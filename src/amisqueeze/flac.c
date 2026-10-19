@@ -198,7 +198,7 @@ static int flac_start(struct decoder *d, const struct pcm_format *in)
     }
     d->state = st;
     st->phase = MAGIC;
-    d->out.rate = in->rate ? in->rate : 44100;  /* a guess until STREAMINFO */
+    d->out.rate = in->rate;                     /* a guess until STREAMINFO */
     d->out.channels = 2;
     d->out.sample_bytes = 2;
     d->out.big_endian = (uint8_t)host_big_endian();

@@ -15,6 +15,8 @@ import tempfile
 import threading
 import time
 
+import flac_data
+
 TIMEOUT = 8
 failures = 0
 
@@ -147,14 +149,14 @@ class HttpServer(threading.Thread):
     sending stops for `stall` seconds after `stall_at` bytes. A broken connection: it is reset (RST) after
     `cut_at` bytes."""
 
-    def __init__(self, seconds, chunk=65536, pause=0.0, seed=1, stall_at=None, stall=0.0, cut_at=None):
+    def __init__(self, seconds=0.0, chunk=65536, pause=0.0, seed=1, stall_at=None, stall=0.0, cut_at=None, data=None):
         super().__init__(daemon=True)
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.sock.bind(("127.0.0.1", 0))
         self.sock.listen(1)
         self.port = self.sock.getsockname()[1]
-        self.data = random.Random(seed).randbytes(frames(seconds))
+        self.data = data if data is not None else random.Random(seed).randbytes(frames(seconds))
         self.chunk, self.pause = chunk, pause
         self.stall_at, self.stall, self.cut_at = stall_at, stall, cut_at
         self.request = b""
@@ -431,6 +433,70 @@ def scenario_control_lost():
     check(rc == 0 and reported, "loss reported, clean exit (exit code %s)" % rc)
 
 
+FLAC_FILES = [                          # file of tests/data, signal of flac_data.py
+    ("s16-l0.flac", "s16"), ("s16-l5.flac", "s16"), ("s16-l8.flac", "s16"), ("m16-l5.flac", "m16"),
+    ("s24-l5.flac", "s24"), ("s16-48k-l5.flac", "s16-48k"), ("s16-l5-pad.flac", "s16"),
+]
+
+
+def flac_file(name):
+    with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", name), "rb") as f:
+        return f.read()
+
+
+def send_strm_flac(session, http, threshold_kb=64):
+    fmt7 = b"1f????" + bytes([threshold_kb])    # autostart 1, FLAC: the parameters are in the stream
+    send_packet(session.conn, b"strm", strm("s", port=http.port, ip=0, fmt7=fmt7, request=HTTP_REQUEST))
+
+
+def scenario_flac():
+    print("-- FLAC: each test file decoded byte for byte, sent in pieces of 3000 bytes (frames arrive cut)")
+    for name, signal in FLAC_FILES:
+        path = os.path.join(tempfile.mkdtemp(), "play.pcm")
+        http = HttpServer(data=flac_file(name), chunk=3000, pause=0.001)
+        http.start()
+        server, proc, s = start_session("Flac", "OUTPUT=" + path)
+        try:
+            send_strm_flac(s, http)
+            s.until("STAT:STMs")
+            s.until("STAT:STMd")
+            s.until("STAT:STMu", timeout=10)
+        finally:
+            rc, out = stop(proc)
+            server.close()
+        data, want = read_output(path), flac_data.expected(signal)
+        check(data == want and rc == 0, "%s: %d bytes, %d expected, first difference at %d"
+              % (name, len(data), len(want), first_difference(data, want)))
+        if data != want:
+            print(out)
+
+
+def scenario_flac_gapless():
+    print("-- FLAC, FLAC, then raw PCM, back to back: each track complete and in place (the decoder reads ahead)")
+    path = os.path.join(tempfile.mkdtemp(), "play.pcm")
+    tracks = [HttpServer(data=flac_file("s16-l5.flac")), HttpServer(data=flac_file("m16-l5.flac")),
+              HttpServer(0.5, seed=7)]
+    for h in tracks:
+        h.start()
+    server, proc, s = start_session("Gapless", "OUTPUT=" + path)
+    try:
+        send_strm_flac(s, tracks[0])
+        s.until("STAT:STMd")
+        send_strm_flac(s, tracks[1])
+        s.until("STAT:STMd")
+        send_strm_s(s, tracks[2])
+        s.until("STAT:STMd")
+        s.until("STAT:STMu", timeout=10)
+        check(s.names().count("STAT:STMs") == 3, "STMs for each track (%d)" % s.names().count("STAT:STMs"))
+    finally:
+        rc, out = stop(proc)
+        server.close()
+    data = read_output(path)
+    want = flac_data.expected("s16") + flac_data.expected("m16") + tracks[2].data
+    check(data == want, "file: %d bytes, %d expected, first difference at %d"
+          % (len(data), len(want), first_difference(data, want)))
+
+
 def scenario_no_server():
     print("-- no server listening: retries, Ctrl-C during the wait")
     probe = socket.socket()
@@ -470,6 +536,8 @@ if __name__ == "__main__":
     scenario_stall()
     scenario_cut()
     scenario_control_lost()
+    scenario_flac()
+    scenario_flac_gapless()
     scenario_no_server()
     scenario_arguments()
     print("fake_server: %d failed" % failures)

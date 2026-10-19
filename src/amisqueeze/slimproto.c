@@ -160,8 +160,8 @@ static const struct decoder_ops *parse_format(const uint8_t *pkt, struct pcm_for
     int rate = pkt[8] - '0';
     int channels = pkt[9] - '0';
 
-    if (pkt[6] == 'f') {
-        f->rate = 0;
+    if (pkt[6] == 'f') {                    /* a guess until the decoder reads the stream's header */
+        f->rate = 44100;
         f->channels = 2;
         f->sample_bytes = 2;
         f->big_endian = (uint8_t)host_big_endian();
