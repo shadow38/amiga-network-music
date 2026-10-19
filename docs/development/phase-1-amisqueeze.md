@@ -381,6 +381,26 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   virtual output with `OUTPUT` (359 checks); using a ring position on the output side on purpose makes three of
   them fail. WinUAE: command scenario, five formats, `stop-repro` (memory intact), CPU load on the slow profile
   unchanged (65 % at volume 100).
+- **1.8b done** (2026-10-19, branch `decoding`): dr_flac 0.13.4 in `third_party/dr_flac` (commit `dfe8377`,
+  public domain or MIT-0), built by `dr_flac.c` without our warnings and at `-O2` (no gain measured over `-Os`);
+  the Amiga link drops unused sections (`-ffunction-sections`, `--gc-sections`): dr_flac's float output needs
+  soft-float helpers libnix does not provide. `flac.c` reads the FLAC header as it arrives (STREAMINFO kept, every
+  other block skipped: a picture may be bigger than the ring buffer), opens dr_flac on a minimal header, decodes
+  only whole frames in the buffer (bound from STREAMINFO plus dr_flac's 4 KB cache) and at most one frame per
+  request; 16-bit native output. The decoder interface gained `stop` (frees the state) and `finished` (dr_flac
+  reads ahead: the next track only begins once it has handed over everything it took); the decoder owns its
+  output format, known from the stream (`strm` 'f' guesses 44.1 kHz until then, the virtual output paces itself
+  on it). Options `FLAC=AUTO|ON|OFF` and `BENCH`: a built-in sample (`bench_flac.c` from
+  `tests/data/bench-l8.flac`, 0.3 s at level 8, 35 KB) decoded at start-up for at most 1 s; `flc` advertised in
+  `HELO` if it runs at least twice real time. Tests: `tests/flac_data.py` (deterministic signal) and
+  `tests/data/*.flac` (levels 0, 5, 8, mono, 24 bits, 48 kHz, 1.2 MB of metadata), sent by the fake server in
+  pieces of 3000 bytes, `OUTPUT` identical byte for byte; FLAC, FLAC, PCM back to back; `FLAC=OFF`, `BENCH`.
+  Measured in WinUAE (`BENCH`): 68020 without JIT, about 45 MHz (1.6 times the slow profile): level 8 at 0.2x real
+  time, so FLAC stays with the server; 68020 with JIT (`lancer-jit.cmd` locally: 32-bit addressing, no
+  cycle-exact; about 230 times the slow profile, the order of a PiStorm): 77x (21x when the JIT has not compiled
+  the code yet: the start-up measure is pessimistic on such CPUs, never optimistic). There, LMS sends FLAC as is
+  and five test tones (16 and 24 bits, mono, 48 and 96 kHz: LMS lowers 96 kHz to 48 in FLAC) play without
+  `STMo`; heard by the user: a 48 kHz song and the 96 kHz tone, right. Executable: 114 KB. Next: 1.8c (MP3).
 
 ## 1.9 Real machine ⬜
 

@@ -54,13 +54,22 @@ validated on 2026-10-19. Step 1.5 (volume from `audg`) validated on 2026-10-19. 
 (volume applied to the samples, see Pitfalls); validated on 2026-10-19. Release 0.1 published on 2026-10-19,
 then 0.2-dev. Step 1.7a (8, 24 and 32-bit samples converted to 16 bits for AHI; LMS strips WAV/AIFF headers, files
 above 48 kHz not playable until FLAC decoding) done on 2026-10-19. Step 1.8 on the branch `decoding` (merged into
-`main` after each validated sub-step): 1.8a done (decoder stage, see below); next 1.8b (FLAC).
+`main` after each validated sub-step): 1.8a done (decoder stage, see below); 1.8b done (FLAC with dr_flac,
+`FLAC=AUTO|ON|OFF`, `BENCH`); next 1.8c (MP3).
 
 Step 1.8a (decoder.h, decoder.c): the ring buffer holds the stream as received; the decoder of each track writes
 PCM into the AHI blocks or for the virtual output. Two kinds of position, never to be mixed: the ring's (bytes of
 the stream: where each track's data begins, `track.start`) and the output's (bytes of decoded PCM: `out.handed`,
 `track.out_start`, everything played, elapsed time, boundaries). Raw PCM cannot reveal a mix-up (same size on both
 sides): the test-only "widening" decoder in `tests/test_core.c` can.
+
+Step 1.8b (flac.c, dr_flac.c, bench.c): dr_flac takes a short read for the end of the stream and reads ahead (4 KB
+cache), so a frame is decoded only when the buffer holds a whole one, and a track ends for the output only when
+the decoder says `finished`. Third-party code goes in `third_party/` (version, commit, licence in a README), built
+in its own file without our warnings (`THIRD_PARTY` in the Makefile). A file that includes a third-party header and
+reads its structures must use the same configuration macros as the file that builds it. FLAC speed in WinUAE:
+without JIT even "max" speed is a 68020 at about 45 MHz (level 8 at 0.2x real time); a PiStorm-like test needs the
+JIT (68020, 32-bit addressing, no cycle-exact; a 68040 needs its CPU library, missing from the test HDF).
 
 Step 1.2 (stream.c, ring.c): HTTP stream with a non-blocking connection; one 1 MB ring buffer, reported to LMS
 as both the stream and the output buffer (raw PCM needs no decoding); a virtual output consumes it at the PCM rate

@@ -13,8 +13,8 @@ other player.
 **plays what LMS plays through AHI**: in LMS, playback progresses, moves on to the next track, pauses, seeks,
 stops and changes volume as with any player. It takes raw PCM streams, which LMS makes from the files (see the
 requirements): 8, 16, 24 or 32-bit samples (24-bit "high resolution" FLAC included), mono or stereo, up to
-48 kHz, converted to 16 bits for AHI. The sound has been checked by ear in WinUAE (Paula and Toccata), not yet on
-a real Amiga.
+48 kHz, converted to 16 bits for AHI. On a fast Amiga it also decodes **FLAC** itself (see "FLAC" below). The
+sound has been checked by ear in WinUAE (Paula and Toccata), not yet on a real Amiga.
 
 ### Requirements
 
@@ -33,9 +33,9 @@ On the server:
   streams; or whatever its HTTP port is: LMS tells the player which one);
 - a conversion rule from MP3 to raw PCM, see the [README](../README.md#lms-server). FLAC, WAV and AIFF are
   converted by LMS's default rules;
-- files above 48 kHz (88.2, 96, 192 kHz) do not play: LMS cannot lower their rate when it makes raw PCM, and
-  reports "Couldn't create command line for flc playback" in its log. This will change when amisqueeze decodes
-  FLAC itself (LMS can then send it a FLAC at 48 kHz).
+- files above 48 kHz (88.2, 96, 192 kHz) play only when amisqueeze decodes FLAC itself (LMS then lowers their rate
+  in FLAC); when the Amiga is too slow for that, LMS cannot lower their rate as it makes raw PCM, and reports
+  "Couldn't create command line for flc playback" in its log.
 
 ### Installation
 
@@ -50,7 +50,7 @@ From a Shell:
 amisqueeze SERVER=192.168.1.10
 ```
 
-Template: `SERVER,PORT/N/K,NAME/K,MAC/K,OUTPUT/K,UNIT/N/K,NOAUDIO/S,SWAP/S,VERBOSE/S`
+Template: `SERVER,PORT/N/K,NAME/K,MAC/K,OUTPUT/K,UNIT/N/K,NOAUDIO/S,SWAP/S,FLAC/K,BENCH/S,VERBOSE/S`
 
 | Option | Meaning | Default |
 |---|---|---|
@@ -62,6 +62,8 @@ Template: `SERVER,PORT/N/K,NAME/K,MAC/K,OUTPUT/K,UNIT/N/K,NOAUDIO/S,SWAP/S,VERBO
 | `UNIT` | AHI unit to play through (0 to 3, set in the AHI preferences) | `0` |
 | `NOAUDIO` | no sound: the audio is received and consumed at the playing pace, as if played | off |
 | `SWAP` | swaps left and right (for an AHI driver that swaps them, see below) | off |
+| `FLAC` | `AUTO`: FLAC decoded on the Amiga if it is fast enough (measured at start-up), otherwise converted by the server; `ON`: always decoded here; `OFF`: always converted by the server (see "FLAC" below) | `AUTO` |
+| `BENCH` | measures how fast this Amiga decodes FLAC, prints it and quits (no server needed) | off |
 | `VERBOSE` | print the messages exchanged with the server and the stream events | off |
 
 `Ctrl-C` stops amisqueeze. To keep the Shell free, run it in the background: `Run >NIL: amisqueeze`, or keep its
@@ -74,8 +76,20 @@ can also be renamed from the LMS web interface; amisqueeze takes the new name wh
 
 If the connection drops or the server restarts, amisqueeze reconnects by itself (it retries every 5 seconds).
 
-**`OUTPUT=<file>`** writes the audio to a file as it is played, exactly as the server sent it: raw PCM, for LMS
-16-bit **little-endian** samples (44.1 kHz stereo: about 10 MB per minute). The file is created (or replaced) when
+**FLAC**: the player tells LMS, when it connects, which formats it decodes; LMS sends those files as they are and
+converts the others. Decoding FLAC on the Amiga saves the network about half of the bandwidth, and lets files above
+48 kHz play (LMS lowers their rate in FLAC), but it needs a fast CPU: with `FLAC=AUTO` (the default), amisqueeze
+decodes a built-in sample at start-up (the slowest FLAC level, 8, for at most a second) and only takes FLAC if it
+runs at least twice real time; it prints the result, for instance `FLAC: level 8 decoded at 77.0x real time: FLAC
+decoded here`. Measured in WinUAE: a 68020 without its JIT compiler (about 45 MHz) decodes it at 0.2x real time,
+so FLAC stays with the server (its default rule converts it to PCM, nothing to set up); with the JIT (the order of
+a PiStorm) 77x. `amisqueeze BENCH` prints that measure without connecting; `FLAC=ON` or `FLAC=OFF` force the
+choice. The measure is a little pessimistic on a CPU that compiles code on the fly (WinUAE's JIT, the PiStorm's
+Emu68): the first pass also compiles.
+
+**`OUTPUT=<file>`** writes the audio to a file as it is played: raw PCM exactly as the server sent it (for LMS
+16-bit **little-endian** samples; 44.1 kHz stereo: about 10 MB per minute), or, for FLAC decoded on the Amiga,
+16-bit samples in the Amiga's byte order (big-endian). The file is created (or replaced) when
 amisqueeze starts and closed when it stops; everything played in between is appended, the next track right after
 the previous one, nothing while paused. It is meant for checking playback: compare it with the expected PCM, e.g.
 with `tools/pcm-compare.py` from the repository (in an emulator, write it to a volume shared with the host). With
@@ -153,7 +167,9 @@ Rules:
 | `no news from the server, reconnecting` | the server stayed silent for 35 s; amisqueeze reconnects |
 | `connection closed by the server` | the server closed the connection; amisqueeze reconnects |
 | `not enough memory for the 1024 KB stream buffer` | not enough free memory to start |
-| `stream format X not supported` | LMS sent a format other than raw PCM (no conversion rule for that format) |
+| `stream format X not supported` | LMS sent a format other than raw PCM or FLAC (no conversion rule for that format) |
+| `FLAC: level 8 decoded at …x real time: …` | the start-up measure (`FLAC=AUTO`): whether FLAC is decoded here or converted by the server |
+| `flac: … , track skipped` | a FLAC stream that cannot be decoded (not FLAC, no STREAMINFO, more than 2 channels): the next track follows |
 | `cannot open ahi.device unit N (is AHI installed? NOAUDIO plays without sound)` | AHI missing, or that unit cannot be opened; amisqueeze stops |
 | `not enough memory for the audio blocks` | the 3 audio blocks (96 KB) cannot be allocated; amisqueeze stops |
 | `cannot create <file>: error N` | the `OUTPUT` file cannot be created (missing directory, write-protected disk); amisqueeze stops. On a volume that is not mounted, AmigaDOS first asks for it to be inserted; this message follows a Cancel |

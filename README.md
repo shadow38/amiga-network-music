@@ -19,8 +19,9 @@ only, not yet on a real Amiga.
 **Status:** under development, in testable steps described in the
 [development plan](docs/development/README.md). amisqueeze: shows up as a player in LMS and plays through AHI
 (play, pause, seek, stop, gapless next track, volume; validated in WinUAE with emulated networking and LMS 9.1.1);
-raw PCM only for now (8 to 32 bits, mono or stereo, up to 48 kHz), so MP3 needs a conversion rule on the server
-until local decoding comes. amilms: not started.
+raw PCM (8 to 32 bits, mono or stereo, up to 48 kHz), and FLAC decoded on the Amiga when it is fast enough (a
+PiStorm-class CPU; measured at start-up), otherwise converted by the server; MP3 still needs a conversion rule on
+the server until local MP3 decoding comes. amilms: not started.
 
 ## Requirements
 
@@ -165,7 +166,7 @@ Tasks (`.vscode/tasks.json`, calling `tools/amiga-make.sh`, through WSL on Windo
 amisqueeze SERVER=192.168.1.10 NAME=Amiga VERBOSE
 ```
 
-Options (`SERVER`, `PORT`, `NAME`, `MAC`, `OUTPUT`, `UNIT`, `NOAUDIO`, `SWAP`, `VERBOSE`) and default options
+Options (`SERVER`, `PORT`, `NAME`, `MAC`, `OUTPUT`, `UNIT`, `NOAUDIO`, `SWAP`, `FLAC`, `BENCH`, `VERBOSE`) and default options
 stored in `ENV:amisqueeze.prefs` are
 described in the **[user guide](docs/user-guide.md)**.
 
@@ -206,4 +207,6 @@ with `-g`.
 ## Licence
 
 MIT, see [LICENSE](LICENSE). amisqueeze is written from scratch from the protocol description; squeezelite and
-LMS (GPL) are used as references for the protocol's behaviour, not as a source of code.
+LMS (GPL) are used as references for the protocol's behaviour, not as a source of code. Third-party code, in
+`third_party/` (each with a README giving its origin and licence): dr_flac (FLAC decoding), public domain or MIT No
+Attribution.

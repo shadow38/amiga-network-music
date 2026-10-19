@@ -58,7 +58,7 @@ success criterion and a way to check it.
 | 1.6 amisqueeze: robustness | ✅ 2026-10-19 |
 | 1.7a amisqueeze: other PCM formats (LMS) | ✅ 2026-10-19 |
 | 1.7b amisqueeze: Music Assistant | ⬜ after version 0.2 |
-| **1.8 amisqueeze: local decoding (FLAC, then MP3)** | 🔶 1.8a done (branch `decoding`); **next: 1.8b FLAC** |
+| **1.8 amisqueeze: local decoding (FLAC, then MP3)** | 🔶 1.8a, 1.8b (FLAC) done; **next: 1.8c MP3** |
 | 1.9 to 1.10 | ⬜ |
 | 0.9 Test Music Assistant server | ⬜ after version 0.2 |
 | 2.0 remote: study (common interface, Music Assistant feasibility, name) | ⬜ before any amilms code |
