@@ -12,7 +12,7 @@ tested yet. The server (and its web interface or apps) sees and controls it like
 
 ### Current state
 
-Version 0.3 in development. The latest release, 0.2, is a preview: tested in WinUAE only, not yet on a real Amiga.
+Version 0.3, a preview: tested in WinUAE only, not yet on a real Amiga.
 
 What amisqueeze does:
 

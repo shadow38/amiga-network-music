@@ -71,14 +71,13 @@ How to build and test: [CONTRIBUTING.md](../../CONTRIBUTING.md).
 | 2.12 remote: MPD | ⬜ idea, after Music Assistant |
 | 3.1 Licence and user documentation | 🔶 licence: MIT; user guide kept up to date |
 | 3.2 Aminet archive | ⬜ |
-| 3.3 Public versions | 🔶 0.1 and 0.2 published (tags, GitHub releases); CI: host tests before 0.3 |
+| 3.3 Public versions | 🔶 0.1, 0.2, 0.3 published (tags, GitHub releases, changelog); CI: host tests |
 | 3.4 Setup guides: minimal server, the Amiga on the network | ⬜ before 1.0 |
 
 Phase 0 moves forward as needed: a tooling step is done when a step of phase 1 or 2 needs it. Phases 1 and 2 can
-progress in parallel. Release 0.2 was published on 2026-10-19 (FLAC decoded on fast Amigas, 8/24/32-bit PCM); the
-current priority is amisqueeze for LMS towards version 0.3: MP3 is done (1.8c, 2026-10-19); agreed order
-(2026-10-19): continuous integration of the host tests (3.3), release 0.3, then MP3 without gaps (1.8d); after
-that the real machine (1.9) or the finishing touches (1.10), to agree with the user.
+progress in parallel. Release 0.3 was published on 2026-10-20 (MP3 decoded by `amisqueeze.fpu`, two executables,
+documentation reworked; 0.2 on 2026-10-19: FLAC, 8/24/32-bit PCM). Next, as agreed on 2026-10-19: MP3 without
+gaps (1.8d); after that the real machine (1.9) or the finishing touches (1.10), to agree with the user.
 Music Assistant (0.9, 1.7b, 2.8 to 2.11) was put after 0.2 (decided 2026-10-19): it is no longer waiting on a
 release, when to start it is still to be decided.
 

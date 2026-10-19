@@ -17,7 +17,9 @@ GitHub CLI once the user has approved the notes; `CHANGELOG.md` (Keep a Changelo
 user-visible change under "Unreleased" as it is made, and give that part the version and date at the release; the `$VER:` date is the release date. Between releases the number reads `<next>-dev`, so that
 a build in between is not taken for the last release. 0.1 = first release (2026-10-19: AHI audio, volume,
 robustness, tested in WinUAE only); 0.2 = second release (2026-10-19: FLAC decoded on fast Amigas, 8/24/32-bit
-PCM, tested in WinUAE only), followed by 0.3-dev; the first public push of 2026-10-18 had no tag. The number
+PCM, tested in WinUAE only); 0.3 = third release (2026-10-20: MP3 decoded by `amisqueeze.fpu`, two executables,
+documentation reworked, tested in WinUAE only), followed by 0.4-dev; the first public push of 2026-10-18 had no
+tag. The number
 appears in the two `$VER:` strings (`amiga.c`: `amisqueeze` and `amisqueeze.fpu`), in `Firmware=` of the `HELO`
 capabilities (`slimproto.c`) and in the user guide.
 
@@ -63,7 +65,8 @@ Step 1.7a (8, 24 and 32-bit samples converted to 16 bits for AHI; LMS strips WAV
 above 48 kHz not playable until FLAC decoding) done on 2026-10-19. Step 1.8 on the branch `decoding` (merged into
 `main` after each validated sub-step): 1.8a done (decoder stage, see below); 1.8b done (FLAC with dr_flac,
 `FLAC=AUTO|ON|OFF`, `BENCH`); release 0.2 published on 2026-10-19, then 0.3-dev; 1.8c done on 2026-10-19 (MP3
-with minimp3 in `amisqueeze.fpu`, `MP3=AUTO|ON|OFF`). Next: 1.9 (real machine) or 1.10, to agree with the user.
+with minimp3 in `amisqueeze.fpu`, `MP3=AUTO|ON|OFF`); release 0.3 published on 2026-10-20, then 0.4-dev. Next
+(agreed order): 1.8d (MP3 without gaps), then 1.9 (real machine) or 1.10, to agree with the user.
 Documentation review of 2026-10-19: points announced in the plan but neither done nor dropped are listed under
 "Open points" in `docs/development/README.md`, for the user to decide (never implement them unasked).
 
@@ -191,6 +194,10 @@ With `flc` and `mp3` advertised, LMS sends FLAC and MP3 files as they are (forma
   minimp3 keeps about 17 KB on the stack (`mp3dec_decode_frame`): `amisqueeze.fpu` sets `__stack` and links
   libnix's `__stkinit` (`-Wl,-u,___stkinit`), which gives a bigger stack when the Shell's is smaller. The
   `-m68881` code uses `fintrz` and `fmovecr`, emulated (slowly) by the CPU library on a 68040/68060.
+- **`$VER:` string** (found at the 0.3 release): kept non-const, in the data hunk. Const, it sat in the code hunk,
+  and AmigaOS 3.2's `Version` printed "amiseeze 0.3" for the 0.3 build although the bytes were right (only when
+  reading the file as an executable; the 0.2 build was fine). Before each release, check `Version <exe> FULL`
+  for both executables in WinUAE.
 - **WinUAE JIT and FPU**: without `compfpu=true` the JIT interprets FPU instructions (MP3 at 1.8x real time
   instead of 74x): a PiStorm-like test of `amisqueeze.fpu` needs it.
 - **Volume with Paula**: samples scaled down (low LMS volume) bring out Paula's noise through AHI (14 bits): a

@@ -24,10 +24,12 @@ Back to the [plan](README.md).
 - **Done**: amisqueeze 0.1 and 0.2 (2026-10-19), each a tag `amisqueeze-<version>` and a GitHub release (marked
   as a pre-release) holding the zip of `make dist` (`tools/make-dist.py`: the executables, `LICENSE`, the README
   and the user guide) and short notes approved by the user; between releases the version reads `<next>-dev`.
-  From 0.3 on, the zip holds both executables (`amisqueeze`, `amisqueeze.fpu`).
-- **Continuous integration** (decided 2026-10-19): GitHub Actions, in two parts. First, before 0.3: on each push,
-  `make test` (host build, unit tests, fake server) on GitHub's Linux machine; the badge or the run's page tells
-  whether a commit passes. Then, before 1.0: the Amiga build (the `amigadev/crosstools` image, the Docker mode of
+  amisqueeze 0.3 (2026-10-20): the zip holds both executables (`amisqueeze`, `amisqueeze.fpu`), `CHANGELOG.md`
+  (Keep a Changelog, at the root, since 0.3) and the user guide's images; the release notes end with a link to the
+  changelog.
+- **Continuous integration** (decided 2026-10-19): GitHub Actions, in two parts. First, done before 0.3: on each
+  push, `make test` (host build, unit tests, fake server) on GitHub's Linux machine; the badge or the run's page
+  tells whether a commit passes. Then, before 1.0: the Amiga build (the `amigadev/crosstools` image, the Docker mode of
   `tools/amiga-make.sh`, never tried so far) and the release archive made by GitHub from a tag.
 
 ## 3.4 Setup guides: server and network (noted 2026-10-19) ⬜

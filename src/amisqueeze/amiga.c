@@ -32,11 +32,12 @@
 #include "player.h"
 
 /* Read by the Version command: "Version amisqueeze". Printed with VERBOSE: a string nothing reads would be dropped
- * at link time (--gc-sections), and Version would find nothing. */
+ * at link time (--gc-sections), and Version would find nothing. Not const: in the data hunk. In the code hunk,
+ * AmigaOS 3.2's Version read "amiseeze 0.3" out of the 0.3 build, though the bytes were right. */
 #ifdef AMISQUEEZE_FPU
-static const char version[] = "$VER: amisqueeze.fpu 0.3-dev (19.10.2026)";
+static char version[] = "$VER: amisqueeze.fpu 0.3 (20.10.2026)";
 #else
-static const char version[] = "$VER: amisqueeze 0.3-dev (19.10.2026)";
+static char version[] = "$VER: amisqueeze 0.3 (20.10.2026)";
 #endif
 
 #ifdef AMISQUEEZE_FPU
