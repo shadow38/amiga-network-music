@@ -9,7 +9,7 @@ repository. Documentation, code comments and program messages are in English.
 **Versioning** (decided 2026-10-18, completed 2026-10-19): 0.x until the main feature works; the version changes
 only for a **published** release; 1.0 = first really usable version (tested on the real machine). Never bump it on
 our own: ask the user. A release = a Git tag `amisqueeze-<version>` + a GitHub Release with a zip (the Amiga
-executable, `LICENSE`, `README.md`, the user guide) and short notes, made with the GitHub CLI once the user has
+executables, `LICENSE`, `README.md`, the user guide) and short notes, made with the GitHub CLI once the user has
 approved the notes; the `$VER:` date is the release date. Between releases the number reads `<next>-dev`, so that
 a build in between is not taken for the last release. 0.1 = first release (2026-10-19: AHI audio, volume,
 robustness, tested in WinUAE only); the first public push of 2026-10-18 had no tag. The number appears in the
@@ -55,7 +55,15 @@ validated on 2026-10-19. Step 1.5 (volume from `audg`) validated on 2026-10-19. 
 then 0.2-dev. Step 1.7a (8, 24 and 32-bit samples converted to 16 bits for AHI; LMS strips WAV/AIFF headers, files
 above 48 kHz not playable until FLAC decoding) done on 2026-10-19. Step 1.8 on the branch `decoding` (merged into
 `main` after each validated sub-step): 1.8a done (decoder stage, see below); 1.8b done (FLAC with dr_flac,
-`FLAC=AUTO|ON|OFF`, `BENCH`); next 1.8c (MP3).
+`FLAC=AUTO|ON|OFF`, `BENCH`); 1.8c done on 2026-10-19 (MP3 with minimp3 in `amisqueeze.fpu`, `MP3=AUTO|ON|OFF`).
+Next: 1.9 (real machine) or 1.10, to agree with the user.
+
+Step 1.8c (mp3.c, minimp3.c, `amisqueeze.fpu`): two Amiga executables from the same sources, `amisqueeze`
+(68020) and `amisqueeze.fpu` (`-m68881`, `AMISQUEEZE_FPU`; `AMISQUEEZE_MP3` compiles the MP3 decoder, also in the
+host build). minimp3 resets itself when the bytes after a frame are not the next header: it is called only with a
+frame and the next header in its 16 KB staging buffer (a full buffer for the first frame), or at the end of the
+track. MP3 gapless trimming is not done (about 50 ms of silence at the start of each file). In the zip, both
+executables; in `$VER:`, `amisqueeze` or `amisqueeze.fpu` (two lines in `amiga.c` to bump).
 
 Step 1.8a (decoder.h, decoder.c): the ring buffer holds the stream as received; the decoder of each track writes
 PCM into the AHI blocks or for the virtual output. Two kinds of position, never to be mixed: the ring's (bytes of
@@ -164,6 +172,15 @@ decoding later (step 1.8).
   are static or allocated, never on the stack. Margin check: `Stack 2048` in the Shell, then replay the WinUAE
   scenario; passed on 2026-10-18 after the switch to `vsnprintf` (step 0.6). Redo it whenever call depth or
   local variables grow (step 1.2).
+- **`-m68881` and libnix**: libnix links a start-up check (`__fpucheck`) that, without an FPU, shows an alert and
+  quits before `main()` without a message: `amiga.c` replaces it with an empty one and checks `AttnFlags` itself.
+  minimp3 keeps about 17 KB on the stack (`mp3dec_decode_frame`): `amisqueeze.fpu` sets `__stack` and links
+  libnix's `__stkinit` (`-Wl,-u,___stkinit`), which gives a bigger stack when the Shell's is smaller. The
+  `-m68881` code uses `fintrz` and `fmovecr`, emulated (slowly) by the CPU library on a 68040/68060.
+- **WinUAE JIT and FPU**: without `compfpu=true` the JIT interprets FPU instructions (MP3 at 1.8x real time
+  instead of 74x): a PiStorm-like test of `amisqueeze.fpu` needs it.
+- **Volume with Paula**: samples scaled down (low LMS volume) bring out Paula's noise through AHI (14 bits): a
+  crackle at 50, gone at 100. Judge Paula's sound at volume 100.
 - Strings shown on the Amiga and files read by the Amiga: ASCII only (ISO-8859-1 on the Amiga), LF line endings.
 - WinUAE syntax checked in `cfgfile.cpp`: `filesystem2=rw,DEVICE:Volume:path,bootpri`; `chipmem_size` in 512 KB
   units, `fastmem_size` in MB; networking emulation `bsdsocket_emu=true`.

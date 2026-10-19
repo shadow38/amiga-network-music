@@ -137,7 +137,9 @@ full volume, 50 is quiet (about -25 dB, 6 % of full amplitude), 25 very quiet; m
 second. LMS offers no "fixed volume" for this kind of player: for full volume, set it to 100. Below 100 the
 scaling costs CPU time: on a 68020 at about 28 MHz with Paula, about a quarter of the CPU on top of AHI's two
 thirds (measured in WinUAE). **On a slow Amiga, leave LMS at 100 and set the volume on the amplifier**: at 100 the
-samples are not touched. With `VERBOSE`, each change prints `volume: 5.9 % of full amplitude`.
+samples are not touched. **With Paula, the same advice holds for the sound**: Paula's 14 bits through AHI have
+their own noise, which a low volume brings forward (a crackle heard at 50 in WinUAE, gone at 100). With `VERBOSE`,
+each change prints `volume: 5.9 % of full amplitude`.
 
 ### Default options
 

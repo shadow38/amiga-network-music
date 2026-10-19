@@ -300,7 +300,7 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   seven test tones (WAV 16, FLAC 24, FLAC mono, WAV 24, WAV 8, AIFF, FLAC 16) in one playlist, 70 s in 70.4 s,
   no `STMo`; heard by the user: same pitch and level, boundaries not noticeable.
 
-## 1.8 Local decoding: FLAC, then MP3 ⬜
+## 1.8 Local decoding: FLAC, then MP3 ✅
 
 - **Goal**: stop depending on server-side conversion (a regular LMS has no MP3 → PCM rule).
 - **Content**: FLAC then MP3 decoders in portable C (lightweight, MIT-compatible libraries, e.g. dr_flac and
@@ -401,6 +401,38 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   the code yet: the start-up measure is pessimistic on such CPUs, never optimistic). There, LMS sends FLAC as is
   and five test tones (16 and 24 bits, mono, 48 and 96 kHz: LMS lowers 96 kHz to 48 in FLAC) play without
   `STMo`; heard by the user: a 48 kHz song and the 96 kHz tone, right. Executable: 114 KB. Next: 1.8c (MP3).
+- **1.8c done** (2026-10-19, branch `decoding`), in three parts:
+  - **`amisqueeze.fpu`**: the same sources built with `-m68881` (`AMISQUEEZE_FPU`, objects in
+    `obj/amisqueeze-fpu/`), both executables in the release archive; `amisqueeze` is unchanged. It checks
+    `AttnFlags` and explains that it needs an FPU; libnix's own check, linked in by `-m68881`, showed an alert and
+    quit before `main()` without a word: replaced by an empty `__fpucheck`.
+  - **MP3 decoder** (`mp3.c`, only with `AMISQUEEZE_MP3`: `amisqueeze.fpu` and the host build): minimp3 (CC0,
+    commit `ea99364`) in `third_party/minimp3`, built by `minimp3.c` without SIMD (the host tests run the Amiga's
+    code) and layer III only. ID3v2 tags skipped as they arrive (several, with footers, bigger than the ring
+    buffer); an ID3v1 tag at the end not taken for a frame. Frames go through a 16 KB staging buffer: minimp3 is
+    called with a full buffer to find the first frame (it wants several frames in a row), then with the biggest
+    frame and the next header (otherwise it starts over and loses the bit reservoir), or at the end of the track;
+    a decoded frame is handed over as the output asks; rate and channels come from the frames (a format change
+    starts a new block). minimp3 keeps about 17 KB on the stack (`-fstack-usage`): `amisqueeze.fpu` asks libnix for
+    32 KB at start-up (`__stack`, `__stkinit`); `BENCH` from a `Stack 2048` Shell passes. Not done: gapless
+    trimming (encoder delay, LAME header frame decoded as silence: about 50 ms at the start of each file).
+  - **`MP3=AUTO|ON|OFF`**: like FLAC, a built-in sample (`bench_mp3.c` from `tests/data/bench-320.mp3`, 0.3 s at
+    320 kbit/s, 13.6 KB) measured at start-up; `mp3` advertised last, as squeezelite does: LMS 9.1.1 still sends an
+    MP3 as is (and keeps FLAC as FLAC). In `amisqueeze`, `MP3=ON` prints why it is ignored (both executables read
+    the same prefs). `BENCH` prints both speeds.
+  - **Tests**: MP3 files made with `lame` from the signals of `flac_data.py` (128 kbit/s CBR, VBR, 320 kbit/s
+    without header nor tag, mono, 48 kHz, 22.05 kHz MPEG-2), decoded against their signal after the delay found by
+    search: SNR 23.6 to 40.9 dB, the same values as `lame --decode`; the same bytes sent in pieces of 3000 bytes or
+    at once; rate checked by the elapsed time; extra tags; a seek in the middle of a frame (the end identical to
+    the whole file's); MP3, MP3, PCM back to back; a stream without MP3 frames.
+  - **Measured in WinUAE**, 68020 + 68882 with the JIT: FLAC 78x, MP3 74x real time, but only with the JIT's FPU
+    compiler on (`compfpu=true`: without it, 1.8x). Two MP3s through LMS (215 s) played to the end, the output
+    identical to the host build's but for 0.03 % of the samples, by 1. Heard by the user: the user's song decoded
+    on the Amiga, right on the Toccata; on Paula a crackle at LMS volume 50 that went away at 100: the samples
+    scaled to 6 % leave Paula's noise (14 bits through AHI) 25 dB closer to the music; the user guide advises 100
+    with Paula (see the volume modes of 1.10). Executables: `amisqueeze` 114 KB, `amisqueeze.fpu` 150 KB.
+  - **For 1.9**: the synthesis uses `fintrz` and `fmovecr` (from `-m68881`), emulated by the CPU library on a real
+    68040 or 68060 (one trap per sample: slow); fine on a 68881/68882, Emu68 to check. `MP3=AUTO` would measure it.
 
 ## 1.9 Real machine ⬜
 
@@ -426,6 +458,8 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   itself (`AHIC_OutputVolume`), at no CPU cost; to check first: which drivers support it (`paula.audio`?
   Toccata, the PiStorm's DAC), and who drives it: from LMS, it would be `LMS` without the cost, but only if AHI
   does not fall into the fault seen with `ahir_Volume` (1.6); from the Amiga, amilms would have to talk to
-  amisqueeze itself (an ARexx port, for instance), not only to LMS.
+  amisqueeze itself (an ARexx port, for instance), not only to LMS. Also heard in 1.8c: with Paula through AHI
+  (14 bits), samples scaled down to a low volume bring out Paula's noise (a crackle at LMS volume 50, gone at 100);
+  a volume set after the conversion (the output's own, or Paula's 0 to 64) would keep the full resolution.
 - **Criterion**: started without arguments, the player finds the server and shows up under the chosen name; with
   `LOG=<file>`, the messages appear in the Shell window and, at the same time, in the file.
