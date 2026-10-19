@@ -182,14 +182,41 @@ Avoid putting `OUTPUT` in the default options: every run would fill the disk.
 
 ### Sound (AHI)
 
-amisqueeze plays through `ahi.device` (tested with AHI 6.x: `ahi.device` 6.6), on the unit given by `UNIT` (0 by
-default). Set that unit in the AHI preferences (`SYS:Prefs/AHI`):
+amisqueeze plays through **AHI** (Audio Hardware Interface), the standard audio system of the Amiga: programs
+play through AHI, and an AHI driver drives the sound hardware, Paula (the Amiga's own sound chip) or a sound card.
+AHI is free, on Aminet, but **not part of AmigaOS 3.x**: an Amiga that only ever played games and demos usually
+does not have it.
 
-- **a "stereo++" mode**: in a plain "stereo" mode, AHI puts each sound entirely on one side, and a stereo stream
-  plays on one side only;
-- **at 44100 Hz** if the driver allows it (the rate LMS sends): otherwise AHI converts the rate. Paula is limited
-  to about 28 kHz with a 15 kHz screen mode (27,429 Hz in PAL);
+#### Installing AHI
+
+If AHI is not installed yet (no `DEVS:ahi.device`, no `SYS:Prefs/AHI`), from [Aminet](https://aminet.net):
+
+| Archive | What it holds |
+|---|---|
+| `driver/audio/m68k-amigaos-ahiusr.lha` | AHI 6.0 itself (`ahi.device`, the preferences); needs a 68020 or better |
+| `driver/audio/m68k-amigaos-ahidrv.lha` | the drivers, among them `paula.audio` (Paula) |
+| `util/libs/mui38usr.lha` | MUI, which the AHI 6 preferences need (skip it if MUI is installed) |
+
+AHI 6 has no installer: copy its files as its readme (`ahiusr.readme`) describes. A sound card usually comes with
+its own AHI driver: follow its documentation. amisqueeze was tested with AHI 6 (`ahi.device` 6.6); AHI 4 is
+expected to work, not checked yet.
+
+#### Setting up the unit
+
+amisqueeze plays on the AHI unit given by `UNIT` (0 by default). In the AHI preferences (`SYS:Prefs/AHI`), choose
+for that unit:
+
+- **a "stereo++" mode**, for instance **`Paula:14 bit stereo++`** with Paula (the name may end with "calibrated"),
+  or your card's "16 bit stereo++" mode. In a plain "stereo" mode (without "++"), AHI puts each sound entirely on
+  one side, and the music plays on one side only;
+- **the highest frequency**: 44100 Hz if the driver allows it (the rate LMS sends; otherwise AHI converts the
+  rate). Paula's maximum is about 28 kHz with a 15 kHz screen mode (27,429 Hz in PAL);
 - 1 channel is enough (amisqueeze plays one sound at a time); more lets other programs play at the same time.
+
+Then save. With Paula, `Paula:8 bit stereo++` takes a little less CPU than the 14-bit mode, at a lower quality;
+the "HiFi" modes take more.
+
+#### How it plays
 
 With Paula, AHI converts and mixes the sound with the CPU: on a 68020 at about 28 MHz (measured in WinUAE),
 playback takes about two thirds of the CPU, 14-bit modes a little more than 8-bit ones; amisqueeze itself takes

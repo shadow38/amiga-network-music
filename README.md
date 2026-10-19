@@ -29,9 +29,10 @@ spoken by free software on both sides.
   software player, without a display or infrared remote.
 - **amilms**: a remote control from the Amiga (not started yet).
 
-On the Amiga: AmigaOS 3.x, a 68020 or better (from a plain 68020 accelerator to a PiStorm), AHI, and a TCP/IP stack
-providing `bsdsocket.library` (Roadshow, AmiTCP, AmiNetXDuo, or WinUAE's emulation). Cross-compiled C, tested in
-WinUAE.
+On the Amiga: AmigaOS 3.x, a 68020 or better (from a plain 68020 accelerator to a PiStorm), a TCP/IP stack
+providing `bsdsocket.library` (Roadshow, AmiTCP, AmiNetXDuo, or WinUAE's emulation), and **AHI**, the standard
+Amiga audio system (free on Aminet, not part of AmigaOS 3.x), with the driver of Paula or of a sound card.
+Cross-compiled C, tested in WinUAE.
 
 ## Quick start
 
@@ -39,8 +40,9 @@ WinUAE.
    (0.2: a preview tested in WinUAE only, not yet on a real Amiga). It holds amisqueeze and the user guide.
 2. **Pick the executable** and copy it to `C:`: `amisqueeze` for any Amiga with a 68020 or better;
    `amisqueeze.fpu` (from version 0.3) for an Amiga with an FPU, which also decodes MP3.
-3. **On the Amiga**: a TCP/IP stack running, and AHI installed with unit 0 set to a "stereo++" mode
-   (`SYS:Prefs/AHI`).
+3. **On the Amiga**: a TCP/IP stack running, and AHI installed, with unit 0 set to a "stereo++" mode in
+   `SYS:Prefs/AHI` (with Paula: `Paula:14 bit stereo++`); without "++", the music plays on one side only. Where to
+   get AHI and how to set it up: [sound](docs/user-guide.md#sound-ahi).
 4. **Run it** from a Shell, with the address of the server:
 
    ```
