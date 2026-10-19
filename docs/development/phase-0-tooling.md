@@ -129,7 +129,7 @@ Back to the [plan](README.md).
   `m68k-amigaos-gdb` (`target remote …:2345`) driven by VS Code (cpptools); build with `-g`.
 - **Criterion**: stops on a breakpoint in `main.c`, variables readable.
 
-## 0.9 Test Music Assistant server ⬜
+## 0.9 Test Music Assistant server ⬜ (after version 0.2)
 
 - **Goal**: a Music Assistant server reachable from the emulated Amiga, for the Music Assistant back end of the
   remote (2.8 to 2.11) and for amisqueeze as a Music Assistant player (1.7).

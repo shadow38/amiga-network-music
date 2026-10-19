@@ -56,13 +56,16 @@ success criterion and a way to check it.
 | 1.4 amisqueeze: AHI audio output | ✅ 2026-10-19 |
 | 1.5 amisqueeze: commands and volume | ✅ 2026-10-19 |
 | 1.6 amisqueeze: robustness | ✅ 2026-10-19 |
-| 1.7 to 1.10 | ⬜ |
-| 0.9 Test Music Assistant server | ⬜ |
+| **1.7a amisqueeze: other PCM formats (LMS)** | ⬜ **next** |
+| 1.7b amisqueeze: Music Assistant | ⬜ after version 0.2 |
+| 1.8 to 1.10 | ⬜ |
+| 0.9 Test Music Assistant server | ⬜ after version 0.2 |
 | 2.0 remote: study (common interface, Music Assistant feasibility, name) | ⬜ before any amilms code |
 | 2.1 to 2.7 remote: LMS | ⬜ |
-| 2.8 to 2.11 remote: Music Assistant | ⬜ |
+| 2.8 to 2.11 remote: Music Assistant | ⬜ after version 0.2 |
 | 3.1 Licence and user documentation | 🔶 licence: MIT |
 | 3.2 to 3.3 release | ⬜ |
 
 Phase 0 moves forward as needed: a tooling step is done when a step of phase 1 or 2 needs it. Phases 1 and 2 can
-progress in parallel; the current priority is amisqueeze (1.4, AHI audio output).
+progress in parallel; the current priority is amisqueeze for LMS towards version 0.2 (1.7a, then 1.8), Music
+Assistant coming after 0.2 (decided 2026-10-19).

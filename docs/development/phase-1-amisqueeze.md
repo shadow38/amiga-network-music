@@ -2,8 +2,8 @@
 
 Back to the [plan](README.md).
 
-A network player for LMS (and Music Assistant): slimproto control connection (TCP 3483), HTTP audio stream, audio
-output through AHI. Protocol references: squeezelite (`slimproto.c`, `slimproto.h`, `stream.c`, `pcm.c`) and LMS
+A network player for LMS (Music Assistant later, after version 0.2): slimproto control connection (TCP 3483), HTTP
+audio stream, audio output through AHI. Protocol references: squeezelite (`slimproto.c`, `slimproto.h`, `stream.c`, `pcm.c`) and LMS
 (`Slim/Networking/Slimproto.pm`, `Slim/Player/Squeezebox2.pm`).
 
 Design choices: one task and one loop around `WaitSelect()` (sockets, AHI signals, Ctrl-C), because a `SocketBase`
@@ -279,6 +279,8 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   if the server sends them. Music Assistant: the player's `wav` output codec (MA offers no raw PCM); check what MA
   sends in `strm`.
 - **Criterion**: test tones pass in each format; the player works with Music Assistant.
+- **Split** (decided 2026-10-19): **1.7a** the formats, tested with LMS (now); **1.7b** Music Assistant, after
+  version 0.2, with the test server of step 0.9.
 
 ## 1.8 Local decoding: FLAC, then MP3 ⬜
 

@@ -32,8 +32,8 @@ Toccata a 16-bit reference.
 Decided (2026-10-18): two programs in this repository, one `src/<prog>/` directory each, shared code in
 `src/common/`:
 
-- **amisqueeze**: slimproto player with AHI output (works with LMS and Music Assistant, which both speak
-  slimproto);
+- **amisqueeze**: slimproto player with AHI output, for LMS (Music Assistant speaks slimproto too; decided
+  2026-10-19: Music Assistant is tested only after version 0.2, see the plan);
 - **amilms** (working name; **amiremote** proposed, to be decided by study step 2.0): remote control, one
   portable core with two server back ends behind a common interface, LMS text CLI (TCP 9090) first, then the
   Music Assistant API (JSON over WebSocket, token); a Shell front end first, then a GUI front end calling the same
