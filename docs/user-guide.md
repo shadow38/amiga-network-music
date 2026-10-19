@@ -9,7 +9,7 @@ amisqueeze turns the Amiga into a network music player for Lyrion Music Server (
 protocol of Logitech's Squeezebox players, so LMS (and its web interface or apps) sees and controls it like any
 other player.
 
-**Current state (version 0.1, a first preview, tested in WinUAE only):** amisqueeze connects to the server, shows up as a player and
+**Current state (version 0.2 in development; 0.1, the first release, is a preview tested in WinUAE only):** amisqueeze connects to the server, shows up as a player and
 **plays what LMS plays through AHI**: in LMS, playback progresses, moves on to the next track, pauses, seeks,
 stops and changes volume as with any player. Only raw 16-bit PCM streams are accepted for now (LMS converts the other formats, see
 the requirements). The sound has been checked by ear in WinUAE (Paula and Toccata), not yet on a real Amiga.

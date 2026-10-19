@@ -18,7 +18,7 @@
 #define DEVICE_ID_SQUEEZEPLAY 12
 
 /* Advertised in HELO. Only list formats actually played: pcm only, the server transcodes the rest. */
-#define CAPS "Model=squeezelite,ModelName=AmiSqueeze,Firmware=0.1,AccuratePlayPoints=0,HasDigitalOut=0," \
+#define CAPS "Model=squeezelite,ModelName=AmiSqueeze,Firmware=0.2-dev,AccuratePlayPoints=0,HasDigitalOut=0," \
              "MaxSampleRate=48000,pcm"
 
 /* ---- serialisation ---- */
