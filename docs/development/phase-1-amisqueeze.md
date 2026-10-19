@@ -106,7 +106,7 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   that frame. A reference decoded from the whole file is then one frame too long: decode the file without its
   ID3v1 tag, or use test MP3s without one (`lame --id3v2-only`).
 
-## 1.4 AHI audio output 🔶 (1.4a, 1.4b done; 1.4c listening done, stack, leak, CPU load next)
+## 1.4 AHI audio output ✅ (2026-10-19)
 
 - **Goal**: hear the sound, and hear it right.
 - **Content**: `ahi.device`, double-buffered `CMD_WRITE`, `AHIST_S16S`; byte swapping when the stream is
@@ -162,7 +162,26 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   the stream at the right offset (exactly 15.0 s of data left). Learnt on the server side: LMS announces in `strm`
   the rate of the **source file**, even when its conversion rule resamples; LMS's own `ogg pcm` rule (`sox -r
   44100`) therefore makes a 48 kHz source play 9 % too fast on any PCM-only player (our test `mp3 pcm` rule had
-  copied it, fixed). Still to do: stack, no leak, CPU load on the slow profile.
+  copied it, fixed).
+- **1.4c, the rest** (2026-10-19, measured without the user):
+  - LMS timing criteria of 1.2 with the AHI output (Paula, `SWAP`): time +60.01 s in 60.02 s, pause frozen,
+    resume, seek, next track, end of the playlist, stop: all as with the virtual output;
+  - stack: `Stack 2048` (checked with `Status FULL`: amisqueeze gets 2048), three rounds of the command scenario
+    plus a seek and a track boundary: same results as with 4 KB;
+  - memory: `Avail FLUSH` around each round, chip unchanged; fast drops by 1,064 bytes now and then, also when
+    only `C:Wait` is started the same way (`Run` with output to a WinUAE folder), and not on every amisqueeze run:
+    the system's, not amisqueeze's;
+  - CPU load on the slow profile (68020 without FPU, WinUAE approximate mode at 4 x 7.09 = 28.4 MHz, as a
+    typical A1200 accelerator; free CPU counted by a priority -128 loop, load = 1 - count while playing / count
+    when idle, 10 s windows): through AHI and Paula, **66-68 % in 14 bits** (unit 0) and **61-65 % in 8 bits** (unit 2), for
+    44.1 and 48 kHz streams, no `STMo`, LMS time exact; with `NOAUDIO`, 2-5 %. So nearly all of it is the sound
+    output: AHI resampling and mixing for Paula (27,429 Hz), plus the byte swap into the AHI blocks (not measured
+    apart; estimated at a few percent). Limits of the figure: WinUAE's networking runs TCP/IP on the host (a real
+    stack, Roadshow, adds its own load) and its Zorro II fast RAM is not the accelerator's own RAM. About a third
+    of the CPU is left on such a machine: to keep in mind for local FLAC decoding (1.8).
+- **Validated with the user** (2026-10-19): Paula's crackles left to the real machine (1.9); the CPU load accepted
+  for now (lighter AHI settings to look at in 1.8 if decoding does not fit); `SWAP` stays a manual option until
+  the real machine shows whether its channels are swapped too (1.9).
 - **Criterion**: correct test tones (440 Hz at the right pitch, left/right in the right place, no noise); a whole
   track without crackling; CPU load measured with Paula on the slow profile (0.4).
 - **Test**: WinUAE with both AHI drivers of step 0.5, Paula first (Amiga chipset, the output of Amigas without a

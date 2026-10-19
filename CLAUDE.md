@@ -38,7 +38,9 @@ Work proceeds in testable steps, each validated with the user **before** writing
 `docs/user-guide.md`: update it with every change visible to users. Steps 1.1b (default options in
 `ENV:amisqueeze.prefs`), 1.2 (stream received, virtual output) and 1.3 (`OUTPUT` file) validated on 2026-10-18.
 Step 1.4: 1.4a and 1.4b done (AHI output); 1.4c listening done on 2026-10-19 (test tones, a whole 48 kHz track as
-MP3 and FLAC, Paula needs `SWAP` in WinUAE); still to do in 1.4c: stack, no leak, CPU load on a slow 68020 profile.
+MP3 and FLAC, Paula needs `SWAP` in WinUAE); rest of 1.4c measured the same day (2 KB stack OK, no leak, CPU
+load on the slow 68020 profile: 61-68 % with Paula, almost all of it AHI; 2-5 % with `NOAUDIO`). Step 1.4
+validated on 2026-10-19; next 1.5 (commands and volume).
 
 Step 1.2 (stream.c, ring.c): HTTP stream with a non-blocking connection; one 1 MB ring buffer, reported to LMS
 as both the stream and the output buffer (raw PCM needs no decoding); a virtual output consumes it at the PCM rate

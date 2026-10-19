@@ -89,6 +89,10 @@ default). Set that unit in the AHI preferences (`SYS:Prefs/AHI`):
   to about 28 kHz with a 15 kHz screen mode (27,429 Hz in PAL);
 - 1 channel is enough (amisqueeze plays one sound at a time); more lets other programs play at the same time.
 
+With Paula, AHI converts and mixes the sound with the CPU: on a 68020 at about 28 MHz (measured in WinUAE),
+playback takes about two thirds of the CPU, 14-bit modes a little more than 8-bit ones; amisqueeze itself takes
+only a few percent.
+
 AHI is given about 0.6 s of audio ahead; pause, stop and seek cut the sound at once, and the playing time shown by
 LMS follows what was actually played. If left and right come out swapped (seen in WinUAE with `paula.audio` 4.30,
 in 8 and 14 bits, while Paula itself is right: not checked on a real Amiga yet), add `SWAP`. Occasional

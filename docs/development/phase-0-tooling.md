@@ -49,6 +49,9 @@ Back to the [plan](README.md).
     addressing, Zorro III memory, tens of MB); **slow**, a 68020 accelerator without FPU at its real speed (not
     "as fast as possible", so that CPU load can be measured: Paula mixing, later the decoders);
   - a versioned configuration template in `winuae/`, with machine-specific paths kept in a local, unversioned file.
+- **Slow profile, local** (2026-10-19, for step 1.4c): the provisional configuration started with the CPU
+  settings overridden (`-s cpu_compatible=true -s cpu_speed=real -s cpu_multiplier=4`, a 68020 at about
+  28 MHz, as a typical A1200 accelerator); no versioned template yet.
 - **Criterion**: the configuration boots, `bsdsocket.library` is available, amisqueeze connects to the server.
 
 ## 0.5 AHI in the emulated Amiga ✅ (2026-10-18)
