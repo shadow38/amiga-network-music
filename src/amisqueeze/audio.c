@@ -2,8 +2,9 @@
  * audio.c - portable core: the blocks of the audio output (plan step 1.4b)
  *
  * The platform's audio device (ahi.device on the Amiga, see platform.h) plays the blocks one after the other.
- * Here: which block holds what and in which order, the conversion of the stream's PCM for the device (16-bit
- * big-endian, left and right swapped with SWAP), the bytes played, the pause, and the volume.
+ * Here: which block holds what and in which order, the conversion of the stream's PCM for the device (8, 16, 24 or
+ * 32-bit samples to 16-bit big-endian, left and right swapped with SWAP), the bytes played (counted in bytes of the
+ * stream, whatever the device got), the pause, and the volume.
  *
  * ahi.device chains a request only to one that is already playing: a request linked to a request that is itself
  * waiting is never played (seen in WinUAE, and in AHI's source: the third one is left in the waiting list). So at
@@ -89,12 +90,48 @@ static void build_tables(struct audio *a)
     a->tables = a->volume;
 }
 
-/* In place: 16-bit samples to big-endian, scaled by the volume (16.16, unchanged at full volume), then left and
- * right swapped if asked. Byte by byte, so that the host build gives the same result. */
-static void convert(struct audio *a, uint8_t *d, uint32_t n, int big_endian, int channels)
+/* In place: 8, 24 or 32-bit samples (n bytes of the stream) to 16-bit big-endian. 24 and 32 bits keep their two
+ * most significant bytes; 8 bits are unsigned (centred on 0x80) and double in size, so they are converted from
+ * the end (the block was filled with at most half its size, see feed_audio). */
+static void to_16bit(uint8_t *d, uint32_t n, int sample_bytes, int big_endian)
 {
-    uint32_t i;
+    uint32_t i, o;
 
+    if (sample_bytes == 1) {
+        for (i = n; i-- > 0;) {
+            d[2 * i] = (uint8_t)(d[i] ^ 0x80);
+            d[2 * i + 1] = 0;
+        }
+    } else {
+        int hi = big_endian ? 0 : sample_bytes - 1, lo = big_endian ? 1 : sample_bytes - 2;
+
+        for (i = 0, o = 0; i + (uint32_t)sample_bytes <= n; i += (uint32_t)sample_bytes, o += 2) {
+            uint8_t h = d[i + hi], l = d[i + lo];   /* read before writing: o <= i */
+
+            d[o] = h;
+            d[o + 1] = l;
+        }
+    }
+}
+
+/* Bytes of the stream for bytes sent to the device (whole frames): the device gets 16-bit samples */
+static uint32_t stream_bytes(const struct audio_block *bl, uint32_t device_bytes)
+{
+    return device_bytes / 2 * (uint32_t)bl->sample_bytes;
+}
+
+/* In place: the stream's samples to 16-bit big-endian, scaled by the volume (16.16, unchanged at full volume),
+ * then left and right swapped if asked. Byte by byte, so that the host build gives the same result. */
+static void convert(struct audio *a, struct audio_block *bl)
+{
+    uint8_t *d = bl->buf;
+    uint32_t i, n = bl->len;
+    int big_endian = bl->big_endian;
+
+    if (bl->sample_bytes != 2) {            /* 16 bits, the usual case, needs no extra pass */
+        to_16bit(d, stream_bytes(bl, n), bl->sample_bytes, big_endian);
+        big_endian = 1;
+    }
     if (a->volume < AUDIO_VOLUME_FULL) {
         int hi = big_endian ? 0 : 1, lo = 1 - hi;
 
@@ -112,7 +149,7 @@ static void convert(struct audio *a, uint8_t *d, uint32_t n, int big_endian, int
             d[i] = d[i + 1];
             d[i + 1] = t;
         }
-    if (a->swap && channels == 2)
+    if (a->swap && bl->channels == 2)
         for (i = 0; i + 3 < n; i += 4) {
             uint8_t t0 = d[i], t1 = d[i + 1];
             d[i] = d[i + 2];
@@ -134,7 +171,7 @@ static void send_ready(struct audio *a, uint32_t now)
         struct audio_block *bl = &a->block[b];
 
         if (!bl->converted) {
-            convert(a, bl->buf, bl->len, bl->big_endian, bl->channels);
+            convert(a, bl);
             bl->converted = 1;
         }
         bl->sent = bl->len - bl->done;
@@ -184,7 +221,7 @@ void audio_poll(struct player *p, uint32_t now)
 
         if (bl->state != BLOCK_SENT || !plat_audio_done(b))
             break;
-        a->played += bl->sent;
+        a->played += stream_bytes(bl, bl->sent);
         bl->state = BLOCK_FREE;
         drop_first(a, 1);
         a->head_ms = now;                   /* the next block started when this one ended */
@@ -225,10 +262,11 @@ void audio_submit(struct player *p, int b, uint32_t n, const struct pcm_format *
         ring_consume(&p->ring, len);
         got += len;
     }
-    bl->len = n;
+    bl->len = n / f->sample_bytes * 2;      /* what the device will get: 16-bit samples */
     bl->done = 0;
     bl->rate = f->rate;
     bl->channels = f->channels;
+    bl->sample_bytes = f->sample_bytes;
     bl->big_endian = f->big_endian;
     bl->converted = 0;                      /* converted when sent, at the volume of that moment */
     bl->state = BLOCK_READY;
@@ -251,7 +289,7 @@ uint64_t audio_played(const struct player *p, uint32_t now, int estimate)
     const struct audio *a = &p->audio;
 
     if (estimate && !a->paused && a->count > 0 && a->block[a->order[0]].state == BLOCK_SENT)
-        return a->played + head_estimate(a, now);
+        return a->played + stream_bytes(&a->block[a->order[0]], head_estimate(a, now));
     return a->played;
 }
 
@@ -275,7 +313,7 @@ void audio_pause(struct player *p, uint32_t now)
             got = head_estimate(a, now);
         got -= got % frame;
         bl->done += got;
-        a->played += got;
+        a->played += stream_bytes(bl, got);
         bl->state = bl->done >= bl->len ? BLOCK_FREE : BLOCK_READY;
     }
     while (freed < a->count && a->block[a->order[freed]].state == BLOCK_FREE)

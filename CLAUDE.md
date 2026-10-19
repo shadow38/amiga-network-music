@@ -51,7 +51,9 @@ MP3 and FLAC, Paula needs `SWAP` in WinUAE); rest of 1.4c measured the same day 
 load on the slow 68020 profile: 61-68 % with Paula, almost all of it AHI; 2-5 % with `NOAUDIO`). Step 1.4
 validated on 2026-10-19. Step 1.5 (volume from `audg`) validated on 2026-10-19. Step 1.6 (robustness) on
 2026-10-19: reconnection storm fixed (wait 5 s after a session shorter than 10 s), AHI memory corruption avoided
-(volume applied to the samples, see Pitfalls); validated on 2026-10-19.
+(volume applied to the samples, see Pitfalls); validated on 2026-10-19. Release 0.1 published on 2026-10-19,
+then 0.2-dev. Step 1.7a (8, 24 and 32-bit samples converted to 16 bits for AHI; LMS strips WAV/AIFF headers, files
+above 48 kHz not playable until FLAC decoding) done on 2026-10-19; next 1.8.
 
 Step 1.2 (stream.c, ring.c): HTTP stream with a non-blocking connection; one 1 MB ring buffer, reported to LMS
 as both the stream and the output buffer (raw PCM needs no decoding); a virtual output consumes it at the PCM rate

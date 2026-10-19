@@ -1066,24 +1066,153 @@ static void test_audio_starved(void)
     teardown(&p);
 }
 
-/* No AHI; a sample size the audio output does not take */
+/* No AHI */
 static void test_audio_errors(void)
 {
     struct player p;
-    char pcm24[7] = { '1', 'p', '2', '3', '2', '1', 1 };
 
     setup(&p, "Amiga");
     stub_audio_fails = 1;
     CHECK(!audio_open(&p, 0, 0) && !p.audio.enabled);
     CHECK(strstr(stub_out, "cannot open ahi.device unit 0") != NULL);
     teardown(&p);
+}
 
+/* Plays the rest of the track to its end */
+static void play_out(struct player *p)
+{
+    int guard;
+
+    stub_stream_end();
+    stream_io(p, PLAT_READ);
+    for (guard = 0; guard < 20 && p->out.state == OUTPUT_RUNNING; guard++)
+        finish(p);
+}
+
+/* What the device must receive for a stream of sample_bytes-byte samples: 16-bit big-endian, made here
+ * independently of audio.c (8 bits: unsigned, centred on 0x80; 24 and 32 bits: the two most significant bytes).
+ * Returns the bytes written. */
+static uint32_t to_device_fmt(uint8_t *dst, const uint8_t *src, uint32_t n, int sample_bytes, int big_endian)
+{
+    uint32_t i, o = 0;
+
+    for (i = 0; i + (uint32_t)sample_bytes <= n; i += (uint32_t)sample_bytes) {
+        const uint8_t *s = src + i;
+        int msb = big_endian ? 0 : sample_bytes - 1;
+
+        if (sample_bytes == 1) {
+            dst[o++] = (uint8_t)(s[0] - 0x80);
+            dst[o++] = 0;
+        } else {
+            dst[o++] = s[msb];
+            dst[o++] = s[big_endian ? 1 : msb - 1];
+        }
+    }
+    return o;
+}
+
+/* strm s with the given size code ('0'..'3' = 8 to 32 bits), channels ('1', '2') and endianness ('0' = big,
+ * '1' = little), 44.1 kHz; then connection and response headers */
+static void open_stream_fmt(struct player *p, char size, char channels, char endian)
+{
+    char fmt[7] = { '1', 'p', size, '3', channels, endian, 1 };
+
+    feed_strm('s', fmt, 0, 9000, 0, request);
+    drain(p);
+    stream_io(p, PLAT_WRITE);
+    stub_feed_stream(http_ok, (int)strlen(http_ok));
+    drain_stream(p);
+}
+
+/* 8, 24 and 32-bit samples, both byte orders, mono and stereo: converted to 16-bit big-endian for the device, the
+ * bytes played counted in bytes of the stream (elapsed time, end of the track) */
+static void test_audio_formats(void)
+{
+    static const struct { char size, channels, endian; int bytes; } cases[] = {
+        { '0', '2', '1', 1 },               /* 8-bit unsigned stereo (WAV) */
+        { '2', '2', '1', 3 },               /* 24-bit little-endian stereo (FLAC, WAV) */
+        { '2', '1', '0', 3 },               /* 24-bit big-endian mono (AIFF) */
+        { '3', '2', '1', 4 },               /* 32-bit little-endian stereo */
+        { '1', '2', '0', 2 },               /* 16-bit big-endian stereo (AIFF) */
+    };
+    uint32_t c;
+
+    fill(track_a, sizeof(track_a), 7);
+    for (c = 0; c < sizeof(cases) / sizeof(cases[0]); c++) {
+        struct player p;
+        int channels = cases[c].channels - '0', sb = cases[c].bytes;
+        uint32_t frame = (uint32_t)(channels * sb), n = 100000 - 100000 % frame;
+        uint32_t full = (sb == 1 ? BLOCK / 2 : BLOCK) / frame * frame, dev;
+
+        setup_audio(&p, 0);
+        open_stream_fmt(&p, cases[c].size, cases[c].channels, cases[c].endian);
+        stub_feed_stream(track_a, (int)n);
+        drain_stream(&p);
+        output_tick(&p, stub_now);
+        CHECK(stub_audio[0].len == full / (uint32_t)sb * 2 && stub_audio[0].channels == channels);
+        finish(&p);                                     /* the first block played: its stream bytes */
+        CHECK(audio_played(&p, stub_now, 0) == full);
+        CHECK(output_elapsed_ms(&p) == (uint32_t)((uint64_t)full * 1000 / (44100 * frame)));
+        play_out(&p);
+        dev = to_device_fmt(expect, track_a, n, sb, cases[c].endian == '0');
+        CHECK(stub_audio_out_len == (int)dev && !memcmp(stub_audio_out, expect, dev));
+        CHECK(audio_played(&p, stub_now, 0) == n && p.out.state == OUTPUT_STOPPED);
+        CHECK(stub_audio_bad == 0);
+        teardown(&p);
+    }
+}
+
+/* 24 bits: a pause in the middle of a block counts the stream bytes of what was played; the rest follows on */
+static void test_audio_24bit_pause(void)
+{
+    struct player p;
+    uint32_t n = 100002, dev;
+
+    fill(track_a, sizeof(track_a), 8);
     setup_audio(&p, 0);
-    clear_tx();
-    feed_strm('s', pcm24, 0, 9000, 0, request);
+    open_stream_fmt(&p, '2', '2', '1');
+    stub_feed_stream(track_a, (int)n);
+    drain_stream(&p);
+    output_tick(&p, stub_now);
+    stub_audio_abort_played = 1000;                     /* device bytes: 250 frames */
+    feed_strm('p', NULL, 0, 0, 0, NULL);
     drain(&p);
-    CHECK(!strcmp(trace(), "STAT:STMf STAT:STMn"));
-    CHECK(strstr(stub_out, "24-bit samples not supported") != NULL);
+    CHECK(audio_played(&p, stub_now, 0) == 1500);       /* 250 frames of 6 bytes */
+    feed_strm('u', NULL, 0, 0, 0, NULL);
+    drain(&p);
+    play_out(&p);
+    dev = to_device_fmt(expect, track_a, n, 3, 0);
+    CHECK(stub_audio_out_len == (int)dev && !memcmp(stub_audio_out, expect, dev));
+    CHECK(stub_audio_bad == 0);
+    teardown(&p);
+}
+
+/* Gapless from a 16-bit track to a 24-bit one: each block holds one track, the boundary (STMs) comes when the
+ * 16-bit track has been played, and the device gets both, converted */
+static void test_audio_gapless_24bit(void)
+{
+    struct player p;
+    uint32_t na = 40000, nb = 30000, dev;
+
+    fill(track_a, sizeof(track_a), 9);
+    fill(track_b, sizeof(track_b), 10);
+    setup_audio(&p, 0);
+    open_stream(&p, '1', 1);                            /* 16-bit little-endian stereo */
+    stub_feed_stream(track_a, (int)na);
+    drain_stream(&p);
+    stub_stream_end();
+    stream_io(&p, PLAT_READ);
+    stub_reset();
+    open_stream_fmt(&p, '2', '2', '1');                 /* then 24-bit */
+    stub_feed_stream(track_b, (int)nb);
+    drain_stream(&p);
+    clear_tx();
+    play_out(&p);
+    CHECK(count_in_trace("STAT:STMs") == 1 && count_in_trace("STAT:STMu") == 1);
+    to_device(expect, track_a, na, 0);
+    dev = to_device_fmt(expect + na, track_b, nb, 3, 0);
+    CHECK(stub_audio_out_len == (int)(na + dev) && !memcmp(stub_audio_out, expect, na + dev));
+    CHECK(stub_audio_bad == 0);
     teardown(&p);
 }
 
@@ -1114,17 +1243,6 @@ static void to_device_vol(uint8_t *dst, const uint8_t *src, uint32_t n, int swap
         dst[i] = (uint8_t)(s >> 8);
         dst[i + 1] = (uint8_t)s;
     }
-}
-
-/* Plays the rest of the track to its end */
-static void play_out(struct player *p)
-{
-    int guard;
-
-    stub_stream_end();
-    stream_io(p, PLAT_READ);
-    for (guard = 0; guard < 20 && p->out.state == OUTPUT_RUNNING; guard++)
-        finish(p);
 }
 
 /* Volume (audg): the samples are scaled when a block is sent, the device always gets full volume; the blocks
@@ -1244,6 +1362,9 @@ int main(void)
     test_audio_wait_full_block();
     test_audio_starved();
     test_audio_errors();
+    test_audio_formats();
+    test_audio_24bit_pause();
+    test_audio_gapless_24bit();
     test_audio_volume();
     test_audio_volume_pause();
     printf("test_core: %d checks, %d failed\n", checks, failures);

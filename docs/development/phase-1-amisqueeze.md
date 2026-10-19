@@ -281,6 +281,24 @@ belongs to the task that opened it; packets serialised field by field; buffers a
 - **Criterion**: test tones pass in each format; the player works with Music Assistant.
 - **Split** (decided 2026-10-19): **1.7a** the formats, tested with LMS (now); **1.7b** Music Assistant, after
   version 0.2, with the test server of step 0.9.
+- **1.7a, what LMS 9.1.1 sends** (observed 2026-10-19 with the host build, test tones in each format): always
+  format `p` with explicit values, the samples only: **LMS strips the WAV and AIFF headers itself**, so no header
+  parsing is needed with LMS (maybe with Music Assistant, 1.7b). 16-bit FLAC/WAV: size `1`, little-endian; 24-bit
+  FLAC/WAV: size `2` (3 bytes per sample), little-endian; 8-bit WAV: size `0`, **unsigned** (centred on 0x80);
+  AIFF: endianness `0` (big-endian); mono: channels `1`. A 96 kHz FLAC is not played at all: amisqueeze
+  advertises 48 kHz at most and LMS cannot lower the rate when it makes PCM ("Couldn't create command line for
+  flc playback"); left as it is (decided 2026-10-19): with FLAC decoding (1.8), LMS can send a FLAC resampled to
+  48 kHz (its `flc flc` rule resamples).
+- **1.7a done** (2026-10-19): the audio output takes 8, 16, 24 and 32-bit samples and converts them to 16-bit
+  big-endian when a block is sent (24 and 32 bits: the two most significant bytes; 8 bits: unsigned to signed,
+  converted from the end of the block since they double in size, so an 8-bit block is filled to half); AHI always
+  gets 16 bits (AHI 4). The bytes played are counted in bytes of the stream (each block knows its sample size), so
+  the elapsed time, the track boundaries and pauses inside a converted block stay right. The check that refused
+  non-16-bit streams (`STMn`) is gone. Unit tests: each conversion bit for bit against an independent one (8-bit
+  stereo, 24-bit little-endian stereo, 24-bit big-endian mono, 32-bit, 16-bit big-endian), the time after the
+  first block, a pause in a 24-bit block, a gapless 16-bit to 24-bit boundary (328 checks). WinUAE (Paula):
+  seven test tones (WAV 16, FLAC 24, FLAC mono, WAV 24, WAV 8, AIFF, FLAC 16) in one playlist, 70 s in 70.4 s,
+  no `STMo`; heard by the user: same pitch and level, boundaries not noticeable.
 
 ## 1.8 Local decoding: FLAC, then MP3 ⬜
 

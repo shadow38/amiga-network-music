@@ -117,9 +117,10 @@ enum block_state {
 
 struct audio_block {
     uint8_t *buf;
-    uint32_t len;                       /* bytes of PCM in buf */
+    uint32_t len;                       /* bytes for the device (16-bit samples) once converted; done and sent too */
     uint32_t done;                      /* bytes already played (a pause stopped it there) */
     uint32_t sent;                      /* bytes sent with the last request (len - done) */
+    int      sample_bytes;              /* 1 to 4: sample size in the stream (the buffer holds that until sent) */
     int      state;                     /* enum block_state */
     uint32_t rate;
     int      channels;
@@ -203,8 +204,6 @@ void output_resume(struct player *p);
 uint32_t output_elapsed_ms(const struct player *p);
 /* 1 if the loop must wake up often (stream or output active) */
 int player_busy(const struct player *p);
-/* 0 if the output cannot play this format (the audio output takes 16-bit PCM only for now) */
-int output_format_ok(const struct player *p, const struct pcm_format *f);
 
 /* audio.c: the audio output's blocks (portable; the device itself is behind platform.h) */
 /* Opens the platform's audio output and allocates the blocks; 0 on failure (message printed) */
@@ -218,8 +217,9 @@ void audio_poll(struct player *p, uint32_t now);
 int audio_free_block(const struct player *p);
 /* Blocks queued or held: 0 = nothing left to play */
 int audio_pending(const struct player *p);
-/* Copies n bytes (whole frames, n <= AUDIO_BLOCK_SIZE) from the ring buffer into block b and queues the block; it
- * is converted for the device (16-bit big-endian, volume, left/right swapped with SWAP) when sent */
+/* Copies n bytes (whole frames; n <= AUDIO_BLOCK_SIZE, half of it for 8-bit samples, which double in size) from
+ * the ring buffer into block b and queues the block; it is converted for the device (16-bit big-endian, volume,
+ * left/right swapped with SWAP) when sent */
 void audio_submit(struct player *p, int b, uint32_t n, const struct pcm_format *f, uint32_t now);
 /* Bytes played since the last reset: exact (finished blocks), or with an estimate of the block playing now */
 uint64_t audio_played(const struct player *p, uint32_t now, int estimate);

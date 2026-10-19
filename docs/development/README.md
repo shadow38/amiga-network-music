@@ -56,9 +56,10 @@ success criterion and a way to check it.
 | 1.4 amisqueeze: AHI audio output | ✅ 2026-10-19 |
 | 1.5 amisqueeze: commands and volume | ✅ 2026-10-19 |
 | 1.6 amisqueeze: robustness | ✅ 2026-10-19 |
-| **1.7a amisqueeze: other PCM formats (LMS)** | ⬜ **next** |
+| 1.7a amisqueeze: other PCM formats (LMS) | ✅ 2026-10-19 |
 | 1.7b amisqueeze: Music Assistant | ⬜ after version 0.2 |
-| 1.8 to 1.10 | ⬜ |
+| **1.8 amisqueeze: local decoding (FLAC, then MP3)** | ⬜ **next** |
+| 1.9 to 1.10 | ⬜ |
 | 0.9 Test Music Assistant server | ⬜ after version 0.2 |
 | 2.0 remote: study (common interface, Music Assistant feasibility, name) | ⬜ before any amilms code |
 | 2.1 to 2.7 remote: LMS | ⬜ |

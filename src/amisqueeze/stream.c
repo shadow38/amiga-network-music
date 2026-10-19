@@ -177,11 +177,6 @@ static int streaming(const struct player *p)
     return s == STREAM_CONNECTING || s == STREAM_HEADERS || s == STREAM_BODY;
 }
 
-int output_format_ok(const struct player *p, const struct pcm_format *f)
-{
-    return !p->audio.enabled || f->sample_bytes == 2;
-}
-
 /* Format of the data at the buffer's read position, the next bytes handed to the sink */
 static const struct pcm_format *submit_format(const struct player *p)
 {
@@ -323,14 +318,14 @@ static void output_empty(struct player *p)
 
 /* Audio output: fills the free blocks. A block holds whole frames of one track; it is sent full, or with what
  * there is when the track's data is complete or when the device is about to run dry (fewer than two blocks
- * queued). */
+ * queued). 8-bit samples fill half a block: they double in size when converted to 16 bits. */
 static void feed_audio(struct player *p, uint32_t now)
 {
     struct ring *r = &p->ring;
 
     for (;;) {
         const struct pcm_format *f;
-        uint32_t frame, n, avail;
+        uint32_t frame, n, avail, full;
         int b;
 
         if (p->out.queued > 0 && sink_played(p) >= p->out.queue[0].start) {
@@ -349,7 +344,9 @@ static void feed_audio(struct player *p, uint32_t now)
             return;
         f = submit_format(p);
         frame = (uint32_t)f->channels * f->sample_bytes;
-        n = until_next_track(p, avail < AUDIO_BLOCK_SIZE ? avail : AUDIO_BLOCK_SIZE);
+        full = f->sample_bytes == 1 ? AUDIO_BLOCK_SIZE / 2 : AUDIO_BLOCK_SIZE;
+        full -= full % frame;
+        n = until_next_track(p, avail < full ? avail : full);
         if (n < frame) {
             if (until_next_track(p, avail) < avail || !streaming(p)) {
                 ring_consume(r, n);         /* a partial frame at the end of a track: dropped */
@@ -359,7 +356,7 @@ static void feed_audio(struct player *p, uint32_t now)
             return;                         /* the rest of the frame is still to come */
         }
         n -= n % frame;
-        if (n < AUDIO_BLOCK_SIZE && audio_pending(p) >= 2 && streaming(p) && until_next_track(p, avail) == avail)
+        if (n < full && audio_pending(p) >= 2 && streaming(p) && until_next_track(p, avail) == avail)
             return;                         /* more of this track to come: wait to fill a whole block */
         audio_submit(p, b, n, f, now);
     }

@@ -11,8 +11,10 @@ other player.
 
 **Current state (version 0.2 in development; 0.1, the first release, is a preview tested in WinUAE only):** amisqueeze connects to the server, shows up as a player and
 **plays what LMS plays through AHI**: in LMS, playback progresses, moves on to the next track, pauses, seeks,
-stops and changes volume as with any player. Only raw 16-bit PCM streams are accepted for now (LMS converts the other formats, see
-the requirements). The sound has been checked by ear in WinUAE (Paula and Toccata), not yet on a real Amiga.
+stops and changes volume as with any player. It takes raw PCM streams, which LMS makes from the files (see the
+requirements): 8, 16, 24 or 32-bit samples (24-bit "high resolution" FLAC included), mono or stereo, up to
+48 kHz, converted to 16 bits for AHI. The sound has been checked by ear in WinUAE (Paula and Toccata), not yet on
+a real Amiga.
 
 ### Requirements
 
@@ -29,8 +31,11 @@ On the server:
 
 - Lyrion Music Server (tested with 9.1.1), reachable from the Amiga on TCP ports 3483 (players) and 9000 (audio
   streams; or whatever its HTTP port is: LMS tells the player which one);
-- a conversion rule from MP3 to raw PCM, see the [README](../README.md#lms-server). FLAC and WAV are converted by
-  LMS's default rules.
+- a conversion rule from MP3 to raw PCM, see the [README](../README.md#lms-server). FLAC, WAV and AIFF are
+  converted by LMS's default rules;
+- files above 48 kHz (88.2, 96, 192 kHz) do not play: LMS cannot lower their rate when it makes raw PCM, and
+  reports "Couldn't create command line for flc playback" in its log. This will change when amisqueeze decodes
+  FLAC itself (LMS can then send it a FLAC at 48 kHz).
 
 ### Installation
 
@@ -149,7 +154,6 @@ Rules:
 | `connection closed by the server` | the server closed the connection; amisqueeze reconnects |
 | `not enough memory for the 1024 KB stream buffer` | not enough free memory to start |
 | `stream format X not supported` | LMS sent a format other than raw PCM (no conversion rule for that format) |
-| `N-bit samples not supported by the audio output` | the stream is not 16-bit; LMS normally sends 16-bit PCM |
 | `cannot open ahi.device unit N (is AHI installed? NOAUDIO plays without sound)` | AHI missing, or that unit cannot be opened; amisqueeze stops |
 | `not enough memory for the audio blocks` | the 3 audio blocks (96 KB) cannot be allocated; amisqueeze stops |
 | `cannot create <file>: error N` | the `OUTPUT` file cannot be created (missing directory, write-protected disk); amisqueeze stops. On a volume that is not mounted, AmigaDOS first asks for it to be inserted; this message follows a Cancel |

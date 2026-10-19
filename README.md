@@ -19,8 +19,8 @@ only, not yet on a real Amiga.
 **Status:** under development, in testable steps described in the
 [development plan](docs/development/README.md). amisqueeze: shows up as a player in LMS and plays through AHI
 (play, pause, seek, stop, gapless next track, volume; validated in WinUAE with emulated networking and LMS 9.1.1);
-raw 16-bit PCM only for now, so MP3 needs a conversion rule on the server until local decoding comes. amilms:
-not started.
+raw PCM only for now (8 to 32 bits, mono or stereo, up to 48 kHz), so MP3 needs a conversion rule on the server
+until local decoding comes. amilms: not started.
 
 ## Requirements
 

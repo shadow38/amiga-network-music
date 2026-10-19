@@ -192,11 +192,6 @@ static void process_strm_s(struct player *p, const uint8_t *pkt, int len)
         slim_send_stat(p, "STMn", 0);
         return;
     }
-    if (!output_format_ok(p, &fmt)) {
-        msg("amisqueeze: %d-bit samples not supported by the audio output\n", fmt.sample_bytes * 8);
-        slim_send_stat(p, "STMn", 0);
-        return;
-    }
     if (autostart < 0 || autostart > 3)
         autostart = 1;
     if (autostart >= 2) {                   /* would wait for "cont" (radio metadata): not supported yet */
