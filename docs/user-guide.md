@@ -15,8 +15,8 @@ tested yet. The server (and its web interface or apps) sees and controls it like
 stops and changes volume as with any player. It takes raw PCM streams, which LMS makes from the files (see the
 requirements): 8, 16, 24 or 32-bit samples (24-bit "high resolution" FLAC included), mono or stereo, up to
 48 kHz, converted to 16 bits for AHI. On a fast Amiga it also decodes **FLAC** itself, and **MP3** with an FPU
-(see "FLAC and MP3" below). The sound has been checked by ear in WinUAE (Paula and Toccata), not yet on a real
-Amiga.
+(see [decoding on the Amiga](#decoding-on-the-amiga-flac-mp3-bench)). The sound has been checked by ear in WinUAE
+(Paula and Toccata), not yet on a real Amiga.
 
 ### Requirements
 
@@ -28,14 +28,15 @@ On the Amiga:
 - a TCP/IP stack providing `bsdsocket.library`: Roadshow, AmiTCP, AmiNetXDuo, or WinUAE's emulation
   (`bsdsocket_emu=true`) in an emulator;
 - for the sound: AHI (tested with 6.x; 4.x expected to work, not checked yet) and a driver: Paula's
-  (`paula.audio`, no sound card needed) or your sound card's; see "Sound (AHI)" below.
+  (`paula.audio`, no sound card needed) or your sound card's; see [sound](#sound-ahi).
 
 On the server:
 
 - Lyrion Music Server (tested with 9.1.1), reachable from the Amiga on TCP ports 3483 (players) and 9000 (audio
   streams; or whatever its HTTP port is: LMS tells the player which one);
-- for MP3 files, unless `amisqueeze.fpu` decodes them (see "FLAC and MP3" below): a conversion rule from MP3 to
-  raw PCM, see [server setup](#server-setup). FLAC, WAV and AIFF are converted by LMS's default rules;
+- for MP3 files, unless `amisqueeze.fpu` decodes them (see
+  [decoding on the Amiga](#decoding-on-the-amiga-flac-mp3-bench)): a conversion rule from MP3 to raw PCM, see
+  [server setup](#server-setup). FLAC, WAV and AIFF are converted by LMS's default rules;
 - files above 48 kHz (88.2, 96, 192 kHz) play only when amisqueeze decodes FLAC itself (LMS then lowers their rate
   in FLAC); when the Amiga is too slow for that, LMS cannot lower their rate as it makes raw PCM, and reports
   "Couldn't create command line for flc playback" in its log.
@@ -47,9 +48,10 @@ Lyrion Music Server needs little for amisqueeze:
 - **Ports** reachable from the Amiga: 3483/tcp (players) and the web port, 9000/tcp by default, which also carries
   the audio streams (LMS tells the player which one; set `HTTP_PORT` if you move it, e.g. in Docker).
 - **MP3 to PCM conversion**, only when amisqueeze does not decode MP3 itself: with `amisqueeze`, or with
-  `amisqueeze.fpu` on a CPU too slow for it (see "FLAC and MP3" below). LMS 9.1 converts FLAC, WAV and AIFF by its
-  default rules, but has **none for MP3** (regular players decode MP3 themselves): without one, its `server.log`
-  says "Couldn't create command line for mp3 playback" and the player receives nothing. Add this rule to a
+  `amisqueeze.fpu` on a CPU too slow for it (see [decoding on the Amiga](#decoding-on-the-amiga-flac-mp3-bench)).
+  LMS 9.1 converts FLAC, WAV and AIFF by its default rules, but has **none for MP3** (regular players decode MP3
+  themselves): without one, its `server.log` says "Couldn't create command line for mp3 playback" and the player
+  receives nothing. Add this rule to a
   `custom-convert.conf` file (in the LMS root directory or at the root of a plugins directory), then restart LMS:
 
   ```
@@ -93,11 +95,11 @@ Template: `SERVER,PORT/N/K,NAME/K,MAC/K,OUTPUT/K,UNIT/N/K,NOAUDIO/S,SWAP/S,FLAC/
 | `PORT` | slimproto port of the server | `3483` |
 | `NAME` | player name shown in LMS | `Amiga` |
 | `MAC` | player identifier, `xx:xx:xx:xx:xx:xx` | derived from `NAME` |
-| `OUTPUT` | file receiving the audio as it is played, for checking (see below); no sound with it | none |
+| `OUTPUT` | file receiving the audio as it is played, for checking (see [writing the audio to a file](#writing-the-audio-to-a-file-output)); no sound with it | none |
 | `UNIT` | AHI unit to play through (0 to 3, set in the AHI preferences) | `0` |
 | `NOAUDIO` | no sound: the audio is received and consumed at the playing pace, as if played | off |
-| `SWAP` | swaps left and right (for an AHI driver that swaps them, see below) | off |
-| `FLAC` | `AUTO`: FLAC decoded on the Amiga if it is fast enough (measured at start-up), otherwise converted by the server; `ON`: always decoded here; `OFF`: always converted by the server (see "FLAC and MP3" below) | `AUTO` |
+| `SWAP` | swaps left and right (for an AHI driver that swaps them, see [sound](#sound-ahi)) | off |
+| `FLAC` | `AUTO`: FLAC decoded on the Amiga if it is fast enough (measured at start-up), otherwise converted by the server; `ON`: always decoded here; `OFF`: always converted by the server (see [decoding on the Amiga](#decoding-on-the-amiga-flac-mp3-bench)) | `AUTO` |
 | `MP3` | the same for MP3, with `amisqueeze.fpu` only (`amisqueeze` leaves MP3 to the server) | `AUTO` |
 | `BENCH` | measures how fast this Amiga decodes FLAC and MP3, prints it and quits (no server needed) | off |
 | `VERBOSE` | print the messages exchanged with the server and the stream events | off |
@@ -112,30 +114,71 @@ can also be renamed from the LMS web interface; amisqueeze takes the new name wh
 
 If the connection drops or the server restarts, amisqueeze reconnects by itself (it retries every 5 seconds).
 
-**FLAC and MP3**: the player tells LMS, when it connects, which formats it decodes; LMS sends those files as they
-are and converts the others. Decoding on the Amiga saves network bandwidth (FLAC about half of raw PCM, MP3 a fifth
-or less), lets FLAC files above 48 kHz play (LMS lowers their rate in FLAC), and plays MP3 without any conversion
-rule on the server; but it needs a fast CPU. With `FLAC=AUTO` and `MP3=AUTO` (the defaults), amisqueeze decodes a
-built-in sample of each at start-up (the slowest cases: FLAC level 8, MP3 at 320 kbit/s; at most a second each)
-and only takes the format if it runs at least twice real time; it prints the result, for instance `FLAC: level 8
-decoded at 77.0x real time: FLAC decoded here`, then `MP3: 320 kbit/s decoded at 74.2x real time: MP3 decoded
-here`. MP3 is decoded in floating point: only `amisqueeze.fpu` has the MP3 decoder. Measured in WinUAE: a 68020
-without its JIT compiler (about 45 MHz) decodes FLAC at 0.2x real time, so FLAC stays with the server (its default
-rule converts it to PCM, nothing to set up); with the JIT (the order of a PiStorm) FLAC at 77x, and MP3 at 74x with
-a 68882. `amisqueeze BENCH` prints those measures without connecting; `FLAC=ON|OFF` and `MP3=ON|OFF` force the
-choice. The measure is a little pessimistic on a CPU that compiles code on the fly (WinUAE's JIT, the PiStorm's
-Emu68): the first pass also compiles. MP3 tracks are not yet joined without gaps: an MP3 file begins with a few
-hundredths of a second of silence (the encoder's delay), as with a basic player.
+### Decoding on the Amiga (`FLAC`, `MP3`, `BENCH`)
 
-**`OUTPUT=<file>`** writes the audio to a file as it is played: raw PCM exactly as the server sent it (for LMS
-16-bit **little-endian** samples; 44.1 kHz stereo: about 10 MB per minute), or, for FLAC and MP3 decoded on the
-Amiga, 16-bit samples in the Amiga's byte order (big-endian). The file is created (or replaced) when
-amisqueeze starts and closed when it stops; everything played in between is appended, the next track right after
-the previous one, nothing while paused. It is meant for checking playback: compare it with the expected PCM, e.g.
-with `tools/pcm-compare.py` from the repository (in an emulator, write it to a volume shared with the host). With
-`OUTPUT` there is no sound (as with `NOAUDIO`): the file holds exactly what was "played", which AHI could not
-promise (it is given the audio about 0.6 s ahead, and a stop cuts that short). Avoid putting it in the default
-options, or every run fills the disk.
+When it connects, amisqueeze tells LMS which formats it decodes itself. LMS sends those files as they are, and
+converts the others to raw PCM.
+
+Decoding on the Amiga:
+
+- saves network bandwidth: FLAC takes about half of raw PCM, MP3 a fifth or less;
+- plays FLAC files above 48 kHz (LMS lowers their rate in FLAC);
+- plays MP3 with no conversion rule on the server.
+
+But it needs a fast CPU, and MP3 also needs an FPU: only `amisqueeze.fpu` has the MP3 decoder.
+
+**At start-up**, with `FLAC=AUTO` and `MP3=AUTO` (the defaults), amisqueeze decodes a built-in sample of each
+format in its slowest case (FLAC level 8, MP3 at 320 kbit/s), for at most a second each. It takes a format only if
+it decodes it at least twice as fast as real time, and prints the result:
+
+```
+FLAC: level 8 decoded at 77.0x real time: FLAC decoded here
+MP3: 320 kbit/s decoded at 74.2x real time: MP3 decoded here
+```
+
+To decide yourself:
+
+- `FLAC=ON`, `MP3=ON`: always decoded on the Amiga, whatever the measure;
+- `FLAC=OFF`, `MP3=OFF`: always left to the server;
+- `amisqueeze BENCH`: prints the measures and quits, without connecting.
+
+Measured in WinUAE:
+
+| Emulated CPU | FLAC | MP3 (`amisqueeze.fpu`) | Result |
+|---|---|---|---|
+| 68020 without JIT (about 45 MHz) | 0.2x | — | FLAC left to the server (converted by its default rule, nothing to set up) |
+| 68020 with JIT and 68882 (the order of a PiStorm) | 77x | 74x | both decoded on the Amiga |
+
+Good to know:
+
+- the measure is a little pessimistic on a CPU that compiles code on the fly (WinUAE's JIT, the PiStorm's Emu68):
+  its first pass also compiles;
+- MP3 tracks are not yet joined without gaps: each MP3 file begins with a few hundredths of a second of silence
+  (the encoder's delay), as with a basic player.
+
+### Writing the audio to a file (`OUTPUT`)
+
+`OUTPUT=<file>` writes the audio to a file as it is played. It is meant for checking playback, not for listening:
+**there is no sound with it**, as with `NOAUDIO`.
+
+What the file holds:
+
+- raw PCM exactly as the server sent it: for LMS, 16-bit **little-endian** samples (44.1 kHz stereo: about 10 MB
+  per minute);
+- for FLAC and MP3 decoded on the Amiga: 16-bit samples in the Amiga's byte order (big-endian).
+
+How it is written:
+
+- created (or replaced) when amisqueeze starts, closed when it stops;
+- everything played in between is appended, the next track right after the previous one; nothing while paused.
+
+Why no sound: the file holds exactly what was played, which AHI could not promise (AHI receives the audio about
+0.6 s ahead, and a stop cuts that short).
+
+To check the file, compare it with the expected PCM, for instance with `tools/pcm-compare.py` from the repository.
+In an emulator, write it to a volume shared with the host.
+
+Avoid putting `OUTPUT` in the default options: every run would fill the disk.
 
 ### Sound (AHI)
 
@@ -150,22 +193,37 @@ default). Set that unit in the AHI preferences (`SYS:Prefs/AHI`):
 
 With Paula, AHI converts and mixes the sound with the CPU: on a 68020 at about 28 MHz (measured in WinUAE),
 playback takes about two thirds of the CPU, 14-bit modes a little more than 8-bit ones; amisqueeze itself takes
-only a few percent at full volume (see the volume below).
+only a few percent at full volume (see [volume](#volume)).
 
 AHI is given about 0.6 s of audio ahead; pause, stop and seek cut the sound at once, and the playing time shown by
 LMS follows what was actually played. If left and right come out swapped (seen in WinUAE with `paula.audio` 4.30,
 in 8 and 14 bits, while Paula itself is right: not checked on a real Amiga yet), add `SWAP`. Occasional
 crackles with `paula.audio` in WinUAE also occur without amisqueeze (AHI's own test tone).
 
-**Volume**: amisqueeze follows the volume set in LMS (slider, apps, mute): it scales the samples itself (AHI always
-plays them at full volume) and a change is heard 0.2 to 0.4 s later. LMS's volume scale is logarithmic: 100 is
-full volume, 50 is quiet (about -25 dB, 6 % of full amplitude), 25 very quiet; mute and unmute fade in about a
-second. LMS offers no "fixed volume" for this kind of player: for full volume, set it to 100. Below 100 the
-scaling costs CPU time: on a 68020 at about 28 MHz with Paula, about a quarter of the CPU on top of AHI's two
-thirds (measured in WinUAE). **On a slow Amiga, leave LMS at 100 and set the volume on the amplifier**: at 100 the
-samples are not touched. **With Paula, the same advice holds for the sound**: Paula's 14 bits through AHI have
-their own noise, which a low volume brings forward (a crackle heard at 50 in WinUAE, gone at 100). With `VERBOSE`,
-each change prints `volume: 5.9 % of full amplitude`.
+#### Volume
+
+amisqueeze follows the volume set in LMS (slider, apps, mute). It scales the samples itself, since AHI always plays
+them at full volume; a change is heard 0.2 to 0.4 s later.
+
+LMS's volume scale is logarithmic:
+
+| LMS volume | Level |
+|---|---|
+| 100 | full volume: the samples are not touched |
+| 50 | quiet: about -25 dB, 6 % of full amplitude |
+| 25 | very quiet: about -37 dB, 1.4 % |
+
+Mute and unmute fade in about a second. LMS offers no "fixed volume" for this kind of player: for full volume, set
+it to 100.
+
+**On a slow Amiga, or with Paula, leave LMS at 100 and set the volume on the amplifier.** Below 100:
+
+- the scaling costs CPU time: on a 68020 at about 28 MHz with Paula, about a quarter of the CPU on top of AHI's two
+  thirds (measured in WinUAE);
+- with Paula, the sound suffers: Paula's 14 bits through AHI have their own noise, which a low volume brings
+  forward (a crackle heard at 50 in WinUAE, gone at 100).
+
+With `VERBOSE`, each change prints `volume: 5.9 % of full amplitude`.
 
 ### Default options
 
