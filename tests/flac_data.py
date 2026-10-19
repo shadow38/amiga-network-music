@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
-"""Test signal of the FLAC tests: a few sines and a little noise, deterministic, so that the PCM a FLAC file must
-decode to can be computed again here (FLAC is lossless).
+"""Test signal of the FLAC and MP3 tests: a few sines and a little noise, deterministic, so that the PCM a FLAC file
+must decode to can be computed again here (FLAC is lossless), and what an MP3 file was made from.
 
-The FLAC files of tests/data/ were made from it once (flac 1.3.4, the tool shipped with LMS):
+The FLAC and MP3 files of tests/data/ were made from it once (flac 1.3.4 and lame 3.100, the tools of an LMS
+server):
     tests/flac_data.py raw tests/data      # writes the raw PCM files (little-endian signed)
     flac --force-raw-format --endian=little --sign=signed --channels=C --bps=B --sample-rate=R -<level> ...
+    lame -r -s R --bitwidth 16 --signed --little-endian -m <mode> <options> ...
 (see tests/data/README.txt for each file). The tests call expected() to know what amisqueeze must output.
 """
 import math
@@ -19,6 +21,7 @@ SIGNALS = {
     "s24": (44100, 2, 24, 1.0),
     "s16-48k": (48000, 2, 16, 1.0),
     "bench": (44100, 2, 16, 0.3),       # built into amisqueeze (level 8) for the speed measurement
+    "s16-22k": (22050, 2, 16, 1.0),     # MP3 only: an MPEG-2 rate
 }
 
 

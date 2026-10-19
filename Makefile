@@ -25,14 +25,16 @@ PROGS   := $(notdir $(wildcard src/*))
 # Per-program options
 # amisqueeze (slimproto player): targets 68020+ (WinUAE, PiStorm), without FPU.
 # -Wno-pointer-sign: dos.library prototypes expect UBYTE * strings. -Werror=format: msg() format checks.
-amisqueeze_CFLAGS := -m68020 -Wno-pointer-sign -Werror=format -Ithird_party/dr_flac
+amisqueeze_CFLAGS := -m68020 -Wno-pointer-sign -Werror=format -Ithird_party/dr_flac -Ithird_party/minimp3
 
 # amisqueeze.fpu: the same sources built for a 68881/68882 FPU (or a 68040/68060 with FPU): floating point in
-# hardware, so it can hold the MP3 decoder. Objects in obj/amisqueeze-fpu/.
-amisqueeze_fpu_CFLAGS := $(amisqueeze_CFLAGS) -m68881 -DAMISQUEEZE_FPU
+# hardware, so it holds the MP3 decoder (AMISQUEEZE_MP3). Objects in obj/amisqueeze-fpu/. minimp3 needs about
+# 17 KB of stack: libnix's start-up code enlarges it (__stkinit, size in __stack, amiga.c).
+amisqueeze_fpu_CFLAGS  := $(amisqueeze_CFLAGS) -m68881 -DAMISQUEEZE_FPU -DAMISQUEEZE_MP3
+amisqueeze_fpu_LDFLAGS := -Wl,-u,___stkinit
 
 # Third-party code (third_party/): built without our warnings, in a file of its own
-THIRD_PARTY := dr_flac
+THIRD_PARTY := dr_flac minimp3
 $(foreach t,$(THIRD_PARTY),$(eval obj/amisqueeze/$(t).o: CFLAGS += -w -O2))
 $(foreach t,$(THIRD_PARTY),$(eval obj/amisqueeze-fpu/$(t).o: CFLAGS += -w -O2))
 $(foreach t,$(THIRD_PARTY),$(eval obj-host/amisqueeze/$(t).o: HOST_CFLAGS += -w))
@@ -42,7 +44,7 @@ $(foreach t,$(THIRD_PARTY),$(eval obj-host/amisqueeze/$(t).o: HOST_CFLAGS += -w)
 HOST_PROGS   := amisqueeze
 HOSTCC       ?= cc
 HOST_CFLAGS  := -O1 -g -Wall -Wextra -Werror=format -fno-omit-frame-pointer -fsanitize=address,undefined \
-                -Ithird_party/dr_flac
+                -Ithird_party/dr_flac -Ithird_party/minimp3 -DAMISQUEEZE_MP3
 HOST_LDFLAGS := -fsanitize=address,undefined
 
 amiga_srcs = $(filter-out src/$(1)/posix.c,$(wildcard src/$(1)/*.c))
@@ -68,7 +70,7 @@ $(foreach p,$(PROGS),$(eval $(call PROG_template,$(p))))
 
 amisqueeze: out/amisqueeze.fpu
 out/amisqueeze.fpu: $(patsubst src/amisqueeze/%.c,obj/amisqueeze-fpu/%.o,$(call amiga_srcs,amisqueeze)) | out
-	$(CC) $(LDFLAGS) $(amisqueeze_fpu_CFLAGS) -o $@ $^
+	$(CC) $(LDFLAGS) $(amisqueeze_fpu_LDFLAGS) $(amisqueeze_fpu_CFLAGS) -o $@ $^
 obj/amisqueeze-fpu/%.o: src/amisqueeze/%.c
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) $(amisqueeze_fpu_CFLAGS) -MMD -MP -save-temps=obj -c -o $@ $<
@@ -83,7 +85,7 @@ endef
 $(foreach p,$(HOST_PROGS),$(eval $(call HOST_template,$(p))))
 
 # Unit tests: the portable core of amisqueeze on a fake platform (tests/stub_platform.c)
-TEST_CORE := player slimproto stream ring audio decoder flac dr_flac bench bench_flac
+TEST_CORE := player slimproto stream ring audio decoder flac dr_flac mp3 minimp3 bench bench_flac
 out-host/test_core: obj-host/tests/test_core.o obj-host/tests/stub_platform.o \
                     $(patsubst %,obj-host/amisqueeze/%.o,$(TEST_CORE))
 	@mkdir -p $(dir $@)

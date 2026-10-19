@@ -163,11 +163,18 @@ static const struct decoder_ops *parse_format(const uint8_t *pkt, struct pcm_for
     int rate = pkt[8] - '0';
     int channels = pkt[9] - '0';
 
-    if (pkt[6] == 'f') {                    /* a guess until the decoder reads the stream's header */
+    if (pkt[6] == 'f' || pkt[6] == 'm') {   /* a guess until the decoder reads the stream's header */
         f->rate = 44100;
         f->channels = 2;
         f->sample_bytes = 2;
         f->big_endian = (uint8_t)host_big_endian();
+#ifdef AMISQUEEZE_MP3
+        if (pkt[6] == 'm')
+            return &decoder_mp3;
+#else
+        if (pkt[6] == 'm')
+            return NULL;
+#endif
         return &decoder_flac;
     }
     if (pkt[6] != 'p' || size < 1 || size > 4 || rate < 0 || rate > 9 || channels < 1 || channels > 2)
@@ -198,7 +205,7 @@ static void process_strm_s(struct player *p, const uint8_t *pkt, int len)
         msg_raw(pkt + 28, len - 28);        /* HTTP request, sent as is (not NUL-terminated) */
     }
     slim_send_stat(p, "STMf", 0);
-    if (ops == NULL) {                      /* raw PCM and FLAC only for now */
+    if (ops == NULL) {                      /* raw PCM, FLAC, and MP3 in the builds that have its decoder */
         msg("amisqueeze: stream format %c not supported\n", pkt[6]);
         slim_send_stat(p, "STMn", 0);
         return;

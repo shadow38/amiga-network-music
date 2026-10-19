@@ -577,7 +577,7 @@ static void test_connect_failure(void)
 static void test_not_pcm(void)
 {
     struct player p;
-    char fmt[7] = { '1', 'm', '?', '?', '?', '?', 10 };     /* MP3: not decoded yet */
+    char fmt[7] = { '1', 'a', '?', '?', '?', '?', 10 };     /* AAC: not decoded */
 
     setup(&p, "Amiga");
     CHECK(slim_connect(&p, 0));

@@ -58,6 +58,10 @@ struct decoder {
 extern const struct decoder_ops decoder_pcm;
 /* FLAC (strm format 'f'), with dr_flac */
 extern const struct decoder_ops decoder_flac;
+#ifdef AMISQUEEZE_MP3
+/* MP3 (strm format 'm'), with minimp3: only in the builds with floating point in hardware (and the host's) */
+extern const struct decoder_ops decoder_mp3;
+#endif
 
 /* 1 on a big-endian machine (the Amiga), 0 on a little-endian one (most hosts): decoders write native samples */
 int host_big_endian(void);

@@ -4,6 +4,7 @@ and checks what it sends (see "make test").
 
 Usage: fake_server.py <path to the host build of amisqueeze>
 """
+import math
 import os
 import random
 import signal
@@ -498,6 +499,132 @@ def scenario_flac_gapless():
           % (len(data), len(want), first_difference(data, want)))
 
 
+MP3_FILES = [                           # file of tests/data, signal of flac_data.py
+    ("s16-128.mp3", "s16"), ("s16-v2.mp3", "s16"), ("s16-320-raw.mp3", "s16"), ("m16-64.mp3", "m16"),
+    ("s16-48k-192.mp3", "s16-48k"), ("s16-22k-64.mp3", "s16-22k"),
+]
+MP3_MIN_SNR = 20.0                      # dB, decoded against the signal the file was made from
+mp3_decoded = {}                        # file: output of scenario_mp3, reference of the following scenarios
+
+
+def send_strm_mp3(session, http, threshold_kb=64):
+    fmt7 = b"1m????" + bytes([threshold_kb])    # autostart 1, MP3: the parameters are in the stream
+    send_packet(session.conn, b"strm", strm("s", port=http.port, ip=0, fmt7=fmt7, request=HTTP_REQUEST))
+
+
+def play_mp3(data, chunk=3000):
+    """Plays one MP3 track sent in pieces of `chunk` bytes: output, elapsed time at the end (ms), exit code, log"""
+    path = os.path.join(tempfile.mkdtemp(), "play.pcm")
+    http = HttpServer(data=data, chunk=chunk, pause=0.001)
+    http.start()
+    server, proc, s = start_session("Mp3", "OUTPUT=" + path)
+    try:
+        send_strm_mp3(s, http)
+        s.until("STAT:STMd")
+        _, _, body = s.until("STAT:STMu", timeout=10)
+    finally:
+        rc, out = stop(proc)
+        server.close()
+    return read_output(path), stat_elapsed_ms(body), rc, out
+
+
+def mp3_quality(data, signal):
+    """Delay (PCM frames: the encoder's and the decoder's, and the first frame of a LAME header, decoded as silence)
+    and signal-to-noise ratio (dB) of a decoded MP3 against the signal it was made from"""
+    channels = flac_data.SIGNALS[signal][1]
+    got = struct.unpack("<%dh" % (len(data) // 2), data)
+    want = struct.unpack("<%dh" % (len(flac_data.expected(signal)) // 2), flac_data.expected(signal))
+    probe = range(4000 * channels, 4512 * channels, channels)      # 512 samples of the first channel
+    if len(got) < 8600 * channels:
+        return None, 0.0
+    delay = min(range(4000), key=lambda d: sum((got[i + d * channels] - want[i]) ** 2 for i in probe))
+    n = min(len(want), len(got) - delay * channels)
+    noise = sum((got[i + delay * channels] - want[i]) ** 2 for i in range(n)) or 1
+    return delay, 10 * math.log10(sum(v * v for v in want[:n]) / noise)
+
+
+def scenario_mp3():
+    print("-- MP3: each test file against its signal; sent in pieces of 3000 bytes or at once, the same bytes")
+    for name, signal in MP3_FILES:
+        rate, channels = flac_data.SIGNALS[signal][:2]
+        data, elapsed, rc, out = play_mp3(flac_file(name))
+        delay, snr = mp3_quality(data, signal)
+        played_ms = len(data) * 1000 // (rate * channels * 2)
+        check(rc == 0 and delay is not None and snr >= MP3_MIN_SNR and abs(elapsed - played_ms) < 100,
+              "%s: %d bytes, delay %s frames, SNR %.1f dB, %d ms played at %d Hz (%d ms reported)"
+              % (name, len(data), delay, snr, played_ms, rate, elapsed))
+        whole, _, _, _ = play_mp3(flac_file(name), chunk=1 << 20)
+        check(whole == data, "%s at once: %d bytes, first difference at %d"
+              % (name, len(whole), first_difference(whole, data)))
+        if rc != 0 or whole != data:
+            print(out)
+        mp3_decoded[name] = data
+
+
+def id3v2(size, footer=False):
+    """An ID3v2 tag of `size` bytes in all, with a footer if asked (version 2.4)"""
+    body = size - 10 - (10 if footer else 0)
+    synchsafe = bytes([(body >> 21) & 0x7f, (body >> 14) & 0x7f, (body >> 7) & 0x7f, body & 0x7f])
+    head = (b"ID3\x04\x00\x10" if footer else b"ID3\x03\x00\x00") + synchsafe
+    return head + bytes(body) + (b"3DI\x04\x00\x10" + synchsafe if footer else b"")
+
+
+def scenario_mp3_tags():
+    print("-- MP3 tags: two more ID3v2 tags first (one bigger than the stream buffer, with a footer), an ID3v1 last")
+    data = id3v2(1258291, footer=True) + id3v2(3000) + flac_file("s16-128.mp3") + b"TAG" + bytes(125)
+    out, _, rc, log = play_mp3(data, chunk=65536)
+    want = mp3_decoded["s16-128.mp3"]
+    check(rc == 0 and out == want, "%d bytes, %d expected, first difference at %d"
+          % (len(out), len(want), first_difference(out, want)))
+    if out != want:
+        print(log)
+
+
+def scenario_mp3_seek():
+    print("-- MP3 from the middle of a file (a seek), not on a frame boundary: the same audio once in step")
+    file = flac_file("s16-320-raw.mp3")
+    out, _, rc, log = play_mp3(file[len(file) // 2 + 7:])
+    full = mp3_decoded["s16-320-raw.mp3"]
+    n = len(out) // 2
+    check(rc == 0 and n > 0 and out[-n:] == full[-n:] and len(out) <= len(full) // 2,
+          "%d bytes, the last %d as in the whole file" % (len(out), n))
+    if rc != 0:
+        print(log)
+
+
+def scenario_mp3_gapless():
+    print("-- MP3, MP3, then raw PCM, back to back: each track complete and in place")
+    path = os.path.join(tempfile.mkdtemp(), "play.pcm")
+    tracks = [HttpServer(data=flac_file("s16-128.mp3")), HttpServer(data=flac_file("m16-64.mp3")),
+              HttpServer(0.5, seed=8)]
+    for h in tracks:
+        h.start()
+    server, proc, s = start_session("Gapless", "OUTPUT=" + path)
+    try:
+        send_strm_mp3(s, tracks[0])
+        s.until("STAT:STMd")
+        send_strm_mp3(s, tracks[1])
+        s.until("STAT:STMd")
+        send_strm_s(s, tracks[2])
+        s.until("STAT:STMd")
+        s.until("STAT:STMu", timeout=10)
+        check(s.names().count("STAT:STMs") == 3, "STMs for each track (%d)" % s.names().count("STAT:STMs"))
+    finally:
+        rc, out = stop(proc)
+        server.close()
+    data = read_output(path)
+    want = mp3_decoded["s16-128.mp3"] + mp3_decoded["m16-64.mp3"] + tracks[2].data
+    check(data == want, "file: %d bytes, %d expected, first difference at %d"
+          % (len(data), len(want), first_difference(data, want)))
+
+
+def scenario_mp3_garbage():
+    print("-- MP3 announced, something else sent: track skipped")
+    out, _, rc, log = play_mp3(random.Random(9).randbytes(40000))
+    check(rc == 0 and len(out) == 0 and "mp3: no MP3 frame found, track skipped" in log,
+          "nothing played, reported (%d bytes)" % len(out))
+
+
 def scenario_no_server():
     print("-- no server listening: retries, Ctrl-C during the wait")
     probe = socket.socket()
@@ -564,6 +691,11 @@ if __name__ == "__main__":
     scenario_flac()
     scenario_flac_gapless()
     scenario_flac_off()
+    scenario_mp3()
+    scenario_mp3_tags()
+    scenario_mp3_seek()
+    scenario_mp3_gapless()
+    scenario_mp3_garbage()
     scenario_no_server()
     scenario_arguments()
     print("fake_server: %d failed" % failures)

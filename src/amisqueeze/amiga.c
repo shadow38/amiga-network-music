@@ -47,6 +47,12 @@ void __fpucheck(void)
 }
 #endif
 
+#ifdef AMISQUEEZE_MP3
+/* minimp3 keeps about 17 KB of work space on the stack: libnix's start-up code (__stkinit, linked in by the
+ * Makefile) gives the program a stack of this size when the Shell's is smaller */
+unsigned long __stack = 32768;
+#endif
+
 /* Used for the command line and for the prefs variable */
 #define TEMPLATE "SERVER,PORT/N/K,NAME/K,MAC/K,OUTPUT/K,UNIT/N/K,NOAUDIO/S,SWAP/S,FLAC/K,BENCH/S,VERBOSE/S"
 enum { ARG_SERVER, ARG_PORT, ARG_NAME, ARG_MAC, ARG_OUTPUT, ARG_UNIT, ARG_NOAUDIO, ARG_SWAP, ARG_FLAC, ARG_BENCH,
