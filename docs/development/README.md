@@ -109,3 +109,12 @@ they are taken up.
   compatibility list (machines, network cards, TCP/IP stacks, AHI drivers), `BENCH` figures from machines not at
   hand, a FAQ from real questions. Not for the documentation itself, which stays in `docs/` (3.4). To decide after
   1.0 and a public announcement, depending on the feedback; editing restricted to collaborators.
+- **amisqueeze on the other Amiga-family systems** (AmigaOS 4, MorphOS, AROS): checked on 2026-10-19, none of
+  them has a Squeezebox player, nor any client of a music server (OS4Depot, MorphOS-Storage, the AROS archives
+  through the AROS World mirror, Aminet, the community forums; the only one, AmiPlexAmp for Plex, is a 68k
+  program). They have the same `ahi.device` and `bsdsocket.library`, so most of `amiga.c` should carry over, and
+  the core is standard C. First and cheapest try: AROS 68k, which runs the current executables as they are (no
+  code). Then AmigaOS 4 and MorphOS (PowerPC) and AROS on x86 or ARM: a toolchain each; decoding FLAC and MP3 is
+  no CPU issue there. To check for a little-endian AROS: the byte swaps of the platform layer and of the samples
+  handed to AHI (written for a big-endian 68k). A player for PCs was ruled out the same day: squeezelite exists
+  everywhere; the host build stays a test tool.
