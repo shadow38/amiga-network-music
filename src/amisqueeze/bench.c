@@ -1,7 +1,9 @@
 /*
- * bench.c - portable core: how fast this machine decodes FLAC (plan step 1.8b). A built-in sample (bench_flac.c,
- * made from tests/data/bench-l8.flac: 0.3 s of the test signal at level 8, the slowest level to decode) is decoded
- * again and again, the PCM thrown away. FLAC=AUTO decides on that speed; the BENCH option prints it.
+ * bench.c - portable core: how fast this machine decodes FLAC and MP3 (plan steps 1.8b and 1.8c). A built-in
+ * sample is decoded again and again, the PCM thrown away: for FLAC bench_flac.c, made from
+ * tests/data/bench-l8.flac (0.3 s of the test signal at level 8, the slowest level to decode); for MP3
+ * bench_mp3.c, made from tests/data/bench-320.mp3 (the same 0.3 s at 320 kbit/s, the highest rate). The FLAC and
+ * MP3 options decide on those speeds when AUTO; the BENCH option prints them.
  */
 #include <string.h>
 
@@ -11,10 +13,15 @@
 
 extern const uint8_t bench_flac[];
 extern const uint32_t bench_flac_size;
+#ifdef AMISQUEEZE_MP3
+extern const uint8_t bench_mp3[];
+extern const uint32_t bench_mp3_size;
+#endif
 
 #define BENCH_MS 300                        /* measure for about that long, at least one whole pass if quicker */
 
-uint32_t flac_speed(uint32_t max_ms)
+/* Speed of a decoder on a sample, in % of real time; 0 if it cannot be measured */
+static uint32_t decode_speed(const struct decoder_ops *ops, const uint8_t *sample, uint32_t size, uint32_t max_ms)
 {
     static uint16_t pcm[2048];
     struct ring r;
@@ -23,7 +30,7 @@ uint32_t flac_speed(uint32_t max_ms)
     uint64_t frames = 0;
     uint32_t start, elapsed = 0, rate = 0;
 
-    if (!ring_init(&r, bench_flac_size))
+    if (!ring_init(&r, size))
         return 0;
     in.big_endian = (uint8_t)host_big_endian();
     start = plat_now_ms();
@@ -32,10 +39,10 @@ uint32_t flac_speed(uint32_t max_ms)
 
         ring_clear(&r);
         ring_write_space(&r, &w);
-        memcpy(w, bench_flac, bench_flac_size);
-        ring_commit(&r, bench_flac_size);
+        memcpy(w, sample, size);
+        ring_commit(&r, size);
         memset(&d, 0, sizeof(d));
-        d.ops = &decoder_flac;
+        d.ops = ops;
         if (!d.ops->start(&d, &in))
             break;
         for (;;) {
@@ -56,3 +63,15 @@ uint32_t flac_speed(uint32_t max_ms)
         return 0;
     return (uint32_t)(frames * 100000 / rate / elapsed);
 }
+
+uint32_t flac_speed(uint32_t max_ms)
+{
+    return decode_speed(&decoder_flac, bench_flac, bench_flac_size, max_ms);
+}
+
+#ifdef AMISQUEEZE_MP3
+uint32_t mp3_speed(uint32_t max_ms)
+{
+    return decode_speed(&decoder_mp3, bench_mp3, bench_mp3_size, max_ms);
+}
+#endif

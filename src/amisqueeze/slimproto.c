@@ -17,7 +17,7 @@
 
 #define DEVICE_ID_SQUEEZEPLAY 12
 
-/* Advertised in HELO, followed by the formats played: only those really decoded (pcm always, flc when FLAC is
+/* Advertised in HELO, followed by the formats played: only those really decoded (pcm always, flc and mp3 when
  * decoded here); the server converts the rest */
 #define CAPS "Model=squeezelite,ModelName=AmiSqueeze,Firmware=0.3-dev,AccuratePlayPoints=0,HasDigitalOut=0," \
              "MaxSampleRate=48000,"
@@ -64,8 +64,9 @@ static uint8_t *put_header(uint8_t *b, const char *opcode, uint32_t len)
 
 static int send_helo(struct player *p, int reconnect)
 {
-    const char *formats = p->flac ? "flc,pcm" : "pcm";
-    uint8_t pkt[8 + 36 + sizeof(CAPS) + 8];
+    static const char *const format_lists[4] = { "pcm", "flc,pcm", "pcm,mp3", "flc,pcm,mp3" };
+    const char *formats = format_lists[(p->flac ? 1 : 0) | (p->mp3 ? 2 : 0)];
+    uint8_t pkt[8 + 36 + sizeof(CAPS) + 12];
     uint8_t *b = put_header(pkt, "HELO", 36 + strlen(CAPS) + strlen(formats));
 
     b = put8(b, DEVICE_ID_SQUEEZEPLAY);

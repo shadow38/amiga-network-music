@@ -3,7 +3,7 @@
  * services of platform.h. Same behaviour as the Amiga build; the arguments use the same KEY=value syntax:
  *
  *   amisqueeze [SERVER=]<ip|name> [PORT=3483] [NAME=<name>] [MAC=xx:xx:xx:xx:xx:xx] [OUTPUT=<file>] [UNIT=<n>]
- *              [NOAUDIO] [SWAP] [FLAC=AUTO|ON|OFF] [BENCH] [VERBOSE]
+ *              [NOAUDIO] [SWAP] [FLAC=AUTO|ON|OFF] [MP3=AUTO|ON|OFF] [BENCH] [VERBOSE]
  *
  * No audio output: always the virtual output (UNIT, NOAUDIO and SWAP are accepted for the same command lines).
  *
@@ -292,8 +292,13 @@ static int parse_args(int argc, char **argv, struct options *o)
             else if (k == 4 && !strncasecmp(a, "UNIT", 4))
                 o->unit = atoi(v);
             else if (k == 4 && !strncasecmp(a, "FLAC", 4)) {
-                if ((o->flac = parse_flac_mode(v)) < 0) {
+                if ((o->flac = parse_decode_mode(v)) < 0) {
                     msg("amisqueeze: FLAC=%s: expected AUTO, ON or OFF\n", v);
+                    return 0;
+                }
+            } else if (k == 3 && !strncasecmp(a, "MP3", 3)) {
+                if ((o->mp3 = parse_decode_mode(v)) < 0) {
+                    msg("amisqueeze: MP3=%s: expected AUTO, ON or OFF\n", v);
                     return 0;
                 }
             } else {

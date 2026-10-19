@@ -47,14 +47,14 @@ static int same_word(const char *s, const char *upper)
     return *s == '\0' && *upper == '\0';
 }
 
-int parse_flac_mode(const char *s)
+int parse_decode_mode(const char *s)
 {
     if (same_word(s, "AUTO"))
-        return FLAC_AUTO;
+        return DECODE_AUTO;
     if (same_word(s, "ON"))
-        return FLAC_ON;
+        return DECODE_ON;
     if (same_word(s, "OFF"))
-        return FLAC_OFF;
+        return DECODE_OFF;
     return -1;
 }
 
@@ -64,18 +64,47 @@ static void print_speed(const char *what, uint32_t speed)
     msg("%s decoded at %lu.%lux real time", what, (unsigned long)(speed / 100), (unsigned long)(speed % 100 / 10));
 }
 
+/* One line of BENCH; 0 if the speed cannot be measured */
+static int bench_line(const char *format, const char *sample, uint32_t speed)
+{
+    if (speed == 0) {
+        msg("amisqueeze: the %s decoding speed cannot be measured\n", format);
+        return 0;
+    }
+    print_speed(sample, speed);
+    msg(": %s=AUTO %s %s%s\n", format, speed >= DECODE_MIN_SPEED ? "lets this machine decode" : "leaves", format,
+        speed >= DECODE_MIN_SPEED ? "" : " to the server (converted to PCM)");
+    return 1;
+}
+
 int player_bench(void)
 {
-    uint32_t speed = flac_speed(5000);
-
-    if (speed == 0) {
-        msg("amisqueeze: the decoding speed cannot be measured\n");
+    if (!bench_line("FLAC", "FLAC level 8 (the slowest)", flac_speed(5000)))
         return PLAYER_FAIL;
-    }
-    print_speed("FLAC level 8 (the slowest)", speed);
-    msg(": %s\n", speed >= FLAC_MIN_SPEED ? "FLAC=AUTO lets this machine decode FLAC" :
-        "FLAC=AUTO leaves FLAC to the server (converted to PCM)");
+#ifdef AMISQUEEZE_MP3
+    if (!bench_line("MP3", "MP3 at 320 kbit/s (the slowest)", mp3_speed(5000)))
+        return PLAYER_FAIL;
+#else
+    msg("MP3: not decoded by this build (amisqueeze.fpu decodes it, on an Amiga with an FPU)\n");
+#endif
     return PLAYER_OK;
+}
+
+/* Whether a format is advertised to the server (decoded here): from its option, measured if AUTO */
+static int decide(const char *format, const char *sample, int mode, uint32_t (*speed_of)(uint32_t), int verbose)
+{
+    int on = mode == DECODE_ON;
+
+    if (mode == DECODE_AUTO) {
+        uint32_t speed = speed_of(1000);
+
+        on = speed >= DECODE_MIN_SPEED;
+        print_speed(sample, speed);
+        msg(": %s %s\n", format, on ? "decoded here" : "converted to PCM by the server");
+    } else if (verbose)
+        msg("%s: %s (%s=%s)\n", format, on ? "decoded here" : "converted to PCM by the server", format,
+            on ? "ON" : "OFF");
+    return on;
 }
 
 /* Stable MAC address derived from the name: the server identifies players by their MAC.
@@ -202,16 +231,14 @@ int player_main(struct player *p, const struct options *o)
     } else if (p->verbose)
         msg("output: virtual (no sound)\n");
     /* What the server may send as is: decided once, at start-up (HELO) */
-    p->flac = o->flac == FLAC_ON;
-    if (o->flac == FLAC_AUTO) {
-        uint32_t speed = flac_speed(1000);
-
-        p->flac = speed >= FLAC_MIN_SPEED;
-        print_speed("FLAC: level 8", speed);
-        msg(": %s\n", p->flac ? "FLAC decoded here" : "FLAC converted to PCM by the server");
-    } else if (p->verbose)
-        msg("FLAC: %s (FLAC=%s)\n", p->flac ? "decoded here" : "converted to PCM by the server",
-            p->flac ? "ON" : "OFF");
+    p->flac = decide("FLAC", "FLAC: level 8", o->flac, flac_speed, p->verbose);
+#ifdef AMISQUEEZE_MP3
+    p->mp3 = decide("MP3", "MP3: 320 kbit/s", o->mp3, mp3_speed, p->verbose);
+#else
+    p->mp3 = 0;
+    if (o->mp3 == DECODE_ON)
+        msg("MP3=ON: this build does not decode MP3 (amisqueeze.fpu does, with an FPU): converted by the server\n");
+#endif
     msg("player \"%s\" (%02X:%02X:%02X:%02X:%02X:%02X), server %s port %u\n",
         p->name, p->mac[0], p->mac[1], p->mac[2], p->mac[3], p->mac[4], p->mac[5],
         o->server, (unsigned)p->server_port);

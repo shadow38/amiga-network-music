@@ -98,8 +98,8 @@ def scenario_session():
         check(body[0] == 12, "HELO device id 12 (squeezeplay)")
         check(body[2:8] == mac_from_name("Test"), "HELO MAC derived from the name")
         check(struct.unpack(">H", body[24:26])[0] == 0, "HELO first connection (no reconnection flag)")
-        check(body[36:].startswith(b"Model=squeezelite,") and body.endswith(b",flc,pcm"),
-              "HELO capabilities (FLAC=AUTO on a fast machine: flc advertised)")
+        check(body[36:].startswith(b"Model=squeezelite,") and body.endswith(b",flc,pcm,mp3"),
+              "HELO capabilities (FLAC=AUTO and MP3=AUTO on a fast machine: flc and mp3 advertised)")
 
         send_packet(conn, b"strm", strm("t", replay_gain=0x12345678))
         opcode, body = read_packet(conn)
@@ -654,27 +654,34 @@ def scenario_arguments():
     proc = subprocess.run([sys.argv[1], "SERVER=127.0.0.1", "FLAC=MAYBE"], stdout=subprocess.PIPE,
                           stderr=subprocess.STDOUT, text=True, timeout=TIMEOUT)
     check(proc.returncode == 20 and "expected AUTO, ON or OFF" in proc.stdout, "FLAC=MAYBE: error, exit code 20")
+    proc = subprocess.run([sys.argv[1], "SERVER=127.0.0.1", "MP3=MAYBE"], stdout=subprocess.PIPE,
+                          stderr=subprocess.STDOUT, text=True, timeout=TIMEOUT)
+    check(proc.returncode == 20 and "MP3=MAYBE: expected AUTO, ON or OFF" in proc.stdout,
+          "MP3=MAYBE: error, exit code 20")
     proc = subprocess.run([sys.argv[1], "BENCH"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
                           timeout=TIMEOUT)
-    check(proc.returncode == 0 and "FLAC level 8 (the slowest) decoded at" in proc.stdout,
-          "BENCH without a server: the speed is printed (%s)" % proc.stdout.strip())
+    check(proc.returncode == 0 and "FLAC level 8 (the slowest) decoded at" in proc.stdout and
+          "MP3 at 320 kbit/s (the slowest) decoded at" in proc.stdout,
+          "BENCH without a server: both speeds are printed (%s)" % " / ".join(proc.stdout.strip().split("\n")))
 
 
 def scenario_flac_off():
-    print("-- FLAC=OFF: only pcm advertised")
-    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    server.bind(("127.0.0.1", 0))
-    server.listen(1)
-    proc = start(server.getsockname()[1], "FLAC=OFF")
-    try:
-        conn = accept(server)
-        _, body = read_packet(conn)
-        check(body.endswith(b"MaxSampleRate=48000,pcm"), "HELO capabilities end with pcm, no flc")
-        conn.close()
-    finally:
-        stop(proc)
-        server.close()
+    print("-- FLAC=OFF, MP3=OFF: only what is left advertised")
+    for args, formats in [(["FLAC=OFF"], b"MaxSampleRate=48000,pcm,mp3"), (["MP3=OFF"], b"MaxSampleRate=48000,flc,pcm"),
+                          (["FLAC=OFF", "MP3=OFF"], b"MaxSampleRate=48000,pcm")]:
+        server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        server.bind(("127.0.0.1", 0))
+        server.listen(1)
+        proc = start(server.getsockname()[1], *args)
+        try:
+            conn = accept(server)
+            _, body = read_packet(conn)
+            check(body.endswith(formats), "%s: HELO capabilities end with %s" % (" ".join(args), formats.decode()))
+            conn.close()
+        finally:
+            stop(proc)
+            server.close()
 
 
 if __name__ == "__main__":

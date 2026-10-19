@@ -37,14 +37,15 @@ struct options {
     int         unit;                   /* audio unit (AHI unit) */
     int         swap;                   /* swap left and right */
     int         verbose;
-    int         flac;                   /* enum flac_mode: whether FLAC is advertised to the server */
+    int         flac;                   /* enum decode_mode: whether FLAC is advertised to the server */
+    int         mp3;                    /* enum decode_mode: the same for MP3 (builds with AMISQUEEZE_MP3) */
     int         bench;                  /* BENCH: measure the decoding speed, print it and quit */
 };
 
-/* FLAC option: AUTO = advertised if this machine decodes it at least twice real time (measured at start-up),
- * ON = always, OFF = never (the server converts FLAC to PCM) */
-enum flac_mode { FLAC_AUTO, FLAC_ON, FLAC_OFF };
-#define FLAC_MIN_SPEED 200                  /* % of real time, for FLAC=AUTO */
+/* FLAC and MP3 options: AUTO = the format is advertised if this machine decodes it at least twice real time
+ * (measured at start-up), ON = always, OFF = never (the server converts it to PCM) */
+enum decode_mode { DECODE_AUTO, DECODE_ON, DECODE_OFF };
+#define DECODE_MIN_SPEED 200                /* % of real time, for AUTO */
 
 /* HTTP connection carrying the audio of the current track */
 enum stream_state {
@@ -161,6 +162,7 @@ struct player {
     uint32_t last_rx;                   /* ms of the last packet received from the server */
     int      verbose;
     int      flac;                      /* FLAC advertised in HELO */
+    int      mp3;                       /* MP3 advertised in HELO */
 
     /* receiving: 2-byte length, then the packet (4-byte opcode + data) */
     uint16_t rx_expect;
@@ -177,16 +179,20 @@ struct player {
 /* player.c */
 /* Sets up the player from the options, then runs until interrupted; returns PLAYER_OK or PLAYER_FAIL */
 int player_main(struct player *p, const struct options *o);
-/* BENCH option: measures how fast FLAC is decoded here and prints it; returns PLAYER_OK */
+/* BENCH option: measures how fast FLAC and MP3 are decoded here and prints it; returns PLAYER_OK */
 int player_bench(void);
-/* Value of the FLAC option (AUTO, ON, OFF, any case); -1 if it is none of them */
-int parse_flac_mode(const char *s);
+/* Value of the FLAC or MP3 option (AUTO, ON, OFF, any case); -1 if it is none of them */
+int parse_decode_mode(const char *s);
 int parse_mac(const char *s, uint8_t mac[6]);
 
 /* bench.c */
 /* FLAC decoding speed on this machine, in % of real time (300 = three times faster than playing): a built-in
  * level 8 sample decoded for about 0.3 s, at most max_ms; 0 if it cannot be measured */
 uint32_t flac_speed(uint32_t max_ms);
+#ifdef AMISQUEEZE_MP3
+/* The same for MP3: a built-in 320 kbit/s sample */
+uint32_t mp3_speed(uint32_t max_ms);
+#endif
 void mac_from_name(const char *name, uint8_t mac[6]);
 
 /* slimproto.c */
