@@ -9,6 +9,7 @@ is no longer LMS only; the name is decided by the study (2.0), and the files are
 - **LMS**: the text CLI (TCP 9090): one command per line, a one-line reply, URL-encoded parameters (`%20`…),
   `key:value` pairs (steps 2.1 to 2.7).
 - **Music Assistant**: its API, JSON messages over a WebSocket, with an access token (steps 2.8 to 2.11).
+- **MPD** (idea, noted 2026-10-19): a third back end for the Music Player Daemon (step 2.12).
 
 ## Organisation (decided 2026-10-19)
 
@@ -40,6 +41,8 @@ Network code shared with amisqueeze (connection, line reading, logging, Ctrl-C) 
   - Music Assistant feasibility on a 68020: WebSocket client (HTTP upgrade, framing, client masking), JSON parser
     (small, MIT-compatible: e.g. jsmn or cJSON, both MIT), memory use of large replies (paging), token handling
     (cleartext on the LAN, no TLS), stability of the API across Music Assistant versions;
+  - check that the interface also suits MPD (2.12), even if it comes last: a server that plays by itself, with one
+    queue instead of players;
   - name of the program and organisation of the executables;
   - Music Assistant test server (0.9).
 - **Criterion**: the interface and the conclusions are written in this plan and agreed with the user.
@@ -127,3 +130,16 @@ remote.
 ## 2.11 Music Assistant: GUI and real machine ⬜
 
 - **Criterion**: the GUI of 2.6 works the same with both servers; same features on the real machine.
+
+## 2.12 MPD back end (idea, noted 2026-10-19) ⬜
+
+- **Why**: no MPD client was found for AmigaOS (search of 2026-10-19: Aminet, OS4, MorphOS). MPD plays the music
+  itself, on the machine it runs on: on the Amiga this is a remote control, so it belongs here, not in amisqueeze.
+  Probably the easiest back end: a text protocol over TCP 6600 (one command per line, `key: value` replies ending
+  with `OK` or `ACK`), no TLS, an optional password; `idle` for the notifications (like LMS `listen`).
+- **Content**: the same features as the LMS back end (2.2 to 2.4: transport, volume, now playing, library, search,
+  queue) behind the common interface; MPD has one player per server (its outputs are chosen, not its players).
+  Host tests against a fake server in Python; a test MPD server to set up.
+- **Also possible**: MPD's `httpd` output streams what it plays as MP3, FLAC or WAV over HTTP; playing it on the
+  Amiga would be a player's job (amisqueeze's decoders could serve), not this remote's. Not planned.
+- **Criterion** (to agree when the step starts): same as 2.2 to 2.4 and 2.6 with an MPD server.

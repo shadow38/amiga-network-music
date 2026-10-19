@@ -429,3 +429,23 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   amisqueeze itself (an ARexx port, for instance), not only to LMS.
 - **Criterion**: started without arguments, the player finds the server and shows up under the chosen name; with
   `LOG=<file>`, the messages appear in the Shell window and, at the same time, in the file.
+
+## 1.11 Direct Paula output (idea, noted 2026-10-19) ⬜
+
+- **Why**: on the slow profile, playing through AHI and `paula.audio` costs 61-68 % of the CPU, almost all of it in
+  AHI (1.4c), and up to 88 % with the volume scaled in the core (1.6). A second audio sink that drives Paula through
+  `audio.device` itself, without AHI, could leave much more room on a 68020 without FPU (and for MP3 decoding there).
+  Prior art: MintAMP (Aminet `mus/play`, 68030+) plays internet radio on Paula this way, without AHI; read its
+  documentation only, its licence is not checked.
+- **To study first**: the work AHI does that would come back to us: the rate (Paula's maximum is about 28 kHz in
+  a PAL or NTSC screen mode, so 44.1 and 48 kHz must be lowered: a cheap integer step, or a simple filter), 8 bits per
+  channel (or 14 bits with two channels per side and a calibration table: twice the DMA and more CPU), blocks in
+  chip RAM, double buffering with `BeginIO` (never `DoIO`: it clears `io_Flags`, `ADIOF_PERVOL` is lost, volume 0,
+  see 0.5). Volume: Paula's own (0 to 64 per channel) costs no CPU, which also fits the volume modes of 1.10. Sides:
+  channels 0 and 3 left, 1 and 2 right (`WT:paula-lr`, correct in WinUAE, unlike Paula through AHI, see 0.5).
+- **Shape**: an option such as `AUDIO=AHI|PAULA`, behind the same sink interface as `audio.c` (blocks, played
+  bytes, pause), the Amiga calls in `amiga.c`; the conversion and the lower rate in the portable core, tested on the
+  host bit for bit like the rest.
+- **Criterion** (to agree when the step starts): on the slow profile, the same music and the same LMS criteria as
+  1.4 to 1.6, sides in place without `SWAP`, at a CPU load clearly below AHI's (measured with `cpucount`, as in
+  1.4c); then heard on the real 68020 machine (1.9).
