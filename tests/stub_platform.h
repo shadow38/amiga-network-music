@@ -10,6 +10,8 @@
 
 #include <stdint.h>
 
+#include "platform.h"
+
 #define STUB_CONTROL 3
 #define STUB_STREAM  4
 #define STUB_FILE    5
@@ -37,6 +39,8 @@ struct stub_audio_req {
 extern struct stub_audio_req stub_audio[8];
 extern int      stub_audio_fails;       /* 1: plat_audio_open() fails */
 extern int      stub_audio_unit;        /* unit given to plat_audio_open() */
+extern int      stub_audio_mode_known;  /* 1: plat_audio_mode() returns stub_audio_mode */
+extern struct audio_mode stub_audio_mode;
 extern int      stub_audio_open;
 extern int32_t  stub_audio_abort_played;  /* bytes the playing request has played when aborted (-1 = unknown) */
 extern int32_t  stub_audio_abort_real;  /* with -1 (AHI 4): bytes it really played, captured but not returned */

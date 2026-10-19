@@ -60,6 +60,15 @@ void plat_file_close(int file);
 /* Opens the given unit; 0 if impossible (message printed) */
 int plat_audio_open(int unit);
 void plat_audio_close(void);
+/* The audio mode the opened unit is set to (AHI preferences), as the device describes it */
+struct audio_mode {
+    char     name[64];                      /* e.g. "Paula:14 bit stereo++" */
+    uint32_t freq;                          /* Hz */
+    int      stereo;                        /* 1: two output channels */
+    int      panning;                       /* 1: a sound can be placed anywhere between them ("stereo++") */
+};
+/* Fills m for the given unit; 0 if unknown (no preferences for it: the device's defaults) */
+int plat_audio_mode(int unit, struct audio_mode *m);
 /* Queues request i: len bytes at data, rate in Hz, 1 or 2 channels, linked to request link (-1 = none), at full
  * volume (the core scales the samples) */
 void plat_audio_send(int i, const void *data, uint32_t len, uint32_t rate, int channels, int link);

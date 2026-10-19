@@ -256,6 +256,13 @@ void audio_resume(struct player *p, uint32_t now);
 /* audg: 16.16 gains of left and right, adjust 0 = fixed volume (full); applied to the samples of the next blocks
  * sent. Returns 1 if the volume, or whether it is fixed, changed. */
 int audio_set_volume(struct player *p, uint32_t left, uint32_t right, int adjust);
+/* Audio mode and frequency of an AHI unit in the bytes of its preferences file (ENV:Sys/ahi.prefs: an IFF FORM
+ * PREF with one AHIU chunk per unit); 0 if that unit is not in it */
+int ahi_prefs_unit(const uint8_t *prefs, uint32_t size, int unit, uint32_t *mode, uint32_t *freq);
+struct audio_mode;
+/* Warns when the unit's mode would not play a stereo stream right: a stereo mode that cannot pan (each sound on
+ * one side) or a mono mode. Returns 1 if it warned. */
+int audio_check_mode(int unit, const struct audio_mode *m);
 /* Offset just after the blank line ending HTTP headers ("\r\n\r\n" or "\n\n"), 0 if not there yet */
 int http_header_end(const char *buf, int len);
 

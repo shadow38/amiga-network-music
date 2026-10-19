@@ -172,6 +172,13 @@ void plat_audio_close(void)
 {
 }
 
+int plat_audio_mode(int unit, struct audio_mode *m)
+{
+    (void)unit;
+    (void)m;
+    return 0;
+}
+
 void plat_audio_send(int i, const void *data, uint32_t len, uint32_t rate, int channels, int link)
 {
     (void)i; (void)data; (void)len; (void)rate; (void)channels; (void)link;

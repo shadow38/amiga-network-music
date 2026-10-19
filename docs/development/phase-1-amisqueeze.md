@@ -512,6 +512,14 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   adjustable again (0.6 %); the player's Audio page shows the setting. `MIXER` stays an idea for later.
 - **AHI mode warning** (from 1.4, decided 2026-10-19): a warning at start-up when the unit's mode cannot pan (a
   plain "stereo" mode plays a stereo stream on one side only); first check what AHI tells about a unit's mode.
+  **Done** (2026-10-20, design agreed with the user): `ahi.device` reads its units' modes from `ENV:Sys/ahi.prefs`
+  (IFF FORM PREF, one `AHIU` chunk per unit: `struct AHIUnitPrefs`, mode ID and frequency; unit 255 is the
+  "Music" unit). `ahi_prefs_unit()` in the core finds the unit's chunk (host-tested on the real file of the test
+  Amiga, and on a file cut short); `plat_audio_mode()` in `amiga.c` reads the file and asks AHI about the mode
+  (`AHI_GetAudioAttrsA`, AHI 4: name, `AHIDB_Stereo`, `AHIDB_Panning`); `audio_check_mode()` warns for a stereo
+  mode that cannot pan or a mono mode, and amisqueeze plays anyway; `VERBOSE` prints the mode and frequency. No
+  preferences for the unit: nothing said, as before. WinUAE: unit 3 (Toccata:16 bit stereo) warns, unit 0
+  (Paula:14 bit stereo++ calibrated, 27429 Hz) does not. 371 unit checks.
 - **`BUFFER` option** (from 1.2, decided 2026-10-19): only if the real machines (1.9) show a need for another
   size than 1 MB.
 - **Criterion**: started without arguments, the player finds the server and shows up under the chosen name; with

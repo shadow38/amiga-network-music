@@ -225,6 +225,10 @@ for that unit:
 Then save. With Paula, `Paula:8 bit stereo++` takes a little less CPU than the 14-bit mode, at a lower quality;
 the "HiFi" modes take more.
 
+At start-up, amisqueeze reads the unit's mode from these preferences and warns if it would not play the music
+right: a stereo mode without "++" (one side only) or a mono mode. With `VERBOSE`, it prints the mode and frequency
+it plays with, for instance `output: AHI unit 0 (Paula:14 bit stereo++ calibrated, 27429 Hz)`.
+
 ![The AHI preferences: unit 0 chosen at the top left, the mode Paula:14 bit stereo++ selected in the list, the
 frequency at 27429 Hz and 1 channel on the right](images/ahi-prefs-unit0.png)
 
@@ -328,6 +332,8 @@ Rules:
 | `flac: not enough memory`, `mp3: not enough memory`, then `…: cannot decode this track, skipped` | not enough free memory for the decoder of that track: the next track follows |
 | `the FLAC decoding speed cannot be measured` (or MP3) | `BENCH` could not run the measure (not enough memory) |
 | `cannot open ahi.device unit N (is AHI installed? NOAUDIO plays without sound)` | AHI missing, or that unit cannot be opened; amisqueeze stops |
+| `AHI unit N uses "…", a stereo mode without "++": the music will play on one side only; …` | the unit is set to a plain stereo mode: choose a "stereo++" one in `SYS:Prefs/AHI`; amisqueeze plays anyway |
+| `AHI unit N uses "…", a mono mode: the music will play in mono` | the unit is set to a mono mode; amisqueeze plays anyway |
 | `not enough memory for the audio blocks` | the 3 audio blocks (96 KB) cannot be allocated; amisqueeze stops |
 | `cannot create <file>: error N` | the `OUTPUT` file cannot be created (missing directory, write-protected disk); amisqueeze stops. On a volume that is not mounted, AmigaDOS first asks for it to be inserted; this message follows a Cancel |
 | `cannot write to <file>: error N, file closed` | writing the `OUTPUT` file failed (disk full…); playback goes on without the file |

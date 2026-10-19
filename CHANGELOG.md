@@ -16,6 +16,8 @@ are previews, tested in WinUAE only, not yet on a real Amiga.
   "Output level is fixed at 100%" plays at full volume whatever the slider, which LMS's interfaces grey out; the
   samples are not scaled, saving CPU time on a slow Amiga and avoiding Paula's noise at low volumes. amisqueeze
   now advertises `HasDigitalOut=1`, as squeezelite does.
+- **A warning when the AHI unit is set to a mode that would not play the music right**: a stereo mode without
+  "++" (one side only) or a mono mode. With `VERBOSE`, the unit's mode and frequency are printed at start-up.
 
 ## [0.3] - 2026-10-20
 

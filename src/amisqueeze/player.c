@@ -192,6 +192,8 @@ static void run(struct player *p)
 
 int player_main(struct player *p, const struct options *o)
 {
+    struct audio_mode mode;
+
     p->sock = -1;
     p->verbose = o->verbose;
     p->audio.volume = AUDIO_VOLUME_FULL;    /* until the server's audg (no effect without the audio output) */
@@ -226,7 +228,12 @@ int player_main(struct player *p, const struct options *o)
             stream_free(p);
             return PLAYER_FAIL;
         }
-        if (p->verbose)
+        if (plat_audio_mode(o->unit, &mode)) {
+            if (p->verbose)
+                msg("output: AHI unit %d (%s, %lu Hz)%s\n", o->unit, mode.name, (unsigned long)mode.freq,
+                    o->swap ? ", left and right swapped" : "");
+            audio_check_mode(o->unit, &mode);
+        } else if (p->verbose)
             msg("output: AHI unit %d%s\n", o->unit, o->swap ? ", left and right swapped" : "");
     } else if (p->verbose)
         msg("output: virtual (no sound)\n");

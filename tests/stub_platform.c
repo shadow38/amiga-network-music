@@ -26,6 +26,8 @@ int      stub_file_limit;
 struct stub_audio_req stub_audio[8];
 int      stub_audio_fails;
 int      stub_audio_unit;
+int      stub_audio_mode_known;
+struct audio_mode stub_audio_mode;
 int      stub_audio_open;
 int32_t  stub_audio_abort_played;
 int32_t  stub_audio_abort_real;
@@ -251,6 +253,15 @@ int plat_audio_open(int unit)
 void plat_audio_close(void)
 {
     stub_audio_open = 0;
+}
+
+int plat_audio_mode(int unit, struct audio_mode *m)
+{
+    (void)unit;
+    if (!stub_audio_mode_known)
+        return 0;
+    *m = stub_audio_mode;
+    return 1;
 }
 
 void plat_audio_send(int i, const void *data, uint32_t len, uint32_t rate, int channels, int link)

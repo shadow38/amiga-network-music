@@ -21,6 +21,8 @@
 #include <proto/dos.h>
 #include <proto/timer.h>
 #include <proto/bsdsocket.h>
+#include <proto/ahi.h>
+#include <utility/tagitem.h>
 #include <sys/filio.h>
 
 #include <errno.h>
@@ -66,6 +68,12 @@ struct Library *SocketBase;
 struct Device *TimerBase;
 static struct timerequest timer_io;
 static int last_error;
+
+/* ahi.device as a library, for AHI_GetAudioAttrsA (the device's base, while the unit is open) */
+struct Library *AHIBase;
+
+/* The preferences ahi.device reads: one AHIU chunk per unit, with its audio mode */
+#define AHI_PREFS "ENV:Sys/ahi.prefs"
 
 /* ahi.device: one request per audio block, all replied to audio_port */
 static struct MsgPort *audio_port;
@@ -266,6 +274,40 @@ int plat_audio_open(int unit)
         }
         CopyMem(audio_req[0], audio_req[i], sizeof(struct AHIRequest));
     }
+    return 1;
+}
+
+int plat_audio_mode(int unit, struct audio_mode *m)
+{
+    static uint8_t prefs[2048];             /* static: the default stack is small; the file is about 300 bytes */
+    struct TagItem tags[5];
+    ULONG stereo = FALSE, panning = FALSE;
+    uint32_t mode, freq;
+    BPTR f;
+    LONG n;
+
+    if (audio_req[0] == NULL || (f = Open((STRPTR)AHI_PREFS, MODE_OLDFILE)) == 0)
+        return 0;
+    n = Read(f, prefs, sizeof(prefs));
+    Close(f);
+    if (n <= 0 || !ahi_prefs_unit(prefs, (uint32_t)n, unit, &mode, &freq))
+        return 0;
+    AHIBase = (struct Library *)audio_req[0]->ahir_Std.io_Device;
+    m->name[0] = '\0';
+    tags[0].ti_Tag = AHIDB_Name;
+    tags[0].ti_Data = (ULONG)m->name;
+    tags[1].ti_Tag = AHIDB_BufferLen;
+    tags[1].ti_Data = sizeof(m->name);
+    tags[2].ti_Tag = AHIDB_Stereo;
+    tags[2].ti_Data = (ULONG)&stereo;
+    tags[3].ti_Tag = AHIDB_Panning;
+    tags[3].ti_Data = (ULONG)&panning;
+    tags[4].ti_Tag = TAG_DONE;
+    if (!AHI_GetAudioAttrsA(mode, NULL, tags))
+        return 0;                           /* a mode the installed drivers do not know */
+    m->freq = freq;
+    m->stereo = stereo != FALSE;
+    m->panning = panning != FALSE;
     return 1;
 }
 

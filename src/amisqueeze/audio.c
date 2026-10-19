@@ -4,7 +4,8 @@
  * The platform's audio device (ahi.device on the Amiga, see platform.h) plays the blocks one after the other.
  * Here: which block holds what and in which order, the conversion of the stream's PCM for the device (8, 16, 24 or
  * 32-bit samples to 16-bit big-endian, left and right swapped with SWAP), the bytes played (counted in bytes of the
- * stream, whatever the device got), the pause, and the volume.
+ * stream, whatever the device got), the pause, and the volume. At start-up, the AHI unit's mode is read from its
+ * preferences and checked: a mode that would play a stereo stream on one side only, or in mono, gets a warning.
  *
  * ahi.device chains a request only to one that is already playing: a request linked to a request that is itself
  * waiting is never played (seen in WinUAE, and in AHI's source: the third one is left in the waiting list). So at
@@ -340,4 +341,49 @@ int audio_set_volume(struct player *p, uint32_t left, uint32_t right, int adjust
     a->volume = v;
     a->fixed = fixed;
     return 1;
+}
+
+static uint32_t be32(const uint8_t *b)
+{
+    return (uint32_t)b[0] << 24 | (uint32_t)b[1] << 16 | (uint32_t)b[2] << 8 | b[3];
+}
+
+/* An AHIU chunk is a struct AHIUnitPrefs (devices/ahi.h): unit (1 byte), 1 byte, channels (2), audio mode ID (4),
+ * frequency (4), then levels and inputs */
+int ahi_prefs_unit(const uint8_t *prefs, uint32_t size, int unit, uint32_t *mode, uint32_t *freq)
+{
+    uint32_t pos = 12, end;
+
+    if (size < 12 || memcmp(prefs, "FORM", 4) || memcmp(prefs + 8, "PREF", 4))
+        return 0;
+    end = be32(prefs + 4) + 8;
+    if (end > size)
+        end = size;
+    while (pos + 8 <= end) {
+        uint32_t len = be32(prefs + pos + 4);
+
+        if (len > end - pos - 8)
+            break;                              /* a chunk cut short: the rest is not trusted */
+        if (!memcmp(prefs + pos, "AHIU", 4) && len >= 12 && prefs[pos + 8] == unit) {
+            *mode = be32(prefs + pos + 12);
+            *freq = be32(prefs + pos + 16);
+            return 1;
+        }
+        pos += 8 + len + (len & 1);             /* chunks are padded to an even size */
+    }
+    return 0;
+}
+
+int audio_check_mode(int unit, const struct audio_mode *m)
+{
+    if (m->stereo && !m->panning) {
+        msg("amisqueeze: AHI unit %d uses \"%s\", a stereo mode without \"++\": the music will play on one side "
+            "only; choose a \"stereo++\" mode in SYS:Prefs/AHI\n", unit, m->name);
+        return 1;
+    }
+    if (!m->stereo) {
+        msg("amisqueeze: AHI unit %d uses \"%s\", a mono mode: the music will play in mono\n", unit, m->name);
+        return 1;
+    }
+    return 0;
 }
