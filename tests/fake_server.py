@@ -100,6 +100,7 @@ def scenario_session():
         check(struct.unpack(">H", body[24:26])[0] == 0, "HELO first connection (no reconnection flag)")
         check(body[36:].startswith(b"Model=squeezelite,") and body.endswith(b",flc,pcm,mp3"),
               "HELO capabilities (FLAC=AUTO and MP3=AUTO on a fast machine: flc and mp3 advertised)")
+        check(b",HasDigitalOut=1," in body, "HELO HasDigitalOut=1 (LMS then offers its fixed volume setting)")
 
         send_packet(conn, b"strm", strm("t", replay_gain=0x12345678))
         opcode, body = read_packet(conn)
@@ -129,7 +130,7 @@ def scenario_session():
         server.close()
     check(rc == 0 and "stopped" in out, "Ctrl-C stops the player cleanly (exit code 0, \"stopped\")")
     check("player name: Renamed" in out, "new name printed")
-    check("volume: 25.0 % of full amplitude" in out and "volume: 100.0 % of full amplitude" in out,
+    check("volume: 25.0 % of full amplitude" in out and "volume: fixed at 100 % by LMS" in out,
           "audg: volume set, then fixed volume (full)")
     check("connection closed by the server" in out, "disconnect reported")
     check("retrying in 5 s" in out, "wait announced")

@@ -255,17 +255,23 @@ LMS's volume scale is logarithmic:
 | 50 | quiet: about -25 dB, 6 % of full amplitude |
 | 25 | very quiet: about -37 dB, 1.4 % |
 
-Mute and unmute fade in about a second. LMS offers no "fixed volume" for this kind of player: for full volume, set
-it to 100.
+Mute and unmute fade in about a second.
 
-**On a slow Amiga, or with Paula, leave LMS at 100 and set the volume on the amplifier.** Below 100:
+**Fixed volume.** In LMS, the player's settings (*Settings*, the player, then *Audio*) have a **Volume Control**
+setting: choose **Output level is fixed at 100%**. amisqueeze then plays at full volume whatever the slider
+(which LMS's interfaces grey out or hide), and the volume is set on the amplifier. LMS keeps that choice for the
+player. **Use it on a slow Amiga, or with Paula.** Below 100, scaling the samples:
 
-- the scaling costs CPU time: on a 68020 at about 28 MHz with Paula, about a quarter of the CPU on top of AHI's two
-  thirds (measured in WinUAE);
-- with Paula, the sound suffers: Paula's 14 bits through AHI have their own noise, which a low volume brings
-  forward (a crackle heard at 50 in WinUAE, gone at 100).
+- costs CPU time: on a 68020 at about 28 MHz with Paula, about a quarter of the CPU on top of AHI's two thirds
+  (measured in WinUAE);
+- brings out Paula's noise: Paula's 14 bits through AHI have their own noise, which a low volume brings forward (a
+  crackle heard at 50 in WinUAE, gone at 100).
 
-With `VERBOSE`, each change prints `volume: 5.9 % of full amplitude`.
+The same page also shows an **Audio Startup Time** setting, meant for receivers fed by a digital output: leave it
+at its default (0).
+
+With `VERBOSE`, each change prints `volume: 5.9 % of full amplitude`, or `volume: fixed at 100 % by LMS (samples
+untouched)`.
 
 ### Default options
 

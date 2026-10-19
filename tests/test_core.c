@@ -1284,7 +1284,15 @@ static void test_audio_volume(void)
     CHECK(p.audio.volume == 0 && strstr(stub_out, "volume: 0.0 %") != NULL);
     feed_audg(0, 0x0F00, 0x0F00);                       /* fixed volume: full, whatever the gains */
     drain(&p);
-    CHECK(p.audio.volume == 0x10000);
+    CHECK(p.audio.volume == 0x10000 && p.audio.fixed && strstr(stub_out, "volume: fixed at 100 % by LMS") != NULL);
+    stub_out[0] = '\0';
+    feed_audg(1, 0x10000, 0x10000);                     /* back to the slider, at 100: reported */
+    drain(&p);
+    CHECK(p.audio.volume == 0x10000 && !p.audio.fixed && strstr(stub_out, "volume: 100.0 %") != NULL);
+    stub_out[0] = '\0';
+    feed_audg(0, 0x10000, 0x10000);                     /* fixed again from 100: reported too */
+    drain(&p);
+    CHECK(p.audio.fixed && strstr(stub_out, "volume: fixed at 100 % by LMS") != NULL);
     CHECK(stub_audio_bad == 0);
     teardown(&p);
 }

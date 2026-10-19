@@ -478,8 +478,8 @@ belongs to the task that opened it; packets serialised field by field; buffers a
 
 ## 1.10 Finishing touches ⬜ (versions 0.4 to 0.6)
 
-- **Split** (decided 2026-10-20, see the [plan](README.md)): **0.4** the volume modes (`LMS` and `FIXED`;
-  `MIXER` left for later) and the AHI mode warning; **0.5** `LOG=<file>` and the start from the Workbench; **0.6**
+- **Split** (decided 2026-10-20, see the [plan](README.md)): **0.4** the volume modes (`LMS` and `FIXED`, done
+  as LMS's own setting, see below; `MIXER` left for later) and the AHI mode warning; **0.5** `LOG=<file>` and the start from the Workbench; **0.6**
   the automatic server discovery, with the real machine (1.9), since the test setup cannot check a UDP broadcast.
   The `BUFFER` option only if 1.9 shows a need. Each part is designed with the user when it starts.
 - **Content**: automatic server discovery (UDP broadcast on port 3483); start from the Workbench with an icon and
@@ -499,6 +499,17 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   amisqueeze itself (an ARexx port, for instance), not only to LMS. Also heard in 1.8c: with Paula through AHI
   (14 bits), samples scaled down to a low volume bring out Paula's noise (a crackle at LMS volume 50, gone at 100);
   a volume set after the conversion (the output's own, or Paula's 0 to 64) would keep the full resolution.
+  **Done for `FIXED`, without an option** (2026-10-20, design agreed with the user): LMS's code (`Player.pm`,
+  `Settings/Player/Audio.pm`, `Squeezebox2.pm`, `Queries.pm`) shows its per-player "Volume Control" setting only to
+  a player advertising `HasDigitalOut=1`; "Output level is fixed at 100%" (`digitalVolumeControl` 0) then sends
+  `audg` with `adjust` 0, which amisqueeze already took as full volume (1.5), and reports `use_volume_control 0`,
+  so its interfaces grey the slider out. So amisqueeze only advertises `HasDigitalOut=1` (as squeezelite does) and
+  the user chooses in LMS, where the choice is kept per player; no `VOLUME=` option. `VERBOSE` prints the switch
+  (`volume: fixed at 100 % by LMS`, also from 100 %). Side effect: LMS also shows "Audio Startup Time" (silence
+  before MP3s, for digital receivers; default 0). Tests: 361 unit checks (fixed, back to the slider at 100, fixed
+  again), `HasDigitalOut=1` in the fake server's `HELO` check. WinUAE with LMS 9.1.1, through its CLI: volume 40
+  applied (3.1 %), fixed (`use_volume_control:0`, "fixed at 100 %"), volume 20 asked while fixed (nothing changes),
+  adjustable again (0.6 %); the player's Audio page shows the setting. `MIXER` stays an idea for later.
 - **AHI mode warning** (from 1.4, decided 2026-10-19): a warning at start-up when the unit's mode cannot pan (a
   plain "stereo" mode plays a stereo stream on one side only); first check what AHI tells about a unit's mode.
 - **`BUFFER` option** (from 1.2, decided 2026-10-19): only if the real machines (1.9) show a need for another

@@ -148,6 +148,7 @@ struct audio {
     uint32_t           head_ms;        /* when the first block started playing */
     int                paused;
     uint32_t           volume;         /* 16.16 gain (audg) applied to the samples, AUDIO_VOLUME_FULL at most */
+    int                fixed;          /* volume fixed at 100 % in LMS (audg adjust 0): the gains are ignored */
     uint32_t           tables;         /* volume the tables below were built for */
     int32_t            high[256];      /* sample * volume = high[high byte] + low[low byte] */
     int32_t            low[256];
@@ -253,7 +254,7 @@ uint64_t audio_played(const struct player *p, uint32_t now, int estimate);
 void audio_pause(struct player *p, uint32_t now);
 void audio_resume(struct player *p, uint32_t now);
 /* audg: 16.16 gains of left and right, adjust 0 = fixed volume (full); applied to the samples of the next blocks
- * sent. Returns 1 if the volume changed. */
+ * sent. Returns 1 if the volume, or whether it is fixed, changed. */
 int audio_set_volume(struct player *p, uint32_t left, uint32_t right, int adjust);
 /* Offset just after the blank line ending HTTP headers ("\r\n\r\n" or "\n\n"), 0 if not there yet */
 int http_header_end(const char *buf, int len);

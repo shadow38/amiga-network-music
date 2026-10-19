@@ -67,8 +67,8 @@ above 48 kHz not playable until FLAC decoding) done on 2026-10-19. Step 1.8 on t
 `FLAC=AUTO|ON|OFF`, `BENCH`); release 0.2 published on 2026-10-19, then 0.3-dev; 1.8c done on 2026-10-19 (MP3
 with minimp3 in `amisqueeze.fpu`, `MP3=AUTO|ON|OFF`); release 0.3 published on 2026-10-20, then 0.4-dev. Next
 releases (decided 2026-10-20, table in `docs/development/README.md`): 0.4 = 1.8d (MP3 without gaps), volume
-modes `LMS|FIXED`, AHI mode warning; 0.5 = `LOG`, Workbench start; 0.6 = server discovery with the real machine
-(1.9). Then the remote's study (2.0).
+modes (done as LMS's fixed volume setting, `HasDigitalOut=1`), AHI mode warning; 0.5 = `LOG`, Workbench start;
+0.6 = server discovery with the real machine (1.9). Then the remote's study (2.0).
 Documentation review of 2026-10-19: points announced in the plan but neither done nor dropped are listed under
 "Open points" in `docs/development/README.md`, for the user to decide (never implement them unasked).
 

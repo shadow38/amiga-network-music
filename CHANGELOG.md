@@ -12,6 +12,10 @@ are previews, tested in WinUAE only, not yet on a real Amiga.
 - **MP3 tracks follow each other without a gap** (`amisqueeze.fpu`): the silence the encoder adds at the start and
   the end of each file is dropped, as told by the header it writes in the first frame (LAME and compatible
   encoders). Files without such a header play as before.
+- **Fixed volume**: LMS now offers its "Volume Control" setting for amisqueeze (Settings, the player, Audio):
+  "Output level is fixed at 100%" plays at full volume whatever the slider, which LMS's interfaces grey out; the
+  samples are not scaled, saving CPU time on a slow Amiga and avoiding Paula's noise at low volumes. amisqueeze
+  now advertises `HasDigitalOut=1`, as squeezelite does.
 
 ## [0.3] - 2026-10-20
 

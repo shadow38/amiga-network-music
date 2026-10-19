@@ -84,7 +84,7 @@ documentation reworked; 0.2 on 2026-10-19: FLAC, 8/24/32-bit PCM).
 
 | Version | Content | Tested |
 |---|---|---|
-| 0.4 | MP3 without gaps (1.8d); volume modes `VOLUME=LMS\|FIXED` and the AHI mode warning (1.10) | host and WinUAE |
+| 0.4 | MP3 without gaps (1.8d, done); fixed volume through LMS's own setting (1.10, done); the AHI mode warning (1.10) | host and WinUAE |
 | 0.5 | `LOG=<file>`, start from the Workbench with an icon and ToolTypes (1.10) | host and WinUAE |
 | 0.6 | automatic server discovery (1.10), with the real machine (1.9): the first version tried on a real Amiga | host for the code; validated on the real machine and network |
 

@@ -68,8 +68,9 @@ reach). So it covers basic control of amisqueeze under Music Assistant, while se
   `mixer volume`.
 - **Criterion**: from the Amiga, the squeezelite player on the PC starts, stops, changes track and volume.
 - **Volume**: amilms changes it through LMS (`mixer volume`), which sends it to the player (`audg`), as LMS's own
-  interface does; nothing special for amisqueeze in its default mode. With amisqueeze's possible `FIXED` mode the
-  volume is set on the amplifier; a `MIXER` mode driven from the Amiga would need amilms to talk to amisqueeze
+  interface does; nothing special for amisqueeze. When LMS's "Output level is fixed at 100%" is chosen for the
+  player (step 1.10), LMS reports `use_volume_control 0`: the remote should then grey its volume control, the
+  volume being set on the amplifier; a `MIXER` mode driven from the Amiga would need amilms to talk to amisqueeze
   itself: see the volume modes of plan step 1.10.
 
 ## 2.3 Real-time state ⬜

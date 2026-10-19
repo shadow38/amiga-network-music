@@ -330,12 +330,14 @@ void audio_resume(struct player *p, uint32_t now)
 int audio_set_volume(struct player *p, uint32_t left, uint32_t right, int adjust)
 {
     struct audio *a = &p->audio;
-    uint32_t v = !adjust ? AUDIO_VOLUME_FULL : left > right ? left : right;
+    int fixed = adjust == 0;                /* "Output level is fixed at 100%" in LMS */
+    uint32_t v = fixed ? AUDIO_VOLUME_FULL : left > right ? left : right;
 
     if (v > AUDIO_VOLUME_FULL)
         v = AUDIO_VOLUME_FULL;
-    if (v == a->volume)
+    if (v == a->volume && fixed == a->fixed)
         return 0;
     a->volume = v;
+    a->fixed = fixed;
     return 1;
 }

@@ -19,8 +19,9 @@
 #define DEVICE_ID_SQUEEZEPLAY 12
 
 /* Advertised in HELO, followed by the formats played: only those really decoded (pcm always, flc and mp3 when
- * decoded here); the server converts the rest */
-#define CAPS "Model=squeezelite,ModelName=AmiSqueeze,Firmware=0.4-dev,AccuratePlayPoints=0,HasDigitalOut=0," \
+ * decoded here); the server converts the rest. HasDigitalOut=1: LMS then offers its "Volume Control" setting for
+ * this player, whose "Output level is fixed at 100%" sends audg with adjust 0 (plan step 1.10, volume modes). */
+#define CAPS "Model=squeezelite,ModelName=AmiSqueeze,Firmware=0.4-dev,AccuratePlayPoints=0,HasDigitalOut=1," \
              "MaxSampleRate=48000,"
 
 /* ---- serialisation ---- */
@@ -276,7 +277,10 @@ static void process_audg(struct player *p, const uint8_t *pkt, int len)
             (unsigned long)get32(pkt + 14), (unsigned long)get32(pkt + 18));
     if (audio_set_volume(p, get32(pkt + 14), get32(pkt + 18), pkt[12]) && p->verbose) {
         tenths = (p->audio.volume * 1000 + 0x8000) >> 16;  /* volume <= 0x10000: no overflow */
-        msg("volume: %lu.%lu %% of full amplitude\n", (unsigned long)(tenths / 10), (unsigned long)(tenths % 10));
+        if (p->audio.fixed)
+            msg("volume: fixed at 100 %% by LMS (samples untouched)\n");
+        else
+            msg("volume: %lu.%lu %% of full amplitude\n", (unsigned long)(tenths / 10), (unsigned long)(tenths % 10));
     }
 }
 
