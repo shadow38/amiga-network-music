@@ -345,6 +345,30 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   least twice real time (margin for the network stack and AHI).
 - **Criterion**: direct playback of a FLAC and an MP3 file without conversion; acceptable CPU load on the target;
   benchmark figures recorded here for each variant and machine tested.
+- **Design** (agreed 2026-10-19):
+  - **How LMS chooses**: the player lists in `HELO` the formats it decodes; for each track LMS sends the file as
+    is if its format is listed, otherwise converts it with a rule of `convert.conf` (default rules: `flc pcm`,
+    `wav pcm`, `aif pcm`; no `mp3 pcm`), otherwise refuses it. So amisqueeze decides once, at connection, what
+    the server sends: advertising `flc` means every FLAC comes as is, whatever its compression level.
+  - **Libraries**: dr_flac (public domain or MIT-0, integer only) and minimp3 (CC0, floating point: needs an
+    FPU), copied into `third_party/` with their version and licence.
+  - **Data path**: the ring buffer holds the compressed stream; the decoder writes 16-bit PCM straight into the
+    AHI blocks; time is counted in decoded samples, not in bytes received. `OUTPUT` writes the decoded PCM (what
+    would be played), so FLAC can be compared byte for byte with the reference decoder.
+  - **Two executables**: `amisqueeze` (68020, no FPU: FLAC) and `amisqueeze.fpu` (68020 + 68881: FLAC and MP3,
+    refuses to start without an FPU). What is advertised depends on the machine, decided at start-up:
+    **a short built-in FLAC level 8 sample (the worst case) is decoded for about 0.3 s**, and FLAC is advertised
+    only if it decodes at least twice real time (same later for MP3 in `amisqueeze.fpu`); an option forces it
+    either way. The CPU model alone is not enough (a 25 MHz and a 40 MHz 68040 look the same to AmigaOS). The
+    same code is the benchmark tool, shipped in the archive. Expected result: 68020/030 keep PCM (LMS converts
+    FLAC by its default rule; MP3 needs the server rule), a 68040/060 without FPU gets FLAC, with FPU (PiStorm)
+    FLAC and MP3. Ruled out: switching to PCM during playback when decoding falls behind (the track in progress
+    would be lost anyway, much more code).
+  - **Sub-steps**: **1.8a** the new data path with a pass-through "PCM decoder", nothing visible changes (all
+    current tests pass as they are); **1.8b** FLAC: dr_flac, host tests byte for byte against `flac`, Amiga build,
+    benchmark in WinUAE (68020 cycle-exact for faithful timings, then the fast profile), start-up measurement and
+    `HELO`, listening; **1.8c** MP3: `amisqueeze.fpu` with minimp3, tests, benchmark, listening. Then the real
+    machine (1.9) and possibly release 0.2.
 
 ## 1.9 Real machine ⬜
 
