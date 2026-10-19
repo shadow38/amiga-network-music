@@ -2,8 +2,10 @@
 
 Network music for classic Amiga (AmigaOS 3.x, 68020+), built around Lyrion Music Server (LMS):
 
-- **amisqueeze**: a network player speaking slimproto (the Squeezebox protocol), with audio output through AHI.
-  It works with LMS (Music Assistant speaks slimproto too, but is not tested yet);
+- **amisqueeze**: turns the Amiga into a Squeezebox player. Like squeezelite on a PC, it speaks slimproto, the
+  protocol of Logitech's Squeezebox players, so LMS sees it as one more player, controlled from its web interface,
+  its apps or any Squeezebox remote; the sound goes through AHI. A software player without display or infrared
+  remote. It works with LMS (Music Assistant speaks slimproto too, but is not tested yet);
 - **amilms**: a remote control, using the LMS text CLI (TCP 9090).
 
 Target machines: an Amiga with a 68020 or better (from a plain 68020 accelerator to a PiStorm), sound through AHI
