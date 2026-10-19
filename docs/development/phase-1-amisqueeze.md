@@ -106,7 +106,7 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   that frame. A reference decoded from the whole file is then one frame too long: decode the file without its
   ID3v1 tag, or use test MP3s without one (`lame --id3v2-only`).
 
-## 1.4 AHI audio output 🔶 (1.4a, 1.4b done; 1.4c next)
+## 1.4 AHI audio output 🔶 (1.4a, 1.4b done; 1.4c listening done, stack, leak, CPU load next)
 
 - **Goal**: hear the sound, and hear it right.
 - **Content**: `ahi.device`, double-buffered `CMD_WRITE`, `AHIST_S16S`; byte swapping when the stream is
@@ -153,6 +153,16 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   against LMS 9.1.1, Toccata (unit 1) and Paula (unit 0): play (`time ?` +3.00 s in 3 s), pause (time frozen),
   resume (+3.01 s in 3 s), stop, a 10 s track played to its end in 10.3 s, clean exit; `OUTPUT` on the Amiga
   build keeps the virtual output and its file stays identical to the counter pattern (twice, 7,056,000 bytes).
+- **1.4c, test tones heard** (2026-10-19, WinUAE, LMS 9.1.1, `tone-440`, `tone-left`, `tone-right` in one
+  playlist, 20.5 s for 20 s of audio, no `STMo`): Toccata (unit 1) right, sides in place; Paula 14-bit (unit 0)
+  sides swapped without `SWAP`, in place with `SWAP`. Occasional crackle with Paula, also heard with the AHI test
+  tone played without amisqueeze: it comes from the emulation or `paula.audio`, not from amisqueeze (to check on
+  the real machine, 1.9). A whole track (a 156 s, 48 kHz song, as MP3 then as FLAC) on Paula with `SWAP`: right
+  speed and pitch, clean MP3 to FLAC boundary, 312.5 s for 312 s, no `STMo`. A seek (`time 141` from LMS) restarts
+  the stream at the right offset (exactly 15.0 s of data left). Learnt on the server side: LMS announces in `strm`
+  the rate of the **source file**, even when its conversion rule resamples; LMS's own `ogg pcm` rule (`sox -r
+  44100`) therefore makes a 48 kHz source play 9 % too fast on any PCM-only player (our test `mp3 pcm` rule had
+  copied it, fixed). Still to do: stack, no leak, CPU load on the slow profile.
 - **Criterion**: correct test tones (440 Hz at the right pitch, left/right in the right place, no noise); a whole
   track without crackling; CPU load measured with Paula on the slow profile (0.4).
 - **Test**: WinUAE with both AHI drivers of step 0.5, Paula first (Amiga chipset, the output of Amigas without a

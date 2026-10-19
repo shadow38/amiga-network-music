@@ -162,7 +162,8 @@ described in the **[user guide](docs/user-guide.md)**.
 Current state (steps 1.1 to 1.4b of the plan): control connection, player name, default options, and 16-bit PCM
 streams received into a 1 MB buffer and played through AHI (progress reported to LMS, gapless next track, pause,
 stop), or consumed by a virtual output (`NOAUDIO`, host build) and optionally written to a file (`OUTPUT`) to
-check it byte by byte. Listening tests (1.4c) still to do. What comes next is in the
+check it byte by byte. Listening tests done in WinUAE (1.4c); CPU load on a slow 68020 still to measure. What
+comes next is in the
 [amisqueeze plan](docs/development/phase-1-amisqueeze.md).
 
 Protocol references: squeezelite (`slimproto.c`, `slimproto.h`, `stream.c`, `pcm.c`,
