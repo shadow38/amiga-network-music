@@ -39,7 +39,8 @@ spoken by free software on both sides.
 ## Quick start
 
 1. **Download** the zip of the latest [release](https://github.com/shadow38/amiga-network-music/releases)
-   (0.2: a preview tested in WinUAE only, not yet on a real Amiga). It holds amisqueeze and the user guide.
+   (0.2: a preview tested in WinUAE only, not yet on a real Amiga). It holds amisqueeze and the user guide;
+   what changed from one version to the next is in the [changelog](CHANGELOG.md).
 2. **Pick the executable** and copy it to `C:`: `amisqueeze` for any Amiga with a 68020 or better;
    `amisqueeze.fpu` (from version 0.3) for an Amiga with an FPU, which also decodes MP3.
 3. **On the Amiga**: a TCP/IP stack running, and AHI installed, with unit 0 set to a "stereo++" mode in

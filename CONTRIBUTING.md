@@ -67,6 +67,7 @@ obj-host/, out-host/  host objects and executables (generated)
 docs/user-guide.md    user guide
 docs/development/     development plan (roadmap, steps, design decisions)
 CONTRIBUTING.md       this page
+CHANGELOG.md          what changed in each release (updated with each one)
 Makefile              build (m68k-amigaos-gcc must be in the PATH; HOSTCC for the host build)
 tools/amiga-make.sh   runs make with whichever toolchain is available (see "Building")
 tools/check-saves.py  checks the generated assembly (safeguard against a gcc bug, see "Building")
@@ -104,8 +105,9 @@ wsl --cd $PWD --exec sh tools/amiga-make.sh
 Run `make sdk` (task **Amiga: sync headers (.sdk)**) after installing or updating the toolchain, for IntelliSense.
 
 `make dist` (`sh tools/amiga-make.sh dist`) builds the release archive `out/amisqueeze-<version>.zip`: the Amiga
-executables, `LICENSE`, the README and the user guide with its images (`docs/images/`), the version read from the
-program's `$VER:` string.
+executables, `LICENSE`, the README, the changelog and the user guide with its images (`docs/images/`), the version
+read from the program's `$VER:` string. Before a release, the "Unreleased" part of `CHANGELOG.md` gets the version
+number and the date.
 
 Per-program options live in the `Makefile` (`<prog>_CFLAGS`): network programs target the 68020 (`-m68020`).
 amisqueeze is built twice: `out/amisqueeze` (68020, no FPU) and `out/amisqueeze.fpu` (68020 + 68881, with the MP3

@@ -12,8 +12,9 @@ repository. Documentation, code comments and program messages are in English.
 **Versioning** (decided 2026-10-18, completed 2026-10-19): 0.x until the main feature works; the version changes
 only for a **published** release; 1.0 = first really usable version (tested on the real machine). Never bump it on
 our own: ask the user. A release = a Git tag `amisqueeze-<version>` + a GitHub Release with a zip (the Amiga
-executables, `LICENSE`, `README.md`, the user guide) and short notes, made with the GitHub CLI once the user has
-approved the notes; the `$VER:` date is the release date. Between releases the number reads `<next>-dev`, so that
+executables, `LICENSE`, `README.md`, `CHANGELOG.md`, the user guide and its images) and short notes, made with the
+GitHub CLI once the user has approved the notes; `CHANGELOG.md` (Keep a Changelog, added 2026-10-20): note each
+user-visible change under "Unreleased" as it is made, and give that part the version and date at the release; the `$VER:` date is the release date. Between releases the number reads `<next>-dev`, so that
 a build in between is not taken for the last release. 0.1 = first release (2026-10-19: AHI audio, volume,
 robustness, tested in WinUAE only); 0.2 = second release (2026-10-19: FLAC decoded on fast Amigas, 8/24/32-bit
 PCM, tested in WinUAE only), followed by 0.3-dev; the first public push of 2026-10-18 had no tag. The number
