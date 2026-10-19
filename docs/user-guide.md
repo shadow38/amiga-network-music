@@ -161,8 +161,9 @@ Good to know:
 
 - the measure is a little pessimistic on a CPU that compiles code on the fly (WinUAE's JIT, the PiStorm's Emu68):
   its first pass also compiles;
-- MP3 tracks are not yet joined without gaps: each MP3 file begins with a few hundredths of a second of silence
-  (the encoder's delay), as with a basic player.
+- MP3 tracks follow each other without a gap (a live album, a mix): amisqueeze reads the header the encoder
+  writes in the first frame (LAME, and the encoders that copy its format) and drops the silence the encoder adds
+  at the start and the end of each file. MP3 files without such a header keep these few hundredths of a second.
 
 ### Writing the audio to a file (`OUTPUT`)
 

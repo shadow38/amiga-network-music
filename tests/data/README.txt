@@ -27,6 +27,13 @@ MP3 test files (plan step 1.8c), made once from the same signals with lame 3.100
   m16-64.mp3        m16       44.1   m  -b 64 --cbr --id3v2-only --tt Test      (mono)
   s16-48k-192.mp3   s16-48k   48     j  -b 192 --cbr --id3v2-only --tt Test
   s16-22k-64.mp3    s16-22k   22.05  j  -b 64 --cbr --id3v2-only --tt Test      (MPEG-2)
+  cont-a.mp3        cont-a    44.1   j  -b 128 --cbr --id3v2-only --tt Test     (first 57330 frames of cont)
+  cont-b.mp3        cont-b    44.1   j  -b 128 --cbr --id3v2-only --tt Test     (the rest: played after cont-a)
 
-MP3 is lossy: the tests compare the decoded audio with the signal, after its delay (encoder and decoder, plus the
-LAME header frame, decoded as silence), by its signal-to-noise ratio (lame's own decoder gives the same values).
+cont-a and cont-b are the parts of flac_data.PARTS (one continuous signal cut off an MP3 frame boundary): played
+back to back, they must give the whole signal again, without a gap (gapless, plan step 1.8d).
+
+MP3 is lossy: the tests compare the decoded audio with the signal by its signal-to-noise ratio (lame's own
+decoder gives the same values). With a LAME header, amisqueeze drops the encoder's and the decoder's delays and
+the padding: the output lines up with the signal from its first sample and has its length. Without one
+(s16-320-raw.mp3), the delay stays: 576 + 529 frames.

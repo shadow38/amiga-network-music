@@ -3,11 +3,12 @@
  * AMISQUEEZE_MP3: minimp3 computes in floating point, too slow without an FPU.
  *
  * LMS sends an MP3 file as it is, from its start (ID3v2 tags first: an embedded picture may weigh more than the
- * ring buffer) or, after a seek, from anywhere in the middle. Tags are skipped as they arrive; the frames go
- * through a staging buffer, where minimp3 finds them. It wants the frame to decode and the header of the next one
- * (otherwise it starts over and loses the bit reservoir), and, to find the first frame, several frames in a row:
- * so it is called when the staging buffer is full (first frame) or holds the biggest frame and a header, or when
- * the track's data is complete. A decoded frame (up to 1152 PCM frames) is handed over as the output asks for it.
+ * ring buffer) or, after a seek, from its first frame then anywhere in the middle. Tags are skipped as they arrive;
+ * a LAME header in the first frame gives the samples to drop at the start and the end (gapless, step 1.8d). The
+ * frames go through a staging buffer, where minimp3 finds them. It wants the frame to decode and the header of the
+ * next one (otherwise it starts over and loses the bit reservoir), and, to find the first frame, several frames in
+ * a row: so it is called when the staging buffer is full (first frame) or holds the biggest frame and a header, or
+ * when the track's data is complete. A decoded frame (up to 1152 PCM frames) is handed over as the output asks for it.
  * Output: 16-bit samples, native byte order; rate and channels taken from the frames.
  */
 #ifdef AMISQUEEZE_MP3
@@ -28,6 +29,8 @@
 #define FRAME_NEED  (FRAME_MAX + 4)         /* a frame and the next frame's header */
 #define ID3_HEADER  10
 #define ID3V1_SIZE  128
+#define DECODER_DELAY 529                   /* PCM frames an MP3 decoder outputs late (the synthesis filter) */
+#define NO_LIMIT    UINT64_MAX
 
 enum phase { TAGS, FRAMES };
 
@@ -43,6 +46,9 @@ struct mp3_state {
     uint32_t pcm_pos, pcm_len;              /* decoded bytes of pcm still to hand over: [pcm_pos, pcm_len) */
     uint32_t pcm_rate;                      /* format of pcm */
     uint8_t  pcm_channels;
+    int      first_seen;                    /* the first frame has been looked at for a LAME header */
+    uint32_t lead;                          /* PCM frames still to drop at the start (encoder and decoder delay) */
+    uint64_t left;                          /* PCM frames of the track still to play (LAME header), or NO_LIMIT */
     uint8_t  stage[STAGE_SIZE];
     mp3d_sample_t pcm[MINIMP3_MAX_SAMPLES_PER_FRAME];
 };
@@ -54,6 +60,59 @@ static uint32_t id3_size(const uint8_t *b)
                                   (uint32_t)(b[8] & 0x7f) << 7 | (b[9] & 0x7f));
 
     return b[5] & 0x10 ? size + ID3_HEADER : size;
+}
+
+static uint32_t get32(const uint8_t *b)
+{
+    return (uint32_t)b[0] << 24 | (uint32_t)b[1] << 16 | (uint32_t)b[2] << 8 | b[3];
+}
+
+/* Gapless playback (plan step 1.8d): an encoder such as LAME writes in the first frame a header, "Xing" or "Info"
+ * after the side information, with the number of audio frames, then its own extension with its delay and padding
+ * (12 bits each, 21 bytes into it); the layout is the one minimp3_ex.h reads. Returns 0 if frame f (size bytes)
+ * is an audio frame; 1 if it is such a header, which holds no audio: then, when it gives them, lead (the encoder's
+ * delay and the decoder's) and left (the samples of the track) are set. After a seek, LMS sends this frame again
+ * before the data from the new position: left is then never reached, and nothing is cut at the end. */
+static int read_lame_header(struct mp3_state *st, const uint8_t *f, uint32_t size)
+{
+    int mpeg1 = (f[1] & 0x18) == 0x18;
+    int mono = (f[3] >> 6) == 3;
+    uint32_t off = 4 + ((f[1] & 1) ? 0 : 2) + (mpeg1 ? (mono ? 17 : 32) : (mono ? 9 : 17));
+    uint32_t flags, frames;
+    int32_t delay, padding;
+    uint64_t total;
+
+    if (size < off + 8 || (memcmp(f + off, "Xing", 4) && memcmp(f + off, "Info", 4)))
+        return 0;
+    flags = f[off + 7];
+    if (!(flags & 1))
+        return 1;                           /* no frame count: a header, nothing known to trim */
+    if (size < off + 12)
+        return 0;
+    frames = get32(f + off + 8);
+    off += 12;
+    if (flags & 2)
+        off += 4;                           /* bytes */
+    if (flags & 4)
+        off += 100;                         /* seek table */
+    if (flags & 8)
+        off += 4;                           /* quality */
+    if (size < off + 1)
+        return 0;
+    if (f[off] == 0)
+        return 1;                           /* no encoder extension: delay and padding unknown */
+    if (size < off + 36)
+        return 0;
+    delay = ((int32_t)f[off + 21] << 4 | f[off + 22] >> 4) + DECODER_DELAY;
+    padding = ((int32_t)(f[off + 22] & 0x0f) << 8 | f[off + 23]) - DECODER_DELAY;
+    total = (uint64_t)frames * (mpeg1 ? 1152 : 576);
+    if (total >= (uint64_t)delay)
+        total -= (uint64_t)delay;
+    if (padding > 0 && total >= (uint64_t)padding)
+        total -= (uint64_t)padding;
+    st->lead = (uint32_t)delay;
+    st->left = total;
+    return 1;
 }
 
 /* Moves what waits in stage to its start, so that it can be filled further */
@@ -75,6 +134,7 @@ static int mp3_start(struct decoder *d, const struct pcm_format *in)
     d->state = st;
     mp3dec_init(&st->dec);
     st->phase = TAGS;
+    st->left = NO_LIMIT;
     d->out.rate = in->rate;                     /* a guess until the first frame */
     d->out.channels = 2;
     d->out.sample_bytes = 2;
@@ -149,6 +209,7 @@ static uint32_t mp3_run(struct decoder *d, struct ring *r, uint32_t avail, int c
 
     for (;;) {
         mp3dec_frame_info_t info;
+        const uint8_t *frame;
         uint32_t waiting;
         int samples, all_in;
 
@@ -186,18 +247,38 @@ static uint32_t mp3_run(struct decoder *d, struct ring *r, uint32_t avail, int c
             }
             break;
         }
+        memset(&info, 0, sizeof(info));
         samples = mp3dec_decode_frame(&st->dec, st->stage + st->pos, (int)waiting, st->pcm, &info);
         /* Bytes used: a frame, or what comes before the first frame found (all of them when there is none) */
         if (info.frame_bytes <= 0 || (uint32_t)info.frame_bytes > waiting)
             info.frame_bytes = (int)waiting;    /* not expected: nothing usable */
+        frame = st->stage + st->pos + info.frame_offset;
         st->pos += (uint32_t)info.frame_bytes;
+        if (info.hz != 0 && !st->first_seen) {  /* the first frame found */
+            st->first_seen = 1;
+            if (read_lame_header(st, frame, (uint32_t)(info.frame_bytes - info.frame_offset))) {
+                st->synced = 1;
+                st->decoded++;
+                continue;                       /* a header, not audio */
+            }
+        }
         if (samples > 0) {
+            uint32_t n = (uint32_t)samples, drop = st->lead < n ? st->lead : n, frame_size;
+
             st->synced = 1;
             st->decoded++;
             st->pcm_rate = (uint32_t)info.hz;
             st->pcm_channels = (uint8_t)info.channels;
-            st->pcm_pos = 0;
-            st->pcm_len = (uint32_t)samples * (uint32_t)info.channels * 2;
+            frame_size = (uint32_t)info.channels * 2;
+            st->lead -= drop;                   /* the delay at the start of the track */
+            n -= drop;
+            if (st->left != NO_LIMIT) {         /* the padding at its end */
+                if (n > st->left)
+                    n = (uint32_t)st->left;
+                st->left -= n;
+            }
+            st->pcm_pos = drop * frame_size;
+            st->pcm_len = st->pcm_pos + n * frame_size;
         }                                       /* 0 samples: bytes skipped, or a frame without its reservoir */
     }
     return produced;

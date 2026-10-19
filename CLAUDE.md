@@ -76,8 +76,9 @@ Step 1.8c (mp3.c, minimp3.c, `amisqueeze.fpu`): two Amiga executables from the s
 (68020) and `amisqueeze.fpu` (`-m68881`, `AMISQUEEZE_FPU`; `AMISQUEEZE_MP3` compiles the MP3 decoder, also in the
 host build). minimp3 resets itself when the bytes after a frame are not the next header: it is called only with a
 frame and the next header in its 16 KB staging buffer (a full buffer for the first frame), or at the end of the
-track. MP3 gapless trimming is not done (about 50 ms of silence at the start of each file). In the zip, both
-executables; in `$VER:`, `amisqueeze` or `amisqueeze.fpu` (two lines in `amiga.c` to bump).
+track. MP3 gapless (step 1.8d, 2026-10-20): the LAME header of the first frame gives the delays and padding to
+drop (`read_lame_header`); after a seek LMS resends that frame first, so the end limit is never reached. In the
+zip, both executables; in `$VER:`, `amisqueeze` or `amisqueeze.fpu` (two lines in `amiga.c` to bump).
 
 Step 1.8a (decoder.h, decoder.c): the ring buffer holds the stream as received; the decoder of each track writes
 PCM into the AHI blocks or for the virtual output. Two kinds of position, never to be mixed: the ring's (bytes of

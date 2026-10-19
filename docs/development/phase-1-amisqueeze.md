@@ -440,7 +440,7 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   - **For 1.9**: the synthesis uses `fintrz` and `fmovecr` (from `-m68881`), emulated by the CPU library on a real
     68040 or 68060 (one trap per sample: slow); fine on a 68881/68882, Emu68 to check. `MP3=AUTO` would measure it.
 
-## 1.8d MP3 without gaps between tracks ⬜ (version 0.4)
+## 1.8d MP3 without gaps between tracks ✅ (2026-10-20, version 0.4)
 
 - **Why**: an MP3 file begins with the encoder's delay and, from LAME, a header frame (Xing/Info) decoded as
   silence; it ends with padding. Played as they are (1.8c), two tracks meant to follow each other without a pause
@@ -453,6 +453,20 @@ belongs to the task that opened it; packets serialised field by field; buffers a
 - **Criterion**: on the host, the decoded test files line up with their signal from the first sample (delay 0
   instead of 1105 or 2257 frames) and keep its length; two MP3 tracks back to back without gap, byte for byte;
   heard by the user on a track that flows into the next one.
+- **Done** (2026-10-20): `read_lame_header()` in `mp3.c` reads the first frame found: "Xing" or "Info" after the
+  side information (17 or 32 bytes for MPEG-1, 9 or 17 for MPEG-2, plus 2 with a CRC), the frame count, then the
+  encoder's extension (delay and padding, 12 bits each, 21 bytes into it), the layout minimp3's `minimp3_ex.h`
+  reads (read to check, not copied). That frame is not played; the delay plus the decoder's 529 frames are
+  dropped at the start, and the output stops at frames × 1152 (576 for MPEG-2) minus delay and padding. A header
+  without frame count or extension: the frame is skipped, nothing trimmed; no header: played as before. Seeking,
+  checked in LMS's source (`Slim/Formats/MP3.pm`, `getInitialAudioBlock`): LMS sends the file's first frame again
+  before the data from the new position, so the start trim drops about 25 ms after the seek point and the end
+  limit is never reached (nothing wrongly cut). Tests: the five test files with a header come out with delay 0 and
+  their signal's exact length (22.05 and 48 kHz, mono included), the one without a header unchanged (1105); a
+  continuous signal cut off a frame boundary into two files (`cont-a`, `cont-b`) comes back whole, the same SNR
+  around the cut as elsewhere (24.8 dB); a seek as LMS sends it plays the end of the track in full. Heard by the
+  user in WinUAE (68020 + 68882, JIT, Toccata): a 12 s glide cut into three MP3s, with mini gaps from 0.3 (12.9 s)
+  and seamless now (12.3 s).
 
 ## 1.9 Real machine ⬜ (version 0.6)
 

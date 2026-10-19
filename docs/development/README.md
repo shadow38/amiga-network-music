@@ -61,7 +61,7 @@ How to build and test: [CONTRIBUTING.md](../../CONTRIBUTING.md).
 | 1.7a amisqueeze: other PCM formats (LMS) | ✅ 2026-10-19 |
 | 1.7b amisqueeze: Music Assistant | ⬜ after version 0.2 |
 | 1.8 amisqueeze: local decoding (FLAC, then MP3) | ✅ 2026-10-19 (FLAC; MP3 in `amisqueeze.fpu`) |
-| 1.8d amisqueeze: MP3 without gaps between tracks | ⬜ version 0.4 |
+| 1.8d amisqueeze: MP3 without gaps between tracks | ✅ 2026-10-20 (version 0.4) |
 | 1.9 amisqueeze: real machine | ⬜ version 0.6 |
 | 1.10 amisqueeze: finishing touches | ⬜ versions 0.4 to 0.6 (see below) |
 | 1.11 amisqueeze: direct Paula output, without AHI | ⬜ idea (CPU load on a slow 68020) |
@@ -109,7 +109,7 @@ Announced in the plan, then neither done nor dropped; decided with the user on 2
 - **`BUFFER` option** (1.2: "may come with step 1.6"): the 1 MB stream buffer is fixed. **Only if the real
   machines show a need** (1.9: memory on a small Amiga, an unsteady network such as Wi-Fi), then in 1.10.
 - **MP3 gapless** (1.8c): the encoder delay and the LAME header frame are not trimmed (about 50 ms of silence at
-  the start of each MP3 file). **Step 1.8d**, after version 0.3 (which documents the limit).
+  the start of each MP3 file). **Step 1.8d**, after version 0.3 (which documents the limit): done on 2026-10-20.
 - **Continuous integration** (3.3): GitHub Actions. **Host tests on each push before version 0.3**; the Amiga
   build and the release archive before 1.0.
 

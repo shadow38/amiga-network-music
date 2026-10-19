@@ -503,6 +503,7 @@ MP3_FILES = [                           # file of tests/data, signal of flac_dat
     ("s16-128.mp3", "s16"), ("s16-v2.mp3", "s16"), ("s16-320-raw.mp3", "s16"), ("m16-64.mp3", "m16"),
     ("s16-48k-192.mp3", "s16-48k"), ("s16-22k-64.mp3", "s16-22k"),
 ]
+MP3_NO_HEADER = {"s16-320-raw.mp3"}     # made without a LAME header (lame -t)
 MP3_MIN_SNR = 20.0                      # dB, decoded against the signal the file was made from
 mp3_decoded = {}                        # file: output of scenario_mp3, reference of the following scenarios
 
@@ -544,15 +545,20 @@ def mp3_quality(data, signal):
 
 
 def scenario_mp3():
-    print("-- MP3: each test file against its signal; sent in pieces of 3000 bytes or at once, the same bytes")
+    print("-- MP3: each test file against its signal (with a LAME header: from its first sample, its exact length);"
+          " sent in pieces of 3000 bytes or at once, the same bytes")
     for name, signal in MP3_FILES:
         rate, channels = flac_data.SIGNALS[signal][:2]
         data, elapsed, rc, out = play_mp3(flac_file(name))
         delay, snr = mp3_quality(data, signal)
         played_ms = len(data) * 1000 // (rate * channels * 2)
-        check(rc == 0 and delay is not None and snr >= MP3_MIN_SNR and abs(elapsed - played_ms) < 100,
-              "%s: %d bytes, delay %s frames, SNR %.1f dB, %d ms played at %d Hz (%d ms reported)"
-              % (name, len(data), delay, snr, played_ms, rate, elapsed))
+        if name in MP3_NO_HEADER:       # nothing to trim: the encoder's and the decoder's delays stay
+            in_place = delay == 576 + 529
+        else:
+            in_place = delay == 0 and len(data) == len(flac_data.expected(signal))
+        check(rc == 0 and in_place and snr >= MP3_MIN_SNR and abs(elapsed - played_ms) < 100,
+              "%s: %d bytes (signal %d), delay %s frames, SNR %.1f dB, %d ms played at %d Hz (%d ms reported)"
+              % (name, len(data), len(flac_data.expected(signal)), delay, snr, played_ms, rate, elapsed))
         whole, _, _, _ = play_mp3(flac_file(name), chunk=1 << 20)
         check(whole == data, "%s at once: %d bytes, first difference at %d"
               % (name, len(whole), first_difference(whole, data)))
@@ -590,6 +596,65 @@ def scenario_mp3_seek():
           "%d bytes, the last %d as in the whole file" % (len(out), n))
     if rc != 0:
         print(log)
+
+
+def mp3_frames(data):
+    """(offset, size) of the MPEG-1 layer III frames of an MP3 file, after its ID3v2 tag (the test files only)"""
+    bitrates = [0, 32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320]
+    rates = [44100, 48000, 32000]
+    pos = 10 + ((data[6] & 0x7f) << 21 | (data[7] & 0x7f) << 14 | (data[8] & 0x7f) << 7 | data[9] & 0x7f) \
+        if data[:3] == b"ID3" else 0
+    frames = []
+    while pos + 4 <= len(data) and data[pos] == 0xFF and (data[pos + 1] & 0xE0) == 0xE0:
+        size = 144000 * bitrates[data[pos + 2] >> 4] // rates[(data[pos + 2] >> 2) & 3] + ((data[pos + 2] >> 1) & 1)
+        frames.append((pos, size))
+        pos += size
+    return frames
+
+
+def scenario_mp3_seek_lms():
+    print("-- MP3 seek as LMS sends it: the file's first frame (LAME header), then the data from a frame in the middle")
+    file = flac_file("s16-128.mp3")
+    frames = mp3_frames(file)
+    first, middle = frames[0], frames[len(frames) // 2]
+    out, _, rc, log = play_mp3(file[first[0]:first[0] + first[1]] + file[middle[0]:])
+    full = mp3_decoded["s16-128.mp3"]
+    n = len(out) // 2
+    # The header asks to drop the delays at the start (a few ms after the seek point) and gives the file's length,
+    # never reached: the end of the track is played in full, as in the whole file
+    check(rc == 0 and n > 0 and full[-n:] in out, "%d bytes, the end of the track as in the whole file" % len(out))
+    if rc != 0:
+        print(log)
+
+
+def scenario_mp3_continuous():
+    print("-- MP3 gapless: one continuous signal cut in two files, back to back: the signal again, without a gap")
+    path = os.path.join(tempfile.mkdtemp(), "play.pcm")
+    tracks = [HttpServer(data=flac_file("cont-a.mp3")), HttpServer(data=flac_file("cont-b.mp3"))]
+    for h in tracks:
+        h.start()
+    server, proc, s = start_session("Gapless", "OUTPUT=" + path)
+    try:
+        send_strm_mp3(s, tracks[0])
+        s.until("STAT:STMd")
+        send_strm_mp3(s, tracks[1])
+        s.until("STAT:STMd")
+        s.until("STAT:STMu", timeout=10)
+    finally:
+        rc, out = stop(proc)
+        server.close()
+    data = read_output(path)
+    want = flac_data.expected("cont")
+    delay, snr = mp3_quality(data, "cont")
+    check(rc == 0 and delay == 0 and len(data) == len(want) and snr >= MP3_MIN_SNR,
+          "%d bytes (signal %d), delay %s frames, SNR %.1f dB" % (len(data), len(want), delay, snr))
+    # Around the cut (1.3 s), 0.1 s on each side: a gap or a click would show here
+    cut = flac_data.PARTS["cont-b"][1] * 2
+    got = struct.unpack("<%dh" % 17640, data[(cut - 8820) * 2:(cut + 8820) * 2])
+    ref = struct.unpack("<%dh" % 17640, want[(cut - 8820) * 2:(cut + 8820) * 2])
+    noise = sum((a - b) ** 2 for a, b in zip(got, ref)) or 1
+    local = 10 * math.log10(sum(v * v for v in ref) / noise)
+    check(local >= MP3_MIN_SNR, "around the cut: SNR %.1f dB" % local)
 
 
 def scenario_mp3_gapless():
@@ -701,6 +766,8 @@ if __name__ == "__main__":
     scenario_mp3()
     scenario_mp3_tags()
     scenario_mp3_seek()
+    scenario_mp3_seek_lms()
+    scenario_mp3_continuous()
     scenario_mp3_gapless()
     scenario_mp3_garbage()
     scenario_no_server()

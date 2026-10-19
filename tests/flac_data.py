@@ -22,6 +22,14 @@ SIGNALS = {
     "s16-48k": (48000, 2, 16, 1.0),
     "bench": (44100, 2, 16, 0.3),       # built into amisqueeze (level 8) for the speed measurement
     "s16-22k": (22050, 2, 16, 1.0),     # MP3 only: an MPEG-2 rate
+    "cont": (44100, 2, 16, 2.0),        # MP3 only: one continuous signal, cut in two files (PARTS)
+}
+
+# name: (signal, first PCM frame, end PCM frame): a signal cut in two tracks meant to follow each other without a
+# gap; the cut is not on an MP3 frame boundary (1152 PCM frames)
+PARTS = {
+    "cont-a": ("cont", 0, 57330),
+    "cont-b": ("cont", 57330, 88200),
 }
 
 
@@ -61,9 +69,19 @@ def expected(name):
     return struct.pack("<%dh" % len(s), *s)
 
 
+def part(name):
+    """A part of a signal (PARTS) as raw PCM, little-endian signed (16-bit signals only)"""
+    signal, first, end = PARTS[name]
+    frame = SIGNALS[signal][1] * 2
+    return raw(signal)[first * frame:end * frame]
+
+
 if __name__ == "__main__":
     if len(sys.argv) != 3 or sys.argv[1] != "raw":
         sys.exit(__doc__)
     for name in SIGNALS:
         with open(os.path.join(sys.argv[2], name + ".raw"), "wb") as f:
             f.write(raw(name))
+    for name in PARTS:
+        with open(os.path.join(sys.argv[2], name + ".raw"), "wb") as f:
+            f.write(part(name))
