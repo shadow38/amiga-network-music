@@ -1,6 +1,6 @@
 # Development plan
 
-Roadmap of amiga-network-music: the phases, split into testable steps. Each step has a goal, an **observable**
+Roadmap of Amiga Network Music: the phases, split into testable steps. Each step has a goal, an **observable**
 success criterion and a way to check it.
 
 | Phase | Content | Document |

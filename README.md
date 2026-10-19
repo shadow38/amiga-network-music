@@ -1,30 +1,53 @@
-# amiga-network-music
+# Amiga Network Music
+
+**Network music for classic Amigas**: the Amiga plays the music of a server on your local network, and is driven
+like any other player in the house.
 
 [![tests](https://github.com/shadow38/amiga-network-music/actions/workflows/tests.yml/badge.svg)](https://github.com/shadow38/amiga-network-music/actions/workflows/tests.yml)
+· AmigaOS 3.x · 68020 or better · sound through AHI · MIT licence
 
-Network music for classic Amiga (AmigaOS 3.x, 68020+), built around Lyrion Music Server (LMS):
+## How it works
 
-- **amisqueeze**: turns the Amiga into a Squeezebox player. Like squeezelite on a PC, it speaks slimproto, the
-  protocol of Logitech's Squeezebox players, so LMS sees it as one more player, controlled from its web interface,
-  its apps or any Squeezebox remote; the sound goes through AHI. A software player without display or infrared
-  remote. It works with LMS (Music Assistant speaks slimproto too, but is not tested yet);
-- **amilms**: a remote control, using the LMS text CLI (TCP 9090).
+A **music server** holds the music library (files on a PC, a NAS or a Raspberry Pi; web radios and streaming
+services through plugins) and streams it to **players**. A web browser, a phone or a tablet chooses what plays
+where.
 
-Target machines: an Amiga with a 68020 or better (from a plain 68020 accelerator to a PiStorm), sound through AHI
-(Paula or a sound card), plus a TCP/IP stack providing `bsdsocket.library` (Roadshow, AmiTCP, AmiNetXDuo, or
-WinUAE's emulation). Cross-compiled C, tested in WinUAE.
+The Amiga becomes one of these players through **slimproto**, the protocol of Logitech's Squeezebox players, now
+spoken by free software on both sides.
 
-**Download:** [amisqueeze releases](https://github.com/shadow38/amiga-network-music/releases): a zip with the
-Amiga executable and the [user guide](docs/user-guide.md). The latest one, 0.2, is a preview tested in WinUAE
-only, not yet on a real Amiga.
+## Supported servers
 
-**Status:** under development, in testable steps described in the
-[development plan](docs/development/README.md). amisqueeze: shows up as a player in LMS and plays through AHI
-(play, pause, seek, stop, gapless next track, volume; validated in WinUAE with emulated networking and LMS 9.1.1);
-raw PCM (8 to 32 bits, mono or stereo, up to 48 kHz), and FLAC decoded on the Amiga when it is fast enough (a
-PiStorm-class CPU; measured at start-up), otherwise converted by the server; MP3 decoded on the Amiga by
-`amisqueeze.fpu` (Amigas with an FPU) when it is fast enough, otherwise converted by the server (a rule to add, see
-below). amilms: not started.
+| Server | | Status |
+|---|---|---|
+| [Lyrion Music Server](https://lyrion.org) (LMS) | the free, open-source Squeezebox server, formerly Logitech Media Server, now developed by its community; Windows, macOS, Linux, NAS, Raspberry Pi, Docker | **tested** (9.1.1) |
+| [Music Assistant](https://music-assistant.io) | a more recent server, close to Home Assistant, which drives Squeezebox players with the same protocol | not tested yet |
+
+## Programs
+
+- **amisqueeze**: the player. Like squeezelite on a PC, the server sees it as one more Squeezebox, controlled from
+  its web interface, its apps or any Squeezebox remote; the sound goes through AHI (Paula or a sound card). A
+  software player, without a display or infrared remote.
+- **amilms**: a remote control from the Amiga (not started yet).
+
+On the Amiga: AmigaOS 3.x, a 68020 or better (from a plain 68020 accelerator to a PiStorm), AHI, and a TCP/IP stack
+providing `bsdsocket.library` (Roadshow, AmiTCP, AmiNetXDuo, or WinUAE's emulation). Cross-compiled C, tested in
+WinUAE.
+
+## Download
+
+[amisqueeze releases](https://github.com/shadow38/amiga-network-music/releases): a zip with the Amiga executable
+and the [user guide](docs/user-guide.md). The latest one, 0.2, is a preview tested in WinUAE only, not yet on a
+real Amiga.
+
+## Status
+
+Under development, in testable steps described in the [development plan](docs/development/README.md).
+
+amisqueeze shows up as a player in LMS and plays through AHI (play, pause, seek, stop, gapless next track, volume;
+validated in WinUAE with emulated networking and LMS 9.1.1). It plays raw PCM (8 to 32 bits, mono or stereo, up to
+48 kHz). FLAC is decoded on the Amiga when the CPU is fast enough (a PiStorm-class CPU; measured at start-up),
+otherwise converted by the server. MP3 is decoded on the Amiga by `amisqueeze.fpu` (Amigas with an FPU) when it is
+fast enough, otherwise converted by the server (a rule to add, see below). amilms: not started.
 
 ## Requirements
 

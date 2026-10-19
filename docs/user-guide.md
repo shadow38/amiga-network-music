@@ -1,13 +1,14 @@
-# amiga-network-music — User guide
+# Amiga Network Music — User guide
 
-This guide is for people who **use** the programs. Building them is covered in the [README](../README.md); the
-development roadmap is in [docs/development](development/README.md).
+This guide is for people who **use** the programs. How it works and which servers it supports are in the
+[README](../README.md#how-it-works), as well as how to build them; the development roadmap is in
+[docs/development](development/README.md).
 
 ## amisqueeze
 
-amisqueeze turns the Amiga into a network music player for Lyrion Music Server (LMS). It speaks slimproto, the
-protocol of Logitech's Squeezebox players, so LMS (and its web interface or apps) sees and controls it like any
-other player.
+amisqueeze turns the Amiga into a network music player for the music servers that speak slimproto, the protocol of
+Logitech's Squeezebox players: [Lyrion Music Server](https://lyrion.org) (LMS), tested, and Music Assistant, not
+tested yet. The server (and its web interface or apps) sees and controls it like any other player.
 
 **Current state (version 0.3 in development; 0.2, the latest release, is a preview tested in WinUAE only):** amisqueeze connects to the server, shows up as a player and
 **plays what LMS plays through AHI**: in LMS, playback progresses, moves on to the next track, pauses, seeks,
