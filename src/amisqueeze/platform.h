@@ -60,8 +60,10 @@ void plat_file_close(int file);
 /* Opens the given unit; 0 if impossible (message printed) */
 int plat_audio_open(int unit);
 void plat_audio_close(void);
-/* Queues request i: len bytes at data, rate in Hz, 1 or 2 channels, linked to request link (-1 = none) */
-void plat_audio_send(int i, const void *data, uint32_t len, uint32_t rate, int channels, int link);
+/* Queues request i: len bytes at data, rate in Hz, 1 or 2 channels, linked to request link (-1 = none), at the
+ * given volume (16.16, 0x10000 = full) */
+void plat_audio_send(int i, const void *data, uint32_t len, uint32_t rate, int channels, int link,
+                     uint32_t volume);
 /* 1 if request i has ended (it is then free again) */
 int plat_audio_done(int i);
 /* Aborts request i and waits for it; returns the bytes it played, or -1 if the device cannot tell (AHI before

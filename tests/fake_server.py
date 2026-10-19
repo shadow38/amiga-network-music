@@ -81,7 +81,7 @@ def stop(proc):
 
 
 def scenario_session():
-    print("-- session: HELO, strm t, setd, server disconnect and reconnection, Ctrl-C")
+    print("-- session: HELO, strm t, audg, setd, server disconnect and reconnection, Ctrl-C")
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     server.bind(("127.0.0.1", 0))
@@ -103,6 +103,10 @@ def scenario_session():
         check(body[0:4] == b"STMt", "strm t answered with STMt")
         check(struct.unpack(">I", body[47:51])[0] == 0x12345678, "STMt echoes the server timestamp")
 
+        # audg: old gains, adjust, preamp, new 16.16 gains (no answer; printed with VERBOSE)
+        send_packet(conn, b"audg", struct.pack(">IIBBII", 0, 0, 1, 255, 0x4000, 0x4000))
+        send_packet(conn, b"audg", struct.pack(">IIBBII", 0, 0, 0, 255, 0x0F00, 0x0F00))
+
         send_packet(conn, b"setd", b"\0Renamed")
         opcode, body = read_packet(conn)
         check(opcode == b"SETD" and body == b"\0Renamed\0", "setd answered with SETD and the new name")
@@ -118,6 +122,8 @@ def scenario_session():
         server.close()
     check(rc == 0 and "stopped" in out, "Ctrl-C stops the player cleanly (exit code 0, \"stopped\")")
     check("player name: Renamed" in out, "new name printed")
+    check("volume: 25.0 % of full amplitude" in out and "volume: 100.0 % of full amplitude" in out,
+          "audg: volume set, then fixed volume (full)")
     check("connection closed by the server" in out, "disconnect reported")
 
 

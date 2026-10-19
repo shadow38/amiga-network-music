@@ -159,9 +159,9 @@ Options (`SERVER`, `PORT`, `NAME`, `MAC`, `OUTPUT`, `UNIT`, `NOAUDIO`, `SWAP`, `
 stored in `ENV:amisqueeze.prefs` are
 described in the **[user guide](docs/user-guide.md)**.
 
-Current state (steps 1.1 to 1.4b of the plan): control connection, player name, default options, and 16-bit PCM
+Current state (steps 1.1 to 1.5 of the plan): control connection, player name, default options, and 16-bit PCM
 streams received into a 1 MB buffer and played through AHI (progress reported to LMS, gapless next track, pause,
-stop), or consumed by a virtual output (`NOAUDIO`, host build) and optionally written to a file (`OUTPUT`) to
+seek, stop, volume and mute from LMS), or consumed by a virtual output (`NOAUDIO`, host build) and optionally written to a file (`OUTPUT`) to
 check it byte by byte. Listening tests done in WinUAE (1.4c); on a 28 MHz 68020, sound through AHI and Paula takes
 about two thirds of the CPU (AHI's mixing, amisqueeze itself a few percent). What comes next is in the
 [amisqueeze plan](docs/development/phase-1-amisqueeze.md).

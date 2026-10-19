@@ -111,6 +111,7 @@ int player_main(struct player *p, const struct options *o)
 {
     p->sock = -1;
     p->verbose = o->verbose;
+    p->audio.volume = AUDIO_VOLUME_FULL;    /* until the server's audg (no effect without the audio output) */
     p->server_port = o->port ? o->port : SLIMPROTO_PORT;
     strncpy(p->name, o->name ? o->name : "Amiga", PLAYER_NAME_LEN);
     p->name[PLAYER_NAME_LEN] = '\0';

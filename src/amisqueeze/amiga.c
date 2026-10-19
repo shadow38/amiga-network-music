@@ -268,7 +268,8 @@ void plat_audio_close(void)
     }
 }
 
-void plat_audio_send(int i, const void *data, uint32_t len, uint32_t rate, int channels, int link)
+void plat_audio_send(int i, const void *data, uint32_t len, uint32_t rate, int channels, int link,
+                     uint32_t volume)
 {
     struct AHIRequest *r = audio_req[i];
 
@@ -279,7 +280,7 @@ void plat_audio_send(int i, const void *data, uint32_t len, uint32_t rate, int c
     r->ahir_Std.io_Offset = 0;
     r->ahir_Frequency = rate;
     r->ahir_Type = channels == 2 ? AHIST_S16S : AHIST_M16S;
-    r->ahir_Volume = 0x10000;               /* full volume (audg comes with step 1.5) */
+    r->ahir_Volume = volume;
     r->ahir_Position = 0x8000;              /* centre */
     r->ahir_Link = link >= 0 ? audio_req[link] : NULL;
     SendIO((struct IORequest *)r);

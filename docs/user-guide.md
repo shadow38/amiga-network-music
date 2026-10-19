@@ -10,8 +10,8 @@ protocol of Logitech's Squeezebox players, so LMS (and its web interface or apps
 other player.
 
 **Current state (version 0.1, in development):** amisqueeze connects to the server, shows up as a player and
-**plays what LMS plays through AHI**: in LMS, playback progresses, moves on to the next track, pauses, seeks and
-stops as with any player. Only raw 16-bit PCM streams are accepted for now (LMS converts the other formats, see
+**plays what LMS plays through AHI**: in LMS, playback progresses, moves on to the next track, pauses, seeks,
+stops and changes volume as with any player. Only raw 16-bit PCM streams are accepted for now (LMS converts the other formats, see
 the requirements). The sound has been checked by ear in WinUAE (Paula and Toccata), not yet on a real Amiga.
 
 ### Requirements
@@ -97,6 +97,12 @@ AHI is given about 0.6 s of audio ahead; pause, stop and seek cut the sound at o
 LMS follows what was actually played. If left and right come out swapped (seen in WinUAE with `paula.audio` 4.30,
 in 8 and 14 bits, while Paula itself is right: not checked on a real Amiga yet), add `SWAP`. Occasional
 crackles with `paula.audio` in WinUAE also occur without amisqueeze (AHI's own test tone).
+
+**Volume**: amisqueeze follows the volume set in LMS (slider, apps, mute), through AHI: a change is heard 0.2 to
+0.4 s later, at no CPU cost. LMS's volume scale is logarithmic: 100 is full volume, 50 is quiet (about -25 dB, 6 %
+of full amplitude), 25 very quiet; mute and unmute fade in about a second. LMS offers no "fixed volume" for this
+kind of player: for full volume, set it to 100 (and turn the amplifier down). With `VERBOSE`, each change prints
+`volume: 5.9 % of full amplitude`.
 
 ### Default options
 

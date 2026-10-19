@@ -251,12 +251,18 @@ static void process_strm(struct player *p, const uint8_t *pkt, int len)
 
 static void process_audg(struct player *p, const uint8_t *pkt, int len)
 {
+    uint32_t tenths;
+
     if (len < 22)
         return;
-    /* 16.16 gain, 0x10000 = 1.0; adjust = 0: fixed volume */
+    /* 16.16 gains (0x10000 = 1.0), already following the server's volume curve; adjust = 0: fixed volume */
     if (p->verbose)
         msg("<- audg adjust %d left $%08lX right $%08lX\n", pkt[12],
             (unsigned long)get32(pkt + 14), (unsigned long)get32(pkt + 18));
+    if (audio_set_volume(p, get32(pkt + 14), get32(pkt + 18), pkt[12]) && p->verbose) {
+        tenths = (p->audio.volume * 1000 + 0x8000) >> 16;  /* volume <= 0x10000: no overflow */
+        msg("volume: %lu.%lu %% of full amplitude\n", (unsigned long)(tenths / 10), (unsigned long)(tenths % 10));
+    }
 }
 
 static void process_setd(struct player *p, const uint8_t *pkt, int len)

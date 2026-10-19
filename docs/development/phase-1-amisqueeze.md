@@ -187,12 +187,29 @@ belongs to the task that opened it; packets serialised field by field; buffers a
 - **Test**: WinUAE with both AHI drivers of step 0.5, Paula first (Amiga chipset, the output of Amigas without a
   sound card) and Toccata (16-bit reference), then the real machines (1.9).
 
-## 1.5 Commands and volume ⬜
+## 1.5 Commands and volume ✅ (2026-10-19)
 
 - **Content**: pause and resume (`strm p`/`u`, `STMp`/`STMr`), stop, flush, skip; volume (`audg`, 16.16 gain to
   AHI volume); exact elapsed time in `STAT` (based on what was actually played).
 - **Criterion**: every command from the LMS UI acts on the Amiga; the displayed progress stays right after pause
   and resume.
+- **Already done in 1.4**: pause, resume, stop, flush, seek and next track, elapsed time from the bytes played.
+- **Design** (agreed 2026-10-19): the 16.16 gain of `audg` is kept by the audio output and sent with each block
+  (`ahir_Volume`): blocks already with the device keep theirs, so a change is heard 0.2 to 0.4 s later, at no CPU
+  cost (scaling the samples ourselves would act at once but cost about a tenth of a 28 MHz 68020); the louder of
+  left and right (LMS sends the same value, or a balance: no balance through AHI for now), never above 1.0 (AHI
+  does not amplify); `adjust` 0 (fixed volume) = full; ignored without the audio output (`OUTPUT` stays
+  byte-exact); with `VERBOSE`, `volume: n.n % of full amplitude` when it changes. Replay gain (`strm s`) left out.
+- **Done** (2026-10-19): `audio_set_volume()` (`audio.c`), `plat_audio_send()` takes the volume; unit tests (262
+  checks: volume per block, the next block only, louder side, at most full, mute, fixed volume, kept across a
+  pause) and the fake server (`audg` in the session scenario).
+- **Validated** (2026-10-19, WinUAE, LMS 9.1.1, Paula): every command sent through LMS's CLI (volume 100, 25, 50,
+  +10, mute and unmute, pause and resume, next, seek, previous, track chosen in the playlist, stop) acts as
+  expected, no `STMo`; heard by the user (100, 25, mute, unmute, 50): each change clear, no click. Learnt from LMS
+  (`Slim/Player/Squeezebox2.pm`, `Player.pm`): its volume curve gives 50 = 0x0F00 (about -25 dB), 25 = 0x039E;
+  mute, unmute and pause fade through several `audg` in about a second; "fixed volume" (`digitalVolumeControl`
+  0, sent as `adjust` 0) is refused for a player without `HasDigitalOut` in its capabilities, so LMS never sends
+  `adjust` 0 to amisqueeze.
 
 ## 1.6 Robustness ⬜
 

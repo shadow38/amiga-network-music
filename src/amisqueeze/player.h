@@ -107,6 +107,7 @@ struct output {
  * enough for the volume (1.5). */
 #define AUDIO_BLOCKS     3
 #define AUDIO_BLOCK_SIZE 32768UL        /* about 0.19 s of 44.1 kHz 16-bit stereo; a multiple of every frame size */
+#define AUDIO_VOLUME_FULL 0x10000UL     /* 16.16 gain 1.0: the device's full volume */
 
 enum block_state {
     BLOCK_FREE,
@@ -133,6 +134,7 @@ struct audio {
     uint64_t           played;         /* bytes played by finished (or paused) blocks since the last reset */
     uint32_t           head_ms;        /* when the first block started playing */
     int                paused;
+    uint32_t           volume;         /* 16.16 gain sent with each block (audg), AUDIO_VOLUME_FULL at most */
 };
 
 struct player {
@@ -218,6 +220,9 @@ void audio_submit(struct player *p, int b, uint32_t n, const struct pcm_format *
 uint64_t audio_played(const struct player *p, uint32_t now, int estimate);
 void audio_pause(struct player *p, uint32_t now);
 void audio_resume(struct player *p, uint32_t now);
+/* audg: 16.16 gains of left and right, adjust 0 = fixed volume (full); heard from the next block sent. Returns 1
+ * if the volume changed. */
+int audio_set_volume(struct player *p, uint32_t left, uint32_t right, int adjust);
 /* Offset just after the blank line ending HTTP headers ("\r\n\r\n" or "\n\n"), 0 if not there yet */
 int http_header_end(const char *buf, int len);
 

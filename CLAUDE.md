@@ -40,7 +40,8 @@ Work proceeds in testable steps, each validated with the user **before** writing
 Step 1.4: 1.4a and 1.4b done (AHI output); 1.4c listening done on 2026-10-19 (test tones, a whole 48 kHz track as
 MP3 and FLAC, Paula needs `SWAP` in WinUAE); rest of 1.4c measured the same day (2 KB stack OK, no leak, CPU
 load on the slow 68020 profile: 61-68 % with Paula, almost all of it AHI; 2-5 % with `NOAUDIO`). Step 1.4
-validated on 2026-10-19; next 1.5 (commands and volume).
+validated on 2026-10-19. Step 1.5 (volume from `audg`, sent with each AHI block) validated on 2026-10-19; next 1.6
+(robustness, one hour of playback).
 
 Step 1.2 (stream.c, ring.c): HTTP stream with a non-blocking connection; one 1 MB ring buffer, reported to LMS
 as both the stream and the output buffer (raw PCM needs no decoding); a virtual output consumes it at the PCM rate

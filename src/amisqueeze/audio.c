@@ -3,7 +3,7 @@
  *
  * The platform's audio device (ahi.device on the Amiga, see platform.h) plays the blocks one after the other.
  * Here: which block holds what and in which order, the conversion of the stream's PCM for the device (16-bit
- * big-endian, left and right swapped with SWAP), the bytes played, and the pause.
+ * big-endian, left and right swapped with SWAP), the bytes played, the pause, and the volume.
  *
  * ahi.device chains a request only to one that is already playing: a request linked to a request that is itself
  * waiting is never played (seen in WinUAE, and in AHI's source: the third one is left in the waiting list). So at
@@ -27,6 +27,7 @@ int audio_open(struct player *p, int unit, int swap)
 
     memset(a, 0, sizeof(*a));
     a->swap = swap;
+    a->volume = AUDIO_VOLUME_FULL;
     for (i = 0; i < AUDIO_BLOCKS; i++) {
         a->block[i].buf = malloc(AUDIO_BLOCK_SIZE);
         if (a->block[i].buf == NULL) {
@@ -82,7 +83,8 @@ static void send_ready(struct audio *a, uint32_t now)
         bl->state = BLOCK_SENT;
         if (k == 0)
             a->head_ms = now;               /* the device was idle: this block starts now */
-        plat_audio_send(b, bl->buf + bl->done, bl->sent, bl->rate, bl->channels, k > 0 ? a->order[k - 1] : -1);
+        plat_audio_send(b, bl->buf + bl->done, bl->sent, bl->rate, bl->channels, k > 0 ? a->order[k - 1] : -1,
+                        a->volume);
         k++;
     }
 }
@@ -252,4 +254,20 @@ void audio_resume(struct player *p, uint32_t now)
         return;
     a->paused = 0;
     send_ready(a, now);
+}
+
+/* The device takes one volume per request and cannot amplify: the louder side, at most full volume. Blocks
+ * already with the device keep theirs, so a change is heard 0.2 to 0.4 s later, at no CPU cost (scaling the
+ * samples here would act at once, but cost about a tenth of a 28 MHz 68020). */
+int audio_set_volume(struct player *p, uint32_t left, uint32_t right, int adjust)
+{
+    struct audio *a = &p->audio;
+    uint32_t v = !adjust ? AUDIO_VOLUME_FULL : left > right ? left : right;
+
+    if (v > AUDIO_VOLUME_FULL)
+        v = AUDIO_VOLUME_FULL;
+    if (v == a->volume)
+        return 0;
+    a->volume = v;
+    return 1;
 }

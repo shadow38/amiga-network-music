@@ -1039,6 +1039,73 @@ static void test_audio_errors(void)
     teardown(&p);
 }
 
+/* audg body (after the opcode): old gains (2 x 4 bytes), adjust, preamp, then the 16.16 gains of left and right */
+static void feed_audg(int adjust, uint32_t left, uint32_t right)
+{
+    uint8_t b[18];
+
+    memset(b, 0, sizeof(b));
+    b[8] = (uint8_t)adjust;
+    set32(b + 10, left);
+    set32(b + 14, right);
+    stub_feed_packet("audg", b, sizeof(b));
+}
+
+/* Volume (audg): sent with each block, those already with the device keep theirs; the louder side, never above
+ * full; fixed volume = full; the rest of a paused block goes again at the volume of the moment */
+static void test_audio_volume(void)
+{
+    struct player p;
+    int order[8];
+
+    setup_audio(&p, 0);
+    p.verbose = 1;
+    open_stream(&p, '1', 1);
+    stub_feed_stream(track_a, sizeof(track_a));
+    drain_stream(&p);
+    output_tick(&p, stub_now);
+    CHECK(stub_audio_queue(order) == 2);
+    CHECK(stub_audio[order[0]].volume == 0x10000 && stub_audio[order[1]].volume == 0x10000);  /* before audg */
+
+    stub_out[0] = '\0';
+    feed_audg(1, 0x4000, 0x4000);
+    drain(&p);
+    CHECK(strstr(stub_out, "volume: 25.0 % of full amplitude") != NULL);
+    CHECK(stub_audio_queue(order) == 2 && stub_audio[order[1]].volume == 0x10000);    /* already sent: as is */
+    finish(&p);
+    CHECK(stub_audio_queue(order) == 2 && stub_audio[order[1]].volume == 0x4000);     /* the next one */
+
+    stub_out[0] = '\0';
+    feed_audg(1, 0x4000, 0x4000);                       /* the same again (the server repeats it): quiet */
+    drain(&p);
+    CHECK(strstr(stub_out, "volume:") == NULL);
+    feed_audg(1, 0x0F00, 0x2000);                       /* the louder side */
+    drain(&p);
+    CHECK(p.audio.volume == 0x2000);
+    feed_audg(1, 0x30000, 0x30000);                     /* never above full */
+    drain(&p);
+    CHECK(p.audio.volume == 0x10000);
+    feed_audg(1, 0, 0);                                 /* muted */
+    drain(&p);
+    CHECK(p.audio.volume == 0 && strstr(stub_out, "volume: 0.0 %") != NULL);
+    feed_audg(0, 0x0F00, 0x0F00);                       /* fixed volume: full, whatever the gains */
+    drain(&p);
+    CHECK(p.audio.volume == 0x10000);
+
+    stub_audio_abort_played = 1000;
+    feed_strm('p', NULL, 0, 0, 0, NULL);
+    drain(&p);
+    feed_audg(1, 0x8000, 0x8000);
+    drain(&p);
+    feed_strm('u', NULL, 0, 0, 0, NULL);
+    drain(&p);
+    CHECK(stub_audio_queue(order) == 2);
+    CHECK(stub_audio[order[0]].len == BLOCK - 1000 && stub_audio[order[0]].volume == 0x8000);
+    CHECK(stub_audio[order[1]].volume == 0x8000);
+    CHECK(stub_audio_bad == 0);
+    teardown(&p);
+}
+
 int main(void)
 {
     test_ring();
@@ -1069,6 +1136,7 @@ int main(void)
     test_audio_gapless();
     test_audio_wait_full_block();
     test_audio_errors();
+    test_audio_volume();
     printf("test_core: %d checks, %d failed\n", checks, failures);
     return failures ? 1 : 0;
 }
