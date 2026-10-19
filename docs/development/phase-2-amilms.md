@@ -2,13 +2,58 @@
 
 Back to the [plan](README.md).
 
-A remote control for LMS from the Amiga, through the LMS text CLI (TCP 9090): one command per line, a one-line
-reply, URL-encoded parameters (`%20`…), `key:value` pairs. It drives any player (amisqueeze, squeezelite,
-Squeezebox). Music Assistant (JSON API, token, WebSocket) is out of scope for now ⏸.
+A remote control from the Amiga for LMS, then for Music Assistant. It drives any player of the server
+(amisqueeze, squeezelite, Squeezebox…). **amilms** is a working name: **amiremote** is proposed, since the remote
+is no longer LMS only; the name is decided by the study (2.0), and the files are renamed then.
+
+- **LMS**: the text CLI (TCP 9090): one command per line, a one-line reply, URL-encoded parameters (`%20`…),
+  `key:value` pairs (steps 2.1 to 2.7).
+- **Music Assistant**: its API, JSON messages over a WebSocket, with an access token (steps 2.8 to 2.11).
+
+## Organisation (decided 2026-10-19)
+
+As in amisqueeze: a **portable core** in standard C, tested on the host, and thin layers around it.
+
+- **Core**: the common interface (players, now playing, search results, queue; operations; events from the
+  server), the state, and two **back ends** behind it: LMS CLI, then Music Assistant. Host tests (`make test`)
+  against fake servers in Python, like `tests/fake_server.py`.
+- **Shell front end** first (2.1 to 2.5): commands such as `amilms SEARCH "beatles"`, `amilms PLAY`,
+  `amilms STATUS`; used for development, automated tests and scripts.
+- **GUI front end** (2.6): calls the **same core directly, in the same program** (not a GUI starting a CLI program
+  and parsing its output: no `fork` on AmigaOS, clumsy pipes, a program start per action). One task and one loop
+  waiting on both the sockets and the window (`WaitSelect()` with the window's signal), as in amisqueeze.
+- **Later**: an ARexx port on the GUI version, the Amiga way for scripts to drive a running program.
+- Whether both front ends live in one executable (Shell with arguments, window from the Workbench) or two is
+  decided by the study (2.0).
 
 Network code shared with amisqueeze (connection, line reading, logging, Ctrl-C) goes into `src/common/`.
 
-## 2.1 CLI connection ⬜
+## 2.0 Study: common interface and Music Assistant feasibility ⬜ (before any amilms code)
+
+- **Goal**: fix the interface the front ends rely on, so that the Music Assistant back end fits in later without
+  reworking the core or the GUI.
+- **Content** (documents only, no code):
+  - compare what each server offers, from its documentation: players, now playing, transport commands, volume,
+    search, library browsing, queue, notifications (LMS `subscribe` / `listen`; Music Assistant events);
+  - define the common interface: data (player, track, search result, queue item), operations, events, and what
+    exists on one side only;
+  - Music Assistant feasibility on a 68020: WebSocket client (HTTP upgrade, framing, client masking), JSON parser
+    (small, MIT-compatible: e.g. jsmn or cJSON, both MIT), memory use of large replies (paging), token handling
+    (cleartext on the LAN, no TLS), stability of the API across Music Assistant versions;
+  - name of the program and organisation of the executables;
+  - Music Assistant test server (0.9).
+- **Criterion**: the interface and the conclusions are written in this plan and agreed with the user.
+
+**Other remote for Music Assistant: [ami2ha](https://github.com/evil4dmin/ami2ha)** (native AmigaOS Home
+Assistant client, MIT, MUI 3.8+, 68020+, WebSocket API with a long-lived token, AmiSSL optional, otherwise the token
+travels in cleartext). Music Assistant players linked to Home Assistant show up there as `media_player` entities,
+which its `media` widget drives: now playing, previous / play-pause / next, volume. According to its README (not
+tested here): no library browsing, search or queue, and no documented generic service call (such as Music
+Assistant's `play_media` or `search` actions); it needs Home Assistant (a standalone Music Assistant is out of its
+reach). So it covers basic control of amisqueeze under Music Assistant, while search stays amilms' job on LMS
+(2.4). To test it, a Home Assistant + Music Assistant test server is needed (not set up).
+
+## 2.1 LMS: CLI connection ⬜
 
 - **Content**: connect to `<server>:9090`, send `version ?`, read and decode the reply.
 - **Criterion**: `amilms SERVER=<ip>` prints the server version.
@@ -32,8 +77,13 @@ Network code shared with amisqueeze (connection, line reading, logging, Ctrl-C) 
 
 ## 2.4 Library and queue ⬜
 
-- **Content**: browsing artists → albums → tracks; play or add an album; show and edit the queue; search.
-- **Criterion**: pick an album from the Amiga and play it on a player.
+- **Content**: browsing artists → albums → tracks; play or add an album; show and edit the queue; **search**
+  (a main goal of amilms): a search term returns artists, albums and tracks from the library (LMS CLI
+  `search 0 <n> term:<text>`, or `artists` / `albums` / `titles … search:<text>`), and a result can be played
+  or added to the queue (`playlistcontrol cmd:load|add track_id:… / album_id:…`). Commands written from memory:
+  check them against the server's CLI documentation (LMS web UI, Help → Technical Information → CLI) at 2.1.
+- **Criterion**: pick an album from the Amiga and play it on a player; search a track by part of its title and
+  play it.
 
 ## 2.5 Service menus ⬜
 
@@ -50,3 +100,30 @@ Network code shared with amisqueeze (connection, line reading, logging, Ctrl-C) 
 ## 2.7 Real machine ⬜
 
 - **Criterion**: same features on the real machine, with good responsiveness.
+
+## Music Assistant back end (2.8 to 2.11)
+
+Behind the same interface as LMS, so the Shell and GUI front ends need no change; content to be refined by the
+study (2.0). Prerequisite: the Music Assistant test server (0.9). It may come after a first release of the LMS
+remote.
+
+## 2.8 Music Assistant: connection ⬜
+
+- **Content**: WebSocket client (HTTP upgrade, frames, client masking, ping), access token, JSON parsing; read
+  the server information.
+- **Criterion**: `amilms SERVER=<ip> …` (Music Assistant mode, option to be defined) prints the server version.
+- **Test**: host first (fake WebSocket server in Python: fragmented frames, large replies, disconnection).
+
+## 2.9 Music Assistant: players, commands, state ⬜
+
+- **Content**: player list, transport commands, volume, now playing; events instead of polling.
+- **Criterion**: same as 2.2 and 2.3, on Music Assistant (amisqueeze and squeezelite as players).
+
+## 2.10 Music Assistant: search, library, queue ⬜
+
+- **Criterion**: same as 2.4 on Music Assistant: search a track by part of its title and play it; pick an album
+  and play it; show the queue.
+
+## 2.11 Music Assistant: GUI and real machine ⬜
+
+- **Criterion**: the GUI of 2.6 works the same with both servers; same features on the real machine.

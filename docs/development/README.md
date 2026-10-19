@@ -7,7 +7,7 @@ success criterion and a way to check it.
 |---|---|---|
 | 0 | Tooling and test environment | [phase-0-tooling.md](phase-0-tooling.md) |
 | 1 | amisqueeze: slimproto player with AHI output | [phase-1-amisqueeze.md](phase-1-amisqueeze.md) |
-| 2 | amilms: remote control through the LMS CLI | [phase-2-amilms.md](phase-2-amilms.md) |
+| 2 | amilms (working name, amiremote proposed): remote control for LMS, then Music Assistant | [phase-2-amilms.md](phase-2-amilms.md) |
 | 3 | Release | [phase-3-release.md](phase-3-release.md) |
 
 ## Method
@@ -57,7 +57,10 @@ success criterion and a way to check it.
 | 1.5 amisqueeze: commands and volume | ✅ 2026-10-19 |
 | 1.6 amisqueeze: robustness | ✅ 2026-10-19 |
 | 1.7 to 1.10 | ⬜ |
-| 2.1 to 2.7 amilms | ⬜ |
+| 0.9 Test Music Assistant server | ⬜ |
+| 2.0 remote: study (common interface, Music Assistant feasibility, name) | ⬜ before any amilms code |
+| 2.1 to 2.7 remote: LMS | ⬜ |
+| 2.8 to 2.11 remote: Music Assistant | ⬜ |
 | 3.1 Licence and user documentation | 🔶 licence: MIT |
 | 3.2 to 3.3 release | ⬜ |
 

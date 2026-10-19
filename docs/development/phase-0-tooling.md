@@ -128,3 +128,14 @@ Back to the [plan](README.md).
 - **Approach**: `bgdbserver` (Aminet `dev/debug/bgdbserver`) in the emulated Amiga, WinUAE's emulated networking,
   `m68k-amigaos-gdb` (`target remote …:2345`) driven by VS Code (cpptools); build with `-g`.
 - **Criterion**: stops on a breakpoint in `main.c`, variables readable.
+
+## 0.9 Test Music Assistant server ⬜
+
+- **Goal**: a Music Assistant server reachable from the emulated Amiga, for the Music Assistant back end of the
+  remote (2.8 to 2.11) and for amisqueeze as a Music Assistant player (1.7).
+- **Content**: any Music Assistant server will do (Docker image, Home Assistant add-on…), with a small local
+  library and an access token for the API. To check: the server's ports (web UI and API, its slimproto port for
+  players) and whether they collide with a test LMS on the same machine (both servers use 3483 for players: two
+  addresses, or one server at a time).
+- **Criterion**: web UI reachable, API answering with the token, squeezelite (0.3) playing a track from it.
+- **Prerequisite of**: 1.7 (Music Assistant part), 2.8.

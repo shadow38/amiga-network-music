@@ -30,8 +30,13 @@ Decided (2026-10-18): two programs in this repository, one `src/<prog>/` directo
 
 - **amisqueeze**: slimproto player with AHI output (works with LMS and Music Assistant, which both speak
   slimproto);
-- **amilms**: remote control through the LMS text CLI (TCP 9090); LMS only for now (the Music Assistant API, JSON +
-  token + WebSocket, is out of scope for now).
+- **amilms** (working name; **amiremote** proposed, to be decided by study step 2.0): remote control, one
+  portable core with two server back ends behind a common interface, LMS text CLI (TCP 9090) first, then the
+  Music Assistant API (JSON over WebSocket, token); a Shell front end first, then a GUI front end calling the same
+  core in the same program (not a GUI driving a CLI program). Decided 2026-10-19: study 2.0 (common interface, MA
+  feasibility, name) before any amilms code. Track search is one of its main goals (step 2.4). For Music
+  Assistant, the existing Home Assistant client ami2ha already offers basic control (play/pause, next, volume, no
+  search): noted in the phase 2 plan.
 
 Work proceeds in testable steps, each validated with the user **before** writing code: the plan is in
 `docs/development/` (keep the statuses up to date). User-facing behaviour (options, messages) is documented in
