@@ -3,17 +3,22 @@
 Network music for classic Amiga (AmigaOS 3.x, 68020+), built around Lyrion Music Server (LMS):
 
 - **amisqueeze**: a network player speaking slimproto (the Squeezebox protocol), with audio output through AHI.
-  It works with LMS and with Music Assistant, which both speak slimproto;
+  It works with LMS (Music Assistant speaks slimproto too, but is not tested yet);
 - **amilms**: a remote control, using the LMS text CLI (TCP 9090).
 
 Target machines: an Amiga with a 68020 or better (from a plain 68020 accelerator to a PiStorm), sound through AHI
 (Paula or a sound card), plus a TCP/IP stack providing `bsdsocket.library` (Roadshow, AmiTCP, AmiNetXDuo, or
 WinUAE's emulation). Cross-compiled C, tested in WinUAE.
 
+**Download:** [amisqueeze releases](https://github.com/shadow38/amiga-network-music/releases): a zip with the
+Amiga executable and the [user guide](docs/user-guide.md). The latest one, 0.1, is a preview tested in WinUAE
+only, not yet on a real Amiga.
+
 **Status:** under development, in testable steps described in the
-[development plan](docs/development/README.md). amisqueeze: shows up as a player in LMS and receives the audio
-stream (playback progresses, next track, pause, seek, stop; validated in WinUAE with emulated networking and LMS
-9.1.1), default options in `ENV:amisqueeze.prefs`; no sound yet (AHI output is the next part). amilms: not started.
+[development plan](docs/development/README.md). amisqueeze: shows up as a player in LMS and plays through AHI
+(play, pause, seek, stop, gapless next track, volume; validated in WinUAE with emulated networking and LMS 9.1.1);
+raw 16-bit PCM only for now, so MP3 needs a conversion rule on the server until local decoding comes. amilms:
+not started.
 
 ## Requirements
 
