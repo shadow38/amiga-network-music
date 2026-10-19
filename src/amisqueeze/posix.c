@@ -2,8 +2,8 @@
  * posix.c - amisqueeze on Linux (or another POSIX system), for host-side tests: entry point and the system
  * services of platform.h. Same behaviour as the Amiga build; the arguments use the same KEY=value syntax:
  *
- *   amisqueeze [SERVER=]<ip|name> [PORT=3483] [NAME=<name>] [MAC=xx:xx:xx:xx:xx:xx] [OUTPUT=<file>] [UNIT=<n>]
- *              [NOAUDIO] [SWAP] [FLAC=AUTO|ON|OFF] [MP3=AUTO|ON|OFF] [BENCH] [VERBOSE]
+ *   amisqueeze [SERVER=]<ip|name> [PORT=3483] [NAME=<name>] [MAC=xx:xx:xx:xx:xx:xx] [OUTPUT=<file>] [LOG=<file>]
+ *              [UNIT=<n>] [NOAUDIO] [SWAP] [FLAC=AUTO|ON|OFF] [MP3=AUTO|ON|OFF] [BENCH] [VERBOSE]
  *
  * No audio output: always the virtual output (UNIT, NOAUDIO and SWAP are accepted for the same command lines).
  *
@@ -39,6 +39,10 @@ static volatile sig_atomic_t interrupted;
 static int last_error;
 static struct player player;
 
+/* LOG option: every message also appended to this file (NULL = none) */
+static const char *log_name;
+static FILE *log_file;
+
 static void on_signal(int sig)
 {
     (void)sig;
@@ -47,20 +51,60 @@ static void on_signal(int sig)
 
 /* ---- platform.h ---- */
 
+/* Appends to the LOG file, if any; a write error closes it (said on the console only), playback goes on */
+static void log_check(void)
+{
+    if (fflush(log_file) == 0 && !ferror(log_file))
+        return;
+    printf("amisqueeze: cannot write to the log %s: error %d, log closed\n", log_name, errno);
+    fflush(stdout);
+    fclose(log_file);
+    log_file = NULL;
+}
+
+/* LOG option, as in amiga.c: appended to, a line marking the start of the run; no file, no log */
+static void log_open(void)
+{
+    char when[32];
+    time_t now = time(NULL);
+
+    log_file = fopen(log_name, "a");
+    if (log_file == NULL) {
+        msg("amisqueeze: cannot open the log %s: error %d, going on without it\n", log_name, errno);
+        return;
+    }
+    strftime(when, sizeof(when), "%d-%b-%y %H:%M:%S", localtime(&now));
+    fprintf(log_file, "--- amisqueeze (host build), started %s\n", when);
+    log_check();
+}
+
 void msg(const char *fmt, ...)
 {
     va_list ap;
 
     va_start(ap, fmt);
+    if (log_file != NULL) {
+        va_list again;
+
+        va_copy(again, ap);
+        vfprintf(log_file, fmt, again);
+        va_end(again);
+    }
     vfprintf(stdout, fmt, ap);
     va_end(ap);
     fflush(stdout);
+    if (log_file != NULL)
+        log_check();
 }
 
 void msg_raw(const void *buf, int len)
 {
     fwrite(buf, 1, (size_t)len, stdout);
     fflush(stdout);
+    if (log_file != NULL) {
+        fwrite(buf, 1, (size_t)len, log_file);
+        log_check();
+    }
 }
 
 uint32_t plat_now_ms(void)
@@ -296,6 +340,8 @@ static int parse_args(int argc, char **argv, struct options *o)
                 o->mac = v;
             else if (k == 6 && !strncasecmp(a, "OUTPUT", 6))
                 o->output = v;
+            else if (k == 3 && !strncasecmp(a, "LOG", 3))
+                log_name = v;
             else if (k == 4 && !strncasecmp(a, "UNIT", 4))
                 o->unit = atoi(v);
             else if (k == 4 && !strncasecmp(a, "FLAC", 4)) {
@@ -338,6 +384,8 @@ int main(int argc, char **argv)
     memset(&o, 0, sizeof(o));
     if (!parse_args(argc, argv, &o))
         return PLAYER_FAIL;
+    if (log_name != NULL)
+        log_open();
     if (o.bench)
         return player_bench();
     if (o.server == NULL) {

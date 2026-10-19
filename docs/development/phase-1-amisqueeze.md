@@ -488,6 +488,13 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   `LOG=<file>` option: every message written both to the console and to the file (AmigaDOS has no `tee`; today a
   redirection `>file` sends the messages to the file only), appended and flushed after each message like the
   console, usable from the default options too.
+- **`LOG=<file>` done** (2026-10-20, version 0.5, design agreed with the user): `LOG/K` in both platform layers;
+  `msg()` and `msg_raw()` also write to the file. On the Amiga: `MODE_READWRITE` then `Seek` to the end (created if
+  missing, a shared lock: `Type` reads it while amisqueeze runs), a start line with `DateStamp` and `DateToStr`
+  (`--- amisqueeze 0.5-dev (20.10.2026), started 20-Oct-26 01:24:25`), the file closed at the end. A log that cannot
+  be opened is said and amisqueeze goes on; a write error closes it, said in the window only. Fake server: two runs
+  appended to one file, the console without the start line, a log in a missing directory. WinUAE: two runs into
+  `RAM:amisqueeze.log`, read with `Type` while running, `RAM:nodir/...` (error 205) without stopping.
 - **Volume modes** (noted 2026-10-19, to decide when the step starts): an option such as `VOLUME=LMS|FIXED|MIXER`.
   `LMS` (default, as now): the gain sent by the server (`audg`) scales the samples, at a CPU cost on a slow 68020
   (1.6). `FIXED`: `audg` ignored, full output, no scaling; advertise `HasDigitalOut` in `HELO` so that LMS accepts

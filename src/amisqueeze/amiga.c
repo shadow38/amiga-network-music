@@ -2,7 +2,8 @@
  * amiga.c - amisqueeze on AmigaOS 3.x: entry point and the system services of platform.h
  *
  * Usage: amisqueeze [SERVER=<ip|name>] [PORT=3483] [NAME=<name>] [MAC=xx:xx:xx:xx:xx:xx] [OUTPUT=<file>]
- *                   [UNIT=<n>] [NOAUDIO] [SWAP] [FLAC=AUTO|ON|OFF] [MP3=AUTO|ON|OFF] [BENCH] [VERBOSE]
+ *                   [LOG=<file>] [UNIT=<n>] [NOAUDIO] [SWAP] [FLAC=AUTO|ON|OFF] [MP3=AUTO|ON|OFF] [BENCH]
+ *                   [VERBOSE]
  * Ctrl-C to quit. Default options come from ENV:amisqueeze.prefs (same syntax as the command line, which
  * takes precedence); see docs/user-guide.md.
  *
@@ -15,6 +16,7 @@
 #include <dos/dos.h>
 #include <dos/rdargs.h>
 #include <dos/var.h>
+#include <dos/datetime.h>
 #include <devices/timer.h>
 #include <devices/ahi.h>
 #include <proto/exec.h>
@@ -57,9 +59,10 @@ unsigned long __stack = 32768;
 #endif
 
 /* Used for the command line and for the prefs variable */
-#define TEMPLATE "SERVER,PORT/N/K,NAME/K,MAC/K,OUTPUT/K,UNIT/N/K,NOAUDIO/S,SWAP/S,FLAC/K,MP3/K,BENCH/S,VERBOSE/S"
-enum { ARG_SERVER, ARG_PORT, ARG_NAME, ARG_MAC, ARG_OUTPUT, ARG_UNIT, ARG_NOAUDIO, ARG_SWAP, ARG_FLAC, ARG_MP3,
-       ARG_BENCH, ARG_VERBOSE, ARG_COUNT };
+#define TEMPLATE "SERVER,PORT/N/K,NAME/K,MAC/K,OUTPUT/K,LOG/K,UNIT/N/K,NOAUDIO/S,SWAP/S,FLAC/K,MP3/K,BENCH/S," \
+                 "VERBOSE/S"
+enum { ARG_SERVER, ARG_PORT, ARG_NAME, ARG_MAC, ARG_OUTPUT, ARG_LOG, ARG_UNIT, ARG_NOAUDIO, ARG_SWAP, ARG_FLAC,
+       ARG_MP3, ARG_BENCH, ARG_VERBOSE, ARG_COUNT };
 
 /* Global variable ENV:amisqueeze.prefs (saved in ENVARC: to survive a reboot) */
 #define PREFS_VAR "amisqueeze.prefs"
@@ -89,7 +92,64 @@ static char prefs_line[512];
 /* Formatted message (static: the default stack is small) */
 static char msg_line[512];
 
+/* LOG option: every message also appended to this file (0 = none) */
+static BPTR log_file;
+static const char *log_name;
+
 /* ---- platform.h ---- */
+
+/* Appends to the LOG file, if any; a write error closes it (said in the window only), playback goes on */
+static void log_write(const void *buf, int len)
+{
+    LONG error;
+    int n;
+
+    if (log_file == 0 || len <= 0)
+        return;
+    if (Write(log_file, (APTR)buf, len) == len)
+        return;
+    error = IoErr();
+    Close(log_file);
+    log_file = 0;
+    n = snprintf(msg_line, sizeof(msg_line), "amisqueeze: cannot write to the log %s: error %ld, log closed\n",
+                 log_name, (long)error);
+    if (n > 0)
+        Write(Output(), msg_line, n < (int)sizeof(msg_line) ? n : (int)sizeof(msg_line) - 1);
+}
+
+/* LOG option: opens the file to append to (created if missing; readable by others while it runs), and writes a
+ * line marking the start of the run. A file that cannot be opened is said, and amisqueeze goes on without it. */
+static void log_open(const char *name)
+{
+    struct DateTime dt;
+    char date[LEN_DATSTRING], time[LEN_DATSTRING];
+    int n;
+
+    log_file = Open((STRPTR)name, MODE_READWRITE);
+    if (log_file == 0) {
+        msg("amisqueeze: cannot open the log %s: error %ld, going on without it\n", name, (long)IoErr());
+        return;
+    }
+    log_name = name;
+    Seek(log_file, 0, OFFSET_END);
+    memset(&dt, 0, sizeof(dt));
+    DateStamp(&dt.dat_Stamp);
+    dt.dat_Format = FORMAT_DOS;
+    dt.dat_StrDate = (STRPTR)date;
+    dt.dat_StrTime = (STRPTR)time;
+    date[0] = time[0] = '\0';
+    DateToStr(&dt);
+    n = snprintf(msg_line, sizeof(msg_line), "--- %s, started %s %s\n", version + 6, date, time);
+    if (n > 0)
+        log_write(msg_line, n < (int)sizeof(msg_line) ? n : (int)sizeof(msg_line) - 1);
+}
+
+static void log_close(void)
+{
+    if (log_file != 0)
+        Close(log_file);
+    log_file = 0;
+}
 
 void msg(const char *fmt, ...)
 {
@@ -105,11 +165,13 @@ void msg(const char *fmt, ...)
         len = sizeof(msg_line) - 1;
     /* Write() is unbuffered: the text reaches a redirected file at once */
     Write(Output(), msg_line, len);
+    log_write(msg_line, len);
 }
 
 void msg_raw(const void *buf, int len)
 {
     Write(Output(), (APTR)buf, len);
+    log_write(buf, len);
 }
 
 /* Monotonic clock (E-Clock, since boot): the system time can jump (clock set, SNTP) */
@@ -479,6 +541,8 @@ int main(void)
         if (args[i] == 0)
             args[i] = prefs[i];
 
+    if (args[ARG_LOG])
+        log_open((const char *)args[ARG_LOG]);
     memset(&o, 0, sizeof(o));
     if (args[ARG_VERBOSE])
         msg("%s\n", version + 6);           /* without "$VER: " */
@@ -527,6 +591,7 @@ int main(void)
 out_timer:
     CloseDevice((struct IORequest *)&timer_io);
 out_args:
+    log_close();                            /* before FreeArgs: its name lives in the arguments */
     FreeArgs(rda);
 out_prefs:
     if (prefs_rda != NULL) {

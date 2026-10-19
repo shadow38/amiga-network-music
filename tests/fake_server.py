@@ -691,6 +691,39 @@ def scenario_mp3_garbage():
           "nothing played, reported (%d bytes)" % len(out))
 
 
+def scenario_log():
+    print("-- LOG: two runs appended to the same file, each with its start line; a log that cannot be opened")
+    path = os.path.join(tempfile.mkdtemp(), "amisqueeze.log")
+    outs = []
+    for run in range(2):
+        server, proc, s = start_session("Log", "LOG=" + path)
+        try:
+            send_packet(s.conn, b"setd", b"\0Run%d" % run)
+            s.until("SETD")
+        finally:
+            rc, out = stop(proc)
+            server.close()
+        outs.append(out)
+    with open(path) as f:
+        log = f.read()
+    os.remove(path)
+    os.rmdir(os.path.dirname(path))
+    check(log.count("--- amisqueeze (host build), started ") == 2 and log.count("connected to the server") == 2
+          and "player name: Run0" in log and "player name: Run1" in log,
+          "both runs in the log, one after the other (%d lines)" % len(log.splitlines()))
+    check(all("connected to the server" in o and "--- amisqueeze" not in o for o in outs),
+          "the console shows the same messages, without the log's start line")
+    server, proc, s = start_session("Log", "LOG=/nonexistent/amisqueeze.log")
+    try:
+        send_packet(s.conn, b"setd", b"\0NoLog")
+        s.until("SETD")
+    finally:
+        rc, out = stop(proc)
+        server.close()
+    check(rc == 0 and "cannot open the log /nonexistent/amisqueeze.log" in out and "player name: NoLog" in out,
+          "a log that cannot be opened: said, the player runs anyway")
+
+
 def scenario_no_server():
     print("-- no server listening: retries, Ctrl-C during the wait")
     probe = socket.socket()
@@ -771,6 +804,7 @@ if __name__ == "__main__":
     scenario_mp3_continuous()
     scenario_mp3_gapless()
     scenario_mp3_garbage()
+    scenario_log()
     scenario_no_server()
     scenario_arguments()
     print("fake_server: %d failed" % failures)

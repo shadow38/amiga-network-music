@@ -95,7 +95,7 @@ From a Shell:
 amisqueeze SERVER=192.168.1.10
 ```
 
-Template: `SERVER,PORT/N/K,NAME/K,MAC/K,OUTPUT/K,UNIT/N/K,NOAUDIO/S,SWAP/S,FLAC/K,MP3/K,BENCH/S,VERBOSE/S`
+Template: `SERVER,PORT/N/K,NAME/K,MAC/K,OUTPUT/K,LOG/K,UNIT/N/K,NOAUDIO/S,SWAP/S,FLAC/K,MP3/K,BENCH/S,VERBOSE/S`
 
 | Option | Meaning | Default |
 |---|---|---|
@@ -104,6 +104,7 @@ Template: `SERVER,PORT/N/K,NAME/K,MAC/K,OUTPUT/K,UNIT/N/K,NOAUDIO/S,SWAP/S,FLAC/
 | `NAME` | player name shown in LMS | `Amiga` |
 | `MAC` | player identifier, `xx:xx:xx:xx:xx:xx` | derived from `NAME` |
 | `OUTPUT` | file receiving the audio as it is played, for checking (see [writing the audio to a file](#writing-the-audio-to-a-file-output)); no sound with it | none |
+| `LOG` | file receiving a copy of every message, appended to at each run (see below) | none |
 | `UNIT` | AHI unit to play through (0 to 3, set in the AHI preferences) | `0` |
 | `NOAUDIO` | no sound: the audio is received and consumed at the playing pace, as if played | off |
 | `SWAP` | swaps left and right (for an AHI driver that swaps them, see [sound](#sound-ahi)) | off |
@@ -115,6 +116,14 @@ Template: `SERVER,PORT/N/K,NAME/K,MAC/K,OUTPUT/K,UNIT/N/K,NOAUDIO/S,SWAP/S,FLAC/
 `Ctrl-C` stops amisqueeze. To keep the Shell free, run it in the background: `Run >NIL: amisqueeze`, or keep its
 messages in a file, written as they come: `Run amisqueeze >RAM:amisqueeze.log VERBOSE` (the redirection goes
 right after the command name). `Status` then shows its process number, and `Break <number>` stops it.
+
+**`LOG=<file>`** keeps a copy of every message in a file while they still appear in the window (a redirection
+`>file` sends them to the file only). Each run is appended to the file, after a line with the date and time, for
+instance `--- amisqueeze 0.5 (…), started 20-Oct-26 14:32:05`; the file is written as the messages come, so it can
+be read while amisqueeze runs (`Type`). It can be set in the default options too: a lasting trace of what
+happened, handy when something goes wrong. A log that cannot be opened (missing directory…) is said, and amisqueeze
+plays without it. The file only grows: without `VERBOSE` a run adds a few lines; avoid leaving `VERBOSE` on with
+`LOG` for good, and delete the file now and then.
 
 LMS identifies players by their MAC address. Without `MAC`, amisqueeze derives a stable one from the name: the same
 name always gives the same player in LMS, and two Amigas with different names show up as two players. The player
@@ -337,6 +346,8 @@ Rules:
 | `not enough memory for the audio blocks` | the 3 audio blocks (96 KB) cannot be allocated; amisqueeze stops |
 | `cannot create <file>: error N` | the `OUTPUT` file cannot be created (missing directory, write-protected disk); amisqueeze stops. On a volume that is not mounted, AmigaDOS first asks for it to be inserted; this message follows a Cancel |
 | `cannot write to <file>: error N, file closed` | writing the `OUTPUT` file failed (disk full…); playback goes on without the file |
+| `cannot open the log <file>: error N, going on without it` | the `LOG` file cannot be opened (missing directory, write-protected disk); amisqueeze plays without a log |
+| `cannot write to the log <file>: error N, log closed` | writing the `LOG` file failed (disk full…); playback goes on without the log |
 | `stream: cannot connect: error N` | the audio stream port of LMS (HTTP, 9000 by default) cannot be reached |
 | `stream: …`, `output: …` (with `VERBOSE`) | stream events: parameters, connection, headers received, end of the track data; output: AHI unit or virtual output, track started, buffer empty, end of playback, `OUTPUT` file opened and bytes written to it |
 

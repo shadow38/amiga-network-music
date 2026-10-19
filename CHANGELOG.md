@@ -7,6 +7,11 @@ are previews, tested in WinUAE only, not yet on a real Amiga.
 
 ## [Unreleased]
 
+### Added
+
+- **`LOG=<file>`**: a copy of every message in a file while they still appear in the window; each run is appended
+  after a line with its date and time. A log that cannot be opened or written does not stop the music.
+
 ## [0.4] - 2026-10-20
 
 ### Added
