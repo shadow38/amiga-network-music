@@ -18,6 +18,7 @@ SIGNALS = {
     "m16": (44100, 1, 16, 1.0),
     "s24": (44100, 2, 24, 1.0),
     "s16-48k": (48000, 2, 16, 1.0),
+    "bench": (44100, 2, 16, 0.3),       # built into amisqueeze (level 8) for the speed measurement
 }
 
 

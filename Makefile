@@ -29,7 +29,7 @@ amisqueeze_CFLAGS := -m68020 -Wno-pointer-sign -Werror=format -Ithird_party/dr_f
 
 # Third-party code (third_party/): built without our warnings, in a file of its own
 THIRD_PARTY := dr_flac
-$(foreach t,$(THIRD_PARTY),$(eval obj/amisqueeze/$(t).o: CFLAGS += -w))
+$(foreach t,$(THIRD_PARTY),$(eval obj/amisqueeze/$(t).o: CFLAGS += -w -O2))
 $(foreach t,$(THIRD_PARTY),$(eval obj-host/amisqueeze/$(t).o: HOST_CFLAGS += -w))
 
 # Host build: the portable core with posix.c, for tests on the developer's machine. AddressSanitizer and
@@ -70,7 +70,7 @@ endef
 $(foreach p,$(HOST_PROGS),$(eval $(call HOST_template,$(p))))
 
 # Unit tests: the portable core of amisqueeze on a fake platform (tests/stub_platform.c)
-TEST_CORE := player slimproto stream ring audio decoder flac dr_flac
+TEST_CORE := player slimproto stream ring audio decoder flac dr_flac bench bench_flac
 out-host/test_core: obj-host/tests/test_core.o obj-host/tests/stub_platform.o \
                     $(patsubst %,obj-host/amisqueeze/%.o,$(TEST_CORE))
 	@mkdir -p $(dir $@)

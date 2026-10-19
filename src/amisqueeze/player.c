@@ -38,6 +38,46 @@ int parse_mac(const char *s, uint8_t mac[6])
     return *s == '\0';
 }
 
+/* Case-insensitive comparison with an upper-case word */
+static int same_word(const char *s, const char *upper)
+{
+    for (; *s && *upper; s++, upper++)
+        if ((*s >= 'a' && *s <= 'z' ? *s - 'a' + 'A' : *s) != *upper)
+            return 0;
+    return *s == '\0' && *upper == '\0';
+}
+
+int parse_flac_mode(const char *s)
+{
+    if (same_word(s, "AUTO"))
+        return FLAC_AUTO;
+    if (same_word(s, "ON"))
+        return FLAC_ON;
+    if (same_word(s, "OFF"))
+        return FLAC_OFF;
+    return -1;
+}
+
+/* "3.2x real time" */
+static void print_speed(const char *what, uint32_t speed)
+{
+    msg("%s decoded at %lu.%lux real time", what, (unsigned long)(speed / 100), (unsigned long)(speed % 100 / 10));
+}
+
+int player_bench(void)
+{
+    uint32_t speed = flac_speed(5000);
+
+    if (speed == 0) {
+        msg("amisqueeze: the decoding speed cannot be measured\n");
+        return PLAYER_FAIL;
+    }
+    print_speed("FLAC level 8 (the slowest)", speed);
+    msg(": %s\n", speed >= FLAC_MIN_SPEED ? "FLAC=AUTO lets this machine decode FLAC" :
+        "FLAC=AUTO leaves FLAC to the server (converted to PCM)");
+    return PLAYER_OK;
+}
+
 /* Stable MAC address derived from the name: the server identifies players by their MAC.
  * 02:xx = locally administered address. 32-bit hash, so every platform derives the same MAC. */
 void mac_from_name(const char *name, uint8_t mac[6])
@@ -161,6 +201,17 @@ int player_main(struct player *p, const struct options *o)
             msg("output: AHI unit %d%s\n", o->unit, o->swap ? ", left and right swapped" : "");
     } else if (p->verbose)
         msg("output: virtual (no sound)\n");
+    /* What the server may send as is: decided once, at start-up (HELO) */
+    p->flac = o->flac == FLAC_ON;
+    if (o->flac == FLAC_AUTO) {
+        uint32_t speed = flac_speed(1000);
+
+        p->flac = speed >= FLAC_MIN_SPEED;
+        print_speed("FLAC: level 8", speed);
+        msg(": %s\n", p->flac ? "FLAC decoded here" : "FLAC converted to PCM by the server");
+    } else if (p->verbose)
+        msg("FLAC: %s (FLAC=%s)\n", p->flac ? "decoded here" : "converted to PCM by the server",
+            p->flac ? "ON" : "OFF");
     msg("player \"%s\" (%02X:%02X:%02X:%02X:%02X:%02X), server %s port %u\n",
         p->name, p->mac[0], p->mac[1], p->mac[2], p->mac[3], p->mac[4], p->mac[5],
         o->server, (unsigned)p->server_port);

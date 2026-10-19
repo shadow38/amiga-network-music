@@ -97,7 +97,8 @@ def scenario_session():
         check(body[0] == 12, "HELO device id 12 (squeezeplay)")
         check(body[2:8] == mac_from_name("Test"), "HELO MAC derived from the name")
         check(struct.unpack(">H", body[24:26])[0] == 0, "HELO first connection (no reconnection flag)")
-        check(body[36:].startswith(b"Model=squeezelite,") and body.endswith(b",pcm"), "HELO capabilities")
+        check(body[36:].startswith(b"Model=squeezelite,") and body.endswith(b",flc,pcm"),
+              "HELO capabilities (FLAC=AUTO on a fast machine: flc advertised)")
 
         send_packet(conn, b"strm", strm("t", replay_gain=0x12345678))
         opcode, body = read_packet(conn)
@@ -523,6 +524,30 @@ def scenario_arguments():
                           stderr=subprocess.STDOUT, text=True, timeout=TIMEOUT)
     check(proc.returncode == 20 and "cannot create /nonexistent/play.pcm" in proc.stdout,
           "OUTPUT file that cannot be created: error, exit code 20")
+    proc = subprocess.run([sys.argv[1], "SERVER=127.0.0.1", "FLAC=MAYBE"], stdout=subprocess.PIPE,
+                          stderr=subprocess.STDOUT, text=True, timeout=TIMEOUT)
+    check(proc.returncode == 20 and "expected AUTO, ON or OFF" in proc.stdout, "FLAC=MAYBE: error, exit code 20")
+    proc = subprocess.run([sys.argv[1], "BENCH"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
+                          timeout=TIMEOUT)
+    check(proc.returncode == 0 and "FLAC level 8 (the slowest) decoded at" in proc.stdout,
+          "BENCH without a server: the speed is printed (%s)" % proc.stdout.strip())
+
+
+def scenario_flac_off():
+    print("-- FLAC=OFF: only pcm advertised")
+    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    server.bind(("127.0.0.1", 0))
+    server.listen(1)
+    proc = start(server.getsockname()[1], "FLAC=OFF")
+    try:
+        conn = accept(server)
+        _, body = read_packet(conn)
+        check(body.endswith(b"MaxSampleRate=48000,pcm"), "HELO capabilities end with pcm, no flc")
+        conn.close()
+    finally:
+        stop(proc)
+        server.close()
 
 
 if __name__ == "__main__":
@@ -538,6 +563,7 @@ if __name__ == "__main__":
     scenario_control_lost()
     scenario_flac()
     scenario_flac_gapless()
+    scenario_flac_off()
     scenario_no_server()
     scenario_arguments()
     print("fake_server: %d failed" % failures)

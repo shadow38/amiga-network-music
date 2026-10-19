@@ -3,7 +3,7 @@
  * services of platform.h. Same behaviour as the Amiga build; the arguments use the same KEY=value syntax:
  *
  *   amisqueeze [SERVER=]<ip|name> [PORT=3483] [NAME=<name>] [MAC=xx:xx:xx:xx:xx:xx] [OUTPUT=<file>] [UNIT=<n>]
- *              [NOAUDIO] [SWAP] [VERBOSE]
+ *              [NOAUDIO] [SWAP] [FLAC=AUTO|ON|OFF] [BENCH] [VERBOSE]
  *
  * No audio output: always the virtual output (UNIT, NOAUDIO and SWAP are accepted for the same command lines).
  *
@@ -291,7 +291,12 @@ static int parse_args(int argc, char **argv, struct options *o)
                 o->output = v;
             else if (k == 4 && !strncasecmp(a, "UNIT", 4))
                 o->unit = atoi(v);
-            else {
+            else if (k == 4 && !strncasecmp(a, "FLAC", 4)) {
+                if ((o->flac = parse_flac_mode(v)) < 0) {
+                    msg("amisqueeze: FLAC=%s: expected AUTO, ON or OFF\n", v);
+                    return 0;
+                }
+            } else {
                 msg("amisqueeze: unknown option %s\n", a);
                 return 0;
             }
@@ -301,6 +306,8 @@ static int parse_args(int argc, char **argv, struct options *o)
             o->audio = 0;
         else if (!strcasecmp(a, "SWAP"))
             o->swap = 1;
+        else if (!strcasecmp(a, "BENCH"))
+            o->bench = 1;
         else if (o->server == NULL)
             o->server = a;
         else {
@@ -319,6 +326,8 @@ int main(int argc, char **argv)
     memset(&o, 0, sizeof(o));
     if (!parse_args(argc, argv, &o))
         return PLAYER_FAIL;
+    if (o.bench)
+        return player_bench();
     if (o.server == NULL) {
         msg("amisqueeze: no server: give SERVER=<ip|name>\n");
         return PLAYER_FAIL;
