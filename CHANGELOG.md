@@ -7,6 +7,8 @@ are previews, tested in WinUAE only, not yet on a real Amiga.
 
 ## [Unreleased]
 
+## [0.4] - 2026-10-20
+
 ### Added
 
 - **MP3 tracks follow each other without a gap** (`amisqueeze.fpu`): the silence the encoder adds at the start and
@@ -70,7 +72,8 @@ Lyrion Music Server (LMS) as a player and plays through AHI.
 - Options `SERVER`, `PORT`, `NAME`, `MAC`, `UNIT` (AHI unit), `SWAP`, `NOAUDIO`, `OUTPUT`, `VERBOSE`; default
   options in `ENV:amisqueeze.prefs`.
 
-[Unreleased]: https://github.com/shadow38/amiga-network-music/compare/amisqueeze-0.3...HEAD
+[Unreleased]: https://github.com/shadow38/amiga-network-music/compare/amisqueeze-0.4...HEAD
+[0.4]: https://github.com/shadow38/amiga-network-music/compare/amisqueeze-0.3...amisqueeze-0.4
 [0.3]: https://github.com/shadow38/amiga-network-music/compare/amisqueeze-0.2...amisqueeze-0.3
 [0.2]: https://github.com/shadow38/amiga-network-music/compare/amisqueeze-0.1...amisqueeze-0.2
 [0.1]: https://github.com/shadow38/amiga-network-music/releases/tag/amisqueeze-0.1

@@ -18,8 +18,8 @@ user-visible change under "Unreleased" as it is made, and give that part the ver
 a build in between is not taken for the last release. 0.1 = first release (2026-10-19: AHI audio, volume,
 robustness, tested in WinUAE only); 0.2 = second release (2026-10-19: FLAC decoded on fast Amigas, 8/24/32-bit
 PCM, tested in WinUAE only); 0.3 = third release (2026-10-20: MP3 decoded by `amisqueeze.fpu`, two executables,
-documentation reworked, tested in WinUAE only), followed by 0.4-dev; the first public push of 2026-10-18 had no
-tag. The number
+documentation reworked, tested in WinUAE only); 0.4 = fourth release (2026-10-20: MP3 without gaps, fixed volume
+through LMS, AHI mode warning), followed by 0.5-dev; the first public push of 2026-10-18 had no tag. The number
 appears in the two `$VER:` strings (`amiga.c`: `amisqueeze` and `amisqueeze.fpu`), in `Firmware=` of the `HELO`
 capabilities (`slimproto.c`) and in the user guide.
 
@@ -65,10 +65,10 @@ Step 1.7a (8, 24 and 32-bit samples converted to 16 bits for AHI; LMS strips WAV
 above 48 kHz not playable until FLAC decoding) done on 2026-10-19. Step 1.8 on the branch `decoding` (merged into
 `main` after each validated sub-step): 1.8a done (decoder stage, see below); 1.8b done (FLAC with dr_flac,
 `FLAC=AUTO|ON|OFF`, `BENCH`); release 0.2 published on 2026-10-19, then 0.3-dev; 1.8c done on 2026-10-19 (MP3
-with minimp3 in `amisqueeze.fpu`, `MP3=AUTO|ON|OFF`); release 0.3 published on 2026-10-20, then 0.4-dev. Next
-releases (decided 2026-10-20, table in `docs/development/README.md`): 0.4 = 1.8d (MP3 without gaps), volume
-modes (done as LMS's fixed volume setting, `HasDigitalOut=1`), AHI mode warning; 0.5 = `LOG`, Workbench start;
-0.6 = server discovery with the real machine (1.9). Then the remote's study (2.0).
+with minimp3 in `amisqueeze.fpu`, `MP3=AUTO|ON|OFF`); release 0.3 published on 2026-10-20. Release 0.4 the same
+day (1.8d MP3 without gaps, the volume modes done as LMS's fixed volume setting with `HasDigitalOut=1`, the AHI
+mode warning), then 0.5-dev. Next releases (decided 2026-10-20, table in `docs/development/README.md`): 0.5 =
+`LOG`, Workbench start; 0.6 = server discovery with the real machine (1.9). Then the remote's study (2.0).
 Documentation review of 2026-10-19: points announced in the plan but neither done nor dropped are listed under
 "Open points" in `docs/development/README.md`, for the user to decide (never implement them unasked).
 

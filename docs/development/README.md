@@ -72,12 +72,13 @@ How to build and test: [CONTRIBUTING.md](../../CONTRIBUTING.md).
 | 2.12 remote: MPD | ⬜ idea, after Music Assistant |
 | 3.1 Licence and user documentation | 🔶 licence: MIT; user guide kept up to date |
 | 3.2 Aminet archive | ⬜ |
-| 3.3 Public versions | 🔶 0.1, 0.2, 0.3 published (tags, GitHub releases, changelog); CI: host tests |
+| 3.3 Public versions | 🔶 0.1 to 0.4 published (tags, GitHub releases, changelog); CI: host tests |
 | 3.4 Setup guides: minimal server, the Amiga on the network | ⬜ before 1.0 |
 
 Phase 0 moves forward as needed: a tooling step is done when a step of phase 1 or 2 needs it. Phases 1 and 2 can
-progress in parallel. Release 0.3 was published on 2026-10-20 (MP3 decoded by `amisqueeze.fpu`, two executables,
-documentation reworked; 0.2 on 2026-10-19: FLAC, 8/24/32-bit PCM).
+progress in parallel. Release 0.4 was published on 2026-10-20 (MP3 without gaps, fixed volume through LMS, AHI
+mode warning; 0.3 the same day: MP3 decoded by `amisqueeze.fpu`; 0.2 on 2026-10-19: FLAC, 8/24/32-bit PCM). Next:
+0.5.
 
 **Next releases** (decided with the user on 2026-10-20): what can be tested to the end from the development machine
 (host tests, WinUAE) comes first, what needs the real Amiga and a home network last.
