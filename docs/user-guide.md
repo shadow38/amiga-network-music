@@ -35,10 +35,34 @@ On the server:
 - Lyrion Music Server (tested with 9.1.1), reachable from the Amiga on TCP ports 3483 (players) and 9000 (audio
   streams; or whatever its HTTP port is: LMS tells the player which one);
 - for MP3 files, unless `amisqueeze.fpu` decodes them (see "FLAC and MP3" below): a conversion rule from MP3 to
-  raw PCM, see the [README](../README.md#lms-server). FLAC, WAV and AIFF are converted by LMS's default rules;
+  raw PCM, see [server setup](#server-setup). FLAC, WAV and AIFF are converted by LMS's default rules;
 - files above 48 kHz (88.2, 96, 192 kHz) play only when amisqueeze decodes FLAC itself (LMS then lowers their rate
   in FLAC); when the Amiga is too slow for that, LMS cannot lower their rate as it makes raw PCM, and reports
   "Couldn't create command line for flc playback" in its log.
+
+### Server setup
+
+Lyrion Music Server needs little for amisqueeze:
+
+- **Ports** reachable from the Amiga: 3483/tcp (players) and the web port, 9000/tcp by default, which also carries
+  the audio streams (LMS tells the player which one; set `HTTP_PORT` if you move it, e.g. in Docker).
+- **MP3 to PCM conversion**, only when amisqueeze does not decode MP3 itself: with `amisqueeze`, or with
+  `amisqueeze.fpu` on a CPU too slow for it (see "FLAC and MP3" below). LMS 9.1 converts FLAC, WAV and AIFF by its
+  default rules, but has **none for MP3** (regular players decode MP3 themselves): without one, its `server.log`
+  says "Couldn't create command line for mp3 playback" and the player receives nothing. Add this rule to a
+  `custom-convert.conf` file (in the LMS root directory or at the root of a plugins directory), then restart LMS:
+
+  ```
+  mp3 pcm * *
+  	# FT:{START=trim %s}
+  	[sox] -q -t mp3 $FILE$ -t raw -c 2 -2 -s - $START$
+  ```
+
+  It uses the `sox` program shipped with LMS, as its built-in `ogg pcm` rule does, but without `-r`: LMS tells the
+  player the file's own rate (forcing 44100 Hz would play 48 kHz files 9 % too fast). `FT:{START=trim %s}` lets
+  LMS start within a track (seeking).
+- **Music Assistant**: not tested yet. It offers no raw PCM output (its per-player output codecs are `flac`, the
+  default, `mp3`, `aac` and `wav`).
 
 ### Installation
 

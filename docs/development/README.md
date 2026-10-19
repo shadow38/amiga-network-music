@@ -10,6 +10,8 @@ success criterion and a way to check it.
 | 2 | amilms (working name, amiremote proposed): remote control for LMS, then Music Assistant (MPD: an idea) | [phase-2-amilms.md](phase-2-amilms.md) |
 | 3 | Release | [phase-3-release.md](phase-3-release.md) |
 
+How to build and test: [building.md](building.md).
+
 ## Method
 
 - **One step at a time.** The content and success criterion of a step are reviewed and agreed **before** writing
