@@ -12,7 +12,8 @@ our own: ask the user. A release = a Git tag `amisqueeze-<version>` + a GitHub R
 executables, `LICENSE`, `README.md`, the user guide) and short notes, made with the GitHub CLI once the user has
 approved the notes; the `$VER:` date is the release date. Between releases the number reads `<next>-dev`, so that
 a build in between is not taken for the last release. 0.1 = first release (2026-10-19: AHI audio, volume,
-robustness, tested in WinUAE only); the first public push of 2026-10-18 had no tag. The number appears in the
+robustness, tested in WinUAE only); 0.2 = second release (2026-10-19: FLAC decoded on fast Amigas, 8/24/32-bit
+PCM, tested in WinUAE only), followed by 0.3-dev; the first public push of 2026-10-18 had no tag. The number appears in the
 `$VER:` string (`amiga.c`), in `Firmware=` of the `HELO` capabilities (`slimproto.c`) and in the user guide.
 
 **Licence: MIT** (`LICENSE`, "Copyright (c) 2026 shadow38"), decided 2026-10-18. squeezelite and LMS are GPL:
@@ -33,10 +34,11 @@ Decided (2026-10-18): two programs in this repository, one `src/<prog>/` directo
 `src/common/`:
 
 - **amisqueeze**: slimproto player with AHI output, for LMS (Music Assistant speaks slimproto too; decided
-  2026-10-19: Music Assistant is tested only after version 0.2, see the plan);
+  2026-10-19: Music Assistant is tested only after version 0.2; 0.2 is out, when to start it is still to be
+  decided, see the plan);
 - **amilms** (working name; **amiremote** proposed, to be decided by study step 2.0): remote control, one
   portable core with two server back ends behind a common interface, LMS text CLI (TCP 9090) first, then the
-  Music Assistant API (JSON over WebSocket, token); a Shell front end first, then a GUI front end calling the same
+  Music Assistant API (JSON over WebSocket, token), an MPD back end noted as an idea (step 2.12); a Shell front end first, then a GUI front end calling the same
   core in the same program (not a GUI driving a CLI program). Decided 2026-10-19: study 2.0 (common interface, MA
   feasibility, name) before any amilms code. Track search is one of its main goals (step 2.4). For Music
   Assistant, the existing Home Assistant client ami2ha already offers basic control (play/pause, next, volume, no
@@ -51,11 +53,11 @@ MP3 and FLAC, Paula needs `SWAP` in WinUAE); rest of 1.4c measured the same day 
 load on the slow 68020 profile: 61-68 % with Paula, almost all of it AHI; 2-5 % with `NOAUDIO`). Step 1.4
 validated on 2026-10-19. Step 1.5 (volume from `audg`) validated on 2026-10-19. Step 1.6 (robustness) on
 2026-10-19: reconnection storm fixed (wait 5 s after a session shorter than 10 s), AHI memory corruption avoided
-(volume applied to the samples, see Pitfalls); validated on 2026-10-19. Release 0.1 published on 2026-10-19,
-then 0.2-dev. Step 1.7a (8, 24 and 32-bit samples converted to 16 bits for AHI; LMS strips WAV/AIFF headers, files
+(volume applied to the samples, see Pitfalls); validated on 2026-10-19. Release 0.1 published on 2026-10-19.
+Step 1.7a (8, 24 and 32-bit samples converted to 16 bits for AHI; LMS strips WAV/AIFF headers, files
 above 48 kHz not playable until FLAC decoding) done on 2026-10-19. Step 1.8 on the branch `decoding` (merged into
 `main` after each validated sub-step): 1.8a done (decoder stage, see below); 1.8b done (FLAC with dr_flac,
-`FLAC=AUTO|ON|OFF`, `BENCH`); 1.8c done on 2026-10-19 (MP3 with minimp3 in `amisqueeze.fpu`, `MP3=AUTO|ON|OFF`).
+`FLAC=AUTO|ON|OFF`, `BENCH`); release 0.2 published on 2026-10-19, then 0.3-dev; 1.8c done on 2026-10-19 (MP3 with minimp3 in `amisqueeze.fpu`, `MP3=AUTO|ON|OFF`).
 Next: 1.9 (real machine) or 1.10, to agree with the user.
 
 Step 1.8c (mp3.c, minimp3.c, `amisqueeze.fpu`): two Amiga executables from the same sources, `amisqueeze`

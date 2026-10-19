@@ -7,7 +7,7 @@ success criterion and a way to check it.
 |---|---|---|
 | 0 | Tooling and test environment | [phase-0-tooling.md](phase-0-tooling.md) |
 | 1 | amisqueeze: slimproto player with AHI output | [phase-1-amisqueeze.md](phase-1-amisqueeze.md) |
-| 2 | amilms (working name, amiremote proposed): remote control for LMS, then Music Assistant | [phase-2-amilms.md](phase-2-amilms.md) |
+| 2 | amilms (working name, amiremote proposed): remote control for LMS, then Music Assistant (MPD: an idea) | [phase-2-amilms.md](phase-2-amilms.md) |
 | 3 | Release | [phase-3-release.md](phase-3-release.md) |
 
 ## Method
@@ -60,13 +60,35 @@ success criterion and a way to check it.
 | 1.7b amisqueeze: Music Assistant | ⬜ after version 0.2 |
 | 1.8 amisqueeze: local decoding (FLAC, then MP3) | ✅ 2026-10-19 (FLAC; MP3 in `amisqueeze.fpu`) |
 | 1.9 to 1.10 | ⬜ |
+| 1.11 amisqueeze: direct Paula output, without AHI | ⬜ idea (CPU load on a slow 68020) |
 | 0.9 Test Music Assistant server | ⬜ after version 0.2 |
 | 2.0 remote: study (common interface, Music Assistant feasibility, name) | ⬜ before any amilms code |
 | 2.1 to 2.7 remote: LMS | ⬜ |
 | 2.8 to 2.11 remote: Music Assistant | ⬜ after version 0.2 |
+| 2.12 remote: MPD | ⬜ idea, after Music Assistant |
 | 3.1 Licence and user documentation | 🔶 licence: MIT |
 | 3.2 to 3.3 release | ⬜ |
+| 3.4 Setup guides: minimal server, the Amiga on the network | ⬜ before 1.0 |
 
 Phase 0 moves forward as needed: a tooling step is done when a step of phase 1 or 2 needs it. Phases 1 and 2 can
-progress in parallel; the current priority is amisqueeze for LMS towards version 0.2 (1.7a, then 1.8), Music
-Assistant coming after 0.2 (decided 2026-10-19).
+progress in parallel. Release 0.2 was published on 2026-10-19 (FLAC decoded on fast Amigas, 8/24/32-bit PCM); the
+current priority is amisqueeze for LMS towards version 0.3: MP3 is done (1.8c, 2026-10-19), next the real machine
+(1.9) or the finishing touches (1.10), to agree with the user.
+Music Assistant (0.9, 1.7b, 2.8 to 2.11) was put after 0.2 (decided 2026-10-19): it is no longer waiting on a
+release, when to start it is still to be decided.
+
+## Ideas outside the phases (noted 2026-10-19)
+
+Projects of their own, related to this one, not planned: to be studied (and their existence checked) if one day
+they are taken up.
+
+- **Amiga modules in the server**: play tracker music (MOD, MED, etc.) through LMS or Music Assistant on every
+  player in the house, e.g. a conversion rule with `openmpt123` or a server plugin. To check first: what LMS and
+  Music Assistant already do with these files.
+- **A network AHI driver**: an AHI audio mode that sends the Amiga's sound to the network (Snapcast, an HTTP stream
+  that LMS can play) instead of a sound chip, so that every AHI program (players, trackers) plays on the house's
+  speakers. Limit: games and demos drive Paula directly, not AHI. To check first: whether such a driver exists.
+- **A GitHub wiki for users' contributions**: what users bring and the developer alone cannot produce: a
+  compatibility list (machines, network cards, TCP/IP stacks, AHI drivers), `BENCH` figures from machines not at
+  hand, a FAQ from real questions. Not for the documentation itself, which stays in `docs/` (3.4). To decide after
+  1.0 and a public announcement, depending on the feedback; editing restricted to collaborators.

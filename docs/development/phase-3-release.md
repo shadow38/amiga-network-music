@@ -21,3 +21,27 @@ Back to the [plan](README.md).
 
 - **Content**: Git version tags, release notes, public repository up to date.
 - **Criterion**: each published version matches a tag and release notes.
+
+## 3.4 Setup guides: server and network (noted 2026-10-19) ⬜
+
+- **Why**: amisqueeze is useless without a server, and many Amiga users have never installed LMS; putting the
+  Amiga on the network is often the real obstacle. Without these guides few users will get as far as the player,
+  whatever its quality. Before 1.0.
+- **Where** (decided 2026-10-19): everything in `docs/`, not in a GitHub wiki: one place that moves with the code
+  (versioned, reviewed by commit, in the release archive), and GitHub renders Mermaid diagrams in the repository's
+  Markdown files too. A summary page `docs/README.md` links the guides, short pages linked to each other, so that
+  `docs/` reads like a small site (GitHub Pages could later publish it as is, without copying anything).
+- **Diagrams** (Mermaid): the overall picture (sources, server, network, amisqueeze, AHI, Paula or a DAC, a phone
+  driving the server); the path of a track (format decoded by amisqueeze: sent as is; otherwise a conversion rule
+  on the server: converted to PCM; otherwise refused), with a table of the formats each executable decodes, on
+  which machine, and which rule is still needed (e.g. MP3 to PCM); network and ports (3483, the web port, 9090,
+  port mapping with Docker).
+- **Content**, two guides in `docs/`, linked from the user guide:
+  - **minimal server**: Lyrion Music Server (then Music Assistant, after 1.7b) on a Raspberry Pi, a NAS or in Docker,
+    with only what amisqueeze needs: ports (3483, the web port), the conversion rules still needed (e.g. MP3 to PCM
+    for an Amiga without FPU, which does not decode MP3 itself), adding music, checking that the Amiga's player shows up;
+  - **the Amiga on the network**: a TCP/IP stack (Roadshow, AmiTCP, AmiNetXDuo), the usual hardware (PCMCIA network
+    card on an A1200, network on accelerators or a PiStorm), checking the connection (`ping`, server reachable),
+    then AHI (Paula or a sound card's driver), ending with amisqueeze started and heard.
+- **Criterion**: a user who does not know the project goes, with the guides alone, from a fresh server and a
+  networked Amiga without amisqueeze to music playing; checked at least once in WinUAE on a clean installation.
