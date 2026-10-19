@@ -1,0 +1,17 @@
+# Host tests on each push and pull request (plan step 3.3): the portable core built natively with AddressSanitizer
+# and UBSan, its unit tests, then the fake server's scenarios against the host build ("make test" in README.md).
+# The Amiga build is not done here yet (planned before 1.0).
+name: tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  host:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Host build, unit tests, fake server scenarios
+        run: make test

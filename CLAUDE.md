@@ -159,7 +159,10 @@ With `flc` and `mp3` advertised, LMS sends FLAC and MP3 files as they are (forma
   `make test` (`tests/test_core.c` on `tests/stub_platform.c`, then `tests/fake_server.py` against
   `out-host/amisqueeze`; needs a native compiler and python3, no LMS). Run `make test` after every change to the
   core; extend the tests with each step (1.2: stream scenarios in the fake server). The Amiga build is still
-  checked in WinUAE (different platform layer).
+  checked in WinUAE (different platform layer). GitHub Actions runs `make test` on each push
+  (`.github/workflows/tests.yml`, Ubuntu 24.04, decided 2026-10-19): after a push, check the run (`gh run list`,
+  `gh run watch`); the tests use real time (playback pacing, reconnection delays), so a slow runner could make one
+  fail: rerun before suspecting the code, and say so.
 - **VS Code**: open each repository on its own (task names are the same everywhere, shortcuts can target them by
   name); extensions `prb28.amiga-assembly`, `ms-vscode.cpptools` and `spencerwmiles.vscode-task-buttons`.
 - **WinUAE** 6.0; Kickstart ROMs are not versioned (licensed). No test configuration in the repository yet (plan

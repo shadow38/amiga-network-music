@@ -1,5 +1,7 @@
 # amiga-network-music
 
+[![tests](https://github.com/shadow38/amiga-network-music/actions/workflows/tests.yml/badge.svg)](https://github.com/shadow38/amiga-network-music/actions/workflows/tests.yml)
+
 Network music for classic Amiga (AmigaOS 3.x, 68020+), built around Lyrion Music Server (LMS):
 
 - **amisqueeze**: turns the Amiga into a Squeezebox player. Like squeezelite on a PC, it speaks slimproto, the
@@ -91,6 +93,7 @@ obj/, out/            Amiga objects and executables (generated; obj/amisqueeze-f
 obj-host/, out-host/  host objects and executables (generated)
 .sdk/                 copy of the toolchain headers, for IntelliSense (generated)
 .vscode/              tasks (build, clean, headers) and IntelliSense configuration
+.github/workflows/    continuous integration: make test on GitHub (tests.yml)
 docs/user-guide.md    user guide
 docs/development/     development plan
 Makefile              build (m68k-amigaos-gcc must be in the PATH; HOSTCC for the host build)
@@ -161,6 +164,9 @@ make test HOSTCC=clang            # another native compiler (untested)
 disconnection and reconnection, Ctrl-C, argument errors; streams played, paused, stopped, held, cut; the `OUTPUT`
 file compared with what was sent; FLAC and MP3 test files decoded from `tests/data/`, back to back with raw PCM).
 The Amiga build must still be checked in WinUAE: the platform layers differ.
+
+GitHub runs `make test` on each push and pull request (`.github/workflows/tests.yml`, GitHub Actions, Ubuntu); the
+badge at the top of this page shows the result of the latest run. The Amiga build is not part of it yet.
 
 ## VS Code
 
