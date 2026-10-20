@@ -1,7 +1,7 @@
 # Amiga Network Music
 
-**Network music for classic Amigas**: the Amiga plays the music of a server on your local network, and is driven
-like any other player in the house.
+**Network music for classic Amigas**: the Amiga becomes a Squeezebox player, playing the music of a server on
+your local network and driven like any other player in the house.
 
 [![tests](https://github.com/shadow38/amiga-network-music/actions/workflows/tests.yml/badge.svg)](https://github.com/shadow38/amiga-network-music/actions/workflows/tests.yml)
 · AmigaOS 3.x · 68020 or better · sound through AHI · MIT licence
