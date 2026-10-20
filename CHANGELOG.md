@@ -7,6 +7,8 @@ are previews, tested in WinUAE only, not yet on a real Amiga.
 
 ## [Unreleased]
 
+## [0.6] - 2026-10-21
+
 ### Changed
 
 - User guide: the AmigaOS versions tried. Besides 3.2.3, amisqueeze was run with AmigaOS 3.0 and 3.1 ROMs from a
@@ -125,7 +127,8 @@ Lyrion Music Server (LMS) as a player and plays through AHI.
 - Options `SERVER`, `PORT`, `NAME`, `MAC`, `UNIT` (AHI unit), `SWAP`, `NOAUDIO`, `OUTPUT`, `VERBOSE`; default
   options in `ENV:amisqueeze.prefs`.
 
-[Unreleased]: https://github.com/shadow38/amiga-network-music/compare/amisqueeze-0.5...HEAD
+[Unreleased]: https://github.com/shadow38/amiga-network-music/compare/amisqueeze-0.6...HEAD
+[0.6]: https://github.com/shadow38/amiga-network-music/compare/amisqueeze-0.5...amisqueeze-0.6
 [0.5]: https://github.com/shadow38/amiga-network-music/compare/amisqueeze-0.4...amisqueeze-0.5
 [0.4]: https://github.com/shadow38/amiga-network-music/compare/amisqueeze-0.3...amisqueeze-0.4
 [0.3]: https://github.com/shadow38/amiga-network-music/compare/amisqueeze-0.2...amisqueeze-0.3

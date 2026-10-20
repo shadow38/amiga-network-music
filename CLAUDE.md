@@ -30,7 +30,9 @@ audio, volume, robustness, tested in WinUAE only); 0.2 = second release (2026-10
 8/24/32-bit PCM, tested in WinUAE only); 0.3 = third release (2026-10-20: MP3 decoded by `amisqueeze.fpu`, two
 executables, documentation reworked, tested in WinUAE only); 0.4 = fourth release (2026-10-20: MP3 without gaps,
 fixed volume through LMS, AHI mode warning); 0.5 = fifth release (2026-10-20: `LOG`, Workbench start, commodity,
-stack of `amisqueeze` and FLAC seek fixed), followed by 0.6-dev; the first public push of 2026-10-18 had no tag.
+stack of `amisqueeze` and FLAC seek fixed); 0.6 = sixth release (2026-10-21: the review fixes, troubleshooting,
+known limits and what has been tried in the user guide, ASCII documents in the zip, the zip's SHA-256 with the
+release; the first light review); the first public push of 2026-10-18 had no tag.
 The number appears in the two `$VER:` strings (`amiga.c`: `amisqueeze` and `amisqueeze.fpu`), in `Firmware=` of the
 `HELO` capabilities (`slimproto.c`) and in the user guide.
 

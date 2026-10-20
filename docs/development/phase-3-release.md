@@ -27,6 +27,7 @@ Back to the [plan](README.md).
   amisqueeze 0.3 (2026-10-20): the zip holds both executables (`amisqueeze`, `amisqueeze.fpu`), `CHANGELOG.md`
   (Keep a Changelog, at the root, since 0.3) and the user guide's images; the release notes end with a link to the
   changelog. amisqueeze 0.4 and 0.5 (2026-10-20): the same; since 0.5 the zip also holds the Workbench icons.
+  amisqueeze 0.6 (2026-10-21): the same, and the zip's SHA-256 in the notes and in a `.sha256` file.
 - **Continuous integration** (decided 2026-10-19): GitHub Actions, in two parts. First, done before 0.3: on each
   push, `make test` (host build, unit tests, fake server) on GitHub's Linux machine; the badge or the run's page
   tells whether a commit passes. Then, before 1.0: the Amiga build (the `amigadev/crosstools` image, the Docker mode of

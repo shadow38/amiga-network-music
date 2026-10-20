@@ -77,9 +77,11 @@ How to build and test: [CONTRIBUTING.md](../../CONTRIBUTING.md).
 | 3.5 Review before each release (method, review agents, rules inventory, checks) | ✅ 2026-10-20: 3.5a to 3.5c done; 3.5d stopped after the version strings check; 3.5e the release rule in `CLAUDE.md`, no review of HEAD (the next review is the one before 0.6); the tooling changes only when a review misses a real defect |
 
 Phase 0 moves forward as needed: a tooling step is done when a step of phase 1 or 2 needs it. Phases 1 and 2 can
-progress in parallel. Release 0.5 was published on 2026-10-20 (`LOG`, start from the Workbench, a commodity, the
-stack of `amisqueeze` and seeking in a FLAC fixed; 0.4 the same day: MP3 without gaps, fixed volume through LMS,
-AHI mode warning; 0.3 too: MP3 decoded by `amisqueeze.fpu`; 0.2 on 2026-10-19: FLAC, 8/24/32-bit PCM). Next: 0.6.
+progress in parallel. Release 0.6 was published on 2026-10-21 (the review fixes, the user guide's troubleshooting,
+known limits and what has been tried, the zip's SHA-256); 0.5 on 2026-10-20 (`LOG`, start from the Workbench, a
+commodity, the stack of `amisqueeze` and seeking in a FLAC fixed; 0.4 the same day: MP3 without gaps, fixed volume
+through LMS, AHI mode warning; 0.3 too: MP3 decoded by `amisqueeze.fpu`; 0.2 on 2026-10-19: FLAC, 8/24/32-bit
+PCM). Next: the real machine (1.9) with 0.6, then 0.7.
 
 **Next releases** (decided with the user on 2026-10-20): what can be tested to the end from the development machine
 (host tests, WinUAE) comes first, what needs the real Amiga and a home network last.
