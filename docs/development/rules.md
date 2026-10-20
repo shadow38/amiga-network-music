@@ -174,7 +174,7 @@ longer kept up to date.
 | E5 | The Docker way of building is untested (CLAUDE.md:171; CONTRIBUTING.md:96) | limit | – | a CI job using the image | – | – |
 | E6 | LMS 9.1 has no default `mp3 pcm` rule: hence local MP3 decoding; the rule documented for the builds that leave MP3 to the server (CLAUDE.md:134-136) | limit (LMS 9.1.1) | – | – | – | see G2 (the README) |
 | E7 | LMS's `strm s`: PCM little-endian (swapped for AHI), WAV/AIFF headers stripped, FLAC and MP3 sent as they are when `flc` and `mp3` are advertised; files above 48 kHz playable only once decoded locally (CLAUDE.md:65-66, :131-137) | limit (LMS 9.1.1, observed) | test: little-endian PCM, FLAC and MP3 files (`fake_server.py`); WAV headers and rates above 48 kHz untested | – | – | – |
-| E8 | Music Assistant: per-player output codecs `flac`, `mp3`, `aac`, `wav`; the solo playback path and the `strm` format for `wav` not verified (CLAUDE.md:160-162) | limit (not verified) | nothing | verify at step 1.7b | – | – |
+| E8 | Music Assistant: per-player output codecs `flac`, `mp3`, `aac`, `wav`; `strm s` without parameters, then `codc` and `cont` after the response headers; `wav` = a WAV with its header, 24 bits while announced as 16 bits (CLAUDE.md, Design choices) | limit (MA 2.10.7, observed 2026-10-21, step 1.7b) | test in WinUAE: `flac` works; `wav` noise; `mp3`, `aac` not tried | read the WAV header (to decide) | – | – |
 
 ## F. Speed and sound (measurements)
 

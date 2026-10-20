@@ -146,7 +146,7 @@ phase 1; the figures below are those of 0.6.
   `m68k-amigaos-gdb` (`target remote …:2345`) driven by VS Code (cpptools); build with `-g`.
 - **Criterion**: stops on a breakpoint in a function of amisqueeze (e.g. in `player.c`), variables readable.
 
-## 0.9 Test Music Assistant server ⬜ (after version 0.2)
+## 0.9 Test Music Assistant server 🔶 (players side done 2026-10-21; API token not yet)
 
 - **Goal**: a Music Assistant server reachable from the emulated Amiga, for the Music Assistant back end of the
   remote (2.8 to 2.11) and for amisqueeze as a Music Assistant player (1.7b).
@@ -156,3 +156,10 @@ phase 1; the figures below are those of 0.6.
   addresses, or one server at a time).
 - **Criterion**: web UI reachable, API answering with the token, squeezelite (0.3) playing a track from it.
 - **Prerequisite of**: 1.7b, 2.8.
+- **Done** (2026-10-21): Music Assistant 2.10.7 (official image `ghcr.io/music-assistant/server`) with the LMS
+  test library. Its slimproto port is moved on the host side, so both servers run at once (amisqueeze `PORT=`).
+  By default the stream server publishes its own address in `strm`, which the emulated Amiga cannot reach: set
+  the published IP (Settings > System > Streams, advanced; `publish_ip`) to the address the Amiga reaches. Players
+  need the Squeezelite provider, added by hand; it also serves an LMS-like CLI (9090, no token), too limited to
+  start a library track: playback was started from the web UI. amisqueeze was tried instead of squeezelite (1.7b).
+  Not done: an API token (needed by 2.8).

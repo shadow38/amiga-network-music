@@ -54,8 +54,8 @@ Decided (2026-10-18): two programs in this repository, one `src/<prog>/` directo
 `src/common/` (to create with amilms; none yet):
 
 - **amisqueeze**: slimproto player with AHI output, for LMS (Music Assistant speaks slimproto too; decided
-  2026-10-19: Music Assistant is tested only after version 0.2; 0.2 is out, when to start it is still to be
-  decided, see the plan);
+  2026-10-19: Music Assistant is tested only after version 0.2; first tried on 2026-10-21, plan step 1.7b: FLAC
+  works, `wav` does not yet);
 - **amilms** (working name; **amiremote** proposed, to be decided by study step 2.0): remote control, one
   portable core with two server back ends behind a common interface, LMS text CLI (TCP 9090) first, then the
   Music Assistant API (JSON over WebSocket, token), an MPD back end noted as an idea (step 2.12); a Shell front
@@ -83,9 +83,11 @@ same day (1.8d MP3 without gaps, the volume modes done as LMS's fixed volume set
 AHI mode warning). Release 0.5 the same day (`LOG`, Workbench start with icons and ToolTypes, a commodity, the
 stack of `amisqueeze` and FLAC seek fixed, the outside review's points: see "Outside review" in
 `docs/development/README.md`), then 0.6-dev. Next releases (decided 2026-10-20, table in
-`docs/development/README.md`; changed the same day): 0.6 = the fixes from the review reports; then the real
-machine tried with 0.6 (1.9); 0.7 = what it shows, internet radios' metadata (ICY), server discovery. Then the
-remote's study (2.0).
+`docs/development/README.md`; changed the same day, and again on 2026-10-21): 0.6 = the fixes from the review
+reports; 0.7 = Music Assistant (1.7b: the WAV header, the other codecs, a user guide part), with the findings
+moved from the 0.6 review, the outside reading's remarks and `architecture.md`; 0.8 = the real machine (1.9,
+tried with 0.7, LMS and Music Assistant) and what it shows; 0.9 = internet radios' metadata (ICY), server
+discovery. Then the remote's study (2.0).
 Documentation review of 2026-10-19: points announced in the plan but neither done nor dropped are listed under
 "Open points" in `docs/development/README.md`, for the user to decide (never implement them unasked).
 
@@ -173,8 +175,10 @@ With `flc` and `mp3` advertised, LMS sends FLAC and MP3 files as they are (forma
   `msg_raw()` and the `LOG` file (decided 2026-10-20, review of 0.5). Cast 32-bit values to the type the
   specifier names (`(unsigned long)` with `%lX`); `%c` for chars (not `%lc`).
 - Music Assistant: per-player output codecs `flac` (default), `mp3`, `aac`, `wav` (seen in `constants.py`,
-  `CONF_ENTRY_OUTPUT_CODEC`); not verified yet: the solo playback path (`play_media`) and the `strm` format sent for
-  `wav` (explicit values, or `?` plus header parsing).
+  `CONF_ENTRY_OUTPUT_CODEC`); everything transcoded to that codec. Observed with MA 2.10.7 (2026-10-21, step
+  1.7b): `strm s` without parameters, autostart 2/3, then `codc` and `cont` after the response headers (ignored
+  by amisqueeze; fine with FLAC); `wav` = a WAV with its header, 24 bits while `strm` and `codc` say 16 bits: to
+  play it, read the WAV header (not done, when to decide).
 
 ## Toolchain
 

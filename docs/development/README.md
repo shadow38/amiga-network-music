@@ -59,13 +59,13 @@ How to build and test: [CONTRIBUTING.md](../../CONTRIBUTING.md).
 | 1.5 amisqueeze: commands and volume | ✅ 2026-10-19 |
 | 1.6 amisqueeze: robustness | ✅ 2026-10-19 |
 | 1.7a amisqueeze: other PCM formats (LMS) | ✅ 2026-10-19 |
-| 1.7b amisqueeze: Music Assistant | ⬜ after version 0.2 |
+| 1.7b amisqueeze: Music Assistant | 🔶 first test 2026-10-21: FLAC works; `wav` sends a 24-bit WAV announced as 16 bits (WAV header to read, version 0.7) |
 | 1.8 amisqueeze: local decoding (FLAC, then MP3) | ✅ 2026-10-19 (FLAC; MP3 in `amisqueeze.fpu`) |
 | 1.8d amisqueeze: MP3 without gaps between tracks | ✅ 2026-10-20 (version 0.4) |
-| 1.9 amisqueeze: real machine | ⬜ tried with 0.6, before 0.7 |
-| 1.10 amisqueeze: finishing touches | 🔶 the parts of 0.4 and 0.5 done (fixed volume, AHI mode warning, `LOG`, Workbench start); server discovery in 0.7 |
+| 1.9 amisqueeze: real machine | ⬜ tried with 0.7, release 0.8 |
+| 1.10 amisqueeze: finishing touches | 🔶 the parts of 0.4 and 0.5 done (fixed volume, AHI mode warning, `LOG`, Workbench start); server discovery in 0.9 |
 | 1.11 amisqueeze: direct Paula output, without AHI | ⬜ idea (CPU load on a slow 68020) |
-| 0.9 Test Music Assistant server | ⬜ after version 0.2 |
+| 0.9 Test Music Assistant server | 🔶 2026-10-21: players side done (Music Assistant 2.10.7); API token not yet (2.8) |
 | 2.0 remote: study (common interface, Music Assistant feasibility, name) | ⬜ before any amilms code |
 | 2.1 to 2.7 remote: LMS | ⬜ |
 | 2.8 to 2.11 remote: Music Assistant | ⬜ after version 0.2 |
@@ -81,7 +81,8 @@ progress in parallel. Release 0.6 was published on 2026-10-21 (the review fixes,
 known limits and what has been tried, the zip's SHA-256); 0.5 on 2026-10-20 (`LOG`, start from the Workbench, a
 commodity, the stack of `amisqueeze` and seeking in a FLAC fixed; 0.4 the same day: MP3 without gaps, fixed volume
 through LMS, AHI mode warning; 0.3 too: MP3 decoded by `amisqueeze.fpu`; 0.2 on 2026-10-19: FLAC, 8/24/32-bit
-PCM). Next: the real machine (1.9) with 0.6, then 0.7.
+PCM). Next (decided with the user on 2026-10-21): 0.7 for Music Assistant, then the real machine (1.9) in 0.8,
+then 0.9.
 
 **Next releases** (decided with the user on 2026-10-20): what can be tested to the end from the development machine
 (host tests, WinUAE) comes first, what needs the real Amiga and a home network last.
@@ -91,7 +92,9 @@ PCM). Next: the real machine (1.9) with 0.6, then 0.7.
 | 0.4 | MP3 without gaps (1.8d), fixed volume through LMS's own setting, the AHI mode warning (1.10): all done | host and WinUAE |
 | 0.5 | `LOG=<file>`, start from the Workbench with an icon and ToolTypes, a commodity stopped from Exchange (1.10); seeking in a FLAC decoded on the Amiga fixed (1.8b); the outside review's fixes (stack of `amisqueeze`, tests): all done | host and WinUAE |
 | 0.6 | the fixes from the review reports (decided with the user on 2026-10-20): the open findings of the two acceptance reviews (documentation, the icon's `WINDOW` with `SMART`, a decoder that cannot start, a FLAC rate of 0, gaps in `check-saves.py`, guards without a test), the ICY limitation written in the user guide; then its release review (light, the first in real use) | host and WinUAE |
-| 0.7 | what the real machine (1.9, tried with 0.6) shows first; then internet radios' metadata (ICY, see below) and automatic server discovery (1.10), in the order the real tests make important; two findings moved from the 0.6 review: `strm f` stops the playing track (its R4, to confirm against LMS first), a test of the rejection side of the FLAC seek fix (its R3); from an outside reading of the code (2026-10-21): a stream request too long for amisqueeze reported to LMS as a failure (now dropped silently, LMS waits), `make dist` writing the zip's SHA-256 (done by hand at 0.6), and, if the real machine shows gaps while it works (1.9), more AHI blocks or a higher task priority; for developers (decided with the user on 2026-10-20, from an outside reading of the documentation), `docs/development/architecture.md`: the portable core and the platform layer, the data path from the network to AHI with a diagram, what of slimproto is handled and what is ignored, taken out of `CLAUDE.md` | host for the code; validated on the real machine and network |
+| 0.7 | Music Assistant (1.7b, decided with the user on 2026-10-21): the WAV header read at the start of a PCM stream (MA's `wav` codec, 24 bits announced as 16), the other output codecs tried (`mp3` with `amisqueeze.fpu`; a clear failure for a codec the build cannot play), a short Music Assistant part in the user guide; two findings moved from the 0.6 review: `strm f` stops the playing track (its R4, to confirm against LMS first), a test of the rejection side of the FLAC seek fix (its R3); from an outside reading of the code (2026-10-21): a stream request too long for amisqueeze reported to LMS as a failure (now dropped silently, LMS waits), `make dist` writing the zip's SHA-256 (done by hand at 0.6); for developers (decided with the user on 2026-10-20, from an outside reading of the documentation), `docs/development/architecture.md`: the portable core and the platform layer, the data path from the network to AHI with a diagram, what of slimproto is handled and what is ignored, taken out of `CLAUDE.md` | host and WinUAE, with LMS and Music Assistant |
+| 0.8 | the real machine (1.9, tried with 0.7, LMS and Music Assistant): what it shows; from the outside reading of the code, only if the real machine shows gaps while it works, more AHI blocks or a higher task priority | on the real machine and network |
+| 0.9 | internet radios' metadata (ICY, see below) and automatic server discovery (1.10), after the real network | host for the code; validated on the real machine and network |
 
 **0.6, the fixes** (open findings of [acceptance-0.3-0.4](reviews/acceptance-0.3-0.4.md) and
 [acceptance-0.4-0.5](reviews/acceptance-0.4-0.5.md), still there on 2026-10-20; one batch, each fix with its test):
@@ -118,14 +121,16 @@ PCM). Next: the real machine (1.9) with 0.6, then 0.7.
   the log was opened (R1, checked in WinUAE); a line of the skip decoder without a test (R2,
   `test_decoder_no_start_audio`).
 
-The real machine is tried with 0.6, the most robust version, and needs no discovery (`SERVER=` works on a real
-network): what it shows decides the order of 0.7. Server discovery waits for the real network because the test
+The real machine is tried with 0.7 (changed on 2026-10-21: until then with 0.6, before Music Assistant), so that
+one session covers both servers; it needs no discovery (`SERVER=` works on a real network): what it shows makes
+0.8. Server discovery waits for the real network because the test
 setup cannot check it: the test LMS runs in a container behind forwarded TCP ports, which a UDP broadcast from the
 emulated Amiga does not cross. Each step keeps the method:
 design agreed with the user, then code, tests, a line in `CHANGELOG.md`. The remote's study (2.0) comes after these
 releases, or alongside if the user wants it.
 Music Assistant (0.9, 1.7b, 2.8 to 2.11) was put after 0.2 (decided 2026-10-19): it is no longer waiting on a
-release, when to start it is still to be decided.
+release, when to start it is still to be decided. First tried on 2026-10-21 (0.9 and a first test of 1.7b, no
+code changed): FLAC works; the `wav` output codec needs amisqueeze to read the WAV header (in 0.7).
 
 ## Open points (review of 2026-10-19)
 
@@ -156,7 +161,7 @@ the track), the user guide's messages, the plan's statuses. Still open:
 - **Internet radios' metadata (ICY)**, checked in LMS's sources: for a radio played directly by the player
   (`amisqueeze.fpu` with an `http` MP3 radio), LMS adds 2 to autostart, asks the radio for `Icy-MetaData: 1`, then
   sends `cont` with the interval of the metadata blocks. amisqueeze plays at once and does not remove the blocks:
-  minimp3 would lose its sync at each one (cuts every second or so). **Planned for 0.7** (0.6 states the
+  minimp3 would lose its sync at each one (cuts every second or so). **Planned for 0.9** (0.6 states the
   limitation in the user guide): remove the blocks (the interval from `cont` or the `icy-metaint` header), a fake
   server scenario, a check with a real radio.
 - **Noted, for the user to decide** (no known failure):

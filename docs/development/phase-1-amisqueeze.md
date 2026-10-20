@@ -51,7 +51,7 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   - states: `STMc` (connected), `STMs` (playback started), `STMd` (end of data), `STMu` (buffer empty), buffer
     fullness and elapsed time in `STAT`;
   - `strm q`/`f`: stop and flush; autostart 2 and 3 (wait for `cont`, radio metadata) played as 0 and 1; `cont`
-    itself ignored ("not handled"): internet radios' metadata (ICY) is planned for 0.7.
+    itself ignored ("not handled"): internet radios' metadata (ICY) is planned for 0.9.
 - **Criterion**, measured on the server through its CLI, not on the web page (its progress bar animates by itself
   between refreshes, even when nothing plays): `waitingToPlay` goes back to 0 once the player reports the start;
   `<player> time ?` increases by about 60 s in 60 s (less than 1 s off);
@@ -279,7 +279,7 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   memory. Test configuration: `win32.iconified_pause=false`, `win32.inactive_pause=false` (an emulation paused
   by a stray key had stopped an earlier run).
 
-## 1.7 Other PCM formats and Music Assistant 🔶 (1.7a done, 1.7b after version 0.2)
+## 1.7 Other PCM formats and Music Assistant 🔶 (1.7a done, 1.7b first test 2026-10-21)
 
 - **Content**: WAV and AIFF headers (format `?` + header parsing, or explicit values); 48 kHz; mono; 8 and 24 bits
   if the server sends them. Music Assistant: the player's `wav` output codec (MA offers no raw PCM); check what MA
@@ -305,6 +305,36 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   first block, a pause in a 24-bit block, a gapless 16-bit to 24-bit boundary (328 checks). WinUAE (Paula):
   seven test tones (WAV 16, FLAC 24, FLAC mono, WAV 24, WAV 8, AIFF, FLAC 16) in one playlist, 70 s in 70.4 s,
   no `STMo`; heard by the user: same pitch and level, boundaries not noticeable.
+- **1.7b, first test** (2026-10-21, amisqueeze 0.6, Music Assistant 2.10.7 with its Squeezelite provider, test
+  server of 0.9; WinUAE JIT + FPU, `amisqueeze.fpu`, Toccata; playback started from the web UI; read alongside its
+  slimproto library, aioslimproto). No code changed.
+  - **Output codec `flac` (the default): works.** The player shows up (model `squeezeplay`, model name
+    AmiSqueeze, its name asked with `setd`). A library MP3 arrives as FLAC (MA transcodes everything to the
+    player's output codec). Heard by the user: playback, pause and resume (`strm p`, `strm u`), seek (`strm f`,
+    `strm q`, then a new `strm s` whose stream starts at the position: a whole FLAC with its header), three
+    gapless MP3s (`STMd`, then the next `strm s` with autostart 3, appended to the buffer: no gap), end of the
+    queue (`STMu`).
+  - **How MA starts a stream, unlike LMS**: `strm s` without the stream's parameters (`f????`) and autostart 2 or
+    3 (wait for `cont`); after the HTTP response headers (`RESP`), it sends `codc` (the codec, from the
+    response's content type) and then `cont` (the player holds the body back until then). amisqueeze ignores
+    both (`codc`/`cont not handled`), reads the body at once and treats autostart 2/3 as 0/1; MA then sends
+    `strm u`, and playback starts. Harmless with FLAC (the decoder reads everything from the stream). The request:
+    `GET /single/<session>/<mac>/<id>/<mac>.flac`, with `Range: bytes=0-` and a VLC user agent. Also received
+    and ignored: `vers`, `aude`, `grfb`, `grfe`.
+  - **Volume**: the same SqueezePlay curve as LMS for a software player (-74 dB); at each connection `audg` 50
+    (aioslimproto's default), then the volume MA keeps for the player: 20 for a new player (-44.4 dB, 0.6 % of
+    full amplitude, which the player reports as such), then whatever the user set. Not a defect.
+  - **Output codec `wav`** (the slow Amiga's case: no FLAC fast enough, no MP3 without FPU): **loud noise**.
+    `strm s` (and `codc`) announce PCM 16 bits, 44.1 kHz, stereo, little-endian, but the stream is a **24-bit
+    WAV**: `WAVE_FORMAT_EXTENSIBLE`, 2 channels, 44100 Hz, 6 bytes per frame, a 102-byte header (`fmt ` of 40
+    bytes, a `LIST` chunk, `data` of size `FFFFFFFF`). amisqueeze plays it as 16-bit samples, header included.
+    No setting forces 16 bits: the provider declares 16 and 24 bits for every slimproto player (up to its
+    `MaxSampleRate`), and `codc` comes from the content type, without parameters, so its 16 bits / 44.1 kHz are
+    defaults. Hence: **amisqueeze must read a WAV header at the start of a PCM stream** (as squeezelite does),
+    the "header parsing" foreseen in the content of 1.7; the 24-bit conversion already exists (1.7a). In version
+    0.7 (decided with the user on 2026-10-21), designed with the user first.
+  - Not tried: output codecs `mp3` and `aac`, radios, groups of players, an MA server elsewhere than the test
+    one.
 
 ## 1.8 Local decoding: FLAC, then MP3 ✅
 
@@ -481,10 +511,10 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   by the user in WinUAE (68020 + 68882, JIT, Toccata): a 12 s glide cut into three MP3s, with mini gaps from 0.3
   (12.9 s) and seamless now (12.3 s).
 
-## 1.9 Real machine ⬜ (tried with version 0.6, before 0.7)
+## 1.9 Real machine ⬜ (tried with version 0.7, release 0.8)
 
 - **Content**: both kinds of target with a TCP/IP stack (AmiNetXDuo or Roadshow) and an LMS server reachable
-  from the local network: a PiStorm with Emu68, sound through its own AHI outputs (I2S DAC of the PiStorm32-lite
+  from the local network, then a Music Assistant server (decided 2026-10-21: one session for both servers): a PiStorm with Emu68, sound through its own AHI outputs (I2S DAC of the PiStorm32-lite
   FPGA firmware, announced, to check; HDMI with `emu68-hdmi-audio` on a Pi 4) or Paula; a 68020 accelerator
   without FPU, sound through Paula.
 - **Criterion**: the criteria of 1.4 to 1.6 met on the real machine.
@@ -515,16 +545,17 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   Steps 1 and 4 (and the hour of step 6) are scripted in AmigaDOS: versions, memory before, while playing and
   after the stop, `BENCH`, the CPU left when idle and while playing, amisqueeze started from a 4 KB stack with its
   log, then the `STMo` lines and the clean stop; the logs on a disk, not in `RAM:`. The rest is by hand. If the
-  load does not fit: in 0.7, a lower rate asked of the server (`MaxSampleRate` in `HELO`, if LMS resamples for
+  load does not fit: in 0.8, a lower rate asked of the server (`MaxSampleRate` in `HELO`, if LMS resamples for
   it: to check), or the direct Paula output (1.11).
 
-## 1.10 Finishing touches 🔶 (versions 0.4 to 0.7: the parts of 0.4 and 0.5 done)
+## 1.10 Finishing touches 🔶 (versions 0.4 to 0.9: the parts of 0.4 and 0.5 done)
 
 - **Split** (decided 2026-10-20, see the [plan](README.md)): **0.4** the volume modes (`LMS` and `FIXED`, done
   as LMS's own setting, see below; `MIXER` left for later) and the AHI mode warning; **0.5** `LOG=<file>` and
-  the start from the Workbench; **0.7** (moved from 0.6 on 2026-10-20, 0.6 being the review fixes) the automatic
-  server discovery, after the real machine (1.9), since the test setup cannot check a UDP broadcast. The `BUFFER`
-  option only if 1.9 shows a need. Each part is designed with the user when it starts.
+  the start from the Workbench; **0.9** (moved from 0.6 on 2026-10-20, 0.6 being the review fixes, then from 0.7
+  on 2026-10-21, 0.7 being Music Assistant and 0.8 the real machine) the automatic server discovery, after the
+  real machine (1.9), since the test setup cannot check a UDP broadcast. The `BUFFER` option only if 1.9 shows a
+  need. Each part is designed with the user when it starts.
 - **Content**: automatic server discovery (UDP broadcast on port 3483); start from the Workbench with an icon and
   ToolTypes (read with the same template; precedence: built-in defaults, `ENV:amisqueeze.prefs`, ToolTypes,
   command line), with a console window or quiet mode; running in the background (`Run`, or at startup);
