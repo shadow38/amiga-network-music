@@ -109,7 +109,9 @@ Back to the [plan](README.md).
     both, decided with the user on 2026-10-20: since 0.5, HEAD changed only documentation and review tooling);
   - **3.5c** the rules inventory: every rule, limit and measurement of `CLAUDE.md` and `CONTRIBUTING.md`, how it
     is enforced today (script, test, review, nothing), how it should be, and for a measurement its date, commit
-    and what it depends on;
+    and what it depends on. Done on 2026-10-20 ([rules.md](rules.md)): 88 entries in ten groups, with the findings of
+    the two acceptance reports linked to them; twelve candidates for 3.5d; twelve remarks (stale figures and
+    names, the scope of the ASCII rule, the `msg()` exception) left for the user to decide;
   - **3.5d** mechanical checks run by `make test`, proposed one by one (first candidates: version strings, every
     message in the user guide, ASCII-only sources, nothing specific to the developer's workstation);
   - **3.5e** the release rule in `CLAUDE.md`, then a review of HEAD against `amisqueeze-0.5`, after 3.5c and
