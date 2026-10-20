@@ -7,6 +7,12 @@ are previews, tested in WinUAE only, not yet on a real Amiga.
 
 ## [Unreleased]
 
+### Changed
+
+- User guide: the AmigaOS versions tried. Besides 3.2.3, amisqueeze was run with AmigaOS 3.0 and 3.1 ROMs from a
+  Shell, without AHI (in WinUAE): options, speed measure, connection, FLAC and MP3 with a seek, `LOG`. It even
+  starts with 2.04.
+
 ## [0.5] - 2026-10-20
 
 ### Added

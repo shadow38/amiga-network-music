@@ -30,7 +30,9 @@ The sound has been checked by ear in WinUAE, with Paula and with a 16-bit sound 
 
 On the Amiga:
 
-- AmigaOS 3.x, 68020 or better (from a plain 68020 accelerator to a PiStorm);
+- AmigaOS 3.x, 68020 or better (from a plain 68020 accelerator to a PiStorm). Tested with 3.2.3; also with 3.0
+  and 3.1 (Kickstart 39 and 40) from a Shell, without AHI; it even starts with 2.04 (Kickstart 37), the oldest
+  version it asks for;
 - about 1.1 MB of free memory (1 MB stream buffer, about 6 s of CD-quality audio), a little more for
   `amisqueeze.fpu` when it decodes MP3 (about 60 KB: its decoder and a larger stack); both set up the stack they
   need themselves, whatever the Shell's `Stack`;
