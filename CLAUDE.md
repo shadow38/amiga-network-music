@@ -238,6 +238,8 @@ With `flc` and `mp3` advertised, LMS sends FLAC and MP3 files as they are (forma
 - **Volume with Paula**: samples scaled down (low LMS volume) bring out Paula's noise through AHI (14 bits): a
   crackle at 50, gone at 100. Judge Paula's sound at volume 100.
 - Strings shown on the Amiga and files read by the Amiga: ASCII only (ISO-8859-1 on the Amiga), LF line endings.
+  The README and the user guide are among them, since they ship in the zip (decided 2026-10-21): `...`, `-`, `|`
+  rather than their typographic forms.
 - WinUAE syntax checked in `cfgfile.cpp`: `filesystem2=rw,DEVICE:Volume:path,bootpri`; `chipmem_size` in 512 KB
   units, `fastmem_size` in MB; networking emulation `bsdsocket_emu=true`.
 

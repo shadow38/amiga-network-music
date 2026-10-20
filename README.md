@@ -3,8 +3,8 @@
 **Network music for classic Amigas**: the Amiga becomes a Squeezebox player, playing the music of a server on
 your local network and driven like any other player in the house.
 
-[![tests](https://github.com/shadow38/amiga-network-music/actions/workflows/tests.yml/badge.svg)](https://github.com/shadow38/amiga-network-music/actions/workflows/tests.yml)
-· AmigaOS 3.x · 68020 or better · sound through AHI · MIT licence
+[![tests](https://github.com/shadow38/amiga-network-music/actions/workflows/tests.yml/badge.svg)](https://github.com/shadow38/amiga-network-music/actions/workflows/tests.yml) |
+AmigaOS 3.x | 68020 or better | sound through AHI | MIT licence
 
 ## How it works
 
@@ -64,7 +64,7 @@ a fast Amiga; otherwise the server sends raw PCM) and plays it through AHI.
    `SYS:Prefs/AHI` (with Paula: `Paula:14 bit stereo++`); without "++", the music plays on one side only. Where to
    get AHI and how to set it up: [sound](docs/user-guide.md#sound-ahi).
 4. **Start it**, with the address of the server:
-   - from the **Workbench**: select the icon, *Icons > Information…*, and in its ToolTypes turn
+   - from the **Workbench**: select the icon, *Icons > Information...*, and in its ToolTypes turn
      `(SERVER=192.168.1.10)` into your server's address (without the parentheses); then double-click the icon.
      A window shows its messages. Copied into `SYS:WBStartup`, it starts with the Amiga;
    - from a **Shell**:

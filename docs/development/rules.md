@@ -226,6 +226,10 @@ defect it would have caught again.
 
 ## Remarks to decide
 
+**Closed on 2026-10-21** (decided with the user, against over-quality): not to be processed, unless a review finds
+the defect again; G4 was decided the same day (the README and the user guide are files read by the Amiga, made
+ASCII in 0.6).
+
 What looks wrong or stale, left as it is (fixed in 0.6, the release of the review fixes: the stack figure, the
 stale names, the README for the `mp3 pcm` rule, the workstation tool, the zip's list; the line numbers are
 still those of `2802634`):

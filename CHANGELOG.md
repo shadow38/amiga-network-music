@@ -23,6 +23,8 @@ are previews, tested in WinUAE only, not yet on a real Amiga.
 
 ### Fixed
 
+- The README and the user guide of the archive are plain ASCII: their typographic dots, dashes and separators
+  showed as stray characters when read on the Amiga.
 - The example `WINDOW` ToolType of the icons now ends in `/SMART`, like the default window: without it, a window
   made from the example lost its text whenever it was uncovered.
 - A track whose decoder cannot start (not enough memory) is skipped, as the user guide says: until now, more of
