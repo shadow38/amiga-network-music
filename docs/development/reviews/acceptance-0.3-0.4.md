@@ -296,7 +296,8 @@ contradicts (50 list).
 ## 8. Decisions
 
 Acceptance test on a past release: these findings are carried to the review of HEAD (step 3.5e), where each is
-fixed through a plan step or accepted by the user.
+fixed through a plan step or accepted by the user. Their fate is recorded in the plan (`docs/development/README.md`, the
+0.6 list: fixed in 0.6, or moved to 0.7) and in the [0.6 review](0.6.md); the table below is left as it was.
 
 | Finding | Decision |
 |---|---|

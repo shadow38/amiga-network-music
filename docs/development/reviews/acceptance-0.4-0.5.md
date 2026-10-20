@@ -325,7 +325,8 @@ decoder** (score 75, before 0.5, to confirm)
 ## 8. Decisions
 
 Acceptance test on a past release: these findings are carried to the review of HEAD (step 3.5e), where each is
-fixed through a plan step or accepted by the user.
+fixed through a plan step or accepted by the user. Their fate is recorded in the plan (`docs/development/README.md`, the
+0.6 list: fixed in 0.6, or moved to 0.7) and in the [0.6 review](0.6.md); the table below is left as it was.
 
 Decided with the user on 2026-10-20, after section 9: the criterion of 3.5b is met for `0.4..0.5`; the method and
 the agents stay as they are (the FLAC rate of 0 left unrun is run-to-run variance against a rule the method already
