@@ -36,5 +36,7 @@ Answer every question, with evidence, even when the answer is "nothing found":
   (rate, channels, frame size equal to 0).
 - **S6.** Architecture: does the portable core stay free of platform dependencies? Which modules carry too many
   responsibilities for the next planned features?
+- **S7.** The comments of the files of your scope that the range touches: check every factual claim against the
+  code (principle A2).
 
 Return your report as the method describes.

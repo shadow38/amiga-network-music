@@ -29,12 +29,16 @@ Answer every question, with evidence, even when the answer is "nothing found":
   library's internals count as much as our own code.
 - **P3.** For each safety net (sanitizers, `make test`, CI, check scripts): what class of defect is it supposed to
   stop? Prove it with a planted defect in a throwaway worktree (principle A4). Read the default behaviour of each
-  tool in its documentation: "reports" is not the same as "fails".
+  tool in its documentation: "reports" is not the same as "fails". Release scripts are safety nets too (`make dist`
+  and every check run before a release): list each mistake they are meant to stop and plant one of each kind.
 - **P4.** Every resource opened (library, device, port, IORequest, memory, socket, file): is it closed on every
   path, including errors and Ctrl-C? Every asynchronous request: is it always collected before it is reused or
   freed?
-- **P5.** Every option and environment input: range, overflow, truncation, and what happens on an out-of-range
-  value.
-- **P6.** What does the CI compile and run, compared with what ships?
+- **P5.** Every input the program does not control: options, environment, preference files, and every value a
+  system or library call hands back (return codes, structures and each field read from them, lengths, counts,
+  lists, strings that may lack a terminator). For each: what is checked before use, range, overflow, truncation,
+  and what happens on an out-of-range, empty or failed value.
+- **P6.** What does the CI compile and run, compared with what ships? And how does it run: its triggers, the
+  rights its token gets, the secrets it can reach, the third-party code it pulls (actions and how they are pinned).
 
 Return your report as the method describes.

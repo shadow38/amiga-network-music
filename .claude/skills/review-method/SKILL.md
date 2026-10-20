@@ -16,6 +16,8 @@ wrong.
 - **A2. A claim without proof is not a fact.** The plan, the CHANGELOG, the user guide and the code comments make
   claims ("tested on X", "done", "handles Y", "measured Z"). Each one needs a proof you can open: file:line, a test
   function, a fake-server scenario, or a dated measurement. A claim that cannot be traced to a proof is a finding.
+  Code comments are claims too: a comment that states a size, a unit, a range, an invariant, an order or which
+  part of the program does something must match the code.
 - **A3. A measurement expires when what it measures changes.** For each limit or measurement recorded in
   `CLAUDE.md` (stack, memory, CPU load, timings), find the commit that recorded it (`git log -S`), then the later
   commits that changed what it depends on: call depth, local variables, newly linked code (`third_party/`
@@ -55,6 +57,15 @@ wrong.
 
 Only findings at 75 or more go in the main list. A finding that breaks an explicit rule of `CLAUDE.md` is at least
 75 by definition, even when it looks minor.
+
+A code comment proven false is 75 when it states a limit or an invariant that the code, or a later change, would
+rely on; 50 otherwise. In the user documentation (README, user guide), a statement proven false at the reviewed
+commit (a pointer to the wrong document, an option or a message described wrongly) is 75: a reader who follows it
+finds nothing.
+
+An inferred finding that the host build can settle (a unit test, a fake-server scenario, a crafted input file) is
+settled before it is scored: run it in your worktree, then report it proven or drop it. A finding stays inferred
+only when settling it needs the Amiga, an emulator, a server or hardware.
 
 ## Finding format (one block per finding)
 

@@ -90,8 +90,11 @@ Back to the [plan](README.md).
     found at 75 or more except a frame count of 0 (seen, scored 50, not run); missed: `gethostbyname()`'s result
     unchecked, the CI workflow's `permissions:`, two false comments; found in part: what `make dist` checks, the
     malformed-input tests; found beyond it: step 1.2's claim on `cont`, a FLAC rate of 0 stalling a track, gaps in
-    `check-saves.py`. Still to do: the seven method questions of the report (section 10, for the user to decide),
-    replays, `0.4..0.5` and HEAD;
+    `check-saves.py`. The seven method questions (section 10) decided with the user on 2026-10-20 and the method
+    and agents changed; a first replay the same day ran the old agent definitions (loaded when the session starts),
+    so it tested the method changes only (section 11): the pointer rule and the false-comment rule worked, the
+    frame count of 0 was not found in that run; found beyond: `strm f` stops the playing track. Still to do: a replay of `review-platform` and `review-tests-docs`
+    (and of `review-protocol-security` for S7) from a session started after the change, then `0.4..0.5` and HEAD;
   - **3.5c** the rules inventory: every rule, limit and measurement of `CLAUDE.md` and `CONTRIBUTING.md`, how it
     is enforced today (script, test, review, nothing), how it should be, and for a measurement its date, commit
     and what it depends on;

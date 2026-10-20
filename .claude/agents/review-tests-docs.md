@@ -27,7 +27,10 @@ Answer every question, with evidence, even when the answer is "nothing found":
 - **T3.** For each test hook or stub variable: is it set by at least one test? An unused hook is a sign of an
   untested path.
 - **T4.** Coverage of the portable core: which lines of the release diff are never executed by `make test`?
-- **T5.** Hostile input: which parsing functions have a test with truncated, oversized or out-of-range input?
+- **T5.** Hostile input: list yourself every check the portable core makes on what a server or a file sends
+  (lengths, counts, field values, header sizes, truncated data), reading `src/`, not the tests. For each check, name
+  the test that feeds it the failing value; where none does, remove the check in your worktree and see whether
+  `make test` turns red.
 - **T6.** Documentation: every option of the argument template; every message the program can print, with or
   without VERBOSE (inventory all of them from the source); every "X is in document Y" cross-reference; every link
   and anchor; the README status matching the release.

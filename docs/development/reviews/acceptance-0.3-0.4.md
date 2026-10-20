@@ -383,3 +383,97 @@ Whether the criterion is met is for the user to decide.
    which test feeds the failing value?
 7. Wrong cross-references in the user documentation (scored 50, fixed by the outside review): are they 50, or 75
    under CLAUDE.md:55-56?
+
+## 11. First replay, 2026-10-20: the method changes only
+
+### Decisions on the questions of section 10 (taken with the user, 2026-10-20)
+
+All seven accepted, worded as classes of defect rather than as the items missed, so that a replay is not handed
+its answer:
+
+| Question | Change | File |
+|---|---|---|
+| 1. Values handed back by system calls | P5 rewritten: every value a system or library call hands back (structures and each field read, lengths, counts, lists, strings without a terminator) checked before use | `review-platform.md` |
+| 2. CI | P6 completed: triggers, the rights its token gets, the secrets it can reach, the third-party code it pulls | `review-platform.md` |
+| 3. Release scripts | P3 completed: release scripts are safety nets, one planted mistake of each kind they should stop | `review-platform.md` |
+| 4. Comments | A2: code comments are claims; scoring: a false comment is 75 when it states a limit or invariant the code would rely on, 50 otherwise; new S7 (factual claims of the comments in the files the range touches) | `review-method`, `review-protocol-security.md` |
+| 5. Inferred but settleable | Scoring: an inferred finding the host build can settle is run before it is scored | `review-method` |
+| 6. Malformed input | T5 rewritten: list the core's checks on what a server or a file sends from `src/`, name the test that feeds each one its failing value, remove the untested ones | `review-tests-docs.md` |
+| 7. Wrong pointers in the user documentation | Scoring: a statement of the README or user guide proven false at the reviewed commit is 75 (the rule is new: CLAUDE.md:54-55 asks the guide to follow visible changes, not for correct pointers) | `review-method` |
+
+"Found" criteria, fixed before the replay: (1) the resolver's result used unchecked, at 50 or more; (2) the missing
+`permissions:` block, at 50 or more; (3) `make dist` checks the first `$VER:` only, at 50 or more (not "no script
+checks the four places"); (4) the `AUDIO_BLOCK_SIZE` comment shown false, at 50 or more; (5) the frame count of 0,
+proven by a run, at 75 or more; (6) at least two server-input checks shown untested by their removal, at 50 or
+more; (7) re-scored, no replay.
+
+### What ran
+
+- Same worktree, commit and prompt as the first pass (one change: "wrap up near 70 minutes" instead of 50; stop
+  rule 80 minutes), effort `high`.
+- **The agents ran their old definitions**: Claude Code loads `.claude/agents/` when the session starts, and the
+  definitions were edited during it; the agents' transcripts hold the old P5, T5 and S6 and no S7. Only the method
+  file, read from disk, was new. So this replay tests changes 4 (A2 and scoring part), 5 and 7 only; changes 1,
+  2, 3, 6 and S7 were not tested.
+- `review-platform` was stopped once this was seen (none of its questions had changed); `review-plan-compliance`
+  was not replayed (nothing in its scope changed).
+- `review-protocol-security`: 21 minutes. `review-tests-docs`: 35 minutes. Both baselines green (371 checks,
+  fake_server 0 failed); worktrees removed.
+- Blindness check: the transcripts show no read outside the tree, the method and the agents' own files, and no fact
+  that exists only after 0.4; as in the first pass, review-protocol-security fetched LMS 9.1 and squeezelite
+  sources from GitHub as a catalogue of what a server sends.
+
+### Results against the criteria
+
+| Question | Result |
+|---|---|
+| 4. False comment | **Found at 50** by review-protocol-security, from the method alone (S7 was not loaded): `player.h:119` "a multiple of every frame size", false for 24-bit frames (32768 % 6 = 2, % 3 = 2); scored 50 under the new rule, the code rounding the block down to whole frames (`stream.c:446-448`). The comment on where the AHI preferences are read (`audio.c`) was not found. |
+| 5. Frame count of 0 | **Not found**, not even at 50 this time: review-tests-docs lists "`left == 0` with frames still arriving" among the branches `make test` never reaches, without the consequence (a track that plays nothing). |
+| 7. Wrong pointers | **Met**: review-tests-docs scores `user-guide.md:3-4` ("how to build them" in the README) 75, citing the new rule; `CLAUDE.md:131` stays at 50 (not user documentation, consistent with the rule). |
+| 1, 2, 3, 6 | Not tested (old definitions). |
+
+### Findings, after verification (each cited line re-opened at `85ed34e`)
+
+Points of the first pass found again (first pass score -> this replay's score):
+
+- R3 (AHI mode check never run by `make test`): 100 -> 75.
+- R6 (`read_lame_header` branches unexercised): 90 -> 75.
+- R7 ("file cut short" test stops on a chunk boundary): 85 -> 75.
+- R8 (stale stack measurement): 80 -> 75, here as the 2 KB Shell check of step 1.4 not redone.
+- R11 and R15 (`cont`, autostart, ICY): 75 and 75 -> one finding at 75.
+- R13 (messages missing from the user guide): 75 -> 75.
+- R14 (FLAC rate 0 stalls the track): 75 -> **50**, although proven (60 s measured, no STMu): a proven defect that
+  stalls a track was scored 50.
+- R2, its second half (sanitizers blind to an overrun of `stream.request[1024]` into the next fields of
+  `struct player`): 90 merged (75 from this agent) -> 75: the same planted defect, now through its network trigger
+  (a `strm s` request over 1024 bytes with the bound at `stream.c:91-94` disabled: `make test` green, no ASan
+  report).
+- The pointer of `user-guide.md:3-4`: 50 -> 75 (rule 7).
+
+Scores moved down by one step for most points (100/90/85/80 -> 75); one run each way does not tell whether this is
+the method or the run.
+
+New at 75:
+
+- **N1. `strm f` stops the track that is playing** (`slimproto.c:242-245`: `case 'q': case 'f': stream_stop(p);`),
+  score 75, before 0.4. LMS sends `f` while playing to drop only the track being streamed (removing, inserting or
+  moving the next track, reshuffling; `StreamingController.pm`, `_FlushGetNext`); amisqueeze clears the ring and
+  stops the output, cutting the current track. Proven on the player side (a unit test in the agent's worktree:
+  0.7 s of track A left, `strm f`, output STOPPED, ring empty); the LMS side read in LMS 9.1, to confirm with a
+  real server (remove the next track during the last seconds of one). Not in the outside review.
+
+New in the 50 list: `serv` ignored ("switch server" does nothing); synchronisation unsupported and undocumented;
+server strings (the `setd` name) printed raw; the AHI preferences format parsed in the portable core; the
+"Firmware=" line and the four version places checked by no test (a planted `Firmware=0.3` stayed green);
+`scenario_mp3_seek_lms` does not see the header frame played as audio after a seek; the SNR around the MP3 cut
+asserted at 20 dB, not "the same" as the plan says.
+
+### Assessment
+
+The method changes worked where they were tested: rule 7 scored as decided, rule 4 found the comment without its
+question. The frame count of 0 was not found in this run (the first pass saw it at 50, this one did not see it):
+one run each way does not tell whether rule 5 failed or the run varied; R14, proven and scored 50, points the same
+way. Changes 1, 2, 3, 6 and S7 need a replay from a session started after the definitions were changed.
+
+Method and agents used: those committed with this section (the first pass used those of `c6413cf`); none of the
+agents read the saved diff of the change.
