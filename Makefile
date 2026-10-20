@@ -42,12 +42,14 @@ $(foreach t,$(THIRD_PARTY),$(eval obj/amisqueeze-fpu/$(t).o: CFLAGS += -w -O2))
 $(foreach t,$(THIRD_PARTY),$(eval obj-host/amisqueeze/$(t).o: HOST_CFLAGS += -w))
 
 # Host build: the portable core with posix.c, for tests on the developer's machine. AddressSanitizer and
-# UndefinedBehaviorSanitizer stop the program at the first memory error or undefined behaviour.
+# UndefinedBehaviorSanitizer stop the program at the first memory error or undefined behaviour (UBSan alone would
+# only report it and go on: -fno-sanitize-recover makes it stop, so that the tests fail).
 HOST_PROGS   := amisqueeze
 HOSTCC       ?= cc
-HOST_CFLAGS  := -O1 -g -Wall -Wextra -Werror=format -fno-omit-frame-pointer -fsanitize=address,undefined \
+SANITIZE     := -fsanitize=address,undefined -fno-sanitize-recover=all
+HOST_CFLAGS  := -O1 -g -Wall -Wextra -Werror=format -fno-omit-frame-pointer $(SANITIZE) \
                 -Ithird_party/dr_flac -Ithird_party/minimp3 -DAMISQUEEZE_MP3
-HOST_LDFLAGS := -fsanitize=address,undefined
+HOST_LDFLAGS := $(SANITIZE)
 
 amiga_srcs = $(filter-out src/$(1)/posix.c,$(wildcard src/$(1)/*.c))
 host_srcs  = $(filter-out src/$(1)/amiga.c,$(wildcard src/$(1)/*.c))
