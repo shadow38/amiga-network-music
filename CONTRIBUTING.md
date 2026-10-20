@@ -64,6 +64,9 @@ obj-host/, out-host/  host objects and executables (generated)
 .sdk/                 copy of the toolchain headers, for IntelliSense (generated)
 .vscode/              tasks (build, clean, headers) and IntelliSense configuration
 .github/workflows/    continuous integration: make test on GitHub (tests.yml)
+.claude/              the review before each release, for Claude Code (plan step 3.5): the method
+                      (skills/review-method), four review agents (agents/), the entry point
+                      (skills/release-review, /release-review <previous tag>)
 docs/user-guide.md    user guide
 docs/development/     development plan (roadmap, steps, design decisions)
 CONTRIBUTING.md       this page
