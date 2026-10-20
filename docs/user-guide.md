@@ -174,7 +174,7 @@ the background without a window. From a Shell script instead, add to `S:User-Sta
 
 amisqueeze is a **commodity**: while it runs, it shows in **Exchange** (`SYS:Tools/Commodities/Exchange`; once
 Exchange runs, Ctrl-Alt-Help brings its window back), the system's list of background programs, as "amisqueeze",
-"Network music player for LMS". To stop it, however it was started:
+"Squeezebox network music player". To stop it, however it was started:
 
 - in **Exchange**: select "amisqueeze", then **Remove**; this is the way to stop it when it runs without a window
   (`QUIET`);

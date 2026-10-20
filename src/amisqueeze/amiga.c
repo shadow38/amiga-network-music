@@ -470,7 +470,7 @@ static int cx_open(void)
     nb.nb_Version = NB_VERSION;
     nb.nb_Name = (STRPTR)"amisqueeze";
     nb.nb_Title = (STRPTR)(version + 6);   /* "amisqueeze 0.5 (20.10.2026)": within CBD_TITLELEN */
-    nb.nb_Descr = (STRPTR)"Network music player for LMS";
+    nb.nb_Descr = (STRPTR)"Squeezebox network music player";
     nb.nb_Unique = NBU_UNIQUE | NBU_NOTIFY;
     nb.nb_Port = cx_port;
     broker = CxBroker(&nb, &error);
