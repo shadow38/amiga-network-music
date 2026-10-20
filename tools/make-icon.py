@@ -23,7 +23,7 @@ TOOLTYPES = [
     "(UNIT=0)",
     "(LOG=RAM:amisqueeze.log)",
     "(QUIET)",
-    "(WINDOW=CON:0/20/640/120/amisqueeze/AUTO/CLOSE/WAIT)",
+    "(WINDOW=CON:0/20/640/120/amisqueeze/AUTO/CLOSE/WAIT/SMART)",
     "DONOTWAIT",
 ]
 

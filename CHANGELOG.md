@@ -17,6 +17,11 @@ are previews, tested in WinUAE only, not yet on a real Amiga.
 - User guide: a known limit, internet radios. Their metadata is not handled yet: an MP3 radio fetched by
   `amisqueeze.fpu` itself may cut regularly, with the message `cont not handled`.
 
+### Fixed
+
+- The example `WINDOW` ToolType of the icons now ends in `/SMART`, like the default window: without it, a window
+  made from the example lost its text whenever it was uncovered.
+
 ## [0.5] - 2026-10-20
 
 ### Added
