@@ -407,6 +407,15 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   the code yet: the start-up measure is pessimistic on such CPUs, never optimistic). There, LMS sends FLAC as is
   and five test tones (16 and 24 bits, mono, 48 and 96 kHz: LMS lowers 96 kHz to 48 in FLAC) play without
   `STMo`; heard by the user: a 48 kHz song and the 96 kHz tone, right. Executable: 114 KB. Next: 1.8c (MP3).
+  **Fixed on 2026-10-20** (found while taking the user guide's captures, never tested before): a seek in a FLAC
+  decoded here skipped the track (`not a FLAC stream`). For a seek, and when it resumes a track after the player
+  reconnects, LMS sends the file from a frame boundary (`findFrameBoundaries`) without its header (unlike MP3, no
+  `getInitialAudioBlock` for FLAC). `flac.c` now makes up a STREAMINFO from that first frame's header (rate,
+  channels, bits, block size; fails if the frame leaves its rate or bits to STREAMINFO) and opens dr_flac in strict
+  mode as before. `drflac_open_relaxed()` was ruled out: it takes the first 8 bytes as a metadata block header, then
+  looks for the next sync code (the first frame lost), and without CRC checks (`DR_FLAC_NO_CRC`) a sync inside the
+  audio data could be taken for a frame. Tests: five files sent from a frame in the middle, the rest of the track
+  byte for byte; in WinUAE, `time 60` and `time 150` play on, and so does a resume after a restart of amisqueeze.
 - **1.8c done** (2026-10-19, branch `decoding`), in three parts:
   - **`amisqueeze.fpu`**: the same sources built with `-m68881` (`AMISQUEEZE_FPU`, objects in
     `obj/amisqueeze-fpu/`), both executables in the release archive; `amisqueeze` is unchanged. It checks

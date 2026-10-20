@@ -474,6 +474,54 @@ def scenario_flac():
             print(out)
 
 
+def flac_frame(data, n):
+    """(offset, PCM frames per FLAC frame) of frame n of a test FLAC file (fixed block size, n < 128): a frame sync
+    whose header has the right frame number and CRC-8, past the metadata blocks"""
+    pos, last = 4, False
+    while not last:
+        last, size = data[pos] & 0x80, int.from_bytes(data[pos + 1:pos + 4], "big")
+        if data[pos] & 0x7f == 0:
+            block = int.from_bytes(data[pos + 6:pos + 8], "big")        # STREAMINFO: largest block
+        pos += 4 + size
+    while True:
+        pos = data.index(b"\xff\xf8", pos)
+        crc = 0
+        for b in data[pos:pos + 4] + bytes([n]):                        # header up to the frame number, here
+            crc ^= b
+            for _ in range(8):
+                crc = (crc << 1 ^ 0x07 if crc & 0x80 else crc << 1) & 0xFF
+        if data[pos + 4] == n and data[pos + 2] >> 4 not in (0, 6, 7) and data[pos + 2] & 15 in (9, 10) \
+                and data[pos + 5] == crc:
+            return pos, block
+        pos += 1
+
+
+def scenario_flac_seek():
+    print("-- FLAC seek as LMS sends it: the file from a frame in the middle, without its header: the rest of the track")
+    for name, signal, n in [("s16-l5.flac", "s16", 5), ("s16-l0.flac", "s16", 0), ("m16-l5.flac", "m16", 3),
+                            ("s24-l5.flac", "s24", 7), ("s16-48k-l5.flac", "s16-48k", 10)]:
+        file = flac_file(name)
+        offset, block = flac_frame(file, n)
+        path = os.path.join(tempfile.mkdtemp(), "play.pcm")
+        http = HttpServer(data=file[offset:], chunk=3000, pause=0.001)
+        http.start()
+        server, proc, s = start_session("FlacSeek", "OUTPUT=" + path)
+        try:
+            send_strm_flac(s, http)
+            s.until("STAT:STMd")
+            s.until("STAT:STMu", timeout=10)
+        finally:
+            rc, out = stop(proc)
+            server.close()
+        want = flac_data.expected(signal)[n * block * flac_data.SIGNALS[signal][1] * 2:]
+        data = read_output(path)
+        check(data == want and rc == 0 and "skipped" not in out,
+              "%s from frame %d: %d bytes, %d expected, first difference at %d"
+              % (name, n, len(data), len(want), first_difference(data, want)))
+        if data != want:
+            print(out)
+
+
 def scenario_flac_gapless():
     print("-- FLAC, FLAC, then raw PCM, back to back: each track complete and in place (the decoder reads ahead)")
     path = os.path.join(tempfile.mkdtemp(), "play.pcm")
@@ -795,6 +843,7 @@ if __name__ == "__main__":
     scenario_cut()
     scenario_control_lost()
     scenario_flac()
+    scenario_flac_seek()
     scenario_flac_gapless()
     scenario_flac_off()
     scenario_mp3()

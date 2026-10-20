@@ -17,6 +17,12 @@ are previews, tested in WinUAE only, not yet on a real Amiga.
 - **A commodity**: amisqueeze shows in Exchange, whose "Remove" stops it, with or without a window. One runs at a
   time: started again, the running one goes on and the new one quits.
 
+### Fixed
+
+- **Seeking in a FLAC track decoded on the Amiga** skipped the track (`flac: not a FLAC stream, track skipped`),
+  and so did LMS resuming a FLAC track when the player reconnects: LMS then sends the file from the middle,
+  without its header. Broken since FLAC decoding came in (0.2).
+
 ## [0.4] - 2026-10-20
 
 ### Added

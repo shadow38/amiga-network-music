@@ -4,6 +4,8 @@
  * LMS sends a FLAC file as it is: "fLaC", metadata blocks (STREAMINFO first; an embedded picture may weigh more
  * than the ring buffer), then the audio frames. The header is read here as it arrives: STREAMINFO is kept, every
  * other block skipped; dr_flac is then opened on a minimal header (STREAMINFO alone) followed by the frames.
+ * After a seek (or when LMS resumes a track), LMS sends the file from a frame in the middle, without its header:
+ * a STREAMINFO is then made up from the first frame's header (rate, channels, bits, block size).
  * dr_flac reads ahead (its cache) and takes a short read for the end of the stream, so a frame is only decoded
  * when the buffer holds a whole one (bound from STREAMINFO), or when the track's data is complete; and at most
  * one frame per request. Output: 16-bit samples (24 bits keep their 16 most significant bits), native byte order.
@@ -23,16 +25,19 @@
 #include "platform.h"
 
 #define HEAD_SIZE  42                       /* "fLaC", STREAMINFO block header (4 bytes) and body (34) */
+#define FRAME_HEAD 16                       /* longest frame header */
 #define BOUND_MAX  (256UL * 1024UL)         /* a frame bigger than this is not waited for */
 
-enum phase { MAGIC, BLOCK_HEADER, STREAMINFO, SKIP, OPEN, DECODE, FAILED };
+enum phase { MAGIC, FRAME, BLOCK_HEADER, STREAMINFO, SKIP, OPEN, DECODE, FAILED };
 
 struct flac_state {
     drflac  *flac;
     int      phase;                         /* enum phase */
     int      last;                          /* the metadata block being read is the last one */
     uint32_t skip;                          /* bytes of the current metadata block still to skip */
-    uint8_t  head[HEAD_SIZE];               /* the minimal header given to dr_flac */
+    uint8_t  head[HEAD_SIZE + FRAME_HEAD];  /* the minimal header given to dr_flac, then (after a seek) the start
+                                               of the first frame, already taken from the buffer */
+    uint32_t head_len;
     uint32_t head_pos;                      /* bytes of it already given */
     int      have_info;                     /* STREAMINFO read */
     int      done;                          /* everything taken from the buffer handed over: end of the track */
@@ -49,8 +54,8 @@ static size_t flac_read(void *user, void *buf, size_t n)
     uint8_t *b = buf;
     size_t got = 0;
 
-    if (st->head_pos < HEAD_SIZE) {
-        got = HEAD_SIZE - st->head_pos < n ? HEAD_SIZE - st->head_pos : n;
+    if (st->head_pos < st->head_len) {
+        got = st->head_len - st->head_pos < n ? st->head_len - st->head_pos : n;
         memcpy(b, st->head + st->head_pos, got);
         st->head_pos += (uint32_t)got;
     }
@@ -104,6 +109,72 @@ static void read_streaminfo(struct decoder *d, struct flac_state *st, const uint
     st->head[6] = 0;
     st->head[7] = 34;
     memcpy(st->head + 8, s, 34);
+    st->head_len = HEAD_SIZE;
+}
+
+/*
+ * A frame header (f, n bytes: the whole header when the frame is that long) turned into a STREAMINFO body (s, 34
+ * bytes); 0 if it is not one, or if it leaves its rate or bits to the STREAMINFO block (not sent)
+ */
+static int frame_streaminfo(const uint8_t *f, uint32_t n, uint8_t *s)
+{
+    static const uint32_t rates[12] = { 0, 88200, 176400, 192000, 8000, 16000, 22050, 24000, 32000, 44100, 48000,
+                                        96000 };
+    static const uint8_t bits_table[8] = { 0, 8, 12, 0, 16, 20, 24, 0 };   /* 0: reserved, or in STREAMINFO */
+    uint32_t pos = 5, block, rate, channels, bits, min_block, max_block;
+    uint8_t code;
+
+    if (n < 6 || f[0] != 0xFF || (f[1] & 0xFE) != 0xF8)
+        return 0;
+    for (code = f[4]; code & 0x80; code <<= 1)      /* coded frame number: 0xxxxxxx is 1 byte, 110xxxxx 2... */
+        pos++;
+    if (pos > 5)
+        pos--;                                      /* ...11111110 7: as many bytes as leading ones */
+    code = f[2] >> 4;
+    if (code == 0)
+        return 0;
+    else if (code == 1)
+        block = 192;
+    else if (code <= 5)
+        block = 576UL << (code - 2);
+    else if (code == 6)
+        block = pos < n ? f[pos++] + 1UL : 0;
+    else if (code == 7) {
+        block = pos + 1 < n ? ((uint32_t)f[pos] << 8 | f[pos + 1]) + 1 : 0;
+        pos += 2;
+    } else
+        block = 256UL << (code - 8);
+    code = f[2] & 15;
+    if (code >= 1 && code <= 11)
+        rate = rates[code];
+    else if (code == 12)
+        rate = pos < n ? f[pos] * 1000UL : 0;
+    else if (code == 13 || code == 14) {
+        rate = pos + 1 < n ? ((uint32_t)f[pos] << 8 | f[pos + 1]) : 0;
+        if (code == 14)
+            rate *= 10;
+    } else
+        rate = 0;                                   /* 0: in the STREAMINFO block; 15: invalid */
+    code = f[3] >> 4;
+    channels = code < 8 ? code + 1UL : code <= 10 ? 2 : 0;
+    bits = bits_table[(f[3] >> 1) & 7];
+    if (block == 0 || block > 65535 || rate == 0 || rate >= 1UL << 20 || channels == 0 || bits == 0)
+        return 0;
+    if (f[1] & 1) {                                 /* variable block size: any size may follow */
+        min_block = 16;
+        max_block = 65535;
+    } else                                          /* fixed: every frame has this size, but the last */
+        min_block = max_block = block;
+    memset(s, 0, 34);                               /* frame sizes, length and MD5: unknown */
+    s[0] = (uint8_t)(min_block >> 8);
+    s[1] = (uint8_t)min_block;
+    s[2] = (uint8_t)(max_block >> 8);
+    s[3] = (uint8_t)max_block;
+    s[10] = (uint8_t)(rate >> 12);
+    s[11] = (uint8_t)(rate >> 4);
+    s[12] = (uint8_t)((rate & 15) << 4 | (channels - 1) << 1 | (bits - 1) >> 4);
+    s[13] = (uint8_t)(((bits - 1) & 15) << 4);
+    return 1;
 }
 
 /* The track cannot be decoded: what is left of it is dropped */
@@ -124,11 +195,32 @@ static int read_header(struct decoder *d, struct flac_state *st, int complete)
             if (st->avail < 4)
                 return 0;
             st->avail -= ring_read(st->r, b, 4);
-            if (memcmp(b, "fLaC", 4))
-                fail(st, "not a FLAC stream");
-            else
+            if (!memcmp(b, "fLaC", 4))
                 st->phase = BLOCK_HEADER;
+            else if (b[0] == 0xFF && (b[1] & 0xFE) == 0xF8) {
+                memcpy(st->head + HEAD_SIZE, b, 4);  /* a frame: the file from the middle (a seek) */
+                st->phase = FRAME;
+            } else
+                fail(st, "not a FLAC stream");
             break;
+        case FRAME: {
+            uint32_t k = FRAME_HEAD - 4;
+
+            if (st->avail < k && !complete)
+                return 0;
+            if (k > st->avail)
+                k = st->avail;
+            st->avail -= ring_read(st->r, st->head + HEAD_SIZE + 4, k);
+            if (!frame_streaminfo(st->head + HEAD_SIZE, 4 + k, b))
+                fail(st, "cannot start from the middle of this file");
+            else {
+                read_streaminfo(d, st, b);
+                st->head_len = HEAD_SIZE + 4 + k;   /* the frame's start follows the made-up header */
+                st->have_info = 1;
+                st->phase = OPEN;
+            }
+            break;
+        }
         case BLOCK_HEADER:
             if (st->avail < 4)
                 return 0;

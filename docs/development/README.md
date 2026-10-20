@@ -86,7 +86,7 @@ mode warning; 0.3 the same day: MP3 decoded by `amisqueeze.fpu`; 0.2 on 2026-10-
 | Version | Content | Tested |
 |---|---|---|
 | 0.4 | MP3 without gaps (1.8d), fixed volume through LMS's own setting, the AHI mode warning (1.10): all done | host and WinUAE |
-| 0.5 | `LOG=<file>`, start from the Workbench with an icon and ToolTypes, a commodity stopped from Exchange (1.10): all done | host and WinUAE |
+| 0.5 | `LOG=<file>`, start from the Workbench with an icon and ToolTypes, a commodity stopped from Exchange (1.10); seeking in a FLAC decoded on the Amiga fixed (1.8b): all done | host and WinUAE |
 | 0.6 | automatic server discovery (1.10), with the real machine (1.9): the first version tried on a real Amiga | host for the code; validated on the real machine and network |
 
 Server discovery waits for 0.6 because the test setup cannot check it: the test LMS runs in a container behind

@@ -88,7 +88,8 @@ sides): the test-only "widening" decoder in `tests/test_core.c` can.
 
 Step 1.8b (flac.c, dr_flac.c, bench.c): dr_flac takes a short read for the end of the stream and reads ahead (4 KB
 cache), so a frame is decoded only when the buffer holds a whole one, and a track ends for the output only when
-the decoder says `finished`. Third-party code goes in `third_party/` (version, commit, licence in a README), built
+the decoder says `finished`. After a seek or a resume, LMS sends a FLAC file from a frame boundary without its header
+(fixed 2026-10-20: a STREAMINFO is made up from the first frame's header). Third-party code goes in `third_party/` (version, commit, licence in a README), built
 in its own file without our warnings (`THIRD_PARTY` in the Makefile). A file that includes a third-party header and
 reads its structures must use the same configuration macros as the file that builds it. FLAC speed in WinUAE:
 without JIT even "max" speed is a 68020 at about 45 MHz (level 8 at 0.2x real time); a PiStorm-like test needs the

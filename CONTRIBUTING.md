@@ -137,7 +137,8 @@ make test HOSTCC=clang            # another native compiler (untested)
 `make test` needs no LMS server: the unit tests run the core on a fake platform (`tests/stub_platform.c`), and
 `tests/fake_server.py` plays a slimproto server and its HTTP streams on localhost (handshake, renaming,
 disconnection and reconnection, Ctrl-C, argument errors; streams played, paused, stopped, held, cut; the `OUTPUT`
-file compared with what was sent; FLAC and MP3 test files decoded from `tests/data/`, back to back with raw PCM).
+file compared with what was sent; FLAC and MP3 test files decoded from `tests/data/`, whole or from the middle as
+after a seek, back to back with raw PCM).
 The Amiga build must still be checked in WinUAE: the platform layers differ.
 
 GitHub runs `make test` on each push and pull request (`.github/workflows/tests.yml`, GitHub Actions, Ubuntu); the
