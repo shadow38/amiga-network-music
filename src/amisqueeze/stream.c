@@ -270,6 +270,51 @@ static struct track *decode_track(struct player *p)
     return read_track(p);
 }
 
+/* Decoder of a track whose own decoder could not start: drops its data, writes nothing */
+static int skip_start(struct decoder *d, const struct pcm_format *in)
+{
+    (void)d;
+    (void)in;
+    return 1;
+}
+
+static void skip_stop(struct decoder *d)
+{
+    (void)d;
+}
+
+static uint32_t skip_run(struct decoder *d, struct ring *r, uint32_t avail, int complete, uint8_t *out,
+                         uint32_t out_max)
+{
+    (void)d;
+    (void)complete;
+    (void)out;
+    (void)out_max;
+    ring_consume(r, avail);
+    return 0;
+}
+
+static uint32_t skip_none(const struct decoder *d)
+{
+    (void)d;
+    return 0;
+}
+
+static uint32_t skip_input_for(const struct decoder *d, uint32_t out)
+{
+    (void)out;
+    return skip_none(d);
+}
+
+static int skip_finished(const struct decoder *d)
+{
+    (void)d;
+    return 1;
+}
+
+static const struct decoder_ops decoder_skip = { "skip", skip_start, skip_stop, skip_run, skip_input_for,
+                                                 skip_none, skip_finished };
+
 /* Starts the decoder on track t when the decoding reaches it: its first decoded byte is the output position
  * handed so far. A track the decoder cannot take is skipped (its data dropped). 0 if there is nothing to decode
  * for now. */
@@ -291,6 +336,8 @@ static int prepare_decoder(struct player *p, struct track *t)
     }
     msg("amisqueeze: %s: cannot decode this track, skipped\n", t->ops->name);
     ring_consume(&p->ring, until_next_track(p, ring_used(&p->ring)));
+    t->ops = o->dec.ops = &decoder_skip;    /* drops the rest of the track as it comes, without a state */
+    o->dec.out = t->out_fmt;
     return 0;
 }
 

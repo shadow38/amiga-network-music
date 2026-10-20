@@ -1561,6 +1561,91 @@ static void test_decoder_virtual(void)
     teardown(&p);
 }
 
+/* Decoder that cannot start (as without memory), for the tests only: counts its starts, and any later call */
+static int nostart_starts, nostart_used;
+
+static int nostart_start(struct decoder *d, const struct pcm_format *in)
+{
+    (void)d;
+    (void)in;
+    nostart_starts++;
+    return 0;
+}
+
+static uint32_t nostart_run(struct decoder *d, struct ring *r, uint32_t avail, int complete, uint8_t *out,
+                            uint32_t out_max)
+{
+    (void)d;
+    (void)r;
+    (void)avail;
+    (void)complete;
+    (void)out;
+    (void)out_max;
+    nostart_used++;
+    return 0;
+}
+
+static uint32_t nostart_input_for(const struct decoder *d, uint32_t out)
+{
+    (void)d;
+    (void)out;
+    nostart_used++;
+    return 0;
+}
+
+static uint32_t nostart_buffered(const struct decoder *d)
+{
+    (void)d;
+    nostart_used++;
+    return 0;
+}
+
+static int nostart_finished(const struct decoder *d)
+{
+    (void)d;
+    nostart_used++;
+    return 1;
+}
+
+static const struct decoder_ops decoder_nostart = { "nostart", nostart_start, widen_stop, nostart_run,
+                                                    nostart_input_for, nostart_buffered, nostart_finished };
+
+/* A decoder that cannot start: its track is skipped as its data comes, the decoder is never used on it (it has no
+ * state), and the next track plays */
+static void test_decoder_no_start(void)
+{
+    struct player p;
+    uint32_t na = PCM_BPS / 10, nb = PCM_BPS / 10;
+
+    fill(track_a, sizeof(track_a), 17);
+    fill(track_b, sizeof(track_b), 18);
+    nostart_starts = nostart_used = 0;
+    setup_file(&p);
+    open_stream(&p, '1', 1);
+    p.out.queue[p.out.queued - 1].ops = &decoder_nostart;
+    stub_feed_stream(track_a, (int)(na / 2));
+    drain_stream(&p);
+    stub_now += 100;
+    output_tick(&p, stub_now);
+    CHECK(nostart_starts == 1 && strstr(stub_out, "nostart: cannot decode this track, skipped") != NULL);
+    clear_tx();
+    stub_feed_stream(track_a + na / 2, (int)(na - na / 2));       /* more of the same track */
+    drain_stream(&p);
+    stub_stream_end();
+    stream_io(&p, PLAT_READ);
+    play_for(&p, 200);
+    CHECK(nostart_starts == 1 && nostart_used == 0 && strstr(stub_out, "cannot decode") == NULL);
+    stub_reset();
+    open_stream(&p, '1', 1);
+    stub_feed_stream(track_b, (int)nb);
+    drain_stream(&p);
+    stub_stream_end();
+    stream_io(&p, PLAT_READ);
+    play_for(&p, 400);
+    CHECK(nostart_used == 0 && stub_file_len == (int)nb && !memcmp(stub_file, track_b, nb));
+    teardown(&p);
+}
+
 /* ENV:Sys/ahi.prefs as saved by the AHI 6 preferences in WinUAE (plan step 1.10): the Music unit (255), then units
  * 0 (Paula 14-bit stereo++, 27429 Hz), 1 (Toccata stereo++, 44100 Hz), 2 (Paula 8-bit stereo++) and 3 (Toccata
  * plain stereo) */
@@ -1797,6 +1882,7 @@ int main(void)
     test_decoder_audio_gapless();
     test_decoder_audio_pause();
     test_decoder_virtual();
+    test_decoder_no_start();
     test_ahi_mode();
     test_start_mode();
     test_lame_header();

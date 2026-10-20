@@ -22,6 +22,9 @@ are previews, tested in WinUAE only, not yet on a real Amiga.
 - The example `WINDOW` ToolType of the icons now ends in `/SMART`, like the default window: without it, a window
   made from the example lost its text whenever it was uncovered.
 
+- A track whose decoder cannot start (not enough memory) is skipped, as the user guide says: until now, more of
+  that track arriving made the decoder run without its state (a crash or a memory corruption on the Amiga).
+
 ## [0.5] - 2026-10-20
 
 ### Added
