@@ -21,9 +21,10 @@ are previews, tested in WinUAE only, not yet on a real Amiga.
 
 - The example `WINDOW` ToolType of the icons now ends in `/SMART`, like the default window: without it, a window
   made from the example lost its text whenever it was uncovered.
-
 - A track whose decoder cannot start (not enough memory) is skipped, as the user guide says: until now, more of
   that track arriving made the decoder run without its state (a crash or a memory corruption on the Amiga).
+- A FLAC file whose header gives a sample rate of 0 (a damaged file) is skipped with a message: it used to stall
+  the player at 0:00, and LMS never moved on to the next track.
 
 ## [0.5] - 2026-10-20
 

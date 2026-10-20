@@ -158,7 +158,7 @@ static int frame_streaminfo(const uint8_t *f, uint32_t n, uint8_t *s)
     code = f[3] >> 4;
     channels = code < 8 ? code + 1UL : code <= 10 ? 2 : 0;
     bits = bits_table[(f[3] >> 1) & 7];
-    if (block == 0 || block > 65535 || rate == 0 || rate >= 1UL << 20 || channels == 0 || bits == 0)
+    if (block == 0 || block > 65535 || rate == 0 || channels == 0 || bits == 0)   /* rate < 655360: fits 20 bits */
         return 0;
     if (f[1] & 1) {                                 /* variable block size: any size may follow */
         min_block = 16;
@@ -233,6 +233,10 @@ static int read_header(struct decoder *d, struct flac_state *st, int complete)
             if (st->avail < 34)
                 return 0;
             st->avail -= ring_read(st->r, b, 34);
+            if (get24(b + 10) >> 4 == 0) {      /* the output would never move on */
+                fail(st, "sample rate 0");
+                break;
+            }
             read_streaminfo(d, st, b);
             st->have_info = 1;
             st->phase = st->last ? OPEN : BLOCK_HEADER;

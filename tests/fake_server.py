@@ -474,6 +474,30 @@ def scenario_flac():
             print(out)
 
 
+def scenario_flac_rate_0():
+    print("-- FLAC whose STREAMINFO gives a sample rate of 0: track skipped, the output does not stall")
+    data = bytearray(flac_file("s16-l5.flac"))
+    data[18] = data[19] = 0                 # STREAMINFO body at 8: its rate is the 20 bits at 18
+    data[20] &= 0x0F
+    path = os.path.join(tempfile.mkdtemp(), "play.pcm")
+    http = HttpServer(data=bytes(data), chunk=3000, pause=0.001)
+    http.start()
+    server, proc, s = start_session("Flac", "OUTPUT=" + path)
+    try:
+        send_strm_flac(s, http)
+        s.until("STAT:STMd")
+        try:
+            s.until("STAT:STMu", timeout=5)
+            ended = True
+        except TimeoutError:
+            ended = False
+    finally:
+        rc, out = stop(proc)
+        server.close()
+    check(ended and rc == 0 and len(read_output(path)) == 0 and "flac: sample rate 0, track skipped" in out,
+          "nothing played, reported, STMu sent")
+
+
 def flac_frame(data, n):
     """(offset, PCM frames per FLAC frame) of frame n of a test FLAC file (fixed block size, n < 128): a frame sync
     whose header has the right frame number and CRC-8, past the metadata blocks"""
@@ -843,6 +867,7 @@ if __name__ == "__main__":
     scenario_cut()
     scenario_control_lost()
     scenario_flac()
+    scenario_flac_rate_0()
     scenario_flac_seek()
     scenario_flac_gapless()
     scenario_flac_off()
