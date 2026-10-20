@@ -20,7 +20,9 @@ tag, `/release-review <previous tag>` (three agents, limited to the diff and wha
 `/release-review <previous tag> full` (four agents, the whole repository), only at milestones: before 1.0, or after
 a big change of architecture (Music Assistant, splitting `stream.c`). Findings scored 75 or more are fixed, or
 accepted by the user with the reason in the report (an urgent fix may ship after a review of its own diff); the
-review tooling changes only when a review misses a real defect, or when the user decides it. `CHANGELOG.md` (Keep a
+review tooling changes only when a review misses a real defect, or when the user decides it. Remarks that come
+after a version's review (outside readings, new ideas) go to the next version by default; only a real defect, or
+the user's choice, brings one into the current version (decided 2026-10-21, against over-quality). `CHANGELOG.md` (Keep a
 Changelog, added 2026-10-20): note each user-visible change under "Unreleased" as it is made, and give that part
 the version and date at the release; the `$VER:` date is the release date. Between releases the number reads
 `<next>-dev`, so that a build in between is not taken for the last release. 0.1 = first release (2026-10-19: AHI
@@ -214,7 +216,9 @@ With `flc` and `mp3` advertised, LMS sends FLAC and MP3 files as they are (forma
   stack. Check: a temporary probe in `main()` (fill the stack below the current pointer with a pattern from
   `tc_SPLower`, scan it at the end) run from a script with `Stack 4096` (never from a Shell with a large stack);
   2026-10-20: 5.6 KB of 16 KB used while playing FLAC with a seek, 17.8 KB of 32 KB for `amisqueeze.fpu` with FLAC
-  and MP3. Redo it whenever call depth or local variables grow, and measure frames with `-fstack-usage`.
+  and MP3. Redo it when `-fstack-usage` shows the deepest path growing by more than 1 KB, or when a new decoder,
+  library or start-up path is linked (decided 2026-10-21: a few bytes more do not call for it); measure frames
+  with `-fstack-usage`.
 - **`-m68881` and libnix**: libnix links a start-up check (`__fpucheck`) that, without an FPU, shows an alert and
   quits before `main()` without a message: `amiga.c` replaces it with an empty one and checks `AttnFlags` itself.
   minimp3 keeps about 17 KB on the stack (`mp3dec_decode_frame`): see Stack above. The `-m68881` code uses `fintrz` and `fmovecr`, emulated (slowly) by the CPU library on a 68040/68060.

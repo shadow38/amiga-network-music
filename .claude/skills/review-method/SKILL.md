@@ -68,9 +68,10 @@ A score is one of the five values above, never a range. When torn between two, p
 would move it up or down.
 
 Only findings at 75 or more go in the main list. A finding that breaks an explicit rule of `CLAUDE.md` is at least
-75 by definition, even when it looks minor, with one exception: a stale or wrong statement in the internal
+75 by definition, even when it looks minor, with two exceptions: a stale or wrong statement in the internal
 documents (`CLAUDE.md`, the plan and the rest of `docs/development/`) is 50 at most, unless a reader acting on it
-would do something wrong (break a rule, skip a needed check, ship a wrong release).
+would do something wrong (break a rule, skip a needed check, ship a wrong release); and a broken rule with no
+failure scenario is 50 at most, like any finding (see "Finding format").
 
 A code comment proven false is 75 when it states a limit or an invariant that the code, or a later change, would
 rely on; 50 otherwise. In the user documentation (README, user guide), a statement proven false at the reviewed
@@ -113,7 +114,9 @@ No proof that can be opened means no COVERED.
 
 ## What not to report
 
-Style preferences no rule supports; speculative future problems; anything a compiler warning already catches.
+Style preferences no rule supports; speculative future problems; anything a compiler warning already catches;
+what has gone stale in a document marked frozen (`docs/development/rules.md`: read it as a reference, never report
+its rows, remarks or line numbers).
 Problems that predate the release are reported, marked "before <version>", when they break a rule or a claim;
 otherwise they go in the 50 list.
 
