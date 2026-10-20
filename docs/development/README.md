@@ -94,17 +94,22 @@ AHI mode warning; 0.3 too: MP3 decoded by `amisqueeze.fpu`; 0.2 on 2026-10-19: F
 **0.6, the fixes** (open findings of [acceptance-0.3-0.4](reviews/acceptance-0.3-0.4.md) and
 [acceptance-0.4-0.5](reviews/acceptance-0.4-0.5.md), still there on 2026-10-20; one batch, each fix with its test):
 
-- documentation: workstation references (0.4..0.5 R7); step 1.5 still says LMS never sends `adjust` 0 (0.3..0.4
-  R9); step 1.2 says `cont` and autostart are handled as in squeezelite (R11 of both); the guide promises that
-  `LOG` keeps the start-up errors with `QUIET` (0.4..0.5 R4: the guide, or the code); direct radios and their
-  metadata not mentioned (0.4..0.5 R10); the cheap items scored 50: stale names (`read_lame_header`,
-  `consume()`), "2 KB stack OK", the `mp3 pcm` rule said to be in the README, "ToolTypes come later" in step 1.1,
-  the unit check count, the zip's list without the `.info` icons, the figures in the comments of `audio.c:80` and
-  `mp3.c:27`;
-- the icon's `WINDOW` ToolType without `SMART` (0.4..0.5 R8, user-visible);
-- a decoder that cannot start leaves a NULL state used later (0.4..0.5 R1); a FLAC rate of 0 stalls the track
-  (0.3..0.4 R14, with the dead test `flac.c:161`); `check-saves.py` misses `(an)+`, `-(an)`, `dbra` (0.4..0.5 R2);
-  guards no test sees removed: the stream request over 1 KB, the LAME header's bounds (0.3..0.4 R2, R6);
+- ✅ documentation: workstation references (0.4..0.5 R7); step 1.5 still says LMS never sends `adjust` 0 (0.3..0.4
+  R9); step 1.2 says `cont` and autostart are handled as in squeezelite (R11 of both); direct radios and their
+  metadata not mentioned (0.4..0.5 R10, a known limit in the user guide); the cheap items scored 50: stale names
+  (`read_lame_header`, `consume()`), "2 KB stack OK", the `mp3 pcm` rule said to be in the README, "ToolTypes come
+  later" in step 1.1, the unit check count, the zip's list without the `.info` icons, the figures in the comments
+  of `audio.c:80` and `mp3.c:27` (done 2026-10-20, also marked in `rules.md`);
+- ✅ the guide promises that `LOG` keeps the start-up errors with `QUIET` (0.4..0.5 R4): fixed in the code (decided
+  with the user on 2026-10-20): under `QUIET`, a message before the log is open opens the window; checked in
+  WinUAE;
+- ✅ the icon's `WINDOW` ToolType without `SMART` (0.4..0.5 R8, user-visible);
+- ✅ a decoder that cannot start leaves a NULL state used later (0.4..0.5 R1: an internal "skip" decoder takes the
+  track, `test_decoder_no_start`); a FLAC rate of 0 stalls the track (0.3..0.4 R14, with the dead test
+  `flac.c:161`: `scenario_flac_rate_0`); `check-saves.py` misses `(an)+`, `-(an)`, `dbra` (0.4..0.5 R2: self-test
+  `tests/check-saves.s` in `make test`); guards no test sees removed: the stream request over 1 KB, the LAME
+  header's bounds (0.3..0.4 R2, R6: `test_request_too_long`, `test_lame_header` cut at every length). Each test
+  seen failing without its fix (planted in a throwaway copy), then passing;
 - moved to 0.7 or accepted, to decide at the 0.6 review: `strm f` stops the playing track (0.3..0.4, first
   replay), the rejection side of the FLAC seek fix untested (0.4..0.5 R6).
 
