@@ -100,9 +100,14 @@ out-host/test_core: obj-host/tests/test_core.o obj-host/tests/stub_platform.o \
 	$(HOSTCC) $(HOST_LDFLAGS) -o $@ $^
 
 # tools/check-version.py: the version number agrees everywhere (make dist checks it again through make-dist.py,
-# with --release: no -dev version, the CHANGELOG section and its date)
+# with --release: no -dev version, the CHANGELOG section and its date); tests/check-saves.s: the assembly safeguard
+# must name each _bad_ function there, and no _good_ one
+SAVES_BAD := _bad_dbra _bad_plain _bad_postinc _bad_predec _bad_tst_postinc
 test: host out-host/test_core
 	python3 tools/check-version.py
+	python3 tools/check-saves.py tests/check-saves.s | sed -n 's/.* error: \([a-z_]*\) modifies.*/\1/p' | sort | \
+	    tr '\n' ' ' | grep -qx '$(SAVES_BAD) ' && echo "check-saves: self-test passed" || \
+	    { echo "check-saves: self-test failed, expected: $(SAVES_BAD)"; python3 tools/check-saves.py tests/check-saves.s; exit 1; }
 	out-host/test_core
 	python3 tests/fake_server.py out-host/amisqueeze
 

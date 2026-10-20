@@ -125,7 +125,8 @@ Header dependencies are tracked (`-MMD -MP`, `obj/<prog>/*.d` files).
 checks before assembling. The build fails if a function modifies a register the caller expects to be preserved
 (d2-d7, a2-a6) without saving it. This was a bug in `m68k-amigaos-gcc` 16.1.1b (image
 `wischner/gcc-m68k-amiga:1.1.0`): programs crashed with an *address error* `#80000003`. It is fixed in 16.2, but
-the GCC 16 port is recent.
+the GCC 16 port is recent. `make test` checks the safeguard itself on `tests/check-saves.s`: a few functions with
+such a fault (a plain write, `(an)+`, `-(an)`, `dbra`) and a few without.
 
 ## Host build and tests
 

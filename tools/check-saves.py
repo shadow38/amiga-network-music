@@ -68,6 +68,10 @@ def check(path):
             parts = ins.split(None, 1)
             op = parts[0].split(".")[0]
             ops = split_operands(parts[1]) if len(parts) > 1 else []
+            for o in ops:  # (an)+ and -(an) write an, whatever the instruction (tst, cmpm, movem...)
+                m = re.fullmatch(r"-?\((a[0-7])\)\+?", o)
+                if m and o != f"({m.group(1)})" and m.group(1) in CALLEE_SAVED:
+                    written.add(m.group(1))
             if op == "movem":
                 if ops[-1] == "-(sp)":
                     saved |= reglist(ops[0])
@@ -79,7 +83,7 @@ def check(path):
                 continue
             if ops[0] == "(sp)+":
                 continue  # restore: move.l (sp)+,reg
-            dests = ops if op == "exg" else [ops[-1]]
+            dests = ops if op == "exg" else [ops[0]] if op.startswith("db") else [ops[-1]]  # dbra d3,label
             for dest in dests:
                 for d in dest.split(":"):  # 68020+ register pairs: divsl.l / mulu.l ...,d2:d3
                     if re.fullmatch(REG, d) and d in CALLEE_SAVED:
