@@ -7,6 +7,7 @@
  * build talking to a real LMS 9.1.1.
  */
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "platform.h"
@@ -1586,7 +1587,7 @@ static const uint8_t ahi_prefs[256] = {
 static void test_ahi_mode(void)
 {
     uint32_t mode = 0, freq = 0;
-    uint8_t cut[100];
+    uint8_t *cut, odd[12 + 14 + 40];
     struct audio_mode m;
 
     CHECK(ahi_prefs_unit(ahi_prefs, sizeof(ahi_prefs), 0, &mode, &freq) && mode == 0x00020001 && freq == 27429);
@@ -1594,9 +1595,19 @@ static void test_ahi_mode(void)
     CHECK(ahi_prefs_unit(ahi_prefs, sizeof(ahi_prefs), 3, &mode, &freq) && mode == 0x000A0003);
     CHECK(ahi_prefs_unit(ahi_prefs, sizeof(ahi_prefs), 255, &mode, &freq) && mode == 0x000A0009 && freq == 8000);
     CHECK(!ahi_prefs_unit(ahi_prefs, sizeof(ahi_prefs), 4, &mode, &freq));      /* no such unit */
-    memcpy(cut, ahi_prefs, sizeof(cut));                                         /* the file cut short */
-    CHECK(!ahi_prefs_unit(cut, sizeof(cut), 1, &mode, &freq));
+    /* The file cut short within unit 0's chunk, after its unit number but before its mode: an exact-size copy, so
+     * that AddressSanitizer catches a read past it */
+    cut = malloc(110);
+    memcpy(cut, ahi_prefs, 110);
+    CHECK(!ahi_prefs_unit(cut, 110, 0, &mode, &freq));
+    free(cut);
     CHECK(!ahi_prefs_unit((const uint8_t *)"not an IFF file at all", 22, 0, &mode, &freq));
+    /* A chunk of odd length (5 bytes, padded to 6) before unit 1's */
+    memcpy(odd, ahi_prefs, 12);
+    odd[7] = sizeof(odd) - 8;
+    memcpy(odd + 12, "PRHD\0\0\0\5abcde\0", 14);
+    memcpy(odd + 26, ahi_prefs + 136, 40);
+    CHECK(ahi_prefs_unit(odd, sizeof(odd), 1, &mode, &freq) && mode == 0x000A0001 && freq == 44100);
 
     stub_reset();
     memset(&m, 0, sizeof(m));
@@ -1612,6 +1623,48 @@ static void test_ahi_mode(void)
     m.stereo = 0;
     m.panning = 1;
     CHECK(audio_check_mode(2, &m) && strstr(stub_out, "a mono mode: the music will play in mono"));
+}
+
+/* The player's start-up with the audio output: the unit's mode printed with VERBOSE, the warning for a mode that
+ * cannot play stereo right; nothing but the unit when the platform cannot tell the mode (plat_wait() of the stub
+ * returns at once, as for a Ctrl-C) */
+static void test_start_mode(void)
+{
+    struct player p;
+    struct options o;
+
+    memset(&o, 0, sizeof(o));
+    o.server = "127.0.0.1";
+    o.audio = 1;
+    o.unit = 3;
+    o.verbose = 1;
+    o.flac = o.mp3 = DECODE_OFF;
+    stub_reset();
+    stub_audio_fails = 0;
+    stub_audio_mode_known = 1;
+    memset(&stub_audio_mode, 0, sizeof(stub_audio_mode));
+    strcpy(stub_audio_mode.name, "Toccata:16 bit stereo");
+    stub_audio_mode.freq = 44100;
+    stub_audio_mode.stereo = 1;
+    memset(&p, 0, sizeof(p));
+    CHECK(player_main(&p, &o) == PLAYER_OK && stub_audio_unit == 3);
+    CHECK(strstr(stub_out, "output: AHI unit 3 (Toccata:16 bit stereo, 44100 Hz)\n") != NULL);
+    CHECK(strstr(stub_out, "AHI unit 3 uses \"Toccata:16 bit stereo\", a stereo mode without \"++\"") != NULL);
+
+    stub_reset();
+    stub_audio_mode.panning = 1;                /* stereo++: the mode printed, no warning */
+    o.swap = 1;
+    memset(&p, 0, sizeof(p));
+    CHECK(player_main(&p, &o) == PLAYER_OK);
+    CHECK(strstr(stub_out, "output: AHI unit 3 (Toccata:16 bit stereo, 44100 Hz), left and right swapped\n") &&
+          !strstr(stub_out, "uses \""));
+
+    stub_reset();
+    stub_audio_mode_known = 0;                  /* the mode unknown: the unit alone */
+    o.swap = 0;
+    memset(&p, 0, sizeof(p));
+    CHECK(player_main(&p, &o) == PLAYER_OK);
+    CHECK(strstr(stub_out, "output: AHI unit 3\n") && !strstr(stub_out, "uses \""));
 }
 
 /* Workbench start: an icon's ToolTypes turned into a command line for the template */
@@ -1671,6 +1724,7 @@ int main(void)
     test_decoder_audio_pause();
     test_decoder_virtual();
     test_ahi_mode();
+    test_start_mode();
     test_tooltypes();
     printf("test_core: %d checks, %d failed\n", checks, failures);
     return failures ? 1 : 0;
