@@ -140,6 +140,17 @@ If the connection drops or the server restarts, amisqueeze reconnects by itself 
 Double-click the icon of `amisqueeze` (or `amisqueeze.fpu`). A window titled "amisqueeze" opens at its first
 message and shows the messages as a Shell would; the player then shows up in LMS.
 
+![A Workbench drawer holding the two programs, amisqueeze.fpu and amisqueeze, each with a loudspeaker
+icon](images/workbench-icons.png)
+
+*The two programs in a drawer, with their icons.*
+
+![The amisqueeze window: the FLAC speed measured at start-up, the player's name and server, then "connected to
+the server"](images/workbench-window.png)
+
+*Started from its icon: the message window, here with the options of `ENV:amisqueeze.prefs` (`SERVER=127.0.0.1
+NAME=Amiga`, a test setup). Without `VERBOSE`, nothing more is printed while it plays.*
+
 **Options in the icon.** Select the icon, then *Icons > Information…* (Amiga-I): its **ToolTypes** take the same
 options as the command line, one per line: `SERVER=192.168.1.10`, `NAME=Kitchen`, `UNIT=0`, `LOG=…`, `VERBOSE`… A
 ToolType in parentheses is disabled: the icon comes with examples written that way, such as
@@ -169,6 +180,11 @@ Exchange runs, Ctrl-Alt-Help brings its window back), the system's list of backg
   (`QUIET`);
 - in its **window** (started from the Workbench) or its **Shell**: **Ctrl-C**;
 - from another Shell: `Status` gives its process number (when started from a Shell), then `Break <number>`.
+
+![Exchange: amisqueeze selected in the list of commodities, its description on the right, the Remove button
+below](images/exchange.png)
+
+*Exchange with amisqueeze selected: **Remove** stops it.*
 
 It always stops cleanly: the sound stops, the connection is closed, `stopped` is printed. Its window then stays
 open until it is closed, so that the last messages can be read. Exchange's Active/Inactive switch is shown but does
