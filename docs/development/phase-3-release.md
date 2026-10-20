@@ -97,8 +97,15 @@ Back to the [plan](README.md).
     the same day, from a new session, ran the changed questions of `review-platform`, `review-tests-docs` and
     `review-protocol-security` (section 12): `permissions:`, what `make dist` checks (75), the false comments and
     the malformed-input tests found; `gethostbyname()` reached but listed at "25-50", off the scale (counted as
-    found by the user; the method now asks for one score, never a range); the frame count of 0 and `strm f` not found in that run. Still to
-    do: `0.4..0.5` and HEAD;
+    found by the user; the method now asks for one score, never a range); the frame count of 0 and `strm f` not
+    found in that run. Review of `0.4..0.5` on 2026-10-20, the four agents, blind
+    ([report](reviews/acceptance-0.4-0.5.md)): eleven findings at 75, six beyond the outside review and the earlier passes (a decoder that cannot start leaves
+    a NULL state, proven on the host; QUIET with LOG loses the start-up errors; the 0.5 seek fix's rejection side
+    never runs; workstation references; the icon's `WINDOW` without `SMART`; a direct `printf`); of the outside
+    review's points fixed in 0.5, the guide's messages and the plan's statuses found incomplete, the LAME bounds
+    checks partly tested, the rest confirmed; the FLAC rate of 0 seen but left unrun. Criterion met for `0.4..0.5`
+    (decided with the user, method unchanged; the direct `printf` accepted, the `msg()` rule made explicit). Still to
+    do: HEAD;
   - **3.5c** the rules inventory: every rule, limit and measurement of `CLAUDE.md` and `CONTRIBUTING.md`, how it
     is enforced today (script, test, review, nothing), how it should be, and for a measurement its date, commit
     and what it depends on;
