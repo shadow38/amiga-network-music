@@ -41,27 +41,30 @@ spoken by free software on both sides.
 1. **Download** the zip of the latest [release](https://github.com/shadow38/amiga-network-music/releases)
    (0.5: a preview tested in WinUAE only, not yet on a real Amiga). It holds amisqueeze and the user guide;
    what changed from one version to the next is in the [changelog](CHANGELOG.md).
-2. **Pick the executable** and copy it to `C:`: `amisqueeze` for any Amiga with a 68020 or better;
-   `amisqueeze.fpu` for an Amiga with an FPU, which also decodes MP3.
+2. **Pick the executable**: `amisqueeze` for any Amiga with a 68020 or better; `amisqueeze.fpu` for an Amiga
+   with an FPU, which also decodes MP3. Copy it with its icon (`.info`) into a drawer to start it from the
+   Workbench, or into `C:` to run it from a Shell.
 3. **On the Amiga**: a TCP/IP stack running, and AHI installed, with unit 0 set to a "stereo++" mode in
    `SYS:Prefs/AHI` (with Paula: `Paula:14 bit stereo++`); without "++", the music plays on one side only. Where to
    get AHI and how to set it up: [sound](docs/user-guide.md#sound-ahi).
-4. **Run it** from a Shell, with the address of the server:
+4. **Start it**, with the address of the server:
+   - from the **Workbench**: select the icon, *Icons > Information…*, and in its ToolTypes turn
+     `(SERVER=192.168.1.10)` into your server's address (without the parentheses); then double-click the icon.
+     A window shows its messages. Copied into `SYS:WBStartup`, it starts with the Amiga;
+   - from a **Shell**:
 
-   ```
-   amisqueeze SERVER=192.168.1.10
-   ```
+     ```
+     amisqueeze SERVER=192.168.1.10
+     ```
 
    A player called "Amiga" shows up in LMS: choose it in the web interface or an app, and play.
-5. **Keep the options** for the next times, then just type `amisqueeze`:
+5. **To stop it**: Exchange, the system's list of background programs, lists it ("Remove"); or Ctrl-C in its
+   window or Shell. To keep the Shell options for the next times, then just type `amisqueeze`:
 
    ```
    Echo "SERVER=192.168.1.10 NAME=Amiga" >ENV:amisqueeze.prefs
    Copy ENV:amisqueeze.prefs ENVARC:
    ```
-
-   Or from the **Workbench**: double-click its icon (the options can also go in the icon's ToolTypes). Exchange,
-   the system's list of background programs, stops it ("Remove"), as does Ctrl-C in its window.
 
 On the server side: LMS reachable from the Amiga (ports 3483 and 9000), and, for MP3 files on an Amiga that does
 not decode them, a conversion rule: see [server setup](docs/user-guide.md#server-setup).
@@ -82,7 +85,9 @@ C, cross-compiled; tested in WinUAE, not yet on a real Amiga.
   converted by the server;
 - **MP3**: decoded on the Amiga by `amisqueeze.fpu` (Amigas with an FPU) when it is fast enough, otherwise
   converted by the server;
-- **robustness**: it recovers from a slow or broken stream and from a server restart.
+- **robustness**: it recovers from a slow or broken stream and from a server restart;
+- **on the Amiga**: started from a Shell or from the Workbench (icon, options in its ToolTypes, at boot from
+  `SYS:WBStartup`), listed in Exchange, which stops it; a log file (`LOG`) if wanted.
 
 Tested in WinUAE with emulated networking and LMS 9.1.1: listening, one hour of playback. On a 28 MHz 68020, sound
 through AHI and Paula takes about two thirds of the CPU.
