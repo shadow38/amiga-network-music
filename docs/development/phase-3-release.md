@@ -85,7 +85,13 @@ Back to the [plan](README.md).
   - **3.5b** acceptance test: the review of `amisqueeze-0.3..amisqueeze-0.4` in a worktree, compared with the
     outside review of 0.4; each item missed sharpens a question of the method, and the review is replayed until
     it finds it. Since the development session knows that review's findings, the tooling is also judged on what
-    it finds beyond them, on `0.4..0.5` and on HEAD;
+    it finds beyond them, on `0.4..0.5` and on HEAD. First run on 2026-10-20
+    ([report](reviews/acceptance-0.3-0.4.md)): of the points the outside review lists as done before 0.5, all
+    found at 75 or more except a frame count of 0 (seen, scored 50, not run); missed: `gethostbyname()`'s result
+    unchecked, the CI workflow's `permissions:`, two false comments; found in part: what `make dist` checks, the
+    malformed-input tests; found beyond it: step 1.2's claim on `cont`, a FLAC rate of 0 stalling a track, gaps in
+    `check-saves.py`. Still to do: the seven method questions of the report (section 10, for the user to decide),
+    replays, `0.4..0.5` and HEAD;
   - **3.5c** the rules inventory: every rule, limit and measurement of `CLAUDE.md` and `CONTRIBUTING.md`, how it
     is enforced today (script, test, review, nothing), how it should be, and for a measurement its date, commit
     and what it depends on;
