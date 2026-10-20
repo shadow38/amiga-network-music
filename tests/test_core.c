@@ -1625,6 +1625,80 @@ static void test_ahi_mode(void)
     CHECK(audio_check_mode(2, &m) && strstr(stub_out, "a mono mode: the music will play in mono"));
 }
 
+/* A first MP3 frame holding a Xing/Info header (b1, b3: bytes 1 and 3 of the frame header: version, CRC,
+ * channels), with a frame count if frames >= 0 and a LAME extension if ext; returns the bytes written */
+static uint32_t lame_frame(uint8_t *f, uint8_t b1, uint8_t b3, const char *tag, int32_t frames, int ext,
+                           uint32_t delay, uint32_t padding)
+{
+    int mpeg1 = (b1 & 0x18) == 0x18, mono = (b3 >> 6) == 3;
+    uint32_t off = 4 + ((b1 & 1) ? 0 : 2) + (mpeg1 ? (mono ? 17 : 32) : (mono ? 9 : 17));
+
+    memset(f, 0, 400);
+    f[0] = 0xFF;
+    f[1] = b1;
+    f[2] = 0x90;
+    f[3] = b3;
+    memcpy(f + off, tag, 4);
+    f[off + 7] = frames >= 0 ? 1 : 0;
+    off += 8;
+    if (frames >= 0) {
+        f[off] = (uint8_t)(frames >> 24);
+        f[off + 1] = (uint8_t)(frames >> 16);
+        f[off + 2] = (uint8_t)(frames >> 8);
+        f[off + 3] = (uint8_t)frames;
+        off += 4;
+    }
+    if (ext) {
+        memcpy(f + off, "LAME3.100", 9);
+        f[off + 21] = (uint8_t)(delay >> 4);
+        f[off + 22] = (uint8_t)((delay & 15) << 4 | padding >> 8);
+        f[off + 23] = (uint8_t)padding;
+    }
+    return off + 36;
+}
+
+/* Gapless MP3: what the LAME header of the first frame gives, and its fallbacks (no frame count, no extension,
+ * CRC, MPEG-2 mono, cut short, a count of 0) */
+static void test_lame_header(void)
+{
+    uint8_t f[400];
+    uint32_t lead, size;
+    uint64_t left;
+
+    /* MPEG-1 stereo, LAME: delay 576 + 529 of the decoder, padding 1000 - 529, out of 100 frames of 1152 */
+    size = lame_frame(f, 0xFB, 0x00, "Info", 100, 1, 576, 1000);
+    lead = 0;
+    left = UINT64_MAX;
+    CHECK(mp3_lame_header(f, size, &lead, &left) && lead == 1105 && left == 115200 - 1105 - 471);
+    /* With a CRC (2 more bytes before the side information): the same */
+    size = lame_frame(f, 0xFA, 0x00, "Xing", 100, 1, 576, 1000);
+    lead = 0;
+    left = UINT64_MAX;
+    CHECK(mp3_lame_header(f, size, &lead, &left) && lead == 1105 && left == 115200 - 1105 - 471);
+    /* MPEG-2 mono: 9 bytes of side information, 576 samples per frame */
+    size = lame_frame(f, 0xF3, 0xC0, "Xing", 100, 1, 576, 1000);
+    lead = 0;
+    left = UINT64_MAX;
+    CHECK(mp3_lame_header(f, size, &lead, &left) && lead == 1105 && left == 57600 - 1105 - 471);
+    /* No frame count, or no LAME extension: a header (no audio), nothing to trim */
+    size = lame_frame(f, 0xFB, 0x00, "Xing", -1, 0, 0, 0);
+    lead = 0;
+    left = UINT64_MAX;
+    CHECK(mp3_lame_header(f, size, &lead, &left) && lead == 0 && left == UINT64_MAX);
+    size = lame_frame(f, 0xFB, 0x00, "Info", 100, 0, 0, 0);
+    CHECK(mp3_lame_header(f, size, &lead, &left) && lead == 0 && left == UINT64_MAX);
+    /* A frame count of 0: the delay is dropped, but no limit (the track would be dropped whole) */
+    size = lame_frame(f, 0xFB, 0x00, "Info", 0, 1, 576, 1000);
+    CHECK(mp3_lame_header(f, size, &lead, &left) && lead == 1105 && left == UINT64_MAX);
+    /* Cut short, before the extension's delay: taken as an audio frame, nothing set */
+    size = lame_frame(f, 0xFB, 0x00, "Info", 100, 1, 576, 1000);
+    lead = 0;
+    CHECK(!mp3_lame_header(f, size - 20, &lead, &left) && lead == 0 && left == UINT64_MAX);
+    /* An audio frame: no header */
+    memset(f + 4, 0, 60);
+    CHECK(!mp3_lame_header(f, size, &lead, &left) && lead == 0);
+}
+
 /* The player's start-up with the audio output: the unit's mode printed with VERBOSE, the warning for a mode that
  * cannot play stereo right; nothing but the unit when the platform cannot tell the mode (plat_wait() of the stub
  * returns at once, as for a Ctrl-C) */
@@ -1725,6 +1799,7 @@ int main(void)
     test_decoder_virtual();
     test_ahi_mode();
     test_start_mode();
+    test_lame_header();
     test_tooltypes();
     printf("test_core: %d checks, %d failed\n", checks, failures);
     return failures ? 1 : 0;

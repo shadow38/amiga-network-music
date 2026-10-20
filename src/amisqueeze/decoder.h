@@ -61,6 +61,10 @@ extern const struct decoder_ops decoder_flac;
 #ifdef AMISQUEEZE_MP3
 /* MP3 (strm format 'm'), with minimp3: only in the builds with floating point in hardware (and the host's) */
 extern const struct decoder_ops decoder_mp3;
+/* The LAME header of an MP3 file's first frame (f, size bytes), for gapless playback: 0 if f is an audio frame (or
+ * a header cut too short to read); 1 if it is a header, which holds no audio: then *lead (PCM frames to drop at the
+ * start) and *left (PCM frames of the track) are set when it gives them, *left only for a non-zero frame count */
+int mp3_lame_header(const uint8_t *f, uint32_t size, uint32_t *lead, uint64_t *left);
 #endif
 
 /* 1 on a big-endian machine (the Amiga), 0 on a little-endian one (most hosts): decoders write native samples */

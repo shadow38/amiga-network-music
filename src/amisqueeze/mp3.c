@@ -69,11 +69,11 @@ static uint32_t get32(const uint8_t *b)
 
 /* Gapless playback (plan step 1.8d): an encoder such as LAME writes in the first frame a header, "Xing" or "Info"
  * after the side information, with the number of audio frames, then its own extension with its delay and padding
- * (12 bits each, 21 bytes into it); the layout is the one minimp3_ex.h reads. Returns 0 if frame f (size bytes)
- * is an audio frame; 1 if it is such a header, which holds no audio: then, when it gives them, lead (the encoder's
- * delay and the decoder's) and left (the samples of the track) are set. After a seek, LMS sends this frame again
- * before the data from the new position: left is then never reached, and nothing is cut at the end. */
-static int read_lame_header(struct mp3_state *st, const uint8_t *f, uint32_t size)
+ * (12 bits each, 21 bytes into it); the layout is the one minimp3_ex.h reads. lead gets the encoder's delay and
+ * the decoder's, left the samples of the track; a frame count of 0 (a broken header) sets no limit, so that the
+ * track is not dropped whole. After a seek, LMS sends this frame again before the data from the new position:
+ * left is then never reached, and nothing is cut at the end. (See decoder.h.) */
+int mp3_lame_header(const uint8_t *f, uint32_t size, uint32_t *lead, uint64_t *left)
 {
     int mpeg1 = (f[1] & 0x18) == 0x18;
     int mono = (f[3] >> 6) == 3;
@@ -110,8 +110,9 @@ static int read_lame_header(struct mp3_state *st, const uint8_t *f, uint32_t siz
         total -= (uint64_t)delay;
     if (padding > 0 && total >= (uint64_t)padding)
         total -= (uint64_t)padding;
-    st->lead = (uint32_t)delay;
-    st->left = total;
+    *lead = (uint32_t)delay;
+    if (frames > 0)
+        *left = total;
     return 1;
 }
 
@@ -256,7 +257,7 @@ static uint32_t mp3_run(struct decoder *d, struct ring *r, uint32_t avail, int c
         st->pos += (uint32_t)info.frame_bytes;
         if (info.hz != 0 && !st->first_seen) {  /* the first frame found */
             st->first_seen = 1;
-            if (read_lame_header(st, frame, (uint32_t)(info.frame_bytes - info.frame_offset))) {
+            if (mp3_lame_header(frame, (uint32_t)(info.frame_bytes - info.frame_offset), &st->lead, &st->left)) {
                 st->synced = 1;
                 st->decoded++;
                 continue;                       /* a header, not audio */

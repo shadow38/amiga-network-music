@@ -26,6 +26,8 @@ are previews, tested in WinUAE only, not yet on a real Amiga.
 - **Seeking in a FLAC track decoded on the Amiga** skipped the track (`flac: not a FLAC stream, track skipped`),
   and so did LMS resuming a FLAC track when the player reconnects: LMS then sends the file from the middle,
   without its header. Broken since FLAC decoding came in (0.2).
+- An MP3 file whose LAME header counts 0 frames (a broken header) would have been decoded and then dropped whole,
+  in silence: it now plays in full (0.4).
 
 ## [0.4] - 2026-10-20
 
