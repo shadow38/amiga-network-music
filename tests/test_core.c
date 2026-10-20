@@ -590,6 +590,29 @@ static void test_not_pcm(void)
     teardown(&p);
 }
 
+/* A strm s whose HTTP request is longer than the 1 KB kept for it: refused, no stream opened (copied, it would
+ * overwrite the fields after the request, which the sanitizers do not see) */
+static void test_request_too_long(void)
+{
+    static uint8_t b[24 + 1025];
+    struct player p;
+
+    memset(b, 'x', sizeof(b));
+    memset(b, 0, 24);
+    b[0] = 's';
+    memcpy(b + 1, "1p1321\001", 7);
+    b[18] = 9000 >> 8;
+    b[19] = 9000 & 0xff;
+    setup(&p, "Amiga");
+    CHECK(slim_connect(&p, 0));
+    clear_tx();
+    stub_feed_packet("strm", b, (int)sizeof(b));
+    drain(&p);
+    CHECK(strstr(stub_out, "stream: request too long (1025 bytes)") != NULL);
+    CHECK(p.stream.state == STREAM_IDLE && !stub_stream_open);
+    teardown(&p);
+}
+
 /* autostart 0: STMl once buffered, playback starts on strm u */
 static void test_autostart_0(void)
 {
@@ -1747,8 +1770,9 @@ static uint32_t lame_frame(uint8_t *f, uint8_t b1, uint8_t b3, const char *tag, 
 static void test_lame_header(void)
 {
     uint8_t f[400];
-    uint32_t lead, size;
+    uint32_t lead, size, n;
     uint64_t left;
+    int cut_ok;
 
     /* MPEG-1 stereo, LAME: delay 576 + 529 of the decoder, padding 1000 - 529, out of 100 frames of 1152 */
     size = lame_frame(f, 0xFB, 0x00, "Info", 100, 1, 576, 1000);
@@ -1779,6 +1803,17 @@ static void test_lame_header(void)
     size = lame_frame(f, 0xFB, 0x00, "Info", 100, 1, 576, 1000);
     lead = 0;
     CHECK(!mp3_lame_header(f, size - 20, &lead, &left) && lead == 0 && left == UINT64_MAX);
+    /* Cut at any length (each of its bounds: tag, frame count, extension), in a block of that size, so that a read
+     * past it shows under ASan: never a header, nothing set */
+    for (n = 4, cut_ok = 1; n < size; n++) {
+        uint8_t *cut = malloc(n);
+
+        memcpy(cut, f, n);
+        if (mp3_lame_header(cut, n, &lead, &left) || lead != 0 || left != UINT64_MAX)
+            cut_ok = 0;
+        free(cut);
+    }
+    CHECK(cut_ok);
     /* An audio frame: no header */
     memset(f + 4, 0, 60);
     CHECK(!mp3_lame_header(f, size, &lead, &left) && lead == 0);
@@ -1860,6 +1895,7 @@ int main(void)
     test_stop();
     test_connect_failure();
     test_not_pcm();
+    test_request_too_long();
     test_autostart_0();
     test_output_file();
     test_output_file_stop();
