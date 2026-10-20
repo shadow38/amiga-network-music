@@ -30,8 +30,9 @@ the verification pass.
   the Amiga build) here, and a worktree name of its own for experiments (`../<repo>-review-<agent>`). Nothing from
   the development conversation: no known defects, no hints, no expected results.
 - Never use a fork, which inherits the conversation. If the `review-*` agent types are not available (they are
-  found when Claude Code starts in the repository; a first `.claude/agents/` created during a session needs a
-  restart), stop and say so, rather than falling back to an agent that gets this session's context.
+  found when Claude Code starts in the repository; a `.claude/agents/` created or edited during a session needs a
+  restart), stop and say so, rather than falling back to an agent that gets this session's context. After an
+  edit, check that each agent's transcript holds the new wording a minute after the launch.
 
 ## 3. Verify (the method's verification pass)
 
