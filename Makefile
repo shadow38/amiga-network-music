@@ -25,13 +25,15 @@ PROGS   := $(notdir $(wildcard src/*))
 # Per-program options
 # amisqueeze (slimproto player): targets 68020+ (WinUAE, PiStorm), without FPU.
 # -Wno-pointer-sign: dos.library prototypes expect UBYTE * strings. -Werror=format: msg() format checks.
-amisqueeze_CFLAGS := -m68020 -Wno-pointer-sign -Werror=format -Ithird_party/dr_flac -Ithird_party/minimp3
+# The Shell's stack (4 KB by default) is too small for the decoders (dr_flac about 5 KB, minimp3 about 17 KB):
+# libnix's start-up code enlarges it (__stkinit, linked in here; size in __stack, amiga.c).
+amisqueeze_CFLAGS  := -m68020 -Wno-pointer-sign -Werror=format -Ithird_party/dr_flac -Ithird_party/minimp3
+amisqueeze_LDFLAGS := -Wl,-u,___stkinit
 
 # amisqueeze.fpu: the same sources built for a 68881/68882 FPU (or a 68040/68060 with FPU): floating point in
-# hardware, so it holds the MP3 decoder (AMISQUEEZE_MP3). Objects in obj/amisqueeze-fpu/. minimp3 needs about
-# 17 KB of stack: libnix's start-up code enlarges it (__stkinit, size in __stack, amiga.c).
+# hardware, so it holds the MP3 decoder (AMISQUEEZE_MP3). Objects in obj/amisqueeze-fpu/.
 amisqueeze_fpu_CFLAGS  := $(amisqueeze_CFLAGS) -m68881 -DAMISQUEEZE_FPU -DAMISQUEEZE_MP3
-amisqueeze_fpu_LDFLAGS := -Wl,-u,___stkinit
+amisqueeze_fpu_LDFLAGS := $(amisqueeze_LDFLAGS)
 
 # Third-party code (third_party/): built without our warnings, in a file of its own
 THIRD_PARTY := dr_flac minimp3
@@ -63,7 +65,7 @@ all: $(PROGS)
 define PROG_template
 $(1): out/$(1)
 out/$(1): $(patsubst src/%.c,obj/%.o,$(call amiga_srcs,$(1))) | out
-	$$(CC) $$(LDFLAGS) $$($(1)_CFLAGS) -o $$@ $$^
+	$$(CC) $$(LDFLAGS) $$($(1)_LDFLAGS) $$($(1)_CFLAGS) -o $$@ $$^
 obj/$(1)/%.o: CFLAGS += $$($(1)_CFLAGS)
 endef
 $(foreach p,$(PROGS),$(eval $(call PROG_template,$(p))))

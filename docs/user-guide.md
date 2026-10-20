@@ -32,7 +32,8 @@ On the Amiga:
 
 - AmigaOS 3.x, 68020 or better (from a plain 68020 accelerator to a PiStorm);
 - about 1.1 MB of free memory (1 MB stream buffer, about 6 s of CD-quality audio), a little more for
-  `amisqueeze.fpu` when it decodes MP3 (about 60 KB: its decoder and a larger stack, which it sets up itself);
+  `amisqueeze.fpu` when it decodes MP3 (about 60 KB: its decoder and a larger stack); both set up the stack they
+  need themselves, whatever the Shell's `Stack`;
 - a TCP/IP stack providing `bsdsocket.library`: Roadshow, AmiTCP, AmiNetXDuo, or WinUAE's emulation
   (`bsdsocket_emu=true`) in an emulator;
 - for the sound: AHI (tested with 6.x; 4.x expected to work, not checked yet) and a driver: Paula's

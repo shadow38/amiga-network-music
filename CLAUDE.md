@@ -190,14 +190,18 @@ With `flc` and `mp3` advertised, LMS sends FLAC and MP3 files as they are (forma
   `00068020`). Its `GetVar` ignores global variables (`ENV:`) and returns 0. Useful for argument parsing only;
   test the rest in WinUAE.
 - **Stack**: the default Shell stack is 4 KB and AmigaOS does not detect overflows (silent corruption). Big buffers
-  are static or allocated, never on the stack. Margin check: `Stack 2048` in the Shell, then replay the WinUAE
-  scenario; passed on 2026-10-18 after the switch to `vsnprintf` (step 0.6). Redo it whenever call depth or
-  local variables grow (step 1.2).
+  are static or allocated, never on the stack. Both executables set `__stack` (16 KB `amisqueeze`, 32 KB
+  `amisqueeze.fpu`) and link libnix's `__stkinit`, which gives that stack when the Shell's is smaller: dr_flac
+  needs about 5.5 KB (4.6 KB in `drflac_open` alone), minimp3 about 17.5 KB. **Found by an outside review on
+  2026-10-20**: until then `amisqueeze` (68020) ran on the Shell's 4 KB and overflowed at every start (FLAC speed
+  measure) since 0.2; the WinUAE tests never saw it because amiagent's Shell has a 256 KB stack. Check: a
+  temporary probe in `main()` (fill the stack below the current pointer with a pattern from `tc_SPLower`, scan it
+  at the end) run from a script with `Stack 4096` (never from amiagent's own stack); 2026-10-20: 5.6 KB of 16 KB
+  used while playing FLAC with a seek, 17.8 KB of 32 KB for `amisqueeze.fpu` with FLAC and MP3. Redo it whenever
+  call depth or local variables grow, and measure frames with `-fstack-usage`.
 - **`-m68881` and libnix**: libnix links a start-up check (`__fpucheck`) that, without an FPU, shows an alert and
   quits before `main()` without a message: `amiga.c` replaces it with an empty one and checks `AttnFlags` itself.
-  minimp3 keeps about 17 KB on the stack (`mp3dec_decode_frame`): `amisqueeze.fpu` sets `__stack` and links
-  libnix's `__stkinit` (`-Wl,-u,___stkinit`), which gives a bigger stack when the Shell's is smaller. The
-  `-m68881` code uses `fintrz` and `fmovecr`, emulated (slowly) by the CPU library on a 68040/68060.
+  minimp3 keeps about 17 KB on the stack (`mp3dec_decode_frame`): see Stack above. The `-m68881` code uses `fintrz` and `fmovecr`, emulated (slowly) by the CPU library on a 68040/68060.
 - **`$VER:` string** (found at the 0.3 release): kept non-const, in the data hunk. Const, it sat in the code hunk,
   and AmigaOS 3.2's `Version` printed "amiseeze 0.3" for the 0.3 build although the bytes were right (only when
   reading the file as an executable; the 0.2 build was fine). Before each release, check `Version <exe> FULL`

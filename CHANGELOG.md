@@ -19,6 +19,10 @@ are previews, tested in WinUAE only, not yet on a real Amiga.
 
 ### Fixed
 
+- **`amisqueeze` overflowed its stack when started from a Shell** with the usual 4 KB stack: the FLAC decoder
+  needs about 5.5 KB, already at start-up (speed measure). AmigaOS does not detect it: a crash or a hang could
+  follow at any later time. Both executables now set up the stack they need themselves (16 KB for `amisqueeze`,
+  32 KB for `amisqueeze.fpu`, which already did). Broken since 0.2; started from its icon, it was not affected.
 - **Seeking in a FLAC track decoded on the Amiga** skipped the track (`flac: not a FLAC stream, track skipped`),
   and so did LMS resuming a FLAC track when the player reconnects: LMS then sends the file from the middle,
   without its header. Broken since FLAC decoding came in (0.2).
