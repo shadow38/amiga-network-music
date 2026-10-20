@@ -13,7 +13,8 @@ repository. Documentation, code comments and program messages are in English.
 only for a **published** release; 1.0 = first really usable version (tested on the real machine). Never bump it on
 our own: ask the user. A release = a Git tag `amisqueeze-<version>` + a GitHub Release with a zip (the Amiga
 executables and their `.info` icons, `LICENSE`, `README.md`, `CHANGELOG.md`, the user guide and its images) and
-short notes, made with the GitHub CLI once the user has approved the notes. **Before every release tag** (plan step
+short notes, made with the GitHub CLI once the user has approved the notes; the zip's SHA-256 goes in the notes and
+in a `<zip>.sha256` file attached to the release (decided 2026-10-21; by hand until `make dist` writes it, plan 0.7). **Before every release tag** (plan step
 3.5, decided 2026-10-20; two levels decided the same day, for cost): a light review of the range since the previous
 tag, `/release-review <previous tag>` (three agents, limited to the diff and what it reaches); a full audit,
 `/release-review <previous tag> full` (four agents, the whole repository), only at milestones: before 1.0, or after

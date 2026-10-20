@@ -502,7 +502,9 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   4. load, the key point: LMS's fixed volume, a 44.1 kHz FLAC for 5 minutes with `VERBOSE` and `LOG`, the CPU
      left while playing (an idle-loop counter at the lowest priority, as in 1.4c), the `STMo` of the log (the
      buffer ran empty: a gap) and the gaps heard. If there are some, again with, in this order: Paula's 8-bit mode,
-     a lower AHI frequency (22 kHz: duller treble, to judge by ear);
+     a lower AHI frequency (22 kHz: duller treble, to judge by ear). Then the same while the Amiga works: files
+     copied on the disk, Workbench windows moved: AHI holds only about 0.6 s of audio, so amisqueeze kept from the
+     CPU longer than that by busier tasks would make a gap;
   5. commands (1.5): pause, resume, seek, next track, stop; the elapsed time read through the CLI after a pause;
      once at volume 50 without the fixed volume (load, crackle);
   6. robustness (1.6): the Ethernet cable pulled for 10 s and LMS restarted while playing; Ctrl-C at the

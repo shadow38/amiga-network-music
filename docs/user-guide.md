@@ -103,7 +103,10 @@ Lyrion Music Server needs little for amisqueeze:
 
 ### Installation
 
-The archive holds two executables of the same program; take the one that suits the Amiga:
+The archive comes from the project's [releases](https://github.com/shadow38/amiga-network-music/releases); each
+release gives its SHA-256 (in its notes and in a `.sha256` file), to check the archive before unpacking it, for
+instance with `sha256sum` on Linux or `Get-FileHash` in PowerShell. It holds two executables of the same program;
+take the one that suits the Amiga:
 
 | Executable | For | Decodes itself |
 |---|---|---|
