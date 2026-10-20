@@ -93,8 +93,12 @@ Back to the [plan](README.md).
     `check-saves.py`. The seven method questions (section 10) decided with the user on 2026-10-20 and the method
     and agents changed; a first replay the same day ran the old agent definitions (loaded when the session starts),
     so it tested the method changes only (section 11): the pointer rule and the false-comment rule worked, the
-    frame count of 0 was not found in that run; found beyond: `strm f` stops the playing track. Still to do: a replay of `review-platform` and `review-tests-docs`
-    (and of `review-protocol-security` for S7) from a session started after the change, then `0.4..0.5` and HEAD;
+    frame count of 0 was not found in that run; found beyond: `strm f` stops the playing track. A second replay
+    the same day, from a new session, ran the changed questions of `review-platform`, `review-tests-docs` and
+    `review-protocol-security` (section 12): `permissions:`, what `make dist` checks (75), the false comments and
+    the malformed-input tests found; `gethostbyname()` reached but listed at "25-50", off the scale (counted as
+    found by the user; the method now asks for one score, never a range); the frame count of 0 and `strm f` not found in that run. Still to
+    do: `0.4..0.5` and HEAD;
   - **3.5c** the rules inventory: every rule, limit and measurement of `CLAUDE.md` and `CONTRIBUTING.md`, how it
     is enforced today (script, test, review, nothing), how it should be, and for a measurement its date, commit
     and what it depends on;

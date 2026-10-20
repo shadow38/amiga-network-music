@@ -477,3 +477,111 @@ way. Changes 1, 2, 3, 6 and S7 need a replay from a session started after the de
 
 Method and agents used: those committed with this section (the first pass used those of `c6413cf`); none of the
 agents read the saved diff of the change.
+
+## 12. Second replay, 2026-10-20: the changed questions of three agents
+
+### What ran
+
+- From a session started after the definitions were changed (`fe65eb5`, `6fa3a63`): `review-platform` (P3, P5,
+  P6: questions 1 to 3), `review-tests-docs` (T5: question 6), `review-protocol-security` (S7: question 4).
+  `review-plan-compliance` not replayed (nothing in its scope changed).
+- Same worktree (`85ed34e`, `amisqueeze-0.4`, built `all` and `test` before the launch: green), same prompt as the
+  first replay (taken from its transcript), effort `high`; nothing in the prompt about any finding.
+- One minute after the launch, each transcript held the new wording: P3 "Release scripts are safety nets too", P5
+  "hands back", P6 "the rights its token gets" (review-platform); T5 "reading `src/`, not the tests"
+  (review-tests-docs); S7 (review-protocol-security).
+- `review-platform`: 21 minutes; `review-protocol-security`: 24 minutes; `review-tests-docs`: 35 minutes; none near
+  the 80-minute stop. 47 to 70 turns and 7 to 9.4 million tokens read from the cache each. All three baselines
+  green (371 checks, fake_server 0 failed); their worktrees removed. Every question of the three agents answered.
+- Blindness check (the tool calls of the three transcripts scanned for paths outside the tree, later refs and
+  tags): one breach, declared by the agent itself: `review-tests-docs` read the first five lines of
+  `../amiga-make.local.sh` (the local build launcher, outside the root) while finding out how `make` runs; nothing
+  from it is used in its findings. Otherwise no read outside the tree, the method and the agents' own scratch
+  files, no `main`, `HEAD`, `--all` or later tag; review-protocol-security fetched LMS 9.1 sources (`public/9.1`)
+  as a catalogue of what a server sends, as in both earlier runs. The one fact after the range in a report (0.5 =
+  `LOG`, Workbench start) is in the plan at `85ed34e` (`docs/development/README.md:89`).
+
+### Results against the criteria (fixed before the first replay, section 11)
+
+| Question | Result |
+|---|---|
+| 1. Values handed back by system calls | **Found, at a score off the scale**: review-platform (P5) names `amiga.c:134-136`, `gethostbyname()` with `h_addr_list[0]` and `h_length` unchecked, and lists it at "25-50", which is not a score of the method; the criterion (50 or more) is not met as fixed. The new P5 reached the class (it also lists `PORT/N` cut to 16 bits, the AHI mode name not forced to end with a NUL, `io_Actual` clamped). For the user to decide. |
+| 2. CI | **Met at 50** (review-platform, P6): no `permissions:` block in `tests.yml`, the token's rights left to a repository setting; also `actions/checkout@v5` pinned by tag, not by SHA. |
+| 3. Release scripts | **Met at 75**, above the criterion (review-platform F4): `tools/make-dist.py:20` reads only `$VER: amisqueeze`, and its docstring (lines 4-5) claims "the archive always matches the executable". Proven by six mistakes planted in one run, none stopped: `amisqueeze.fpu` at 0.3, a `-dev` version, no CHANGELOG section, `Firmware=0.2`, the guide at 0.4, an image the guide links deleted (left out of the zip without a word). |
+| 4. False comments | **Met at 50** (review-protocol-security, S7): `player.h:119` "a multiple of every frame size" (32768 % 6 = 2), scored 50 since the code rounds down (`stream.c:448`). Also found false at 50: `audio.c:80-81` (43 cycles per multiplication is about 13.5 % of a 28 MHz CPU, not a third) and `mp3.c:27` (16 KB is about 15.7 frames at 320 kbit/s, not 10). The comment on where the AHI preferences are read (`audio.c:7-8`, cited as 4-6) was found at 50 by review-tests-docs, not by S7: the "missed (minor)" row of section 9 is now found. |
+| 6. Malformed input | **Met at 50**, with new findings above it (review-tests-docs, T5): the core's checks on what a server or a file sends, listed from `src/`, and the unfed ones removed. About twenty server-input checks are never fed a failing value: `strm`, `audg` or packet too short, PCM fields out of range, `setd` name over 64 bytes, request over 1 KB, headers too long or cut, connection lost, not FLAC, more than 2 channels, the 35 s silence. Removed in **one** batch run (green), not one by one; gcov shows the failing side of each never runs, which makes one run enough. Scored 50. The guards of `read_lame_header` (an MP3 sent by the server) are scored 75, those of the `ahi.prefs` parser (a local file) 100. |
+| 5. Frame count of 0 | Not targeted by this replay; **not found** (no report names a Xing frame count of 0 with its flag set; review-tests-docs' "no frame count" is the flag clear, `mp3.c:88-89`). |
+
+### Findings, after verification (each cited line re-opened at `85ed34e`)
+
+All cited lines checked; three corrected: the AHI preferences comment is at `audio.c:7-8`; in review-platform's F1
+the Makefile lines are 30-34 (`__stkinit` for `amisqueeze.fpu` only), in its F2 the comment is at `Makefile:42-43`.
+Merges: review-protocol-security's F3 (stack not re-checked for 0.4) into review-platform's F1, which has the
+evidence; the "no script checks the version places" items of the two other 50 lists into review-platform's F4.
+
+Points of the first pass found again (first pass -> first replay -> this replay):
+
+- R1 / R8 (`amisqueeze` on the Shell's 4 KB stack, stale measurement): 90 / 80 -> 75 -> **100** (review-platform
+  F1). No `__stack` or `__stkinit` in the 68020 build (`Makefile:30-34`, `amiga.c:53-57`), and `-fstack-usage` on
+  the Amiga build puts the start-up FLAC measurement at about 5.6 KB (`drflac_open_with_metadata_private` 4608
+  bytes). The need is proven; the corruption is to confirm (the outside review confirmed it).
+- R2, first half (UBSan reports without failing): 90 -> not tested -> **75** (review-platform F2). A left shift of
+  a negative value planted at `audio.c:142` printed `runtime error`, and the run stayed green; the comment at
+  `Makefile:42-43` ("stop the program at the first ... undefined behaviour") is false.
+- R3 (AHI mode check at start-up never run, `player.c:231-237`; stub hook `stub_audio_mode` never set): 100 -> 75
+  -> **100**.
+- R7 ("file cut short" test ends between chunks, `test_core.c:1589,1597-1598`; `audio.c:365-366` never run): 85 ->
+  75 -> **100**. Without the guard the run stays green; a 110-byte cut gives an ASan stack-buffer-overflow.
+- R6 (`read_lame_header` variants: CRC, MPEG-2 mono, no count, no extension, `mp3.c:80-112`): 90 -> 75 -> **75**.
+- R13 (messages printed without `VERBOSE` missing from the user guide): 75 -> 75 -> **75**. About twenty, plus
+  `user-guide.md:341`, which shows `stream: …` as `VERBOSE` only while the stream errors print without it.
+- R11 / R15 (`cont`, autostart 2/3, ICY): 75 -> 75 -> **75** (review-protocol-security F1 and F2). The metadata
+  bytes going to the MP3 decoder are proven with a fake-server scenario (about 110 ms lost per metadata block); the
+  LMS trigger is inferred (direct streaming depends on preferences whose default was not found).
+- `check-saves.py` misses `dbra`, `(an)+`, `-(an)`, `movem` loads and pops: 50 list -> not tested -> **75**
+  (review-platform F3), proven by planted defects; a stricter checker finds no hit in 0.4, so the gap is latent.
+  fp2-fp7 stays at 50.
+- R14 (a FLAC rate of 0 stalls the track): 75 -> 50 -> **50**, proven again (176 bytes written, then nothing, no
+  STMu in 6 s) and scored 50 again.
+- In the 50 list again: the track queue that forgets its oldest entry, a request over 1 KB, the HTTP status never
+  checked, replay gain and the other ignored `strm` fields, `serv`, `PORT`/`UNIT`, the prefs line cut at 510, CI
+  coverage of the Amiga build, `stream.c` to split, the README links inside the zip, the 1.8d Content / Done
+  contradiction, `CLAUDE.md:131`.
+- The pointer in `user-guide.md:3-4` ("how to build them" in the README): 50 -> 75 -> **50**: review-tests-docs did
+  not apply rule 7 this time. Re-scored **75** at verification under that rule (a statement of the user guide
+  proven false at the reviewed commit).
+- **Not found this time**: N1 (`strm f` stops the playing track, found by the first replay); review-protocol-security
+  lists `q` and `f` as handled the same way, without the consequence. As in section 11, one run each way does not
+  tell the method from the run.
+
+New in the 50 list:
+
+- the fake server throws away the ASan report of a crash at start-up (`stop()` in a `finally`), and shows only a
+  `TimeoutError`;
+- `test_core` never calls `flac_start`;
+- removing `memset(&info)` (`mp3.c:250`) or `!st->first_seen` (`mp3.c:257`) stays green, and the sanitizers do not
+  see uninitialised reads;
+- the length of `s16-320-raw.mp3` is printed but not asserted;
+- 8-bit AIFF is read as unsigned (inferred);
+- `p` with `?` fields (Music Assistant `wav`) gives "format p not supported", which the user guide does not explain;
+- the `setd` name cut at 64 bytes can split a UTF-8 character;
+- the Makefile's `dist` comment omits CHANGELOG and images.
+
+### Assessment
+
+The changed questions reached their classes:
+
+- **Questions 2, 3, 4 and 6** were met, question 3 well above its criterion. The new P3 also turned the
+  `check-saves.py` gaps from 50 into a proven 75.
+- **Question 1** reached `gethostbyname()` through the new P5, but at a score the method does not have ("25-50"):
+  against the criterion as fixed, not met.
+- **Not seen in this run**: the frame count of 0 (in none of the three runs since the first pass), N1, and rule 7
+  (applied in the first replay, not in this one). These vary between runs of the same method; no question changed
+  them.
+
+Method and agents used: those of `6fa3a63` (the agents unchanged since `fe65eb5`).
+
+Decided with the user after this replay (2026-10-20): question 1 counts as found (P5 reached the point missed;
+only its score was off the scale), and the method now says that a score is one of the five values, never a range,
+with one line on what would move it (`review-method`, under the scoring table). Not tested by this replay; the
+next review applies it.

@@ -55,6 +55,9 @@ wrong.
 | 75 | very likely real, direct impact, or breaks an explicit rule |
 | 100 | certain and frequent |
 
+A score is one of the five values above, never a range. When torn between two, pick one and say in one line what
+would move it up or down.
+
 Only findings at 75 or more go in the main list. A finding that breaks an explicit rule of `CLAUDE.md` is at least
 75 by definition, even when it looks minor.
 
