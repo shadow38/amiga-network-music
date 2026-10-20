@@ -15,6 +15,22 @@ where.
 The Amiga becomes one of these players through **slimproto**, the protocol of Logitech's Squeezebox players, now
 spoken by free software on both sides.
 
+```mermaid
+flowchart LR
+    ctl["Web browser,<br>phone, tablet"] -->|"chooses what plays"| lms["Music server (LMS)<br>music library"]
+    subgraph amiga ["Amiga"]
+        tcp["TCP/IP stack<br>(bsdsocket.library)"] --> sq["amisqueeze"]
+        sq --> ahi["AHI"]
+        ahi --> out["Paula or<br>a sound card"]
+    end
+    lms -->|"slimproto, TCP 3483:<br>play, pause, volume..."| tcp
+    lms -->|"audio stream, HTTP 9000:<br>raw PCM, FLAC or MP3"| tcp
+    sq -.->|"player state, elapsed time"| lms
+```
+
+amisqueeze takes the server's commands, receives the music as an HTTP stream, decodes it if needed (FLAC, MP3 on
+a fast Amiga; otherwise the server sends raw PCM) and plays it through AHI.
+
 ## Supported servers
 
 | Server | | Status |
