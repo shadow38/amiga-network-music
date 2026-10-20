@@ -118,6 +118,10 @@ Back to the [plan](README.md).
     3.5d; it also closes 3.5b (the tooling judged on what it finds on HEAD). Its launch prompt adds "no `HEAD` in
     git commands" and "logs in your own worktree" ([decided](reviews/acceptance-0.4-0.5.md#8-decisions)). Before
     that review, the agents and the method read [rules.md](rules.md) and name a rule by its ID (`rules.md C12`)
-    rather than by a line of `CLAUDE.md` (decided with the user on 2026-10-20).
+    rather than by a line of `CLAUDE.md` (decided with the user on 2026-10-20). Also before it, the remarks of
+    `rules.md` not settled by 3.5d are decided with the user in one batch (the stale figures and names, the
+    `.info` icons in the zip's list, gcc 13 or 14, rules stated only in status sentences, the third-party
+    README wording), and whether `CLAUDE.md` gets a rule for what the server sends and for "not supported yet"
+    (decided with the user on 2026-10-20: the remarks a check depends on are settled when that check comes up).
 - **Criterion**: on `0.3..0.4` the review finds what the outside review found at 75 or more; its report on HEAD is
   handed to the user, each finding then fixed through a plan step or accepted.
