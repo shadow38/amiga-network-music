@@ -32,7 +32,7 @@ executables, documentation reworked, tested in WinUAE only); 0.4 = fourth releas
 fixed volume through LMS, AHI mode warning); 0.5 = fifth release (2026-10-20: `LOG`, Workbench start, commodity,
 stack of `amisqueeze` and FLAC seek fixed); 0.6 = sixth release (2026-10-21: the review fixes, troubleshooting,
 known limits and what has been tried in the user guide, ASCII documents in the zip, the zip's SHA-256 with the
-release; the first light review); the first public push of 2026-10-18 had no tag.
+release; the first light review), followed by 0.7-dev; the first public push of 2026-10-18 had no tag.
 The number appears in the two `$VER:` strings (`amiga.c`: `amisqueeze` and `amisqueeze.fpu`), in `Firmware=` of the
 `HELO` capabilities (`slimproto.c`) and in the user guide.
 

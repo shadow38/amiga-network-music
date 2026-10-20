@@ -19,7 +19,7 @@ tested yet. The server (and its web interface or apps) sees and controls it like
 
 ### Current state
 
-Version 0.6, a preview: tested in WinUAE only, not yet on a real Amiga.
+Version 0.7 in development. The latest release, 0.6, is a preview: tested in WinUAE only, not yet on a real Amiga.
 
 What amisqueeze does:
 
