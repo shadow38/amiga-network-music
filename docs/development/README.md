@@ -74,7 +74,7 @@ How to build and test: [CONTRIBUTING.md](../../CONTRIBUTING.md).
 | 3.2 Aminet archive | ⬜ |
 | 3.3 Public versions | 🔶 0.1 to 0.5 published (tags, GitHub releases, changelog); CI: host tests |
 | 3.4 Setup guides: minimal server, the Amiga on the network | ⬜ before 1.0 |
-| 3.5 Review before each release (method, review agents, rules inventory, checks) | 🔶 decided 2026-10-20; 3.5a done; 3.5b first run, two replays and `0.4..0.5` done (2026-10-20), its review of HEAD merged into 3.5e; 3.5c rules inventory done (2026-10-20) |
+| 3.5 Review before each release (method, review agents, rules inventory, checks) | 🔶 decided 2026-10-20; 3.5a done; 3.5b first run, two replays and `0.4..0.5` done (2026-10-20), its review of HEAD merged into 3.5e; 3.5c rules inventory done (2026-10-20); 3.5d: version strings check done (2026-10-20) |
 
 Phase 0 moves forward as needed: a tooling step is done when a step of phase 1 or 2 needs it. Phases 1 and 2 can
 progress in parallel. Release 0.5 was published on 2026-10-20 (`LOG`, start from the Workbench, a commodity, the
@@ -138,7 +138,6 @@ the track), the user guide's messages, the plan's statuses. Still open:
   - `gethostbyname()`: no check of an empty address list or of a length other than 4;
   - `PORT` and `UNIT` not checked for range (`PORT=70000`, `UNIT=255`);
   - the default options are read on one line of at most 510 characters, the rest dropped silently;
-  - `make dist` checks the first `$VER:` only (not the `.fpu` one, `Firmware=`, the changelog);
   - the CI builds neither the Amiga executables nor the configuration without MP3 actually shipped (decided: before
     1.0), and its workflow has no `permissions:` block;
   - malformed server input (cut frames, `strm` fields out of range, headers too long) is not tested yet;

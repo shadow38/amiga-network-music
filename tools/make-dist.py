@@ -1,26 +1,30 @@
 #!/usr/bin/env python3
 """Builds the release archive of a program: out/<prog>-<version>.zip, holding a <prog>-<version>/ directory with
 the Amiga executable (out/<prog>, and out/<prog>.fpu if built), LICENSE, README.md, CHANGELOG.md and the user
-guide with its images (docs/images/ -> images/). The version is read from the $VER: string of src/<prog>/amiga.c,
-so the archive always matches the executable.
+guide with its images (docs/images/ -> images/). The version is the one tools/check-version.py --release accepts
+(the same in both $VER: strings, Firmware=, the user guide, the README and the CHANGELOG, not a -dev one), so the
+archive always matches the executables.
 
 Paths inside the zip use forward slashes (the zip standard: Windows PowerShell 5.1's Compress-Archive writes
 backslashes, which other tools misread). An .lha archive for Aminet is left for later (plan step 3.2).
 
 Usage: make-dist.py <prog>   (from the repository root, after the Amiga build)
 """
+import importlib.util
 import os
-import re
 import sys
 import zipfile
 
 
 def version_of(prog):
-    with open(f"src/{prog}/amiga.c", encoding="latin-1") as f:
-        m = re.search(r"\$VER: " + re.escape(prog) + r" (\S+) \(", f.read())
-    if not m:
-        sys.exit(f"make-dist: no $VER: string for {prog} in src/{prog}/amiga.c")
-    return m.group(1)
+    """The version, once tools/check-version.py --release has accepted it (it exits otherwise)."""
+    spec = importlib.util.spec_from_file_location("check_version", os.path.join(os.path.dirname(__file__),
+                                                                             "check-version.py"))
+    check_version = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(check_version)
+    if prog != check_version.PROG:
+        sys.exit(f"make-dist: no version check for {prog} (tools/check-version.py)")
+    return check_version.check(release=True)
 
 
 def main():

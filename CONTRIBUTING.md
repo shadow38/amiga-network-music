@@ -76,6 +76,7 @@ tools/amiga-make.sh   runs make with whichever toolchain is available (see "Buil
 tools/check-saves.py  checks the generated assembly (safeguard against a gcc bug, see "Building")
 tools/pcm-compare.py  compares the PCM written by amisqueeze (OUTPUT option) with a reference, byte by byte
 tools/make-dist.py    builds the release archive (make dist)
+tools/check-version.py checks that the version number agrees everywhere (make test, make dist)
 tools/bin2c.py        turns a file into a C array (the built-in FLAC and MP3 samples of the speed measurement)
 tools/make-icon.py    draws the Workbench icons (out/<prog>.info, classic AmigaOS format) built with the programs
 ```
@@ -110,8 +111,10 @@ Run `make sdk` (task **Amiga: sync headers (.sdk)**) after installing or updatin
 
 `make dist` (`sh tools/amiga-make.sh dist`) builds the release archive `out/amisqueeze-<version>.zip`: the Amiga
 executables and their icons, `LICENSE`, the README, the changelog and the user guide with its images
-(`docs/images/`), the version read from the program's `$VER:` string. Before a release, the "Unreleased" part of `CHANGELOG.md` gets the version
-number and the date.
+(`docs/images/`). Before a release, the "Unreleased" part of `CHANGELOG.md` gets the version number and the date.
+`make dist` refuses to build the archive unless `tools/check-version.py --release` accepts the version: not a
+`-dev` one, the same in both `$VER:` strings, `Firmware=`, the user guide and the README, with its section at the
+top of the changelog, dated as the `$VER:` strings, and nothing left under "Unreleased".
 
 Per-program options live in the `Makefile` (`<prog>_CFLAGS`): network programs target the 68020 (`-m68020`).
 amisqueeze is built twice: `out/amisqueeze` (68020, no FPU) and `out/amisqueeze.fpu` (68020 + 68881, with the MP3
@@ -137,6 +140,10 @@ make test                         # unit tests of the core, then scenarios again
 make test HOSTCC=clang            # another native compiler (untested)
 ```
 
+Before the tests, `make test` runs `tools/check-version.py`: the version number must be the same in both `$VER:` strings
+(declared as `static char <name>[] = "$VER: ...";`, never const), `Firmware=` and the user guide's state line
+(`Version x.y in development` for `x.y-dev`, `Version x.y,` for a release); the latest release named by the guide
+and the README must be the newest section of `CHANGELOG.md`; the commodity's title must fit 39 characters.
 `make test` needs no LMS server: the unit tests run the core on a fake platform (`tests/stub_platform.c`), and
 `tests/fake_server.py` plays a slimproto server and its HTTP streams on localhost (handshake, renaming,
 disconnection and reconnection, Ctrl-C, argument errors; streams played, paused, stopped, held, cut; the `OUTPUT`

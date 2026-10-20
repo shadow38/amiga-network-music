@@ -99,7 +99,10 @@ out-host/test_core: obj-host/tests/test_core.o obj-host/tests/stub_platform.o \
 	@mkdir -p $(dir $@)
 	$(HOSTCC) $(HOST_LDFLAGS) -o $@ $^
 
+# tools/check-version.py: the version number agrees everywhere (make dist checks it again through make-dist.py,
+# with --release: no -dev version, the CHANGELOG section and its date)
 test: host out-host/test_core
+	python3 tools/check-version.py
 	out-host/test_core
 	python3 tests/fake_server.py out-host/amisqueeze
 

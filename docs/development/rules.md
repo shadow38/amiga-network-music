@@ -52,11 +52,12 @@ Written on 2026-10-20. Line numbers are those of commit `2802634`.
 | V1 | 0.x until the main feature works; 1.0 = first really usable version, tested on the real machine (CLAUDE.md:12-13) | rule | review | review | – | – |
 | V2 | The version changes only for a published release; never bumped without asking the user (CLAUDE.md:13-14) | rule | review | review | – | – |
 | V3 | A release = a tag `amisqueeze-<version>` + a GitHub Release with the zip and short notes, made with the GitHub CLI once the user has approved the notes (CLAUDE.md:14-16) | rule | manual; the zip: `make dist` (`tools/make-dist.py` checks that each file exists) | manual, by the release rule of 3.5e | 0.4..0.5 §5 (`dist` does not depend on `test`) | the zip's list (CLAUDE.md:14-15, `make-dist.py:2-5`) omits the `.info` icons (0.4..0.5 §5) |
-| V4 | `CHANGELOG.md` (Keep a Changelog): each user-visible change under "Unreleased" as it is made; the version and date given at the release (CLAUDE.md:16-17; CONTRIBUTING.md:113-114) | rule | review | review; the release part: script **3.5d** (`make dist` refuses a version without its section) | 0.4..0.5 R3 | – |
-| V5 | The `$VER:` date is the release date; between releases the number reads `<next>-dev` (CLAUDE.md:17-18) | rule | review | script **3.5d** (`make dist` refuses `-dev`, and a `$VER:` date other than the CHANGELOG's) | 0.4..0.5 R3 | – |
-| V6 | The number appears in both `$VER:` strings (`amiga.c`), in `Firmware=` (`slimproto.c`) and in the user guide (CLAUDE.md:23-25, :85) | rule | nothing (`make-dist.py:18-22` reads the first `$VER:` only) | script **3.5d** (all four agree), run by `make test` and `make dist` | 0.3..0.4 §12; 0.4..0.5 R3; open point (`docs/development/README.md:140`) | first candidate named by the plan |
-| V7 | The `$VER:` string is not const, so it sits in the data hunk (CLAUDE.md:210-211) | rule | nothing (a comment, `amiga.c:43-45`) | script **3.5d** (no `const` on the `$VER:` lines) | – | – |
+| V4 | `CHANGELOG.md` (Keep a Changelog): each user-visible change under "Unreleased" as it is made; the version and date given at the release (CLAUDE.md:16-17; CONTRIBUTING.md:113-114) | rule | the release part: script (`tools/check-version.py`: `make test` refuses a CHANGELOG not starting with "Unreleased", a heading not of the form `## [x.y] - yyyy-mm-dd`, a release version that is not its newest section; `make dist` also refuses a non-empty "Unreleased"; seen failing 2026-10-20); the rest: review | review; the release part: script | 0.4..0.5 R3 | – |
+| V5 | The `$VER:` date is the release date; between releases the number reads `<next>-dev` (CLAUDE.md:17-18) | rule | script (`tools/check-version.py`: `make dist` refuses `-dev`; a release version dated otherwise than its CHANGELOG section, and an `x.y-dev` not after the latest release, refused by `make test` too; seen failing 2026-10-20) | script | 0.4..0.5 R3 | – |
+| V6 | The number appears in both `$VER:` strings (`amiga.c`), in `Firmware=` (`slimproto.c`) and in the user guide (CLAUDE.md:23-25, :85) | rule | script (`tools/check-version.py`, run by `make test` and, through `make-dist.py`, by `make dist`: both `$VER:` strings, `Firmware=`, the guide's state line agree; the latest release named by the guide and by `README.md` is the CHANGELOG's newest section, an extension decided with the user on 2026-10-20; seen failing 2026-10-20) | script | 0.3..0.4 §12; 0.4..0.5 R3; open point (`docs/development/README.md:140`) | first candidate named by the plan |
+| V7 | The `$VER:` string is not const, so it sits in the data hunk (CLAUDE.md:210-211) | rule | script (`tools/check-version.py`: each `$VER:` string declared exactly as `static char <name>[] = "$VER: …";`, on a line of its own; seen failing 2026-10-20) | script | – | – |
 | V8 | Before each release, `Version <exe> FULL` for both executables in WinUAE (CLAUDE.md:212-213) | rule | manual | manual, in the release rule of 3.5e | 0.3..0.4 §4, 0.4..0.5 §4: outside the repository | – |
+| V9 | The commodity's title is the `$VER:` string without `$VER: `: it must fit `CBD_TITLELEN`, 40 bytes with the NUL (`amiga.c:475`, NDK `libraries/commodities.h`; not in `CLAUDE.md`, added with its check, decided with the user on 2026-10-20) | limit (commodities.library) | script (`tools/check-version.py`; seen failing 2026-10-20) | script | – | what commodities.library does with a longer title was not tried |
 
 ## P. Plan, documentation, test method
 
@@ -202,7 +203,9 @@ Findings that touch only the method's principles, no rule of `CLAUDE.md` or `CON
 In the plan's order first, then the others; each to be proposed one by one.
 
 1. Version strings: both `$VER:`, `Firmware=`, the user guide agree; `make dist` refuses `-dev`, a missing
-   CHANGELOG section, a date other than the CHANGELOG's; no `const` on `$VER:` (V4 to V7).
+   CHANGELOG section, a date other than the CHANGELOG's; no `const` on `$VER:` (V4 to V7). Done on 2026-10-20:
+   `tools/check-version.py`, with the latest release named by the guide and the README and the commodity's title
+   length (V9) added.
 2. Every message the program prints has a row in the user guide (P3).
 3. ASCII only and LF line endings (G4, once its scope is decided).
 4. Nothing specific to the developer's workstation, the word list kept outside the repository (G1).

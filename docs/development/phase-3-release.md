@@ -113,7 +113,12 @@ Back to the [plan](README.md).
     the two acceptance reports linked to them; twelve candidates for 3.5d; twelve remarks (stale figures and
     names, the scope of the ASCII rule, the `msg()` exception) left for the user to decide;
   - **3.5d** mechanical checks run by `make test`, proposed one by one (first candidates: version strings, every
-    message in the user guide, ASCII-only sources, nothing specific to the developer's workstation);
+    message in the user guide, ASCII-only sources, nothing specific to the developer's workstation). Each check:
+    proposed, accepted, written, seen failing on planted defects in a throwaway worktree, seen passing on the
+    repository. Done: (1) the version strings, `tools/check-version.py` (2026-10-20; `rules.md` V4 to V7, V9):
+    run by `make test`, and with `--release` by `make dist` through `make-dist.py`; accepted the 0.3, 0.4 and 0.5
+    tags as releases, refused 17 planted defects and HEAD itself with `--release`, also through `make test` and
+    `make dist` themselves;
   - **3.5e** the release rule in `CLAUDE.md`, then a review of HEAD against `amisqueeze-0.5`, after 3.5c and
     3.5d; it also closes 3.5b (the tooling judged on what it finds on HEAD). Its launch prompt adds "no `HEAD` in
     git commands" and "logs in your own worktree" ([decided](reviews/acceptance-0.4-0.5.md#8-decisions)). Before
