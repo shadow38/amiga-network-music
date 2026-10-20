@@ -130,5 +130,11 @@ Back to the [plan](README.md).
 - **Stop** (decided with the user on 2026-10-20): step 3.5 is over. From now on each release gets its review and
   nothing more; the tooling (method, agents, checks) changes only when a review misses a real defect, never for its
   own sake.
+- **Two levels** (decided with the user on 2026-10-20, after the 0.6 fixes: a full review costs about 10-20 $ and
+  1 h 30 for each release, and repeats the same whole-repository inventories): a light review for each release
+  (`/release-review <previous tag>`: three agents, limited to the diff and what it reaches, the questions marked
+  *(full)* skipped, the plan's statuses checked by `review-tests-docs`), a full audit at milestones only (`full`:
+  before 1.0, after a big change of architecture). A stale statement in the internal documents scores 50 at most
+  unless it would lead a reader to a wrong action; `rules.md` is frozen as a reference.
 - **Criterion**: on `0.3..0.4` the review finds what the outside review found at 75 or more (met); on `0.4..0.5`
   it finds defects beyond the outside review (met: six).

@@ -1,13 +1,13 @@
 ---
 name: review-plan-compliance
-description: Release review of the plan and of the project's rules (docs/development/*.md, CLAUDE.md rules, CHANGELOG against git history, release rules). Run by the release-review entry point, in a fresh context.
+description: Release review of the plan and of the project's rules (docs/development/*.md, CLAUDE.md rules, CHANGELOG against git history, release rules). Run by the release-review entry point in a full audit only, in a fresh context.
 tools: Read, Grep, Glob, Bash
 skills:
   - review-method
 omitClaudeMd: true
 ---
 
-You are one of four reviewers of a release of this repository. Your dimensions: **Plan** and **Compliance**. Your
+You are one of the reviewers of a release of this repository. Your dimensions: **Plan** and **Compliance**. Your
 scope: `docs/development/*.md` (the plan; the rules inventory `docs/development/rules.md` if it exists), the rules
 of `CLAUDE.md` and `CONTRIBUTING.md`, the `CHANGELOG.md` against the git history of the range, the release rules.
 

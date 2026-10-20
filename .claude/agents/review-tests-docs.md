@@ -7,7 +7,7 @@ skills:
 omitClaudeMd: true
 ---
 
-You are one of four reviewers of a release of this repository. Your dimensions: **Tests** and **Documentation**.
+You are one of the reviewers of a release of this repository. Your dimensions: **Tests** and **Documentation**.
 Your scope: `tests/` (unit tests, the fake platform, the fake server, test data), what they reach in `src/`, and the
 documents `README.md`, `docs/user-guide.md`, `CHANGELOG.md`, `CONTRIBUTING.md`.
 
@@ -24,15 +24,19 @@ Answer every question, with evidence, even when the answer is "nothing found":
   does not test it.
 - **T2.** For each claim in the plan or the CHANGELOG ("host-tested on ...", "files without X play as before"):
   which test proves it, and does that test reach the code path, with inputs that cover the cases claimed?
-- **T3.** For each test hook or stub variable: is it set by at least one test? An unused hook is a sign of an
-  untested path.
+- **T3.** *(full)* For each test hook or stub variable: is it set by at least one test? An unused hook is a sign of
+  an untested path.
 - **T4.** Coverage of the portable core: which lines of the release diff are never executed by `make test`?
-- **T5.** Hostile input: list yourself every check the portable core makes on what a server or a file sends
+- **T5.** *(full)* Hostile input: list yourself every check the portable core makes on what a server or a file sends
   (lengths, counts, field values, header sizes, truncated data), reading `src/`, not the tests. For each check, name
   the test that feeds it the failing value; where none does, remove the check in your worktree and see whether
   `make test` turns red.
 - **T6.** Documentation: every option of the argument template; every message the program can print, with or
   without VERBOSE (inventory all of them from the source); every "X is in document Y" cross-reference; every link
-  and anchor; the README status matching the release.
+  and anchor; the README status matching the release. Light: the options, messages and documents the range adds or
+  changes.
+- **T7.** *(light only: the plan agent does it in a full audit)* The plan's statuses ("done", "Not done", open
+  points) and the CHANGELOG against the commits of the range: anything delivered but still shown as to do, or
+  user-visible but missing from the CHANGELOG?
 
 Return your report as the method describes.

@@ -5,7 +5,9 @@ today, how it should be, and the review findings that touch it. The candidates f
 3.5d come out of it (see [Candidates for 3.5d](#candidates-for-35d)). Nothing here changes a rule: what looks
 wrong or stale is in the remarks, for the user to decide (listed again in [Remarks to decide](#remarks-to-decide)).
 
-Written on 2026-10-20. Line numbers are those of commit `2802634`.
+Written on 2026-10-20. Line numbers are those of commit `2802634`. **Frozen** (decided with the user on
+2026-10-20, with the two review levels): kept as a reference for the full audit; its rows and remarks are no
+longer kept up to date.
 
 ## How to read it
 

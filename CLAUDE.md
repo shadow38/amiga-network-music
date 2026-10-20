@@ -14,19 +14,22 @@ only for a **published** release; 1.0 = first really usable version (tested on t
 our own: ask the user. A release = a Git tag `amisqueeze-<version>` + a GitHub Release with a zip (the Amiga
 executables and their `.info` icons, `LICENSE`, `README.md`, `CHANGELOG.md`, the user guide and its images) and
 short notes, made with the GitHub CLI once the user has approved the notes. **Before every release tag** (plan step
-3.5, decided 2026-10-20): a full review of the range since the previous tag, `/release-review <previous tag>`;
-findings scored 75 or more are fixed, or accepted by the user with the reason in the report (an urgent fix may ship
-after a review of its own diff; the next release then gets a full review); the review tooling changes only when a
-review misses a real defect. `CHANGELOG.md` (Keep a Changelog, added 2026-10-20): note each
-user-visible change under "Unreleased" as it is made, and give that part the version and date at the release; the `$VER:` date is the release date. Between releases the number reads `<next>-dev`, so that
-a build in between is not taken for the last release. 0.1 = first release (2026-10-19: AHI audio, volume,
-robustness, tested in WinUAE only); 0.2 = second release (2026-10-19: FLAC decoded on fast Amigas, 8/24/32-bit
-PCM, tested in WinUAE only); 0.3 = third release (2026-10-20: MP3 decoded by `amisqueeze.fpu`, two executables,
-documentation reworked, tested in WinUAE only); 0.4 = fourth release (2026-10-20: MP3 without gaps, fixed volume
-through LMS, AHI mode warning); 0.5 = fifth release (2026-10-20: `LOG`, Workbench start, commodity, stack of
-`amisqueeze` and FLAC seek fixed), followed by 0.6-dev; the first public push of 2026-10-18 had no tag. The number
-appears in the two `$VER:` strings (`amiga.c`: `amisqueeze` and `amisqueeze.fpu`), in `Firmware=` of the `HELO`
-capabilities (`slimproto.c`) and in the user guide.
+3.5, decided 2026-10-20; two levels decided the same day, for cost): a light review of the range since the previous
+tag, `/release-review <previous tag>` (three agents, limited to the diff and what it reaches); a full audit,
+`/release-review <previous tag> full` (four agents, the whole repository), only at milestones: before 1.0, or after
+a big change of architecture (Music Assistant, splitting `stream.c`). Findings scored 75 or more are fixed, or
+accepted by the user with the reason in the report (an urgent fix may ship after a review of its own diff); the
+review tooling changes only when a review misses a real defect, or when the user decides it. `CHANGELOG.md` (Keep a
+Changelog, added 2026-10-20): note each user-visible change under "Unreleased" as it is made, and give that part
+the version and date at the release; the `$VER:` date is the release date. Between releases the number reads
+`<next>-dev`, so that a build in between is not taken for the last release. 0.1 = first release (2026-10-19: AHI
+audio, volume, robustness, tested in WinUAE only); 0.2 = second release (2026-10-19: FLAC decoded on fast Amigas,
+8/24/32-bit PCM, tested in WinUAE only); 0.3 = third release (2026-10-20: MP3 decoded by `amisqueeze.fpu`, two
+executables, documentation reworked, tested in WinUAE only); 0.4 = fourth release (2026-10-20: MP3 without gaps,
+fixed volume through LMS, AHI mode warning); 0.5 = fifth release (2026-10-20: `LOG`, Workbench start, commodity,
+stack of `amisqueeze` and FLAC seek fixed), followed by 0.6-dev; the first public push of 2026-10-18 had no tag.
+The number appears in the two `$VER:` strings (`amiga.c`: `amisqueeze` and `amisqueeze.fpu`), in `Firmware=` of the
+`HELO` capabilities (`slimproto.c`) and in the user guide.
 
 **Licence: MIT** (`LICENSE`, "Copyright (c) 2026 shadow38"), decided 2026-10-18. squeezelite and LMS are GPL:
 read them to **understand** the protocol and its expected behaviour (message layouts, when to send which state),

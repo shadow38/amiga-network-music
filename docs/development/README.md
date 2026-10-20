@@ -88,7 +88,7 @@ AHI mode warning; 0.3 too: MP3 decoded by `amisqueeze.fpu`; 0.2 on 2026-10-19: F
 |---|---|---|
 | 0.4 | MP3 without gaps (1.8d), fixed volume through LMS's own setting, the AHI mode warning (1.10): all done | host and WinUAE |
 | 0.5 | `LOG=<file>`, start from the Workbench with an icon and ToolTypes, a commodity stopped from Exchange (1.10); seeking in a FLAC decoded on the Amiga fixed (1.8b); the outside review's fixes (stack of `amisqueeze`, tests): all done | host and WinUAE |
-| 0.6 | the fixes from the review reports (decided with the user on 2026-10-20): the open findings of the two acceptance reviews (documentation, the icon's `WINDOW` with `SMART`, a decoder that cannot start, a FLAC rate of 0, gaps in `check-saves.py`, guards without a test), the ICY limitation written in the user guide; then the first release review in real use | host and WinUAE |
+| 0.6 | the fixes from the review reports (decided with the user on 2026-10-20): the open findings of the two acceptance reviews (documentation, the icon's `WINDOW` with `SMART`, a decoder that cannot start, a FLAC rate of 0, gaps in `check-saves.py`, guards without a test), the ICY limitation written in the user guide; then its release review (light, the first in real use) | host and WinUAE |
 | 0.7 | what the real machine (1.9, tried with 0.6) shows first; then internet radios' metadata (ICY, see below) and automatic server discovery (1.10), in the order the real tests make important | host for the code; validated on the real machine and network |
 
 **0.6, the fixes** (open findings of [acceptance-0.3-0.4](reviews/acceptance-0.3-0.4.md) and

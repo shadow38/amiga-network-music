@@ -39,11 +39,20 @@ wrong.
 - The project's `CLAUDE.md` and `CONTRIBUTING.md` take precedence. A finding cites the rule it relies on
   (file:line), or the principle above that applies.
 - The release diff (the range you are given) is reviewed line by line. Architecture, security and tests are
-  reviewed on the whole repository at the commit under review.
+  reviewed on the whole repository at the commit under review in a full audit; in a light review, what the diff
+  adds or changes and the code, tests and documents it reaches (see Levels).
 - `third_party/` and generated files (`bench_*.c`) are not reviewed themselves; the paths through them that the
   project's own code reaches are, including what they cost in stack, memory and time on the Amiga.
 - Read only the commit under review and the history up to it. Never look at later commits, other branches or tags
   after the one under review, nor at files outside the tree you are given (except this method).
+
+## Levels (given in your prompt)
+
+- **light** (each release): answer each question for what the release diff adds or changes, and the code, tests
+  and documents it reaches. Skip the questions marked *(full)*, saying so in one line (not a limit). Experiments
+  only for what the diff adds or changes (a guard, a test, a safety net). Compliance table: the units the range
+  touches only.
+- **full** (milestones): every question, on the whole repository.
 
 ## Scoring (confidence that the problem is real, not how serious it feels)
 
@@ -59,7 +68,9 @@ A score is one of the five values above, never a range. When torn between two, p
 would move it up or down.
 
 Only findings at 75 or more go in the main list. A finding that breaks an explicit rule of `CLAUDE.md` is at least
-75 by definition, even when it looks minor.
+75 by definition, even when it looks minor, with one exception: a stale or wrong statement in the internal
+documents (`CLAUDE.md`, the plan and the rest of `docs/development/`) is 50 at most, unless a reader acting on it
+would do something wrong (break a rule, skip a needed check, ship a wrong release).
 
 A code comment proven false is 75 when it states a limit or an invariant that the code, or a later change, would
 rely on; 50 otherwise. In the user documentation (README, user guide), a statement proven false at the reviewed

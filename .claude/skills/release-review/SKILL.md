@@ -1,14 +1,20 @@
 ---
 name: release-review
-description: Review a release before its tag (plan step 3.5): runs the four review agents in parallel, in fresh contexts, on the range since the previous tag, verifies every finding and writes the report. Fixes nothing.
-argument-hint: <previous tag> [commit, default HEAD] [worktree path]
+description: Review a release before its tag (plan step 3.5): runs the review agents in parallel, in fresh contexts, on the range since the previous tag (light review by default, full audit with "full"), verifies every finding and writes the report. Fixes nothing.
+argument-hint: <previous tag> [full] [commit, default HEAD] [worktree path]
 ---
 
 # Release review
 
-Arguments: `$ARGUMENTS` = `<previous tag> [commit] [root]`. The commit defaults to `HEAD`; the root (the tree under
-review) defaults to the repository. Read `.claude/skills/review-method/SKILL.md` first: it is the method you apply in
-the verification pass.
+Arguments: `$ARGUMENTS` = `<previous tag> [full] [commit] [root]`. The commit defaults to `HEAD`; the root (the tree
+under review) defaults to the repository. The level (the method's "Levels"):
+
+- **light**, the default, for each release: the agents `review-protocol-security`, `review-platform` and
+  `review-tests-docs`, limited to the release diff and what it reaches; `<minutes>` 40, stop rule 50 minutes;
+- **full**, with `full`, at milestones (before 1.0, after a big change of architecture): the four agents, the
+  whole repository; `<minutes>` 70, stop rule 80 minutes.
+
+Read `.claude/skills/review-method/SKILL.md` first: it is the method you apply in the verification pass.
 
 ## 1. Pin the review
 
@@ -21,15 +27,15 @@ the verification pass.
 - Note how `make test` and the Amiga build run on this machine (`CONTRIBUTING.md`, plus any local notes the user
   keeps outside the repository): the agents need it, and it is not in the repository's generic files.
 
-## 2. Run the four agents in parallel
+## 2. Run the agents in parallel
 
-- In **one** message, launch the agents `review-protocol-security`, `review-platform`, `review-tests-docs` and
-  `review-plan-compliance` (`.claude/agents/`). Their definitions set `omitClaudeMd`: they read the `CLAUDE.md` of
+- In **one** message, launch the agents of the level (`.claude/agents/`; `review-plan-compliance` only in a full
+  audit). Their definitions set `omitClaudeMd`: they read the `CLAUDE.md` of
   the tree under review themselves, so the rules are those of the reviewed commit.
 - Give each one only: the root, the full SHA, the range, the path of the method skill, how to run `make test` (and
   the Amiga build) here, and a worktree name of its own for experiments (`../<repo>-review-<agent>`). Nothing from
   the development conversation: no known defects, no hints, no expected results.
-- Use this prompt, the same for the four agents but the worktree name; fill the `<…>` and change nothing else
+- Use this prompt, the same for every agent but the worktree name; fill the `<…>` and change nothing else
   (`<build>` is the machine's own text, kept outside the repository; `<later tags>` is "any tag later than
   <tag of the commit>", or "any tag" when the commit has none):
 
@@ -41,6 +47,7 @@ the verification pass.
   - Release range: <previous tag>..<full SHA>
   - Method: <path of review-method/SKILL.md> (the tree under review has no .claude/; this file is the only one
     you may read outside the root).
+  - Level: <light or full> (the method's "Levels").
 
   How to build and test on this machine:
   <build>
@@ -49,7 +56,7 @@ the verification pass.
 
   Experiments: your own throwaway worktree only: `git -C <root> worktree add ../<repo>-review-<name> <full SHA>`.
   Remove it when done (`git -C <root> worktree remove --force <path>`, then `git -C <root> worktree prune`).
-  Never commit, never push. Three other reviewers run at the same time in their own worktrees (tests use
+  Never commit, never push. Other reviewers run at the same time in their own worktrees (tests use
   ephemeral ports, builds stay in each tree). Write your logs and scratch files in your worktree, nowhere else.
 
   Read nothing beyond the commit under review:
@@ -59,12 +66,12 @@ the verification pass.
   - read nothing else in the parent directory of the root (no other repository or checkout, no local notes),
     except the method file above.
 
-  Time: if you approach 70 minutes, wrap up and return your report, listing what you could not answer as limits.
+  Time: if you approach <minutes> minutes, wrap up and return your report, listing what you could not answer as limits.
 
   Return your report as the method describes.
   ```
 
-  Before the launch, build the root (`all`, `test`) and see it green. Stop rule: 80 minutes per agent.
+  Before the launch, build the root (`all`, `test`) and see it green. Stop rule: that of the level, per agent.
 - Never use a fork, which inherits the conversation. If the `review-*` agent types are not available (they are
   found when Claude Code starts in the repository; a `.claude/agents/` created or edited during a session needs a
   restart), stop and say so, rather than falling back to an agent that gets this session's context. After an
@@ -86,15 +93,16 @@ For every finding the agents return:
   (and say whether a finding seen before was marked fixed there).
 
 Check that each agent answered every one of its questions; a question left unanswered is a limit of the review.
-Check the agents' blindness: scan their transcripts' tool calls for paths outside the root, refs or tags later
-than the commit, and web access; write what you find in the report's header.
+For a review of a past commit (an acceptance test), check the agents' blindness: scan their transcripts' tool calls
+for paths outside the root, refs or tags later than the commit, and web access; write what you find in the report's
+header.
 
 ## 4. Write the report
 
 `docs/development/reviews/<version or tag>.md` (one per release; for an acceptance test, a name that says so), in
 English:
 
-1. Header: SHA, range, date, the agents run, how `make test` was run.
+1. Header: SHA, range, date, level, the agents run, how `make test` was run.
 2. Synthesis: findings per dimension at 75 or more, one line of assessment each.
 3. Findings at 75 or more, ranked by score, in the method's format, each with "proven" or "to confirm".
 4. The compliance table (merged from the agents).
