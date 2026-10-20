@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Builds the release archive of a program: out/<prog>-<version>.zip, holding a <prog>-<version>/ directory with
-the Amiga executable (out/<prog>, and out/<prog>.fpu if built), LICENSE, README.md, CHANGELOG.md and the user
-guide with its images (docs/images/ -> images/). The version is the one tools/check-version.py --release accepts
-(the same in both $VER: strings, Firmware=, the user guide, the README and the CHANGELOG, not a -dev one), so the
-archive always matches the executables.
+the Amiga executable (out/<prog>, and out/<prog>.fpu if built) with its .info icon, LICENSE, README.md,
+CHANGELOG.md and the user guide with its images (docs/images/ -> images/). The version is the one
+tools/check-version.py --release accepts (the same in both $VER: strings, Firmware=, the user guide, the README and
+the CHANGELOG, not a -dev one), so the archive always matches the executables.
 
 Paths inside the zip use forward slashes (the zip standard: Windows PowerShell 5.1's Compress-Archive writes
 backslashes, which other tools misread). An .lha archive for Aminet is left for later (plan step 3.2).

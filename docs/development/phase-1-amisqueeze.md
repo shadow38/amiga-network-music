@@ -26,7 +26,7 @@ belongs to the task that opened it; packets serialised field by field; buffers a
 - **Content**: default options in the global variable `ENV:amisqueeze.prefs` (kept across reboots by a copy in
   `ENVARC:`), parsed with the same `ReadArgs` template as the command line; the command line wins; `SERVER` is no
   longer mandatory on the command line; clear error if no server is given anywhere or if the variable cannot be
-  parsed. ToolTypes and Workbench start come later (1.10). Documented in the
+  parsed. ToolTypes and Workbench start came later (1.10, version 0.5). Documented in the
   [user guide](../user-guide.md#default-options).
 - **Criterion**: after `Echo "SERVER=127.0.0.1 NAME=Amiga" >ENV:amisqueeze.prefs` (and a copy in `ENVARC:`, then
   a reboot), `amisqueeze` alone connects as "Amiga"; `amisqueeze NAME=Other` connects as "Other"; an unknown option
@@ -50,7 +50,8 @@ belongs to the task that opened it; packets serialised field by field; buffers a
     that later steps replace with a file (1.3) and AHI (1.4); byte counters;
   - states: `STMc` (connected), `STMs` (playback started), `STMd` (end of data), `STMu` (buffer empty), buffer
     fullness and elapsed time in `STAT`;
-  - `strm q`/`f`: stop and flush; `cont` and `autostart` handled as in squeezelite.
+  - `strm q`/`f`: stop and flush; autostart 2 and 3 (wait for `cont`, radio metadata) played as 0 and 1; `cont`
+    itself ignored ("not handled"): internet radios' metadata (ICY) is planned for 0.7.
 - **Criterion**, measured on the server through its CLI, not on the web page (its progress bar animates by itself
   between refreshes, even when nothing plays): `waitingToPlay` goes back to 0 once the player reports the start;
   `<player> time ?` increases by about 60 s in 60 s (less than 1 s off);
@@ -213,8 +214,9 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   expected, no `STMo`; heard by the user (100, 25, mute, unmute, 50): each change clear, no click. Learnt from LMS
   (`Slim/Player/Squeezebox2.pm`, `Player.pm`): its volume curve gives 50 = 0x0F00 (about -25 dB), 25 = 0x039E;
   mute, unmute and pause fade through several `audg` in about a second; "fixed volume" (`digitalVolumeControl`
-  0, sent as `adjust` 0) is refused for a player without `HasDigitalOut` in its capabilities, so LMS never sends
-  `adjust` 0 to amisqueeze.
+  0, sent as `adjust` 0) is refused for a player without `HasDigitalOut` in its capabilities, so LMS never sent
+  `adjust` 0 to amisqueeze then; since 1.10 (version 0.4) amisqueeze advertises `HasDigitalOut=1` and handles
+  it (fixed volume).
 
 ## 1.6 Robustness ✅ (2026-10-19)
 
@@ -464,20 +466,20 @@ belongs to the task that opened it; packets serialised field by field; buffers a
 - **Criterion**: on the host, the decoded test files line up with their signal from the first sample (delay 0
   instead of 1105 or 2257 frames) and keep its length; two MP3 tracks back to back without gap, byte for byte;
   heard by the user on a track that flows into the next one.
-- **Done** (2026-10-20): `read_lame_header()` in `mp3.c` reads the first frame found: "Xing" or "Info" after the
-  side information (17 or 32 bytes for MPEG-1, 9 or 17 for MPEG-2, plus 2 with a CRC), the frame count, then the
-  encoder's extension (delay and padding, 12 bits each, 21 bytes into it), the layout minimp3's `minimp3_ex.h`
-  reads (read to check, not copied). That frame is not played; the delay plus the decoder's 529 frames are
-  dropped at the start, and the output stops at frames × 1152 (576 for MPEG-2) minus delay and padding. A header
-  without frame count or extension: the frame is skipped, nothing trimmed; no header: played as before. Seeking,
-  checked in LMS's source (`Slim/Formats/MP3.pm`, `getInitialAudioBlock`): LMS sends the file's first frame again
-  before the data from the new position, so the start trim drops about 25 ms after the seek point and the end
-  limit is never reached (nothing wrongly cut). Tests: the five test files with a header come out with delay 0 and
-  their signal's exact length (22.05 and 48 kHz, mono included), the one without a header unchanged (1105); a
-  continuous signal cut off a frame boundary into two files (`cont-a`, `cont-b`) comes back whole, the same SNR
-  around the cut as elsewhere (24.8 dB); a seek as LMS sends it plays the end of the track in full. Heard by the
-  user in WinUAE (68020 + 68882, JIT, Toccata): a 12 s glide cut into three MP3s, with mini gaps from 0.3 (12.9 s)
-  and seamless now (12.3 s).
+- **Done** (2026-10-20): `read_lame_header()` (since renamed `mp3_lame_header()`) in `mp3.c` reads the first frame
+  found: "Xing" or "Info" after the side information (17 or 32 bytes for MPEG-1, 9 or 17 for MPEG-2, plus 2 with a
+  CRC), the frame count, then the encoder's extension (delay and padding, 12 bits each, 21 bytes into it), the
+  layout minimp3's `minimp3_ex.h` reads (read to check, not copied). That frame is not played; the delay plus the
+  decoder's 529 frames are dropped at the start, and the output stops at frames × 1152 (576 for MPEG-2) minus delay
+  and padding. A header without frame count or extension: the frame is skipped, nothing trimmed; no header: played
+  as before. Seeking, checked in LMS's source (`Slim/Formats/MP3.pm`, `getInitialAudioBlock`): LMS sends the file's
+  first frame again before the data from the new position, so the start trim drops about 25 ms after the seek point
+  and the end limit is never reached (nothing wrongly cut). Tests: the five test files with a header come out with
+  delay 0 and their signal's exact length (22.05 and 48 kHz, mono included), the one without a header unchanged
+  (1105); a continuous signal cut off a frame boundary into two files (`cont-a`, `cont-b`) comes back whole, the
+  same SNR around the cut as elsewhere (24.8 dB); a seek as LMS sends it plays the end of the track in full. Heard
+  by the user in WinUAE (68020 + 68882, JIT, Toccata): a 12 s glide cut into three MP3s, with mini gaps from 0.3
+  (12.9 s) and seamless now (12.3 s).
 
 ## 1.9 Real machine ⬜ (tried with version 0.6, before 0.7)
 
@@ -524,11 +526,11 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   - Icons: `tools/make-icon.py` draws a classic tool icon (DiskObject, a 2-bitplane image: a speaker with three
     waves; stack 16384; example ToolTypes disabled, and `DONOTWAIT`), built into `out/` with the executables and put
     in the archive.
-  - Tests: 375 unit checks. WinUAE, driven through amiagent: double-click (window, connected), Exchange lists it
-    with its description and stops it ("Remove"), Ctrl-C in the window, `QUIET` with `LOG` (no window, the log
-    fills, player named by the icon), a second double-click while running (nothing changes), a bad ToolType
-    (`PORT=abc`: the error in a window that stays), `WINDOW` and `UNIT=1` taken, a second start from a Shell
-    refused. Clicks in MUI or Workbench windows through amiagent: see the local notes.
+  - Tests: 391 unit checks at the 0.5 release. WinUAE, driven from a remote-control Shell: double-click (window,
+    connected), Exchange lists it with its description and stops it ("Remove"), Ctrl-C in the window, `QUIET` with
+    `LOG` (no window, the log fills, player named by the icon), a second double-click while running (nothing
+    changes), a bad ToolType (`PORT=abc`: the error in a window that stays), `WINDOW` and `UNIT=1` taken, a second
+    start from a Shell refused.
 - **Volume modes** (noted 2026-10-19, to decide when the step starts): an option such as `VOLUME=LMS|FIXED|MIXER`.
   `LMS` (default, as now): the gain sent by the server (`audg`) scales the samples, at a CPU cost on a slow 68020
   (1.6). `FIXED`: `audg` ignored, full output, no scaling; advertise `HasDigitalOut` in `HELO` so that LMS accepts

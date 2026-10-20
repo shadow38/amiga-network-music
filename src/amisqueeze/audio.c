@@ -78,8 +78,8 @@ static int sent_count(const struct audio *a)
 }
 
 /* Volume tables: a 16-bit sample is hi * 256 + lo (hi signed, lo unsigned), so sample * volume = high[hi] +
- * low[lo], without a multiplication per sample (a 32-bit one costs about 43 cycles on a 68020: a third of a 28 MHz
- * CPU at 44.1 kHz stereo). Built again when the volume changes. */
+ * low[lo], without a multiplication per sample (a 32-bit one costs about 43 cycles on a 68020: about 13 % of a
+ * 28 MHz CPU at 44.1 kHz stereo). Built again when the volume changes. */
 static void build_tables(struct audio *a)
 {
     int32_t v = (int32_t)a->volume;

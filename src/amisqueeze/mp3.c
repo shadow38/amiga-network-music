@@ -24,7 +24,7 @@
 #include "decoder.h"
 #include "platform.h"
 
-#define STAGE_SIZE  (16UL * 1024UL)         /* the first frame is looked for in this much: 10 frames at 320 kbit/s */
+#define STAGE_SIZE  (16UL * 1024UL)         /* the first frame is looked for in this much: 15 frames at 320 kbit/s */
 #define FRAME_MAX   2304UL                  /* biggest frame minimp3 accepts (free format) */
 #define FRAME_NEED  (FRAME_MAX + 4)         /* a frame and the next frame's header */
 #define ID3_HEADER  10

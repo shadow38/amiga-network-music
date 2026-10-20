@@ -12,12 +12,12 @@ repository. Documentation, code comments and program messages are in English.
 **Versioning** (decided 2026-10-18, completed 2026-10-19): 0.x until the main feature works; the version changes
 only for a **published** release; 1.0 = first really usable version (tested on the real machine). Never bump it on
 our own: ask the user. A release = a Git tag `amisqueeze-<version>` + a GitHub Release with a zip (the Amiga
-executables, `LICENSE`, `README.md`, `CHANGELOG.md`, the user guide and its images) and short notes, made with the
-GitHub CLI once the user has approved the notes. **Before every release tag** (plan step 3.5, decided 2026-10-20):
-a full review of the range since the previous tag, `/release-review <previous tag>`; findings scored 75 or more are
-fixed, or accepted by the user with the reason in the report (an urgent fix may ship after a review of its own
-diff; the next release then gets a full review); the review tooling changes only when a review misses a real
-defect. `CHANGELOG.md` (Keep a Changelog, added 2026-10-20): note each
+executables and their `.info` icons, `LICENSE`, `README.md`, `CHANGELOG.md`, the user guide and its images) and
+short notes, made with the GitHub CLI once the user has approved the notes. **Before every release tag** (plan step
+3.5, decided 2026-10-20): a full review of the range since the previous tag, `/release-review <previous tag>`;
+findings scored 75 or more are fixed, or accepted by the user with the reason in the report (an urgent fix may ship
+after a review of its own diff; the next release then gets a full review); the review tooling changes only when a
+review misses a real defect. `CHANGELOG.md` (Keep a Changelog, added 2026-10-20): note each
 user-visible change under "Unreleased" as it is made, and give that part the version and date at the release; the `$VER:` date is the release date. Between releases the number reads `<next>-dev`, so that
 a build in between is not taken for the last release. 0.1 = first release (2026-10-19: AHI audio, volume,
 robustness, tested in WinUAE only); 0.2 = second release (2026-10-19: FLAC decoded on fast Amigas, 8/24/32-bit
@@ -61,19 +61,19 @@ Work proceeds in testable steps, each validated with the user **before** writing
 `docs/user-guide.md`: update it with every change visible to users. Steps 1.1b (default options in
 `ENV:amisqueeze.prefs`), 1.2 (stream received, virtual output) and 1.3 (`OUTPUT` file) validated on 2026-10-18.
 Step 1.4: 1.4a and 1.4b done (AHI output); 1.4c listening done on 2026-10-19 (test tones, a whole 48 kHz track as
-MP3 and FLAC, Paula needs `SWAP` in WinUAE); rest of 1.4c measured the same day (2 KB stack OK, no leak, CPU
-load on the slow 68020 profile: 61-68 % with Paula, almost all of it AHI; 2-5 % with `NOAUDIO`). Step 1.4
-validated on 2026-10-19. Step 1.5 (volume from `audg`) validated on 2026-10-19. Step 1.6 (robustness) on
-2026-10-19: reconnection storm fixed (wait 5 s after a session shorter than 10 s), AHI memory corruption avoided
-(volume applied to the samples, see Pitfalls); validated on 2026-10-19. Release 0.1 published on 2026-10-19.
-Step 1.7a (8, 24 and 32-bit samples converted to 16 bits for AHI; LMS strips WAV/AIFF headers, files
-above 48 kHz not playable until FLAC decoding) done on 2026-10-19. Step 1.8 on the branch `decoding` (merged into
-`main` after each validated sub-step): 1.8a done (decoder stage, see below); 1.8b done (FLAC with dr_flac,
-`FLAC=AUTO|ON|OFF`, `BENCH`); release 0.2 published on 2026-10-19, then 0.3-dev; 1.8c done on 2026-10-19 (MP3
-with minimp3 in `amisqueeze.fpu`, `MP3=AUTO|ON|OFF`); release 0.3 published on 2026-10-20. Release 0.4 the same
-day (1.8d MP3 without gaps, the volume modes done as LMS's fixed volume setting with `HasDigitalOut=1`, the AHI
-mode warning). Release 0.5 the same day (`LOG`, Workbench start with icons and ToolTypes, a commodity, the stack
-of `amisqueeze` and FLAC seek fixed, the outside review's points: see "Outside review" in
+MP3 and FLAC, Paula needs `SWAP` in WinUAE); rest of 1.4c measured the same day (2 KB stack OK then, before the
+decoders: see Stack in Pitfalls; no leak, CPU load on the slow 68020 profile: 61-68 % with Paula, almost all of it
+AHI; 2-5 % with `NOAUDIO`). Step 1.4 validated on 2026-10-19. Step 1.5 (volume from `audg`) validated on
+2026-10-19. Step 1.6 (robustness) on 2026-10-19: reconnection storm fixed (wait 5 s after a session shorter than 10
+s), AHI memory corruption avoided (volume applied to the samples, see Pitfalls); validated on 2026-10-19. Release
+0.1 published on 2026-10-19. Step 1.7a (8, 24 and 32-bit samples converted to 16 bits for AHI; LMS strips WAV/AIFF
+headers, files above 48 kHz not playable until FLAC decoding) done on 2026-10-19. Step 1.8 on the branch `decoding`
+(merged into `main` after each validated sub-step): 1.8a done (decoder stage, see below); 1.8b done (FLAC with
+dr_flac, `FLAC=AUTO|ON|OFF`, `BENCH`); release 0.2 published on 2026-10-19, then 0.3-dev; 1.8c done on 2026-10-19
+(MP3 with minimp3 in `amisqueeze.fpu`, `MP3=AUTO|ON|OFF`); release 0.3 published on 2026-10-20. Release 0.4 the
+same day (1.8d MP3 without gaps, the volume modes done as LMS's fixed volume setting with `HasDigitalOut=1`, the
+AHI mode warning). Release 0.5 the same day (`LOG`, Workbench start with icons and ToolTypes, a commodity, the
+stack of `amisqueeze` and FLAC seek fixed, the outside review's points: see "Outside review" in
 `docs/development/README.md`), then 0.6-dev. Next releases (decided 2026-10-20, table in
 `docs/development/README.md`; changed the same day): 0.6 = the fixes from the review reports; then the real
 machine tried with 0.6 (1.9); 0.7 = what it shows, internet radios' metadata (ICY), server discovery. Then the
@@ -86,7 +86,7 @@ Step 1.8c (mp3.c, minimp3.c, `amisqueeze.fpu`): two Amiga executables from the s
 host build). minimp3 resets itself when the bytes after a frame are not the next header: it is called only with a
 frame and the next header in its 16 KB staging buffer (a full buffer for the first frame), or at the end of the
 track. MP3 gapless (step 1.8d, 2026-10-20): the LAME header of the first frame gives the delays and padding to
-drop (`read_lame_header`); after a seek LMS resends that frame first, so the end limit is never reached. In the
+drop (`mp3_lame_header`); after a seek LMS resends that frame first, so the end limit is never reached. In the
 zip, both executables; in `$VER:`, `amisqueeze` or `amisqueeze.fpu` (two lines in `amiga.c` to bump).
 
 Step 1.8a (decoder.h, decoder.c): the ring buffer holds the stream as received; the decoder of each track writes
@@ -112,12 +112,13 @@ the boundary, STMo / STMu when the buffer is empty, STMl for autostart 0, pause 
 VERBOSE (one per second). Criteria are measured on the server through its CLI (`<player> time ?`, mode, playlist
 index), never on the web page, whose progress bar animates by itself.
 
-Step 1.3: `OUTPUT=<file>` writes what the virtual output consumes (`consume()` in `stream.c`, the only place
-where data leaves the buffer), as received, one file per run. Byte-exact checks with `tools/pcm-compare.py`:
-a counter pattern in FLAC (decoded losslessly by LMS) and MP3s decoded by the server's own `sox` command. Start
-playback with a single `play`, and compare only after the output has drained (`output: end of playback`) and
-amisqueeze has stopped. With AHI, `OUTPUT` keeps the virtual output (no sound). LMS strips an MP3's ID3v1 tag
-before conversion, and `sox` then drops the last frame: test MP3s without ID3v1 (`lame --id3v2-only`).
+Step 1.3: `OUTPUT=<file>` writes what the virtual output plays (`hand_over()` in `stream.c`, the only place
+where the output hands PCM over; raw PCM as received, the rest as decoded), one file per run. Byte-exact checks
+with `tools/pcm-compare.py`: a counter pattern in FLAC (decoded losslessly by LMS) and MP3s decoded by the server's
+own `sox` command. Start playback with a single `play`, and compare only after the output has drained (`output: end
+of playback`) and amisqueeze has stopped. With AHI, `OUTPUT` keeps the virtual output (no sound). LMS strips an
+MP3's ID3v1 tag before conversion, and `sox` then drops the last frame: test MP3s without ID3v1 (`lame
+--id3v2-only`).
 
 Step 1.4 (AHI): the output hands bytes to a sink, the virtual output (host build, `NOAUDIO`, `OUTPUT`) or the
 audio output (`audio.c`, portable: blocks, conversion, played bytes, pause; `ahi.device` calls in `amiga.c`).
@@ -138,7 +139,8 @@ MP3 transcoded by LMS: format `p`, size `1` (16 bits), rate `3` (44.1 kHz), chan
 (**little-endian**: to be swapped for AHI on 68k), autostart `1`, stream address = the control connection's
 address, request `GET /stream.mp3?player=<mac> HTTP/1.0`. LMS 9.1 has no default `mp3 pcm` rule: a regular
 user's server won't have it, hence local MP3 decoding (step 1.8c, `amisqueeze.fpu`); for the builds that leave MP3
-to the server, the rule is documented in the README and in plan step 0.2 (without `-r`, with `trim` for seeking).
+to the server, the rule is documented in the user guide (server setup) and in plan step 0.2 (without `-r`, with
+`trim` for seeking).
 With `flc` and `mp3` advertised, LMS sends FLAC and MP3 files as they are (format `f`, `m`), WAV as PCM.
 
 ## Design choices (player)
@@ -204,11 +206,11 @@ With `flc` and `mp3` advertised, LMS sends FLAC and MP3 files as they are (forma
   `amisqueeze.fpu`) and link libnix's `__stkinit`, which gives that stack when the Shell's is smaller: dr_flac
   needs about 5.5 KB (4.6 KB in `drflac_open` alone), minimp3 about 17.5 KB. **Found by an outside review on
   2026-10-20**: until then `amisqueeze` (68020) ran on the Shell's 4 KB and overflowed at every start (FLAC speed
-  measure) since 0.2; the WinUAE tests never saw it because amiagent's Shell has a 256 KB stack. Check: a
-  temporary probe in `main()` (fill the stack below the current pointer with a pattern from `tc_SPLower`, scan it
-  at the end) run from a script with `Stack 4096` (never from amiagent's own stack); 2026-10-20: 5.6 KB of 16 KB
-  used while playing FLAC with a seek, 17.8 KB of 32 KB for `amisqueeze.fpu` with FLAC and MP3. Redo it whenever
-  call depth or local variables grow, and measure frames with `-fstack-usage`.
+  measure) since 0.2; the WinUAE tests never saw it because they ran from a remote-control Shell with a 256 KB
+  stack. Check: a temporary probe in `main()` (fill the stack below the current pointer with a pattern from
+  `tc_SPLower`, scan it at the end) run from a script with `Stack 4096` (never from a Shell with a large stack);
+  2026-10-20: 5.6 KB of 16 KB used while playing FLAC with a seek, 17.8 KB of 32 KB for `amisqueeze.fpu` with FLAC
+  and MP3. Redo it whenever call depth or local variables grow, and measure frames with `-fstack-usage`.
 - **`-m68881` and libnix**: libnix links a start-up check (`__fpucheck`) that, without an FPU, shows an alert and
   quits before `main()` without a message: `amiga.c` replaces it with an empty one and checks `AttnFlags` itself.
   minimp3 keeps about 17 KB on the stack (`mp3dec_decode_frame`): see Stack above. The `-m68881` code uses `fintrz` and `fmovecr`, emulated (slowly) by the CPU library on a 68040/68060.

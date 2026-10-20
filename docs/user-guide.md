@@ -207,6 +207,11 @@ Decoding on the Amiga:
 
 But it needs a fast CPU, and MP3 also needs an FPU: only `amisqueeze.fpu` has the MP3 decoder.
 
+**Internet radios**: some MP3 radios mix their metadata (the title playing) into the stream, and amisqueeze
+does not handle it yet. When LMS has the player fetch such a radio itself, as it may for a player that decodes
+MP3 (`amisqueeze.fpu`), that metadata reaches the decoder and the sound may cut regularly; the message
+`cont not handled` is then expected. Not yet checked with a real radio.
+
 **At start-up**, with `FLAC=AUTO` and `MP3=AUTO` (the defaults), amisqueeze decodes a built-in sample of each
 format in its slowest case (FLAC level 8, MP3 at 320 kbit/s), for at most a second each. It takes a format only if
 it decodes it at least twice as fast as real time, and prints the result:
@@ -432,7 +437,7 @@ Rules:
 | `AHI unit N uses "…", a mono mode: the music will play in mono` | the unit is set to a mono mode; amisqueeze plays anyway |
 | `not enough memory for the audio blocks` (or `for the audio output`) | the 3 audio blocks (96 KB) or the AHI requests cannot be allocated; amisqueeze stops |
 | `timer.device unavailable` | the system timer cannot be opened (should not happen); amisqueeze stops |
-| `strm … not handled`, `strm too short`, `… not handled (N bytes)`, `packet too short`, `invalid packet size` | the server sent a message amisqueeze does not know or that is malformed: it is ignored (an invalid size closes the connection, and amisqueeze reconnects). Worth reporting, with the server's name and version |
+| `strm … not handled`, `strm too short`, `… not handled (N bytes)`, `packet too short`, `invalid packet size` | the server sent a message amisqueeze does not know or that is malformed: it is ignored (an invalid size closes the connection, and amisqueeze reconnects). Worth reporting, with the server's name and version; `cont not handled` is expected with some internet radios (see [decoding on the Amiga](#decoding-on-the-amiga-flac-mp3-bench)) |
 | `stream: request too long`, `stream: response headers too long` | the audio stream's HTTP request or answer exceeds what amisqueeze handles (1 KB, 2 KB): that track is not played |
 | `cannot create <file>: error N` | the `OUTPUT` file cannot be created (missing directory, write-protected disk); amisqueeze stops. On a volume that is not mounted, AmigaDOS first asks for it to be inserted; this message follows a Cancel |
 | `cannot write to <file>: error N, file closed` | writing the `OUTPUT` file failed (disk full…); playback goes on without the file |
