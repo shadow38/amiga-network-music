@@ -200,7 +200,9 @@ Findings that touch only the method's principles, no rule of `CLAUDE.md` or `CON
 
 ## Candidates for 3.5d
 
-In the plan's order first, then the others; each to be proposed one by one.
+In the plan's order first, then the others. Step 3.5d stopped after the first one (decided with the user on
+2026-10-20, to avoid over-quality): the others are ideas, not planned; one is taken up only when a review finds the
+defect it would have caught again.
 
 1. Version strings: both `$VER:`, `Firmware=`, the user guide agree; `make dist` refuses `-dev`, a missing
    CHANGELOG section, a date other than the CHANGELOG's; no `const` on `$VER:` (V4 to V7). Done on 2026-10-20:

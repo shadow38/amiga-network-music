@@ -479,7 +479,7 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   user in WinUAE (68020 + 68882, JIT, Toccata): a 12 s glide cut into three MP3s, with mini gaps from 0.3 (12.9 s)
   and seamless now (12.3 s).
 
-## 1.9 Real machine ⬜ (version 0.6)
+## 1.9 Real machine ⬜ (tried with version 0.6, before 0.7)
 
 - **Content**: both kinds of target with a TCP/IP stack (AmiNetXDuo or Roadshow) and an LMS server reachable
   from the local network: a PiStorm with Emu68, sound through its own AHI outputs (I2S DAC of the PiStorm32-lite
@@ -487,12 +487,13 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   without FPU, sound through Paula.
 - **Criterion**: the criteria of 1.4 to 1.6 met on the real machine.
 
-## 1.10 Finishing touches 🔶 (versions 0.4 to 0.6: the parts of 0.4 and 0.5 done)
+## 1.10 Finishing touches 🔶 (versions 0.4 to 0.7: the parts of 0.4 and 0.5 done)
 
 - **Split** (decided 2026-10-20, see the [plan](README.md)): **0.4** the volume modes (`LMS` and `FIXED`, done
-  as LMS's own setting, see below; `MIXER` left for later) and the AHI mode warning; **0.5** `LOG=<file>` and the start from the Workbench; **0.6**
-  the automatic server discovery, with the real machine (1.9), since the test setup cannot check a UDP broadcast.
-  The `BUFFER` option only if 1.9 shows a need. Each part is designed with the user when it starts.
+  as LMS's own setting, see below; `MIXER` left for later) and the AHI mode warning; **0.5** `LOG=<file>` and
+  the start from the Workbench; **0.7** (moved from 0.6 on 2026-10-20, 0.6 being the review fixes) the automatic
+  server discovery, after the real machine (1.9), since the test setup cannot check a UDP broadcast. The `BUFFER`
+  option only if 1.9 shows a need. Each part is designed with the user when it starts.
 - **Content**: automatic server discovery (UDP broadcast on port 3483); start from the Workbench with an icon and
   ToolTypes (read with the same template; precedence: built-in defaults, `ENV:amisqueeze.prefs`, ToolTypes,
   command line), with a console window or quiet mode; running in the background (`Run`, or at startup);

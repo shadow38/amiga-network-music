@@ -56,7 +56,7 @@ Back to the [plan](README.md).
 - **Criterion**: a user who does not know the project goes, with the guides alone, from a fresh server and a
   networked Amiga without amisqueeze to music playing; checked at least once in WinUAE on a clean installation.
 
-## 3.5 Review before each release (decided 2026-10-20) 🔶
+## 3.5 Review before each release (decided 2026-10-20) ✅
 
 - **Why**: an outside review of version 0.4 (a fresh Claude session, reading only) found defects the
   development sessions had not seen: a stack measurement made before dr_flac came in and never redone, a sanitizer
@@ -105,8 +105,8 @@ Back to the [plan](README.md).
     without `SMART`; a direct `printf`); of the outside review's points fixed in 0.5, the guide's messages and the
     plan's statuses found incomplete, the LAME bounds checks partly tested, the rest confirmed; the FLAC rate of 0
     seen but left unrun. Criterion met for `0.4..0.5` (decided with the user, method unchanged; the direct `printf`
-    accepted, the `msg()` rule made explicit). The review of HEAD that remains is the one of 3.5e (one review for
-    both, decided with the user on 2026-10-20: since 0.5, HEAD changed only documentation and review tooling);
+    accepted, the `msg()` rule made explicit). No separate review of HEAD (see 3.5e): the first review in real use,
+    `0.5..0.6`, is the tooling's last judge;
   - **3.5c** the rules inventory: every rule, limit and measurement of `CLAUDE.md` and `CONTRIBUTING.md`, how it
     is enforced today (script, test, review, nothing), how it should be, and for a measurement its date, commit
     and what it depends on. Done on 2026-10-20 ([rules.md](rules.md)): 88 entries in ten groups, with the findings of
@@ -118,15 +118,17 @@ Back to the [plan](README.md).
     repository. Done: (1) the version strings, `tools/check-version.py` (2026-10-20; `rules.md` V4 to V7, V9):
     run by `make test`, and with `--release` by `make dist` through `make-dist.py`; accepted the 0.3, 0.4 and 0.5
     tags as releases, refused 17 planted defects and HEAD itself with `--release`, also through `make test` and
-    `make dist` themselves;
-  - **3.5e** the release rule in `CLAUDE.md`, then a review of HEAD against `amisqueeze-0.5`, after 3.5c and
-    3.5d; it also closes 3.5b (the tooling judged on what it finds on HEAD). Its launch prompt adds "no `HEAD` in
-    git commands" and "logs in your own worktree" ([decided](reviews/acceptance-0.4-0.5.md#8-decisions)). Before
-    that review, the agents and the method read [rules.md](rules.md) and name a rule by its ID (`rules.md C12`)
-    rather than by a line of `CLAUDE.md` (decided with the user on 2026-10-20). Also before it, the remarks of
-    `rules.md` not settled by 3.5d are decided with the user in one batch (the stale figures and names, the
-    `.info` icons in the zip's list, gcc 13 or 14, rules stated only in status sentences, the third-party
-    README wording), and whether `CLAUDE.md` gets a rule for what the server sends and for "not supported yet"
-    (decided with the user on 2026-10-20: the remarks a check depends on are settled when that check comes up).
-- **Criterion**: on `0.3..0.4` the review finds what the outside review found at 75 or more; its report on HEAD is
-  handed to the user, each finding then fixed through a plan step or accepted.
+    `make dist` themselves. Closed there on 2026-10-20 (decided with the user: the step was turning into
+    over-quality); the other candidates of `rules.md` stay as ideas, not planned;
+  - **3.5e** the release rule in `CLAUDE.md` (done on 2026-10-20). The agents and the method read
+    [rules.md](rules.md) and name a rule by its ID (`rules.md C12`). The review of HEAD planned here was dropped
+    (decided with the user on 2026-10-20: since 0.5, HEAD changed only documentation and review tooling): the next
+    review is the one before the 0.6 tag, `/release-review amisqueeze-0.5`, whose launch prompt adds "no `HEAD`
+    in git commands" and "logs in your own worktree" ([decided](reviews/acceptance-0.4-0.5.md#8-decisions)). The
+    remarks of `rules.md` stay written, undecided; that review reports those that matter. The findings of the two
+    acceptance reports still open are fixed in one batch, listed with the user.
+- **Stop** (decided with the user on 2026-10-20): step 3.5 is over. From now on each release gets its review and
+  nothing more; the tooling (method, agents, checks) changes only when a review misses a real defect, never for its
+  own sake.
+- **Criterion**: on `0.3..0.4` the review finds what the outside review found at 75 or more (met); on `0.4..0.5`
+  it finds defects beyond the outside review (met: six).

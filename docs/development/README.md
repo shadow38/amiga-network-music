@@ -62,8 +62,8 @@ How to build and test: [CONTRIBUTING.md](../../CONTRIBUTING.md).
 | 1.7b amisqueeze: Music Assistant | ⬜ after version 0.2 |
 | 1.8 amisqueeze: local decoding (FLAC, then MP3) | ✅ 2026-10-19 (FLAC; MP3 in `amisqueeze.fpu`) |
 | 1.8d amisqueeze: MP3 without gaps between tracks | ✅ 2026-10-20 (version 0.4) |
-| 1.9 amisqueeze: real machine | ⬜ version 0.6 |
-| 1.10 amisqueeze: finishing touches | 🔶 the parts of 0.4 and 0.5 done (fixed volume, AHI mode warning, `LOG`, Workbench start); server discovery in 0.6 |
+| 1.9 amisqueeze: real machine | ⬜ tried with 0.6, before 0.7 |
+| 1.10 amisqueeze: finishing touches | 🔶 the parts of 0.4 and 0.5 done (fixed volume, AHI mode warning, `LOG`, Workbench start); server discovery in 0.7 |
 | 1.11 amisqueeze: direct Paula output, without AHI | ⬜ idea (CPU load on a slow 68020) |
 | 0.9 Test Music Assistant server | ⬜ after version 0.2 |
 | 2.0 remote: study (common interface, Music Assistant feasibility, name) | ⬜ before any amilms code |
@@ -74,7 +74,7 @@ How to build and test: [CONTRIBUTING.md](../../CONTRIBUTING.md).
 | 3.2 Aminet archive | ⬜ |
 | 3.3 Public versions | 🔶 0.1 to 0.5 published (tags, GitHub releases, changelog); CI: host tests |
 | 3.4 Setup guides: minimal server, the Amiga on the network | ⬜ before 1.0 |
-| 3.5 Review before each release (method, review agents, rules inventory, checks) | 🔶 decided 2026-10-20; 3.5a done; 3.5b first run, two replays and `0.4..0.5` done (2026-10-20), its review of HEAD merged into 3.5e; 3.5c rules inventory done (2026-10-20); 3.5d: version strings check done (2026-10-20) |
+| 3.5 Review before each release (method, review agents, rules inventory, checks) | ✅ 2026-10-20: 3.5a to 3.5c done; 3.5d stopped after the version strings check; 3.5e the release rule in `CLAUDE.md`, no review of HEAD (the next review is the one before 0.6); the tooling changes only when a review misses a real defect |
 
 Phase 0 moves forward as needed: a tooling step is done when a step of phase 1 or 2 needs it. Phases 1 and 2 can
 progress in parallel. Release 0.5 was published on 2026-10-20 (`LOG`, start from the Workbench, a commodity, the
@@ -88,10 +88,30 @@ AHI mode warning; 0.3 too: MP3 decoded by `amisqueeze.fpu`; 0.2 on 2026-10-19: F
 |---|---|---|
 | 0.4 | MP3 without gaps (1.8d), fixed volume through LMS's own setting, the AHI mode warning (1.10): all done | host and WinUAE |
 | 0.5 | `LOG=<file>`, start from the Workbench with an icon and ToolTypes, a commodity stopped from Exchange (1.10); seeking in a FLAC decoded on the Amiga fixed (1.8b); the outside review's fixes (stack of `amisqueeze`, tests): all done | host and WinUAE |
-| 0.6 | automatic server discovery (1.10), with the real machine (1.9): the first version tried on a real Amiga; internet radios' metadata (ICY, see below) | host for the code; validated on the real machine and network |
+| 0.6 | the fixes from the review reports (decided with the user on 2026-10-20): the open findings of the two acceptance reviews (documentation, the icon's `WINDOW` with `SMART`, a decoder that cannot start, a FLAC rate of 0, gaps in `check-saves.py`, guards without a test), the ICY limitation written in the user guide; then the first release review in real use | host and WinUAE |
+| 0.7 | what the real machine (1.9, tried with 0.6) shows first; then internet radios' metadata (ICY, see below) and automatic server discovery (1.10), in the order the real tests make important | host for the code; validated on the real machine and network |
 
-Server discovery waits for 0.6 because the test setup cannot check it: the test LMS runs in a container behind
-forwarded TCP ports, which a UDP broadcast from the emulated Amiga does not cross. Each step keeps the method:
+**0.6, the fixes** (open findings of [acceptance-0.3-0.4](reviews/acceptance-0.3-0.4.md) and
+[acceptance-0.4-0.5](reviews/acceptance-0.4-0.5.md), still there on 2026-10-20; one batch, each fix with its test):
+
+- documentation: workstation references (0.4..0.5 R7); step 1.5 still says LMS never sends `adjust` 0 (0.3..0.4
+  R9); step 1.2 says `cont` and autostart are handled as in squeezelite (R11 of both); the guide promises that
+  `LOG` keeps the start-up errors with `QUIET` (0.4..0.5 R4: the guide, or the code); direct radios and their
+  metadata not mentioned (0.4..0.5 R10); the cheap items scored 50: stale names (`read_lame_header`,
+  `consume()`), "2 KB stack OK", the `mp3 pcm` rule said to be in the README, "ToolTypes come later" in step 1.1,
+  the unit check count, the zip's list without the `.info` icons, the figures in the comments of `audio.c:80` and
+  `mp3.c:27`;
+- the icon's `WINDOW` ToolType without `SMART` (0.4..0.5 R8, user-visible);
+- a decoder that cannot start leaves a NULL state used later (0.4..0.5 R1); a FLAC rate of 0 stalls the track
+  (0.3..0.4 R14, with the dead test `flac.c:161`); `check-saves.py` misses `(an)+`, `-(an)`, `dbra` (0.4..0.5 R2);
+  guards no test sees removed: the stream request over 1 KB, the LAME header's bounds (0.3..0.4 R2, R6);
+- moved to 0.7 or accepted, to decide at the 0.6 review: `strm f` stops the playing track (0.3..0.4, first
+  replay), the rejection side of the FLAC seek fix untested (0.4..0.5 R6).
+
+The real machine is tried with 0.6, the most robust version, and needs no discovery (`SERVER=` works on a real
+network): what it shows decides the order of 0.7. Server discovery waits for the real network because the test
+setup cannot check it: the test LMS runs in a container behind forwarded TCP ports, which a UDP broadcast from the
+emulated Amiga does not cross. Each step keeps the method:
 design agreed with the user, then code, tests, a line in `CHANGELOG.md`. The remote's study (2.0) comes after these
 releases, or alongside if the user wants it.
 Music Assistant (0.9, 1.7b, 2.8 to 2.11) was put after 0.2 (decided 2026-10-19): it is no longer waiting on a
@@ -126,8 +146,9 @@ the track), the user guide's messages, the plan's statuses. Still open:
 - **Internet radios' metadata (ICY)**, checked in LMS's sources: for a radio played directly by the player
   (`amisqueeze.fpu` with an `http` MP3 radio), LMS adds 2 to autostart, asks the radio for `Icy-MetaData: 1`, then
   sends `cont` with the interval of the metadata blocks. amisqueeze plays at once and does not remove the blocks:
-  minimp3 would lose its sync at each one (cuts every second or so). **Planned for 0.6**: remove the blocks (the
-  interval from `cont` or the `icy-metaint` header), a fake server scenario, a check with a real radio.
+  minimp3 would lose its sync at each one (cuts every second or so). **Planned for 0.7** (0.6 states the
+  limitation in the user guide): remove the blocks (the interval from `cont` or the `icy-metaint` header), a fake
+  server scenario, a check with a real radio.
 - **Noted, for the user to decide** (no known failure):
   - the track queue (4 entries) forgets the oldest one when full, its bytes still in the buffer: a clean refusal
     (`STMn`) would be safer; LMS has never been seen sending that far ahead;
