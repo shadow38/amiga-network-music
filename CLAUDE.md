@@ -224,7 +224,8 @@ With `flc` and `mp3` advertised, LMS sends FLAC and MP3 files as they are (forma
 - **Workbench start and libnix** (step 1.10): libnix opens the console named by `__stdiowin` before `main()` when
   started from the Workbench; `amiga.c` sets it to NULL and opens its own after reading the icon (`WINDOW`,
   `QUIET`). A `CON:` window needs `SMART`, or it loses its text when uncovered. With `QUIET` there is no output
-  (`msg()` checks `Output()`), except before the log is open: a message then opens the window (0.6). amisqueeze is
+  (`msg()` checks `Output()`), except during start-up (`main()`, up to `bsdsocket.library`): a message then opens
+  the window (0.6; `MAC` and `OUTPUT`, checked by the core, go to the log only). amisqueeze is
   a commodity ("Remove" in Exchange = Ctrl-C), one at a time (`CBERR_DUP`); a second start does nothing to the
   running one (decided with the user).
 - **WinUAE JIT and FPU**: without `compfpu=true` the JIT interprets FPU instructions (MP3 at 1.8x real time

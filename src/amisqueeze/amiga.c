@@ -112,9 +112,9 @@ char *__stdiowin = NULL;
 #define DEFAULT_WINDOW "CON:0/20/640/120/amisqueeze/AUTO/CLOSE/WAIT/SMART"
 struct Library *IconBase;
 static struct DiskObject *wb_icon;
-static BPTR wb_console;                     /* the message window, 0 with QUIET */
+static BPTR wb_console;                     /* the message window; with QUIET, 0 unless start-up failed */
 static const char *wb_window;               /* its specification: WINDOW, or DEFAULT_WINDOW */
-static int wb_quiet;                        /* QUIET, until the log is open: a message then opens the window */
+static int wb_quiet;                        /* QUIET, during start-up: a message then opens the window */
 static char tt_line[512];                   /* the icon's ToolTypes as a command line */
 
 /* Commodity: amisqueeze shows in Exchange, which can stop it; one at a time */
@@ -187,8 +187,8 @@ static void wb_open_window(void)
         SelectOutput(wb_console);
 }
 
-/* QUIET: a message before the log is open (an error at start-up, a log that cannot be opened) would go nowhere;
- * the window opens for it (and stays until it is closed) */
+/* QUIET: a message during start-up (an error in the options, a log that cannot be opened, a missing library) would
+ * go nowhere, or to the log only; the window opens for it (and stays until it is closed) */
 static void quiet_start_message(void)
 {
     if (Output() == 0 && wb_quiet) {
@@ -210,7 +210,7 @@ void msg(const char *fmt, ...)
     if (len >= (int)sizeof(msg_line))
         len = sizeof(msg_line) - 1;
     /* Write() is unbuffered: the text reaches a redirected file at once. No output: started from the Workbench
-     * with QUIET (the LOG file only) */
+     * with QUIET, once started (the LOG file only) */
     quiet_start_message();
     if (Output() != 0)
         Write(Output(), msg_line, len);
@@ -670,7 +670,7 @@ static int wb_start(void)
     }
     wb_window = window;
     if (quiet)
-        wb_quiet = 1;                       /* no window, unless a message comes before the log is open */
+        wb_quiet = 1;                       /* no window, unless a message comes during start-up */
     else
         wb_open_window();
     if (!ok)
@@ -731,10 +731,7 @@ int main(void)
     }
     if (args[ARG_LOG])
         log_open((const char *)args[ARG_LOG]);
-    wb_quiet = 0;                           /* QUIET: from here on, the messages go to the log only */
     memset(&o, 0, sizeof(o));
-    if (args[ARG_VERBOSE])
-        msg("%s\n", version + 6);           /* without "$VER: " */
     o.bench = args[ARG_BENCH] != 0;
     if (args[ARG_FLAC] && (o.flac = parse_decode_mode((const char *)args[ARG_FLAC])) < 0) {
         msg("amisqueeze: FLAC=%s: expected AUTO, ON or OFF\n", (const char *)args[ARG_FLAC]);
@@ -763,14 +760,18 @@ int main(void)
         goto out_args;
     }
     TimerBase = timer_io.tr_node.io_Device;
-    if (o.bench) {                          /* needs neither the network nor a server */
-        rc = player_bench();
-        goto out_timer;
+    if (!o.bench) {                         /* BENCH needs neither the network nor a server */
+        SocketBase = OpenLibrary("bsdsocket.library", 4);
+        if (SocketBase == NULL) {
+            msg("amisqueeze: bsdsocket.library not found (is a TCP/IP stack running?)\n");
+            goto out_timer;
+        }
     }
-
-    SocketBase = OpenLibrary("bsdsocket.library", 4);
-    if (SocketBase == NULL) {
-        msg("amisqueeze: bsdsocket.library not found (is a TCP/IP stack running?)\n");
+    wb_quiet = 0;                           /* QUIET: from here on, the messages go to the log only */
+    if (args[ARG_VERBOSE])
+        msg("%s\n", version + 6);           /* without "$VER: " */
+    if (o.bench) {
+        rc = player_bench();
         goto out_timer;
     }
 

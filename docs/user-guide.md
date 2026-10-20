@@ -125,8 +125,8 @@ stop it too (see [stopping amisqueeze](#stopping-amisqueeze)). Only one amisquee
 says `amisqueeze is already running` and quits.
 
 **`LOG=<file>`** keeps a copy of every message in a file while they still appear in the window (a redirection
-`>file` sends them to the file only), from the moment the file is open: an error in the options shows in the
-window only. Each run is appended to the file, after a line with the date and time, for
+`>file` sends them to the file only), from the moment the file is open: an error found while the options are read (an unknown keyword, a bad number)
+shows in the window only. Each run is appended to the file, after a line with the date and time, for
 instance `--- amisqueeze 0.5 (…), started 20-Oct-26 14:32:05`; the file is written as the messages come, so it can
 be read while amisqueeze runs (`Type`). It can be set in the default options too: a lasting trace of what
 happened, handy when something goes wrong. A log that cannot be opened (missing directory…) is said, and amisqueeze
@@ -164,7 +164,7 @@ ToolType in parentheses is disabled: the icon comes with examples written that w
 | ToolType | Meaning |
 |---|---|
 | `WINDOW=CON:…` | the message window: position, size, title, e.g. `CON:0/20/640/120/amisqueeze/AUTO/CLOSE/WAIT/SMART` (the default) |
-| `QUIET` | no window: amisqueeze runs silently; add `LOG=<file>` to keep its messages. A message that comes before the log is open (an error in the ToolTypes or the default options, a log that cannot be opened) still opens the window, which stays until it is closed |
+| `QUIET` | no window: amisqueeze runs silently; add `LOG=<file>` to keep its messages. An error at start-up (in the ToolTypes or the default options, a log that cannot be opened, no TCP/IP stack) still opens the window, which stays until it is closed; an invalid `MAC` or an `OUTPUT` file that cannot be created goes to the log only |
 
 Other ToolTypes, such as the Workbench's own `DONOTWAIT`, are left alone. An error in the ToolTypes (an unknown
 value, a bad number) is shown in the window, which stays open until it is closed.
