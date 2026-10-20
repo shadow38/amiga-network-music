@@ -25,6 +25,8 @@ are previews, tested in WinUAE only, not yet on a real Amiga.
   that track arriving made the decoder run without its state (a crash or a memory corruption on the Amiga).
 - A FLAC file whose header gives a sample rate of 0 (a damaged file) is skipped with a message: it used to stall
   the player at 0:00, and LMS never moved on to the next track.
+- Started from the Workbench with `QUIET`, an error at start-up (a bad ToolType, a log that cannot be opened)
+  opens the window, as the user guide said: until now it went nowhere, and amisqueeze quit without a trace.
 
 ## [0.5] - 2026-10-20
 

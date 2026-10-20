@@ -113,6 +113,8 @@ char *__stdiowin = NULL;
 struct Library *IconBase;
 static struct DiskObject *wb_icon;
 static BPTR wb_console;                     /* the message window, 0 with QUIET */
+static const char *wb_window;               /* its specification: WINDOW, or DEFAULT_WINDOW */
+static int wb_quiet;                        /* QUIET, until the log is open: a message then opens the window */
 static char tt_line[512];                   /* the icon's ToolTypes as a command line */
 
 /* Commodity: amisqueeze shows in Exchange, which can stop it; one at a time */
@@ -175,6 +177,26 @@ static void log_close(void)
     log_file = 0;
 }
 
+/* Opens the message window of a Workbench start; the output goes there */
+static void wb_open_window(void)
+{
+    wb_console = Open((STRPTR)wb_window, MODE_NEWFILE);
+    if (wb_console == 0)
+        wb_console = Open((STRPTR)DEFAULT_WINDOW, MODE_NEWFILE);    /* a WINDOW that cannot be opened */
+    if (wb_console != 0)
+        SelectOutput(wb_console);
+}
+
+/* QUIET: a message before the log is open (an error at start-up, a log that cannot be opened) would go nowhere;
+ * the window opens for it (and stays until it is closed) */
+static void quiet_start_message(void)
+{
+    if (Output() == 0 && wb_quiet) {
+        wb_quiet = 0;
+        wb_open_window();
+    }
+}
+
 void msg(const char *fmt, ...)
 {
     va_list ap;
@@ -189,6 +211,7 @@ void msg(const char *fmt, ...)
         len = sizeof(msg_line) - 1;
     /* Write() is unbuffered: the text reaches a redirected file at once. No output: started from the Workbench
      * with QUIET (the LOG file only) */
+    quiet_start_message();
     if (Output() != 0)
         Write(Output(), msg_line, len);
     log_write(msg_line, len);
@@ -196,6 +219,7 @@ void msg(const char *fmt, ...)
 
 void msg_raw(const void *buf, int len)
 {
+    quiet_start_message();
     if (Output() != 0)
         Write(Output(), (APTR)buf, len);
     log_write(buf, len);
@@ -615,8 +639,8 @@ static struct RDArgs *read_prefs(LONG args[], BOOL *error)
 }
 
 /* Workbench start: reads the icon's ToolTypes, the options into tt_line (for the template), WINDOW and QUIET for
- * the message window, which it opens (AUTO: it shows at the first message). Returns 0 if the ToolTypes are too
- * long to be read. */
+ * the message window, which it opens unless QUIET (AUTO: it shows at the first message). Returns 0 if the
+ * ToolTypes are too long to be read. */
 static int wb_start(void)
 {
     struct WBArg *wa = _WBenchMsg->sm_ArgList;
@@ -644,13 +668,11 @@ static int wb_start(void)
             window = (const char *)w;
         ok = tooltypes_line(TEMPLATE, (const char *const *)tt, n, tt_line, sizeof(tt_line));
     }
-    if (!quiet) {
-        wb_console = Open((STRPTR)window, MODE_NEWFILE);
-        if (wb_console == 0)
-            wb_console = Open((STRPTR)DEFAULT_WINDOW, MODE_NEWFILE);    /* a WINDOW that cannot be opened */
-        if (wb_console != 0)
-            SelectOutput(wb_console);
-    }
+    wb_window = window;
+    if (quiet)
+        wb_quiet = 1;                       /* no window, unless a message comes before the log is open */
+    else
+        wb_open_window();
     if (!ok)
         msg("amisqueeze: the icon's ToolTypes are too long\n");
     return ok;
@@ -709,6 +731,7 @@ int main(void)
     }
     if (args[ARG_LOG])
         log_open((const char *)args[ARG_LOG]);
+    wb_quiet = 0;                           /* QUIET: from here on, the messages go to the log only */
     memset(&o, 0, sizeof(o));
     if (args[ARG_VERBOSE])
         msg("%s\n", version + 6);           /* without "$VER: " */
