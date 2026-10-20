@@ -90,7 +90,9 @@ C, cross-compiled; tested in WinUAE, not yet on a real Amiga.
   `SYS:WBStartup`), listed in Exchange, which stops it; a log file (`LOG`) if wanted.
 
 Tested in WinUAE with emulated networking and LMS 9.1.1: listening, one hour of playback. On a 28 MHz 68020, sound
-through AHI and Paula takes about two thirds of the CPU.
+through AHI and Paula takes about two thirds of the CPU. The user guide lists
+[what has been tried](docs/user-guide.md#requirements), the [known limits](docs/user-guide.md#known-limits) and
+some [troubleshooting](docs/user-guide.md#troubleshooting).
 
 **amilms**: not started.
 

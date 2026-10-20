@@ -14,6 +14,9 @@ are previews, tested in WinUAE only, not yet on a real Amiga.
   starts with 2.04.
 - User guide: every message shown without `VERBOSE` is now in the table of messages (start-up line, `retrying in
   5 s`, network and stream errors, a command line error, the output of `BENCH`), with an example of `BENCH`.
+- User guide: new sections "Troubleshooting" and "Known limits", a table of what has been tried and what is only
+  expected to work (TCP/IP stacks, CPUs, AmigaOS versions, sound), how to find the server's address and which
+  ports to open, how to remove amisqueeze.
 - User guide: a known limit, internet radios. Their metadata is not handled yet: an MP3 radio fetched by
   `amisqueeze.fpu` itself may cut regularly, with the message `cont not handled`.
 

@@ -52,12 +52,29 @@ On the server:
   in FLAC); when the Amiga is too slow for that, LMS cannot lower their rate as it makes raw PCM, and reports
   "Couldn't create command line for flc playback" in its log.
 
+**What has been tried.** Everything so far was run in WinUAE; what the list above names but this table does not is
+expected to work, not checked:
+
+| | Tried | Expected, not tried yet |
+|---|---|---|
+| Machine | WinUAE 6.0 (an A1200 setup) | any real Amiga |
+| CPU | 68020, at about 28 MHz and with the JIT (the speed of a PiStorm, roughly); with and without a 68882 | 68030, 68040, 68060, a PiStorm with Emu68 |
+| AmigaOS | 3.2.3; 3.0 and 3.1 from a Shell without AHI; 2.04 starts | 3.1.4, 3.5, 3.9 |
+| TCP/IP | WinUAE's emulation (`bsdsocket_emu`) | Roadshow, AmiTCP, AmiNetXDuo |
+| Sound | AHI 6.6 with `paula.audio` and a Toccata card | AHI 4.x, other cards, a PiStorm's own outputs |
+| Server | Lyrion Music Server 9.1.1 | other LMS versions, Music Assistant |
+
 ### Server setup
 
 Lyrion Music Server needs little for amisqueeze:
 
+- **Its address**, given to amisqueeze with `SERVER` (amisqueeze does not find the server by itself yet): the
+  address in the browser's address bar when LMS's web page is open on another computer (`http://<address>:9000`),
+  or the computer's own network settings; a fixed address (set in the router) saves changing it later. A host name
+  works too, if the Amiga's TCP/IP stack can resolve it.
 - **Ports** reachable from the Amiga: 3483/tcp (players) and the web port, 9000/tcp by default, which also carries
-  the audio streams (LMS tells the player which one; set `HTTP_PORT` if you move it, e.g. in Docker).
+  the audio streams (LMS tells the player which one; set `HTTP_PORT` if you move it, e.g. in Docker). Open both
+  in the server's firewall; in Docker, publish both.
 - **MP3 to PCM conversion**, only when amisqueeze does not decode MP3 itself: with `amisqueeze`, or with
   `amisqueeze.fpu` on a CPU too slow for it (see [decoding on the Amiga](#decoding-on-the-amiga-flac-mp3-bench)).
   LMS 9.1 converts FLAC, WAV and AIFF by its default rules, but has **none for MP3** (regular players decode MP3
@@ -91,6 +108,10 @@ with its icon (`amisqueeze.info` or `amisqueeze.fpu.info`) if it is to be starte
 a directory of the Shell's command path (for instance `C:`) so that it can be run by name, or into a drawer of
 your choice. It may be renamed `amisqueeze` (rename its icon the same way). Both read the same default options
 (below).
+
+**Removing it**: delete the executable and its icon (from `SYS:WBStartup` too, if it was put there), and the
+default options if any: `Delete ENV:amisqueeze.prefs ENVARC:amisqueeze.prefs`. amisqueeze writes nothing else,
+apart from the `LOG` and `OUTPUT` files you named.
 
 ### Running
 
@@ -156,7 +177,7 @@ the server"](images/workbench-window.png)
 NAME=Amiga`, a test setup). Without `VERBOSE`, nothing more is printed while it plays.*
 
 **Options in the icon.** Select the icon, then *Icons > Information…* (Amiga-I): its **ToolTypes** take the same
-options as the command line, one per line: `SERVER=192.168.1.10`, `NAME=Kitchen`, `UNIT=0`, `LOG=…`, `VERBOSE`… A
+options as the command line (every option of the [table above](#running)), one per line: `SERVER=192.168.1.10`, `NAME=Kitchen`, `UNIT=0`, `LOG=…`, `VERBOSE`… A
 ToolType in parentheses is disabled: the icon comes with examples written that way, such as
 `(SERVER=192.168.1.10)`; remove the parentheses to use one. The ToolTypes win over the default options of
 `ENV:amisqueeze.prefs`, which still apply to what they leave out. Two ToolTypes are for the Workbench only:
@@ -452,6 +473,43 @@ Rules:
 | `stream: recv: error N` | the audio stream broke during a track: what was received plays, then the next track follows |
 | other `stream: …` and `output: …` messages (with `VERBOSE` only) | stream events: parameters, connection, headers received, end of the track data; output: AHI unit or virtual output, track started, buffer empty, end of playback, `OUTPUT` file opened and bytes written to it |
 | `<- strm …`, `-> STAT …`, `-> DSCO …`, `<- audg …`, `volume: …`, the version line (with `VERBOSE` only) | the messages exchanged with the server, the volume it sets |
+
+### Troubleshooting
+
+- **The player does not show up in LMS.** Look at the messages (start amisqueeze from a Shell, or add `LOG`):
+  `bsdsocket.library not found` means no TCP/IP stack is running; `cannot connect` means nothing answers at that
+  address: check `SERVER` (see [server setup](#server-setup)), that LMS runs, and that the server's firewall lets
+  3483/tcp in. `connected to the server` means the connection is up.
+- **It connects, but a track does not play or is skipped at once.** `stream: cannot connect` means the server's
+  web port (9000/tcp) is blocked. `stream format X not supported`, or nothing at all, with "Couldn't create command
+  line" in LMS's `server.log`: LMS has no rule to convert that file to raw PCM, typically MP3 with `amisqueeze`
+  (add the rule of the [server setup](#server-setup), or use `amisqueeze.fpu` on an Amiga with an FPU), or a file
+  above 48 kHz when FLAC is not decoded here.
+- **The music plays on one side only.** The AHI unit uses a plain "stereo" mode: choose a "stereo++" one
+  ([setting up the unit](#setting-up-the-unit)); amisqueeze warns about it at start-up. Left and right swapped:
+  add `SWAP`.
+- **The sound stutters or stops now and then.** The Amiga does not keep up: run `amisqueeze BENCH`, and if FLAC or
+  MP3 is decoded here at less than a few times real time, give `FLAC=OFF` or `MP3=OFF` so that the server converts
+  them (see [decoding on the Amiga](#decoding-on-the-amiga-flac-mp3-bench)); with Paula, an 8-bit mode costs less
+  CPU; close other busy programs. Raw PCM needs about 1.4 Mbit/s for CD quality: a slow network can starve it.
+- **Crackles at low volume with Paula.** Paula's noise shows when the samples are scaled down: keep LMS's volume
+  high and turn the amplifier down instead (see [volume](#volume)).
+- **Nothing happens from the Workbench.** With `QUIET`, add `LOG=<file>` to see the messages. If amisqueeze is
+  already running (Exchange lists it), a second start does nothing.
+- **`amisqueeze.fpu needs an FPU`**: use `amisqueeze`.
+
+### Known limits
+
+- Tried in WinUAE only, not yet on a real Amiga (see [what has been tried](#requirements)).
+- The server's address must be given (`SERVER`): amisqueeze does not find the server by itself yet.
+- MP3 is decoded only by `amisqueeze.fpu`; with `amisqueeze`, the server must convert it (a rule to add, see
+  [server setup](#server-setup)). Other formats play only through LMS's conversion to raw PCM.
+- Files above 48 kHz play only when FLAC is decoded on the Amiga.
+- Internet radios that mix their metadata into the stream may cut regularly with `amisqueeze.fpu` (see
+  [decoding on the Amiga](#decoding-on-the-amiga-flac-mp3-bench)).
+- Synchronising players (LMS's player groups) is not supported, nor tried.
+- Music Assistant has not been tried.
+- With `QUIET`, an invalid `MAC` or an `OUTPUT` file that cannot be created is reported in the log only.
 
 ## amilms
 

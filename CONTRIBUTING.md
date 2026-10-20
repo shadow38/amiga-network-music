@@ -81,7 +81,9 @@ tools/bin2c.py        turns a file into a C array (the built-in FLAC and MP3 sam
 tools/make-icon.py    draws the Workbench icons (out/<prog>.info, classic AmigaOS format) built with the programs
 ```
 
-`obj/`, `out/`, `obj-host/`, `out-host/` and `.sdk/` are generated (ignored by `.gitignore`).
+`obj/`, `out/`, `obj-host/`, `out-host/` and `.sdk/` are generated (ignored by `.gitignore`). `docs/development/`
+is the project's working plan (steps, rules, review reports, which commit messages refer to): not needed to use or
+build the programs.
 
 ## Building
 
