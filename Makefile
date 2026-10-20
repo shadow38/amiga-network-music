@@ -8,8 +8,9 @@
 #   make host     host build of the programs listed in HOST_PROGS (out-host/), native compiler $(HOSTCC)
 #   make test     host build, unit tests of the portable core (tests/test_core.c), then scenarios against the
 #                 host build of amisqueeze driven by a fake server (tests/fake_server.py, python3)
-#   make dist     release archive of amisqueeze: out/amisqueeze-<version>.zip (both executables, LICENSE, README.md,
-#                 user guide), the version read from its $VER: string (tools/make-dist.py, python3)
+#   make dist     release archive of amisqueeze: out/amisqueeze-<version>.zip (both executables and their icons,
+#                 LICENSE, README.md, CHANGELOG.md, the user guide and its images), the version read from its $VER:
+#                 string (tools/make-dist.py, python3)
 #   make clean    removes every build directory
 #   make sdk      copies the toolchain headers into .sdk/ (IntelliSense)
 

@@ -4,8 +4,9 @@
  * The platform's audio device (ahi.device on the Amiga, see platform.h) plays the blocks one after the other.
  * Here: which block holds what and in which order, the conversion of the stream's PCM for the device (8, 16, 24 or
  * 32-bit samples to 16-bit big-endian, left and right swapped with SWAP), the bytes played (counted in bytes of the
- * stream, whatever the device got), the pause, and the volume. At start-up, the AHI unit's mode is read from its
- * preferences and checked: a mode that would play a stereo stream on one side only, or in mono, gets a warning.
+ * stream, whatever the device got), the pause, and the volume. At start-up, the AHI unit's mode (read by the
+ * platform layer, from AHI's preferences parsed here) is checked: a mode that would play a stereo stream on one
+ * side only, or in mono, gets a warning.
  *
  * ahi.device chains a request only to one that is already playing: a request linked to a request that is itself
  * waiting is never played (seen in WinUAE, and in AHI's source: the third one is left in the waiting list). So at

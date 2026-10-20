@@ -116,7 +116,8 @@ struct output {
  * most with the device and one filled in advance. About 0.6 s ahead: enough to ride out a busy moment, short
  * enough for the volume (1.5). */
 #define AUDIO_BLOCKS     3
-#define AUDIO_BLOCK_SIZE 32768UL        /* about 0.19 s of 44.1 kHz 16-bit stereo; a multiple of every frame size */
+#define AUDIO_BLOCK_SIZE 32768UL        /* about 0.19 s of 44.1 kHz 16-bit stereo; filled with whole frames only
+                                           (a 24-bit frame, 3 or 6 bytes, does not divide it) */
 #define AUDIO_VOLUME_FULL 0x10000UL     /* 16.16 gain 1.0: samples unchanged */
 
 enum block_state {

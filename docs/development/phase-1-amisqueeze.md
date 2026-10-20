@@ -183,8 +183,9 @@ belongs to the task that opened it; packets serialised field by field; buffers a
     of the CPU is left on such a machine: to keep in mind for local FLAC decoding (1.8).
 - **Validated with the user** (2026-10-19): Paula's crackles left to the real machine (1.9); the CPU load accepted
   for now (lighter AHI settings to look at in 1.8 if decoding does not fit); `SWAP` stays a manual option until
-  the real machine shows whether its channels are swapped too (1.9). Not done: the start-up warning for a mode that
-  cannot pan (Content above); an open point of the [plan](README.md#open-points-review-of-2026-10-19).
+  the real machine shows whether its channels are swapped too (1.9). Not done then: the start-up warning for a mode
+  that cannot pan (Content above); an open point of the [plan](README.md#open-points-review-of-2026-10-19), done
+  in 1.10 (version 0.4).
 - **Criterion**: correct test tones (440 Hz at the right pitch, left/right in the right place, no noise); a whole
   track without crackling; CPU load measured with Paula on the slow profile (0.4).
 - **Test**: WinUAE with both AHI drivers of step 0.5, Paula first (Amiga chipset, the output of Amigas without a
@@ -402,7 +403,7 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   `tests/data/*.flac` (levels 0, 5, 8, mono, 24 bits, 48 kHz, 1.2 MB of metadata), sent by the fake server in
   pieces of 3000 bytes, `OUTPUT` identical byte for byte; FLAC, FLAC, PCM back to back; `FLAC=OFF`, `BENCH`.
   Measured in WinUAE (`BENCH`): 68020 without JIT, about 45 MHz (1.6 times the slow profile): level 8 at 0.2x real
-  time, so FLAC stays with the server; 68020 with JIT (`lancer-jit.cmd` locally: 32-bit addressing, no
+  time, so FLAC stays with the server; 68020 with JIT (the fast profile: 32-bit addressing, no
   cycle-exact; about 230 times the slow profile, the order of a PiStorm): 77x (21x when the JIT has not compiled
   the code yet: the start-up measure is pessimistic on such CPUs, never optimistic). There, LMS sends FLAC as is
   and five test tones (16 and 24 bits, mono, 48 and 96 kHz: LMS lowers 96 kHz to 48 in FLAC) play without
@@ -429,8 +430,9 @@ belongs to the task that opened it; packets serialised field by field; buffers a
     frame and the next header (otherwise it starts over and loses the bit reservoir), or at the end of the track;
     a decoded frame is handed over as the output asks; rate and channels come from the frames (a format change
     starts a new block). minimp3 keeps about 17 KB on the stack (`-fstack-usage`): `amisqueeze.fpu` asks libnix for
-    32 KB at start-up (`__stack`, `__stkinit`); `BENCH` from a `Stack 2048` Shell passes. Not done: gapless
-    trimming (encoder delay, LAME header frame decoded as silence: about 50 ms at the start of each file).
+    32 KB at start-up (`__stack`, `__stkinit`); `BENCH` from a `Stack 2048` Shell passes. Not done then: gapless
+    trimming (encoder delay, LAME header frame decoded as silence: about 50 ms at the start of each file): done in
+    1.8d (version 0.4).
   - **`MP3=AUTO|ON|OFF`**: like FLAC, a built-in sample (`bench_mp3.c` from `tests/data/bench-320.mp3`, 0.3 s at
     320 kbit/s, 13.6 KB) measured at start-up; `mp3` advertised last, as squeezelite does: LMS 9.1.1 still sends an
     MP3 as is (and keeps FLAC as FLAC). In `amisqueeze`, `MP3=ON` prints why it is ignored (both executables read
@@ -485,7 +487,7 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   without FPU, sound through Paula.
 - **Criterion**: the criteria of 1.4 to 1.6 met on the real machine.
 
-## 1.10 Finishing touches ⬜ (versions 0.4 to 0.6)
+## 1.10 Finishing touches 🔶 (versions 0.4 to 0.6: the parts of 0.4 and 0.5 done)
 
 - **Split** (decided 2026-10-20, see the [plan](README.md)): **0.4** the volume modes (`LMS` and `FIXED`, done
   as LMS's own setting, see below; `MIXER` left for later) and the AHI mode warning; **0.5** `LOG=<file>` and the start from the Workbench; **0.6**

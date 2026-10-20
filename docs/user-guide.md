@@ -1,8 +1,8 @@
 # Amiga Network Music — User guide
 
 This guide is for people who **use** the programs. How it works and which servers it supports are in the
-[README](../README.md#how-it-works), as well as how to build them; the development roadmap is in
-[docs/development](development/README.md).
+[README](../README.md#how-it-works); how to build them is in [CONTRIBUTING.md](../CONTRIBUTING.md), and the
+development roadmap in [docs/development](development/README.md).
 
 ## amisqueeze
 
@@ -397,14 +397,17 @@ Rules:
 | `MP3: 320 kbit/s decoded at …x real time: …` | the same for MP3 (`MP3=AUTO`, `amisqueeze.fpu`) |
 | `amisqueeze.fpu needs an FPU (…): use amisqueeze instead` | `amisqueeze.fpu` started on an Amiga without an FPU |
 | `MP3=ON: this build does not decode MP3 …` | `MP3=ON` given to `amisqueeze`: MP3 stays with the server |
-| `flac: … , track skipped` | a FLAC stream that cannot be decoded (not FLAC, no STREAMINFO, more than 2 channels): the next track follows |
+| `flac: … , track skipped` | a FLAC stream that cannot be decoded (not FLAC, no STREAMINFO, more than 2 channels; after a seek, `cannot start from the middle of this file`: a rare file whose frames leave their format to its header): the next track follows |
 | `mp3: no MP3 frame found, track skipped` | an MP3 stream without a single MP3 frame: the next track follows |
 | `flac: not enough memory`, `mp3: not enough memory`, then `…: cannot decode this track, skipped` | not enough free memory for the decoder of that track: the next track follows |
 | `the FLAC decoding speed cannot be measured` (or MP3) | `BENCH` could not run the measure (not enough memory) |
 | `cannot open ahi.device unit N (is AHI installed? NOAUDIO plays without sound)` | AHI missing, or that unit cannot be opened; amisqueeze stops |
 | `AHI unit N uses "…", a stereo mode without "++": the music will play on one side only; …` | the unit is set to a plain stereo mode: choose a "stereo++" one in `SYS:Prefs/AHI`; amisqueeze plays anyway |
 | `AHI unit N uses "…", a mono mode: the music will play in mono` | the unit is set to a mono mode; amisqueeze plays anyway |
-| `not enough memory for the audio blocks` | the 3 audio blocks (96 KB) cannot be allocated; amisqueeze stops |
+| `not enough memory for the audio blocks` (or `for the audio output`) | the 3 audio blocks (96 KB) or the AHI requests cannot be allocated; amisqueeze stops |
+| `timer.device unavailable` | the system timer cannot be opened (should not happen); amisqueeze stops |
+| `strm … not handled`, `strm too short`, `… not handled (N bytes)`, `packet too short`, `invalid packet size` | the server sent a message amisqueeze does not know or that is malformed: it is ignored (an invalid size closes the connection, and amisqueeze reconnects). Worth reporting, with the server's name and version |
+| `stream: request too long`, `stream: response headers too long` | the audio stream's HTTP request or answer exceeds what amisqueeze handles (1 KB, 2 KB): that track is not played |
 | `cannot create <file>: error N` | the `OUTPUT` file cannot be created (missing directory, write-protected disk); amisqueeze stops. On a volume that is not mounted, AmigaDOS first asks for it to be inserted; this message follows a Cancel |
 | `cannot write to <file>: error N, file closed` | writing the `OUTPUT` file failed (disk full…); playback goes on without the file |
 | `cannot open the log <file>: error N, going on without it` | the `LOG` file cannot be opened (missing directory, write-protected disk); amisqueeze plays without a log |

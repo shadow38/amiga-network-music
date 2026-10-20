@@ -63,7 +63,7 @@ How to build and test: [CONTRIBUTING.md](../../CONTRIBUTING.md).
 | 1.8 amisqueeze: local decoding (FLAC, then MP3) | ✅ 2026-10-19 (FLAC; MP3 in `amisqueeze.fpu`) |
 | 1.8d amisqueeze: MP3 without gaps between tracks | ✅ 2026-10-20 (version 0.4) |
 | 1.9 amisqueeze: real machine | ⬜ version 0.6 |
-| 1.10 amisqueeze: finishing touches | ⬜ versions 0.4 to 0.6 (see below) |
+| 1.10 amisqueeze: finishing touches | 🔶 the parts of 0.4 and 0.5 done (fixed volume, AHI mode warning, `LOG`, Workbench start); server discovery in 0.6 |
 | 1.11 amisqueeze: direct Paula output, without AHI | ⬜ idea (CPU load on a slow 68020) |
 | 0.9 Test Music Assistant server | ⬜ after version 0.2 |
 | 2.0 remote: study (common interface, Music Assistant feasibility, name) | ⬜ before any amilms code |
@@ -86,8 +86,8 @@ mode warning; 0.3 the same day: MP3 decoded by `amisqueeze.fpu`; 0.2 on 2026-10-
 | Version | Content | Tested |
 |---|---|---|
 | 0.4 | MP3 without gaps (1.8d), fixed volume through LMS's own setting, the AHI mode warning (1.10): all done | host and WinUAE |
-| 0.5 | `LOG=<file>`, start from the Workbench with an icon and ToolTypes, a commodity stopped from Exchange (1.10); seeking in a FLAC decoded on the Amiga fixed (1.8b): all done | host and WinUAE |
-| 0.6 | automatic server discovery (1.10), with the real machine (1.9): the first version tried on a real Amiga | host for the code; validated on the real machine and network |
+| 0.5 | `LOG=<file>`, start from the Workbench with an icon and ToolTypes, a commodity stopped from Exchange (1.10); seeking in a FLAC decoded on the Amiga fixed (1.8b); the outside review's fixes (stack of `amisqueeze`, tests): all done | host and WinUAE |
+| 0.6 | automatic server discovery (1.10), with the real machine (1.9): the first version tried on a real Amiga; internet radios' metadata (ICY, see below) | host for the code; validated on the real machine and network |
 
 Server discovery waits for 0.6 because the test setup cannot check it: the test LMS runs in a container behind
 forwarded TCP ports, which a UDP broadcast from the emulated Amiga does not cross. Each step keeps the method:
@@ -101,7 +101,8 @@ release, when to start it is still to be decided.
 Announced in the plan, then neither done nor dropped; decided with the user on 2026-10-19:
 
 - **AHI mode warning** (1.4): a warning at start-up when the unit's mode cannot pan (a plain "stereo" mode plays
-  one side only). **Moved to 1.10**, after version 0.3: first check what AHI tells about a unit's mode.
+  one side only). **Moved to 1.10**, after version 0.3: first check what AHI tells about a unit's mode. Done on
+  2026-10-20 (version 0.4).
 - **64-bit multiplies in dr_flac** (1.8): the planned check of the generated assembly (a 64-bit `muls.l` in the
   hot loop fails the build) was not written. dr_flac's assembly holds such multiplies (481, most in the decoding
   of the residuals), emulated slowly by the 68060's CPU library. **Dropped**: no 68060 among the target machines
@@ -113,6 +114,35 @@ Announced in the plan, then neither done nor dropped; decided with the user on 2
   the start of each MP3 file). **Step 1.8d**, after version 0.3 (which documents the limit): done on 2026-10-20.
 - **Continuous integration** (3.3): GitHub Actions. **Host tests on each push before version 0.3**; the Amiga
   build and the release archive before 1.0.
+
+## Outside review (2026-10-20)
+
+A code and plan review of version 0.4, made from outside (read only, nothing run). Done before 0.5: the stack of
+`amisqueeze` (16 KB, it overflowed the Shell's 4 KB since 0.2), UBSan stops the tests, tests of the AHI mode at
+start-up, of a preferences file cut short and of the LAME header's fallbacks (a frame count of 0 no longer drops
+the track), the user guide's messages, the plan's statuses. Still open:
+
+- **Internet radios' metadata (ICY)**, checked in LMS's sources: for a radio played directly by the player
+  (`amisqueeze.fpu` with an `http` MP3 radio), LMS adds 2 to autostart, asks the radio for `Icy-MetaData: 1`, then
+  sends `cont` with the interval of the metadata blocks. amisqueeze plays at once and does not remove the blocks:
+  minimp3 would lose its sync at each one (cuts every second or so). **Planned for 0.6**: remove the blocks (the
+  interval from `cont` or the `icy-metaint` header), a fake server scenario, a check with a real radio.
+- **Noted, for the user to decide** (no known failure):
+  - the track queue (4 entries) forgets the oldest one when full, its bytes still in the buffer: a clean refusal
+    (`STMn`) would be safer; LMS has never been seen sending that far ahead;
+  - an HTTP request over 1 KB (very long signed radio URLs) is refused without telling LMS (`STMn`), which keeps
+    waiting;
+  - Ctrl-C with a real TCP/IP stack: depending on the stack's break mask, `WaitSelect()` may take the signal for
+    itself (to check on the real machine, 1.9: `SBTC_BREAKMASK` or EINTR taken as a stop);
+  - `gethostbyname()`: no check of an empty address list or of a length other than 4;
+  - `PORT` and `UNIT` not checked for range (`PORT=70000`, `UNIT=255`);
+  - the default options are read on one line of at most 510 characters, the rest dropped silently;
+  - `make dist` checks the first `$VER:` only (not the `.fpu` one, `Firmware=`, the changelog);
+  - the CI builds neither the Amiga executables nor the configuration without MP3 actually shipped (decided: before
+    1.0), and its workflow has no `permissions:` block;
+  - malformed server input (cut frames, `strm` fields out of range, headers too long) is not tested yet;
+  - `stream.c` (HTTP client, track queue, output scheduling, virtual output) is the first module to split when it
+    grows (for ICY, for instance).
 
 ## Ideas outside the phases (noted 2026-10-19)
 
