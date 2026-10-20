@@ -19,7 +19,8 @@ a build in between is not taken for the last release. 0.1 = first release (2026-
 robustness, tested in WinUAE only); 0.2 = second release (2026-10-19: FLAC decoded on fast Amigas, 8/24/32-bit
 PCM, tested in WinUAE only); 0.3 = third release (2026-10-20: MP3 decoded by `amisqueeze.fpu`, two executables,
 documentation reworked, tested in WinUAE only); 0.4 = fourth release (2026-10-20: MP3 without gaps, fixed volume
-through LMS, AHI mode warning), followed by 0.5-dev; the first public push of 2026-10-18 had no tag. The number
+through LMS, AHI mode warning); 0.5 = fifth release (2026-10-20: `LOG`, Workbench start, commodity, stack of
+`amisqueeze` and FLAC seek fixed), followed by 0.6-dev; the first public push of 2026-10-18 had no tag. The number
 appears in the two `$VER:` strings (`amiga.c`: `amisqueeze` and `amisqueeze.fpu`), in `Firmware=` of the `HELO`
 capabilities (`slimproto.c`) and in the user guide.
 
@@ -67,8 +68,11 @@ above 48 kHz not playable until FLAC decoding) done on 2026-10-19. Step 1.8 on t
 `FLAC=AUTO|ON|OFF`, `BENCH`); release 0.2 published on 2026-10-19, then 0.3-dev; 1.8c done on 2026-10-19 (MP3
 with minimp3 in `amisqueeze.fpu`, `MP3=AUTO|ON|OFF`); release 0.3 published on 2026-10-20. Release 0.4 the same
 day (1.8d MP3 without gaps, the volume modes done as LMS's fixed volume setting with `HasDigitalOut=1`, the AHI
-mode warning), then 0.5-dev. Next releases (decided 2026-10-20, table in `docs/development/README.md`): 0.5 =
-`LOG`, Workbench start; 0.6 = server discovery with the real machine (1.9). Then the remote's study (2.0).
+mode warning). Release 0.5 the same day (`LOG`, Workbench start with icons and ToolTypes, a commodity, the stack
+of `amisqueeze` and FLAC seek fixed, the outside review's points: see "Outside review" in
+`docs/development/README.md`), then 0.6-dev. Next releases (decided 2026-10-20, table in
+`docs/development/README.md`): 0.6 = server discovery with the real machine (1.9), internet radios' metadata
+(ICY). Then the remote's study (2.0).
 Documentation review of 2026-10-19: points announced in the plan but neither done nor dropped are listed under
 "Open points" in `docs/development/README.md`, for the user to decide (never implement them unasked).
 

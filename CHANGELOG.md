@@ -7,6 +7,8 @@ are previews, tested in WinUAE only, not yet on a real Amiga.
 
 ## [Unreleased]
 
+## [0.5] - 2026-10-20
+
 ### Added
 
 - **`LOG=<file>`**: a copy of every message in a file while they still appear in the window; each run is appended
@@ -22,12 +24,12 @@ are previews, tested in WinUAE only, not yet on a real Amiga.
 - **`amisqueeze` overflowed its stack when started from a Shell** with the usual 4 KB stack: the FLAC decoder
   needs about 5.5 KB, already at start-up (speed measure). AmigaOS does not detect it: a crash or a hang could
   follow at any later time. Both executables now set up the stack they need themselves (16 KB for `amisqueeze`,
-  32 KB for `amisqueeze.fpu`, which already did). Broken since 0.2; started from its icon, it was not affected.
+  32 KB for `amisqueeze.fpu`, which already did). Broken since 0.2.
 - **Seeking in a FLAC track decoded on the Amiga** skipped the track (`flac: not a FLAC stream, track skipped`),
   and so did LMS resuming a FLAC track when the player reconnects: LMS then sends the file from the middle,
   without its header. Broken since FLAC decoding came in (0.2).
 - An MP3 file whose LAME header counts 0 frames (a broken header) would have been decoded and then dropped whole,
-  in silence: it now plays in full (0.4).
+  in silence: it now plays in full. Broken since 0.4.
 
 ## [0.4] - 2026-10-20
 
@@ -94,7 +96,8 @@ Lyrion Music Server (LMS) as a player and plays through AHI.
 - Options `SERVER`, `PORT`, `NAME`, `MAC`, `UNIT` (AHI unit), `SWAP`, `NOAUDIO`, `OUTPUT`, `VERBOSE`; default
   options in `ENV:amisqueeze.prefs`.
 
-[Unreleased]: https://github.com/shadow38/amiga-network-music/compare/amisqueeze-0.4...HEAD
+[Unreleased]: https://github.com/shadow38/amiga-network-music/compare/amisqueeze-0.5...HEAD
+[0.5]: https://github.com/shadow38/amiga-network-music/compare/amisqueeze-0.4...amisqueeze-0.5
 [0.4]: https://github.com/shadow38/amiga-network-music/compare/amisqueeze-0.3...amisqueeze-0.4
 [0.3]: https://github.com/shadow38/amiga-network-music/compare/amisqueeze-0.2...amisqueeze-0.3
 [0.2]: https://github.com/shadow38/amiga-network-music/compare/amisqueeze-0.1...amisqueeze-0.2

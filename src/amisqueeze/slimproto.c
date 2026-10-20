@@ -21,7 +21,7 @@
 /* Advertised in HELO, followed by the formats played: only those really decoded (pcm always, flc and mp3 when
  * decoded here); the server converts the rest. HasDigitalOut=1: LMS then offers its "Volume Control" setting for
  * this player, whose "Output level is fixed at 100%" sends audg with adjust 0 (plan step 1.10, volume modes). */
-#define CAPS "Model=squeezelite,ModelName=AmiSqueeze,Firmware=0.5-dev,AccuratePlayPoints=0,HasDigitalOut=1," \
+#define CAPS "Model=squeezelite,ModelName=AmiSqueeze,Firmware=0.5,AccuratePlayPoints=0,HasDigitalOut=1," \
              "MaxSampleRate=48000,"
 
 /* ---- serialisation ---- */
