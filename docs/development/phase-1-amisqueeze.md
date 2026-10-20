@@ -488,6 +488,33 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   FPGA firmware, announced, to check; HDMI with `emu68-hdmi-audio` on a Pi 4) or Paula; a 68020 accelerator
   without FPU, sound through Paula.
 - **Criterion**: the criteria of 1.4 to 1.6 met on the real machine.
+- **First machine** (2026-10-20): an A1200 with an ACA1221lc (68EC020 at 26.67 MHz, no FPU, 32-bit fast memory on
+  the card), a PCMCIA Ethernet card, Paula. The slow WinUAE profile (68020 at about 28 MHz) is close to it, but
+  WinUAE's network costs the Amiga nothing: the real TCP/IP stack and the PCMCIA card (the CPU copies every byte
+  received) are the unknown. Without an FPU it runs `amisqueeze`, FLAC is left to the server: everything comes as
+  raw PCM, about 176 KB/s at CD quality, the hardest case for that card.
+- **Protocol** (agreed 2026-10-20), with an LMS server on the local network (ports 3483 and its web port), and
+  a computer reaching its CLI to read the elapsed time:
+  1. the machine: `Version FULL`, `Avail` (with its `Largest` column), `BENCH`; the CPU left when idle;
+  2. connection (1.1): the player shows up, renaming it from LMS, a server restart;
+  3. sound (1.4): the 440 Hz tone, left then right (with `SWAP` if needed: WinUAE swapped them), a whole track
+     without crackles;
+  4. load, the key point: LMS's fixed volume, a 44.1 kHz FLAC for 5 minutes with `VERBOSE` and `LOG`, the CPU
+     left while playing (an idle-loop counter at the lowest priority, as in 1.4c), the `STMo` of the log (the
+     buffer ran empty: a gap) and the gaps heard. If there are some, again with, in this order: Paula's 8-bit mode,
+     a lower AHI frequency (22 kHz: duller treble, to judge by ear);
+  5. commands (1.5): pause, resume, seek, next track, stop; the elapsed time read through the CLI after a pause;
+     once at volume 50 without the fixed volume (load, crackle);
+  6. robustness (1.6): the Ethernet cable pulled for 10 s and LMS restarted while playing; Ctrl-C at the
+     connection, while playing, in pause; one hour of playback with `Avail` before and after;
+  7. the Workbench: the icon, `QUIET` with `LOG` (no window), a wrong ToolType (the window opens), Exchange's
+     Remove, `SYS:WBStartup`.
+
+  Steps 1 and 4 (and the hour of step 6) are scripted in AmigaDOS: versions, memory before, while playing and
+  after the stop, `BENCH`, the CPU left when idle and while playing, amisqueeze started from a 4 KB stack with its
+  log, then the `STMo` lines and the clean stop; the logs on a disk, not in `RAM:`. The rest is by hand. If the
+  load does not fit: in 0.7, a lower rate asked of the server (`MaxSampleRate` in `HELO`, if LMS resamples for
+  it: to check), or the direct Paula output (1.11).
 
 ## 1.10 Finishing touches 🔶 (versions 0.4 to 0.7: the parts of 0.4 and 0.5 done)
 
