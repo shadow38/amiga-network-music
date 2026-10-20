@@ -4,6 +4,13 @@ This guide is for people who **use** the programs. How it works and which server
 [README](../README.md#how-it-works); how to build them is in [CONTRIBUTING.md](../CONTRIBUTING.md), and the
 development roadmap in [docs/development](development/README.md).
 
+**amisqueeze**: [current state](#current-state) · [requirements](#requirements) · [server setup](#server-setup) ·
+[installation](#installation) · [running](#running) · [from the Workbench](#from-the-workbench) ·
+[stopping](#stopping-amisqueeze) · [decoding on the Amiga](#decoding-on-the-amiga-flac-mp3-bench) ·
+[writing to a file](#writing-the-audio-to-a-file-output) · [sound (AHI)](#sound-ahi) ·
+[default options](#default-options) · [messages](#messages) · [troubleshooting](#troubleshooting) ·
+[known limits](#known-limits). **amilms**: [not available yet](#amilms).
+
 ## amisqueeze
 
 amisqueeze turns the Amiga into a network music player for the music servers that speak slimproto, the protocol of
