@@ -1669,6 +1669,48 @@ static void test_decoder_no_start(void)
     teardown(&p);
 }
 
+/* The same on the audio output, the skipped track coming in four reads with the output running between them (as
+ * from the network): the skip decoder keeps the track's format, or the output's frame size would be 0 (a division
+ * by zero) */
+static void test_decoder_no_start_audio(void)
+{
+    struct player p;
+    uint32_t na = PCM_BPS / 10, nb = PCM_BPS / 10, i;
+    int guard;
+
+    fill(track_a, sizeof(track_a), 19);
+    fill(track_b, sizeof(track_b), 20);
+    nostart_starts = nostart_used = 0;
+    setup_audio(&p, 0);
+    open_stream(&p, '1', 1);
+    p.out.queue[p.out.queued - 1].ops = &decoder_nostart;
+    for (i = 0; i < 4; i++) {
+        stub_feed_stream(track_a + i * (na / 4), (int)(na / 4));
+        drain_stream(&p);
+        stub_now += 100;
+        output_tick(&p, stub_now);
+    }
+    stub_stream_end();
+    stream_io(&p, PLAT_READ);
+    stub_now += 100;
+    output_tick(&p, stub_now);
+    CHECK(nostart_starts == 1 && nostart_used == 0 && stub_audio_out_len == 0 &&
+          strstr(stub_out, "nostart: cannot decode this track, skipped") != NULL);
+    stub_reset();
+    open_stream(&p, '1', 1);
+    stub_feed_stream(track_b, (int)nb);
+    drain_stream(&p);
+    stub_stream_end();
+    stream_io(&p, PLAT_READ);
+    output_tick(&p, stub_now);
+    for (guard = 0; guard < 20 && p.out.state == OUTPUT_RUNNING; guard++)
+        finish(&p);
+    to_device(expect, track_b, nb, 0);
+    CHECK(nostart_used == 0 && stub_audio_out_len == (int)nb && !memcmp(stub_audio_out, expect, nb));
+    CHECK(stub_audio_bad == 0);
+    teardown(&p);
+}
+
 /* ENV:Sys/ahi.prefs as saved by the AHI 6 preferences in WinUAE (plan step 1.10): the Music unit (255), then units
  * 0 (Paula 14-bit stereo++, 27429 Hz), 1 (Toccata stereo++, 44100 Hz), 2 (Paula 8-bit stereo++) and 3 (Toccata
  * plain stereo) */
@@ -1919,6 +1961,7 @@ int main(void)
     test_decoder_audio_pause();
     test_decoder_virtual();
     test_decoder_no_start();
+    test_decoder_no_start_audio();
     test_ahi_mode();
     test_start_mode();
     test_lame_header();
