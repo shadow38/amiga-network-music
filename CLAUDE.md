@@ -155,8 +155,8 @@ With `flc` and `mp3` advertised, LMS sends FLAC and MP3 files as they are (forma
   on both builds; on the Amiga: libnix `vsnprintf` into a static buffer, then `Write()` to `Output()`, unbuffered,
   so a log redirected to a file is readable while the program runs); raw bytes through `msg_raw()`. Never
   `Printf`/`PutStr`/`printf` directly, except inside the platform layers' own implementation of `msg()`,
-  `msg_raw()` and the `LOG` file (decided 2026-10-20, review of 0.5). Cast 32-bit values to the type the specifier names (`(unsigned long)` with
-  `%lX`); `%c` for chars (not `%lc`).
+  `msg_raw()` and the `LOG` file (decided 2026-10-20, review of 0.5). Cast 32-bit values to the type the
+  specifier names (`(unsigned long)` with `%lX`); `%c` for chars (not `%lc`).
 - Music Assistant: per-player output codecs `flac` (default), `mp3`, `aac`, `wav` (seen in `constants.py`,
   `CONF_ENTRY_OUTPUT_CODEC`); not verified yet: the solo playback path (`play_media`) and the `strm` format sent for
   `wav` (explicit values, or `?` plus header parsing).
