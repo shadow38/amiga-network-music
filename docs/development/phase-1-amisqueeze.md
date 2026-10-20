@@ -517,8 +517,8 @@ belongs to the task that opened it; packets serialised field by field; buffers a
     `DONOTWAIT` and the like are left alone; disabled ones in parentheses skipped; a value with a space quoted, not
     a number, which a `/N` option refuses quoted) parsed with the same template; they win over `ENV:` prefs.
     `WINDOW` (default `CON:0/20/640/120/amisqueeze/AUTO/CLOSE/WAIT/SMART`) and `QUIET` (no window, no output:
-    `msg()` writes only to the log) are read with `FindToolType`. `SMART` is needed: without it the console window
-    lost its text when uncovered.
+    `msg()` writes only to the log; since 0.6, a message before the log is open opens the window) are read with
+    `FindToolType`. `SMART` is needed: without it the console window lost its text when uncovered.
   - Commodity (`commodities.library` v37): broker "amisqueeze", `NBU_UNIQUE | NBU_NOTIFY`, no Show/Hide; its port's
     signal is in the `WaitSelect` mask; `CXCMD_KILL` ("Remove") stops it as Ctrl-C does, `CXCMD_UNIQUE` (started
     again) is ignored; a second start gets `CBERR_DUP` and quits (with a message from a Shell, silently from the

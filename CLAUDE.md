@@ -220,9 +220,10 @@ With `flc` and `mp3` advertised, LMS sends FLAC and MP3 files as they are (forma
   for both executables in WinUAE.
 - **Workbench start and libnix** (step 1.10): libnix opens the console named by `__stdiowin` before `main()` when
   started from the Workbench; `amiga.c` sets it to NULL and opens its own after reading the icon (`WINDOW`,
-  `QUIET`). A `CON:` window needs `SMART`, or it loses its text when uncovered. With `QUIET` there is no output at
-  all: `msg()` checks `Output()`. amisqueeze is a commodity ("Remove" in Exchange = Ctrl-C), one at a time
-  (`CBERR_DUP`); a second start does nothing to the running one (decided with the user).
+  `QUIET`). A `CON:` window needs `SMART`, or it loses its text when uncovered. With `QUIET` there is no output
+  (`msg()` checks `Output()`), except before the log is open: a message then opens the window (0.6). amisqueeze is
+  a commodity ("Remove" in Exchange = Ctrl-C), one at a time (`CBERR_DUP`); a second start does nothing to the
+  running one (decided with the user).
 - **WinUAE JIT and FPU**: without `compfpu=true` the JIT interprets FPU instructions (MP3 at 1.8x real time
   instead of 74x): a PiStorm-like test of `amisqueeze.fpu` needs it.
 - **Volume with Paula**: samples scaled down (low LMS volume) bring out Paula's noise through AHI (14 bits): a
