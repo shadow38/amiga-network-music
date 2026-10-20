@@ -12,6 +12,8 @@ are previews, tested in WinUAE only, not yet on a real Amiga.
 - User guide: the AmigaOS versions tried. Besides 3.2.3, amisqueeze was run with AmigaOS 3.0 and 3.1 ROMs from a
   Shell, without AHI (in WinUAE): options, speed measure, connection, FLAC and MP3 with a seek, `LOG`. It even
   starts with 2.04.
+- User guide: every message shown without `VERBOSE` is now in the table of messages (start-up line, `retrying in
+  5 s`, network and stream errors, a command line error, the output of `BENCH`), with an example of `BENCH`.
 
 ## [0.5] - 2026-10-20
 

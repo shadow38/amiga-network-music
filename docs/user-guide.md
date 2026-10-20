@@ -222,6 +222,20 @@ To decide yourself:
 - `FLAC=OFF`, `MP3=OFF`: always left to the server;
 - `amisqueeze BENCH`: prints the measures and quits, without connecting.
 
+For instance `amisqueeze BENCH` on a 68020 without FPU:
+
+```
+FLAC level 8 (the slowest) decoded at 0.2x real time: FLAC=AUTO leaves FLAC to the server (converted to PCM)
+MP3: not decoded by this build (amisqueeze.fpu decodes it, on an Amiga with an FPU)
+```
+
+and `amisqueeze.fpu BENCH` on a fast Amiga:
+
+```
+FLAC level 8 (the slowest) decoded at 77.0x real time: FLAC=AUTO lets this machine decode FLAC
+MP3 at 320 kbit/s (the slowest) decoded at 74.2x real time: MP3=AUTO lets this machine decode MP3
+```
+
 Measured in WinUAE:
 
 | Emulated CPU | FLAC | MP3 (`amisqueeze.fpu`) | Result |
@@ -383,20 +397,30 @@ Rules:
 
 | Message | Meaning |
 |---|---|
+| `player "…" (xx:xx:xx:xx:xx:xx), server … port …` | printed at every start: the player's name and MAC address as LMS will see them, and the server it connects to |
 | `connected to the server` | the control connection is up; the player should appear in LMS |
+| `player name: …` | the player was renamed on the server (LMS web interface): amisqueeze takes the new name |
+| `stopped` | amisqueeze has stopped cleanly (Ctrl-C, `Break`, Remove in Exchange) |
 | `no server: give SERVER=<ip\|name>, or set it in ENV:amisqueeze.prefs` | no server on the command line nor in the default options |
 | `invalid MAC (expected xx:xx:xx:xx:xx:xx)` | the `MAC` option is not six hexadecimal pairs; amisqueeze stops |
 | `FLAC=…: expected AUTO, ON or OFF` (or `MP3=…`) | a wrong value for that option; amisqueeze stops |
+| `amisqueeze: <AmigaDOS error>`, e.g. `bad number` | the command line does not fit the template (a bad number for `PORT` or `UNIT`, an unknown keyword…); the text is AmigaDOS's own; amisqueeze stops |
 | `ENV:amisqueeze.prefs: …` | the default options cannot be read (unknown option, syntax error); amisqueeze stops |
 | `bsdsocket.library not found (is a TCP/IP stack running?)` | no TCP/IP stack started |
 | `server … not found` | the host name cannot be resolved |
 | `cannot connect: error N` | the server does not answer on that address and port; amisqueeze retries every 5 s |
+| `retrying in 5 s` | after a failed connection, or a connection lost less than 10 s after it was made: amisqueeze waits 5 s before trying again (after a longer session it reconnects at once) |
+| `socket: error N` | the TCP/IP stack cannot create a connection (out of resources?); amisqueeze retries every 5 s |
+| `send: error N`, `recv: error N` | the connection to the server broke; amisqueeze reconnects |
+| `WaitSelect: error N` | waiting on the network failed (TCP/IP stack error); amisqueeze closes the connection and reconnects |
 | `no news from the server, reconnecting` | the server stayed silent for 35 s; amisqueeze reconnects |
 | `connection closed by the server` | the server closed the connection; amisqueeze reconnects |
 | `not enough memory for the 1024 KB stream buffer` | not enough free memory to start |
 | `stream format X not supported` | LMS sent a format other than raw PCM, FLAC or (`amisqueeze.fpu`) MP3 (no conversion rule for that format) |
 | `FLAC: level 8 decoded at …x real time: …` | the start-up measure (`FLAC=AUTO`): whether FLAC is decoded here or converted by the server |
 | `MP3: 320 kbit/s decoded at …x real time: …` | the same for MP3 (`MP3=AUTO`, `amisqueeze.fpu`) |
+| `FLAC level 8 (the slowest) decoded at …x real time: FLAC=AUTO lets this machine decode FLAC` (or `leaves FLAC to the server`), the same for MP3 | the output of `BENCH` |
+| `MP3: not decoded by this build (…)` | `BENCH` run with `amisqueeze`, which has no MP3 decoder |
 | `amisqueeze.fpu needs an FPU (…): use amisqueeze instead` | `amisqueeze.fpu` started on an Amiga without an FPU |
 | `MP3=ON: this build does not decode MP3 …` | `MP3=ON` given to `amisqueeze`: MP3 stays with the server |
 | `flac: … , track skipped` | a FLAC stream that cannot be decoded (not FLAC, no STREAMINFO, more than 2 channels; after a seek, `cannot start from the middle of this file`: a rare file whose frames leave their format to its header): the next track follows |
@@ -418,7 +442,10 @@ Rules:
 | `the icon's ToolTypes are too long` | the ToolTypes together exceed what amisqueeze reads (about 500 characters) |
 | `cannot write to the log <file>: error N, log closed` | writing the `LOG` file failed (disk full…); playback goes on without the log |
 | `stream: cannot connect: error N` | the audio stream port of LMS (HTTP, 9000 by default) cannot be reached |
-| `stream: …`, `output: …` (with `VERBOSE`) | stream events: parameters, connection, headers received, end of the track data; output: AHI unit or virtual output, track started, buffer empty, end of playback, `OUTPUT` file opened and bytes written to it |
+| `stream: connection lost before the response headers`, `stream: send: error N` | the audio stream broke before any music came: that track is not played |
+| `stream: recv: error N` | the audio stream broke during a track: what was received plays, then the next track follows |
+| other `stream: …` and `output: …` messages (with `VERBOSE` only) | stream events: parameters, connection, headers received, end of the track data; output: AHI unit or virtual output, track started, buffer empty, end of playback, `OUTPUT` file opened and bytes written to it |
+| `<- strm …`, `-> STAT …`, `-> DSCO …`, `<- audg …`, `volume: …`, the version line (with `VERBOSE` only) | the messages exchanged with the server, the volume it sets |
 
 ## amilms
 
