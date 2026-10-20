@@ -105,12 +105,15 @@ Back to the [plan](README.md).
     without `SMART`; a direct `printf`); of the outside review's points fixed in 0.5, the guide's messages and the
     plan's statuses found incomplete, the LAME bounds checks partly tested, the rest confirmed; the FLAC rate of 0
     seen but left unrun. Criterion met for `0.4..0.5` (decided with the user, method unchanged; the direct `printf`
-    accepted, the `msg()` rule made explicit). Still to do: HEAD;
+    accepted, the `msg()` rule made explicit). The review of HEAD that remains is the one of 3.5e (one review for
+    both, decided with the user on 2026-10-20: since 0.5, HEAD changed only documentation and review tooling);
   - **3.5c** the rules inventory: every rule, limit and measurement of `CLAUDE.md` and `CONTRIBUTING.md`, how it
     is enforced today (script, test, review, nothing), how it should be, and for a measurement its date, commit
     and what it depends on;
   - **3.5d** mechanical checks run by `make test`, proposed one by one (first candidates: version strings, every
     message in the user guide, ASCII-only sources, nothing specific to the developer's workstation);
-  - **3.5e** the release rule in `CLAUDE.md`, then a review of HEAD against `amisqueeze-0.5`.
+  - **3.5e** the release rule in `CLAUDE.md`, then a review of HEAD against `amisqueeze-0.5`, after 3.5c and
+    3.5d; it also closes 3.5b (the tooling judged on what it finds on HEAD). Its launch prompt adds "no `HEAD` in
+    git commands" and "logs in your own worktree" ([decided](reviews/acceptance-0.4-0.5.md#8-decisions)).
 - **Criterion**: on `0.3..0.4` the review finds what the outside review found at 75 or more; its report on HEAD is
   handed to the user, each finding then fixed through a plan step or accepted.
