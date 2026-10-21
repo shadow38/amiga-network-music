@@ -279,7 +279,7 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   memory. Test configuration: `win32.iconified_pause=false`, `win32.inactive_pause=false` (an emulation paused
   by a stray key had stopped an earlier run).
 
-## 1.7 Other PCM formats and Music Assistant 🔶 (1.7a done, 1.7b first test 2026-10-21)
+## 1.7 Other PCM formats and Music Assistant 🔶 (1.7a done, 1.7b first test and WAV header 2026-10-21)
 
 - **Content**: WAV and AIFF headers (format `?` + header parsing, or explicit values); 48 kHz; mono; 8 and 24 bits
   if the server sends them. Music Assistant: the player's `wav` output codec (MA offers no raw PCM); check what MA
@@ -335,6 +335,38 @@ belongs to the task that opened it; packets serialised field by field; buffers a
     0.7 (decided with the user on 2026-10-21), designed with the user first.
   - Not tried: output codecs `mp3` and `aac`, radios, groups of players, an MA server elsewhere than the test
     one.
+- **1.7b, the WAV header** (design agreed with the user on 2026-10-21, version 0.7). Read alongside: aioslimproto
+  (for `wav`, `strm s` gets format `p` with the defaults of a content type without parameters: 16 bits, 44.1 kHz,
+  stereo, little-endian; each stream, after a seek and for the next track too, begins with its header) and
+  squeezelite's `pcm.c` (it reads the header only with its `-W` option, off by default; the header then wins).
+  - In the raw PCM decoder, at the start of **each** PCM track, whatever the server: `RIFF` ... `WAVE` in the first
+    12 bytes means a header, anything else raw PCM as before (LMS strips the headers: nothing changes with LMS).
+  - The header is read again from the start at each call until its `data` chunk is in the buffer (MA's is 102
+    bytes), at most 4 KB of header; a header not all there yet is waited for, nothing consumed; a track that ends
+    before its `data` chunk, or a longer header, is skipped with a message. `ring_peek` reads without consuming,
+    across the end of the ring.
+  - The header wins over `strm`. Accepted: format 1 (PCM) and `WAVE_FORMAT_EXTENSIBLE` with the PCM sub-format;
+    8, 16, 24 or 32 bits (the container's size), 1 or 2 channels, a rate other than 0. Anything else (floating
+    point, compressed) skips the track with a message rather than play noise. VERBOSE prints the format found.
+  - A `data` size of `FFFFFFFF` or `7FFFEFFC` (squeezelite's two "unknown" values; MA sends the first) plays to the
+    end of the stream; any other is counted down, and what follows the data (a `LIST` chunk at the end of a file) is
+    dropped. The pad byte after a chunk of odd size is skipped (squeezelite does not).
+  - The call that reads the header consumes it, sets the new format and returns no PCM: the output computes its
+    block from the format before calling the decoder, so a header saying 8 bits where `strm` said 16 would
+    otherwise overrun the AHI block when converted.
+  - Not done: AIFF (MA does not send it), `codc` and `cont` (still ignored: the header is enough).
+  - Criterion: host tests (the header cut at every length, across the end of the ring, MA's 24-bit extensible
+    header with a `LIST` chunk, odd chunk, floating point refused, a limited `data` size, 16 bits announced and 8
+    in the header on the audio output; a fake server scenario like MA's, `OUTPUT` compared byte for byte, elapsed
+    time at 6 bytes per frame), each seen failing without its code; in WinUAE, the slow 68020 profile without JIT,
+    `amisqueeze` (not `.fpu`), Paula, MA's `wav` codec: heard by the user (playback, pause, seek, two gapless
+    tracks), CPU load measured, no `STMo`.
+  - Code and host tests done on 2026-10-21 (`decoder.c`, `ring_peek`; `test_wav_header`, `test_wav_limited`,
+    `test_wav_refused`, `test_wav_audio_8bit`, `scenario_wav`), each test seen failing without its code in a
+    throwaway copy (nine changes planted: no header read, header and data in one call, which ASan reports as an
+    AHI block overrun, no pad byte, no data limit, no wait for a header cut short, two `ring_peek` faults, no check
+    of a rate of 0, none of a missing format chunk, which UBSan reports as a division by zero). The
+    header captured from MA on 2026-10-21 has the layout the tests build. WinUAE: to do.
 
 ## 1.8 Local decoding: FLAC, then MP3 ✅
 

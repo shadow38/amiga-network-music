@@ -356,6 +356,56 @@ def read_output(path):
     return data
 
 
+def wav_header(bits=24, rate=44100, channels=2):
+    """A WAV header like Music Assistant's (seen in WinUAE on 2026-10-21): WAVE_FORMAT_EXTENSIBLE, a LIST chunk of
+    26 bytes, the data's size unknown (FFFFFFFF); 102 bytes"""
+    frame = channels * bits // 8
+    guid = bytes([1, 0, 0, 0, 0, 0, 0x10, 0, 0x80, 0, 0, 0xaa, 0, 0x38, 0x9b, 0x71])
+    fmt = struct.pack("<HHIIHHHHI", 0xfffe, channels, rate, rate * frame, frame, bits, 22, bits, 3) + guid
+    info = b"INFO" + b"ISFT" + struct.pack("<I", 14) + b"x" * 14
+    header = (b"RIFF" + struct.pack("<I", 0xffffffff) + b"WAVE" + b"fmt " + struct.pack("<I", len(fmt)) + fmt
+              + b"LIST" + struct.pack("<I", len(info)) + info + b"data" + struct.pack("<I", 0xffffffff))
+    assert len(header) == 102
+    return header
+
+
+def send_strm_wav(session, http):
+    fmt7 = b"3p1321" + bytes([64])      # as Music Assistant: autostart 3, PCM announced as 16 bits 44.1 kHz stereo
+    send_packet(session.conn, b"strm", strm("s", port=http.port, ip=0, fmt7=fmt7, request=HTTP_REQUEST))
+
+
+def scenario_wav():
+    print("-- WAV header (Music Assistant's wav codec): two 24-bit tracks announced as 16 bits, back to back")
+    path = os.path.join(tempfile.mkdtemp(), "play.pcm")
+    rng = random.Random(3)
+    pcm1, pcm2 = rng.randbytes(6 * 44100 * 3 // 2), rng.randbytes(6 * 44100)     # 1.5 s and 1 s of 24-bit stereo
+    http1, http2 = HttpServer(data=wav_header() + pcm1), HttpServer(data=wav_header() + pcm2)
+    http1.start()
+    http2.start()
+    server, proc, s = start_session("Wav", "OUTPUT=" + path)
+    try:
+        send_strm_wav(s, http1)
+        s.until("STAT:STMd")
+        send_strm_wav(s, http2)         # the next track, appended to the buffer with its own header
+        t_end, _, _ = s.until("STAT:STMu", timeout=6)
+        starts = [t for t, n, _ in s.log if n == "STAT:STMs"]
+        check(len(starts) == 2, "STMs for each track")
+        check(1.4 <= starts[1] - starts[0] <= 1.7 and 0.9 <= t_end - starts[1] <= 1.25,
+              "1.5 s and 1 s of 24-bit audio played in %.2f s and %.2f s"
+              % (starts[1] - starts[0], t_end - starts[1]))
+        stmt = [(t, b) for t, n, b in s.log if n == "STAT:STMt" and t < starts[1]]
+        drift = max(abs(stat_elapsed_ms(b) / 1000 - (t - starts[0])) for t, b in stmt)
+        check(drift < 0.25, "elapsed time follows the clock (max drift %.3f s)" % drift)
+    finally:
+        rc, out = stop(proc)
+        server.close()
+    data = read_output(path)
+    check(data == pcm1 + pcm2, "file identical to the data without the headers (first difference at byte %d)"
+          % first_difference(data, pcm1 + pcm2))
+    check(out.count("stream: WAV header: 24 bits, 44100 Hz, 2 channel(s), to the end of the stream") == 2,
+          "WAV header reported for each track")
+
+
 def scenario_stall():
     print("-- slow network: the stream stops for 3 s, the buffer runs dry (STMo), then playback resumes")
     path = os.path.join(tempfile.mkdtemp(), "play.pcm")
@@ -863,6 +913,7 @@ if __name__ == "__main__":
     scenario_pause()
     scenario_stop()
     scenario_output()
+    scenario_wav()
     scenario_stall()
     scenario_cut()
     scenario_control_lost()

@@ -34,6 +34,9 @@ void ring_commit(struct ring *r, uint32_t n);
 
 /* Contiguous data at the read position: returns its size and sets *p to it (consume it with ring_consume) */
 uint32_t ring_read_space(const struct ring *r, const uint8_t **p);
+/* Copies up to n bytes starting offset bytes past the read position, without consuming them; returns the number
+ * copied */
+uint32_t ring_peek(const struct ring *r, uint32_t offset, void *dst, uint32_t n);
 /* Copies up to n bytes out of the buffer; returns the number copied */
 uint32_t ring_read(struct ring *r, void *dst, uint32_t n);
 /* Drops n bytes from the read side (n <= ring_used) */

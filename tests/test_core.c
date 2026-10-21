@@ -199,6 +199,11 @@ static void test_ring(void)
     CHECK(ring_used(&r) == 12 && ring_space(&r) == 4);
     n = ring_read_space(&r, &rp);
     CHECK(n == 10 && rp == r.buf + 6);  /* contiguous data up to the end, the rest is at the start */
+    CHECK(ring_peek(&r, 8, out, 4) == 4 && !memcmp(out, "efgh", 4));      /* across the end */
+    CHECK(ring_peek(&r, 10, out, 4) == 2 && !memcmp(out, "gh", 2));       /* from the start of the buffer */
+    CHECK(ring_peek(&r, 11, out, 4) == 1 && out[0] == 'h');               /* from past the start */
+    CHECK(ring_peek(&r, 0, out, 3) == 3 && !memcmp(out, "678", 3));
+    CHECK(ring_peek(&r, 12, out, 4) == 0 && ring_used(&r) == 12 && r.total_out == 6);
     CHECK(ring_read(&r, out, 16) == 12 && !memcmp(out, "6789abcdefgh", 12));
     CHECK(r.total_in == 18 && r.total_out == 18 && ring_used(&r) == 0);
     ring_clear(&r);
@@ -1240,6 +1245,213 @@ static void test_audio_gapless_24bit(void)
     teardown(&p);
 }
 
+/* ---- WAV header (Music Assistant's wav output codec, plan step 1.7b) ---- */
+
+static uint8_t wav_buf[8192];
+
+static void set_le16(uint8_t *b, uint32_t v)
+{
+    b[0] = (uint8_t)v; b[1] = (uint8_t)(v >> 8);
+}
+
+static void set_le32(uint8_t *b, uint32_t v)
+{
+    set_le16(b, v); set_le16(b + 2, v >> 16);
+}
+
+/* A WAV header at b: a format chunk of fmt_len bytes (0: none; 16, or 40 with tag 0xfffe: WAVE_FORMAT_EXTENSIBLE,
+ * sub-format PCM), a LIST chunk of list_len bytes (0: none; odd: followed by its pad byte), then the data chunk's
+ * header. Returns its length. */
+static uint32_t wav(uint8_t *b, uint32_t tag, uint32_t channels, uint32_t rate, uint32_t bits, uint32_t fmt_len,
+                    uint32_t list_len, uint32_t data_len)
+{
+    static const uint8_t pcm_guid[16] = { 1, 0, 0, 0, 0, 0, 0x10, 0, 0x80, 0, 0, 0xaa, 0, 0x38, 0x9b, 0x71 };
+    uint32_t n = 12, frame = channels * bits / 8;
+
+    memcpy(b, "RIFF", 4);
+    set_le32(b + 4, 0xffffffff);
+    memcpy(b + 8, "WAVE", 4);
+    if (fmt_len > 0) {
+        memcpy(b + n, "fmt ", 4);
+        set_le32(b + n + 4, fmt_len);
+        n += 8;
+        memset(b + n, 0, fmt_len);
+        set_le16(b + n, tag);
+        set_le16(b + n + 2, channels);
+        set_le32(b + n + 4, rate);
+        set_le32(b + n + 8, rate * frame);
+        set_le16(b + n + 12, frame);
+        set_le16(b + n + 14, bits);
+        if (fmt_len >= 40) {
+            set_le16(b + n + 16, 22);
+            set_le16(b + n + 18, bits);
+            set_le32(b + n + 20, 3);    /* front left and right */
+            memcpy(b + n + 24, pcm_guid, 16);
+        }
+        n += fmt_len;
+    }
+    if (list_len > 0) {
+        memcpy(b + n, "LIST", 4);
+        set_le32(b + n + 4, list_len);
+        memset(b + n + 8, 'x', list_len + (list_len & 1));
+        n += 8 + list_len + (list_len & 1);
+    }
+    memcpy(b + n, "data", 4);
+    set_le32(b + n + 4, data_len);
+    return n + 8;
+}
+
+/* Music Assistant's header (seen in WinUAE on 2026-10-21): 24 bits, WAVE_FORMAT_EXTENSIBLE, a LIST chunk of 26
+ * bytes, data to the end of the stream; 102 bytes */
+static uint32_t wav_ma(uint8_t *b)
+{
+    return wav(b, 0xfffe, 2, 44100, 24, 40, 26, 0xffffffff);
+}
+
+/* A track of header + data on the virtual output, strm s announcing 16 bits as Music Assistant does: the header
+ * coming in two reads cut at `cut`, the output running between them. Returns the bytes written to the file. */
+static int play_wav(struct player *p, const uint8_t *h, uint32_t hlen, uint32_t cut, const uint8_t *data,
+                    uint32_t n)
+{
+    setup_file(p);
+    open_stream(p, '1', 0);
+    stub_feed_stream(h, (int)cut);
+    drain_stream(p);
+    stub_now += 10;
+    output_tick(p, stub_now);
+    stub_feed_stream(h + cut, (int)(hlen - cut));
+    stub_feed_stream(data, (int)n);
+    drain_stream(p);
+    stub_stream_end();
+    stream_io(p, PLAT_READ);
+    play_for(p, 2000);
+    return stub_file_len;
+}
+
+/* Music Assistant's header, cut at every length: the data played in the header's format, the header dropped; the
+ * track takes as long as its 24-bit data (6 bytes per frame) */
+static void test_wav_header(void)
+{
+    struct player p;
+    uint32_t h = wav_ma(wav_buf), n = 6 * 10000, cut;
+
+    fill(track_a, sizeof(track_a), 21);
+    CHECK(h == 102);
+    for (cut = 1; cut <= h; cut++) {
+        int len = play_wav(&p, wav_buf, h, cut, track_a, n);
+
+        CHECK(len == (int)n && !memcmp(stub_file, track_a, n) && p.out.state == OUTPUT_STOPPED);
+        CHECK(p.out.cur.out_fmt.sample_bytes == 3 && p.out.cur.out_fmt.big_endian == 0);
+        if (cut == 1)
+            CHECK(strstr(stub_out, "stream: WAV header: 24 bits, 44100 Hz, 2 channel(s), to the end of the "
+                                   "stream") != NULL && strstr(stub_out, "wav:") == NULL);
+        teardown(&p);
+    }
+    n = 132300;                                         /* 0.5 s of 24-bit stereo at 44.1 kHz */
+    setup_file(&p);
+    open_stream(&p, '1', 0);
+    stub_feed_stream(wav_buf, (int)h);
+    stub_feed_stream(track_a, (int)n);
+    drain_stream(&p);
+    stub_stream_end();
+    stream_io(&p, PLAT_READ);
+    stub_now += 1;
+    output_tick(&p, stub_now);                          /* the header read */
+    play_for(&p, 400);
+    CHECK(p.out.state == OUTPUT_RUNNING && output_elapsed_ms(&p) >= 395 && output_elapsed_ms(&p) <= 405);
+    play_for(&p, 200);                                  /* as 16 bits, it would last 0.75 s */
+    CHECK(p.out.state == OUTPUT_STOPPED && stub_file_len == (int)n && !memcmp(stub_file, track_a, n));
+    teardown(&p);
+}
+
+/* A plain format chunk, a LIST chunk of odd size (and its pad byte), a data size that is not a whole number of
+ * frames, a LIST chunk after the data: only the whole frames of the data are played */
+static void test_wav_limited(void)
+{
+    struct player p;
+    uint32_t h = wav(wav_buf, 1, 2, 48000, 16, 16, 25, 1001), n = 1001;
+
+    fill(track_a, sizeof(track_a), 22);
+    memcpy(track_a + n, "LIST\x1e\0\0\0", 8);           /* 30 bytes of tags after the data */
+    CHECK(play_wav(&p, wav_buf, h, h, track_a, n + 38) == 1000 && !memcmp(stub_file, track_a, 1000));
+    CHECK(strstr(stub_out, "stream: WAV header: 16 bits, 48000 Hz, 2 channel(s), 1001 bytes") != NULL);
+    CHECK(p.out.state == OUTPUT_STOPPED && p.out.cur.out_fmt.rate == 48000);
+    teardown(&p);
+}
+
+/* Headers amisqueeze cannot play: the track skipped with a message, nothing played (no noise); a header that is
+ * not a WAV one: raw PCM, played as announced */
+static void test_wav_refused(void)
+{
+    static const struct { const char *why; uint32_t tag, channels, rate, bits, fmt_len, list_len, cut; } cases[] = {
+        { "wav: not integer PCM, track skipped", 3, 2, 44100, 32, 16, 0, 0 },         /* floating point */
+        { "wav: not integer PCM, track skipped", 0xfffe, 2, 44100, 32, 40, 0, 0 },    /* sub-format: float */
+        { "wav: more than 2 channels, track skipped", 1, 6, 44100, 16, 16, 0, 0 },
+        { "wav: sample size not supported, track skipped", 1, 2, 44100, 12, 16, 0, 0 },
+        { "wav: sample rate of 0, track skipped", 1, 2, 0, 16, 16, 0, 0 },
+        { "wav: format chunk too short, track skipped", 1, 2, 44100, 16, 14, 0, 0 },
+        { "wav: no format chunk, track skipped", 1, 2, 44100, 16, 0, 0, 0 },
+        { "wav: header too long, track skipped", 1, 2, 44100, 16, 16, 5000, 0 },
+        { "wav: the track ends in its header, track skipped", 1, 2, 44100, 16, 16, 0, 30 },
+    };
+    struct player p;
+    uint32_t c, n = PCM_BPS / 10;
+
+    fill(track_a, sizeof(track_a), 23);
+    fill(track_b, sizeof(track_b), 24);
+    for (c = 0; c < sizeof(cases) / sizeof(cases[0]); c++) {
+        uint32_t h = wav(wav_buf, cases[c].tag, cases[c].channels, cases[c].rate, cases[c].bits, cases[c].fmt_len,
+                         cases[c].list_len, 0xffffffff);
+
+        if (cases[c].tag == 0xfffe)
+            wav_buf[12 + 8 + 24] = 3;                   /* KSDATAFORMAT_SUBTYPE_IEEE_FLOAT */
+        setup_file(&p);
+        open_stream(&p, '1', 0);
+        stub_feed_stream(wav_buf, (int)(cases[c].cut ? cases[c].cut : h));
+        if (!cases[c].cut)
+            stub_feed_stream(track_a, (int)n);
+        drain_stream(&p);
+        stub_stream_end();
+        stream_io(&p, PLAT_READ);
+        stub_reset();
+        open_stream(&p, '1', 0);                        /* the next track, raw PCM */
+        stub_feed_stream(track_b, (int)n);
+        drain_stream(&p);
+        stub_stream_end();
+        stream_io(&p, PLAT_READ);
+        play_for(&p, 2000);
+        CHECK(strstr(stub_out, cases[c].why) != NULL);
+        CHECK(stub_file_len == (int)n && !memcmp(stub_file, track_b, n) && p.out.state == OUTPUT_STOPPED);
+        teardown(&p);
+    }
+    memcpy(track_a, "RIFF\0\0\0\0AIFF", 12);           /* not a WAV header: raw PCM */
+    CHECK(play_wav(&p, track_a, 0, 0, track_a, n) == (int)n && !memcmp(stub_file, track_a, n));
+    CHECK(strstr(stub_out, "WAV") == NULL && strstr(stub_out, "wav:") == NULL);
+    teardown(&p);
+}
+
+/* strm s says 16 bits, the header 8: the audio output's first block is sized for 8-bit samples (half a block,
+ * doubled when converted), not overrun */
+static void test_wav_audio_8bit(void)
+{
+    struct player p;
+    uint32_t h = wav(wav_buf, 1, 2, 44100, 8, 16, 0, 0xffffffff), n = 100000, dev;
+
+    fill(track_a, sizeof(track_a), 25);
+    setup_audio(&p, 0);
+    open_stream(&p, '1', 0);
+    stub_feed_stream(wav_buf, (int)h);
+    stub_feed_stream(track_a, (int)n);
+    drain_stream(&p);
+    output_tick(&p, stub_now);
+    CHECK(stub_audio[0].len == BLOCK && stub_audio[0].channels == 2);
+    play_out(&p);
+    dev = to_device_fmt(expect, track_a, n, 1, 0);
+    CHECK(stub_audio_out_len == (int)dev && !memcmp(stub_audio_out, expect, dev));
+    CHECK(audio_played(&p, stub_now, 0) == n && stub_audio_bad == 0);
+    teardown(&p);
+}
+
 /* audg body (after the opcode): old gains (2 x 4 bytes), adjust, preamp, then the 16.16 gains of left and right */
 static void feed_audg(int adjust, uint32_t left, uint32_t right)
 {
@@ -1954,6 +2166,10 @@ int main(void)
     test_audio_formats();
     test_audio_24bit_pause();
     test_audio_gapless_24bit();
+    test_wav_header();
+    test_wav_limited();
+    test_wav_refused();
+    test_wav_audio_8bit();
     test_audio_volume();
     test_audio_volume_pause();
     test_decoder_audio();

@@ -7,6 +7,12 @@ are previews, tested in WinUAE only, not yet on a real Amiga.
 
 ## [Unreleased]
 
+### Added
+
+- WAV sent with its header, as Music Assistant's `wav` output codec does: amisqueeze reads the header and plays
+  the samples in its format (Music Assistant announces 16 bits and sends 24), where it played loud noise. A WAV it
+  cannot play (floating point, more than 2 channels) is skipped with a message.
+
 ## [0.6] - 2026-10-21
 
 ### Changed

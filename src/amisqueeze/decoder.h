@@ -51,10 +51,15 @@ struct decoder {
     uint64_t track;                    /* start (ring position) of the track being decoded */
     struct pcm_format out;             /* what it produces */
     uint32_t in_frame;                 /* bytes per frame of the input, for the PCM decoder */
+    uint32_t data_left;                /* PCM decoder: bytes of a WAV file's data still to come, if limited */
+    uint8_t  phase;                    /* PCM decoder: looking for a WAV header, playing, or dropping the track */
+    uint8_t  limited;                  /* PCM decoder: the WAV header gave the size of its data */
+    uint8_t  verbose;                  /* set by the output: a decoder may tell what it finds (VERBOSE) */
     void *state;                       /* allocated by start, freed by stop */
 };
 
-/* Raw PCM (strm format 'p'): copied as is */
+/* Raw PCM (strm format 'p'): copied as is; a WAV header at the start of the track, if any, gives its format
+ * instead of strm (Music Assistant's wav output codec) */
 extern const struct decoder_ops decoder_pcm;
 /* FLAC (strm format 'f'), with dr_flac */
 extern const struct decoder_ops decoder_flac;

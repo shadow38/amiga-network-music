@@ -328,6 +328,7 @@ static int prepare_decoder(struct player *p, struct track *t)
     o->dec.ops = t->ops;
     o->dec.track = t->start;
     o->dec.state = NULL;
+    o->dec.verbose = (uint8_t)(p->verbose != 0);
     if (t->out_start == OUT_START_UNKNOWN)
         t->out_start = o->handed;
     if (t->ops->start(&o->dec, &t->fmt)) {

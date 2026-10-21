@@ -68,6 +68,27 @@ uint32_t ring_read_space(const struct ring *r, const uint8_t **p)
     return n;
 }
 
+uint32_t ring_peek(const struct ring *r, uint32_t offset, void *dst, uint32_t n)
+{
+    uint8_t *d = dst;
+    uint32_t pos, done = 0;
+
+    if (offset >= r->used)
+        return 0;
+    if (n > r->used - offset)
+        n = r->used - offset;
+    pos = r->size - r->rpos > offset ? r->rpos + offset : offset - (r->size - r->rpos);
+    while (done < n) {
+        uint32_t chunk = r->size - pos;
+        if (chunk > n - done)
+            chunk = n - done;
+        memcpy(d + done, r->buf + pos, chunk);
+        pos = 0;
+        done += chunk;
+    }
+    return done;
+}
+
 uint32_t ring_read(struct ring *r, void *dst, uint32_t n)
 {
     uint8_t *d = dst;
