@@ -17,15 +17,15 @@ spoken by free software on both sides.
 
 ```mermaid
 flowchart LR
-    ctl["Web browser,<br>phone, tablet"] -->|"chooses what plays"| lms["Music server (LMS)<br>music library"]
+    ctl["Web browser,<br>phone, tablet"] -->|"chooses what plays"| srv["Music server<br>music library"]
     subgraph amiga ["Amiga"]
         tcp["TCP/IP stack<br>(bsdsocket.library)"] --> sq["amisqueeze"]
         sq --> ahi["AHI"]
         ahi --> out["Paula or<br>a sound card"]
     end
-    lms -->|"slimproto, TCP 3483:<br>play, pause, volume..."| tcp
-    lms -->|"audio stream, HTTP 9000:<br>raw PCM, FLAC or MP3"| tcp
-    sq -.->|"player state, elapsed time"| lms
+    srv -->|"slimproto, TCP 3483:<br>play, pause, volume..."| tcp
+    srv -->|"audio stream, HTTP:<br>PCM, FLAC or MP3"| tcp
+    sq -.->|"player state, elapsed time"| srv
 ```
 
 amisqueeze takes the server's commands, receives the music as an HTTP stream, decodes it if needed (FLAC, MP3 on
@@ -36,7 +36,7 @@ a fast Amiga; otherwise the server sends raw PCM) and plays it through AHI.
 | Server | | Status |
 |---|---|---|
 | [Lyrion Music Server](https://lyrion.org) (LMS) | the free, open-source Squeezebox server, formerly Logitech Media Server, now developed by its community; Windows, macOS, Linux, NAS, Raspberry Pi, Docker | **tested** (9.1.1) |
-| [Music Assistant](https://music-assistant.io) | a more recent server, close to Home Assistant, which drives Squeezebox players with the same protocol | **tested** (2.10.7), with its `flac` or `wav` output codec |
+| [Music Assistant](https://music-assistant.io) | a more recent server, close to Home Assistant, which drives Squeezebox players with the same protocol | **tested** (2.10.7) |
 
 ## Programs
 
@@ -73,7 +73,7 @@ a fast Amiga; otherwise the server sends raw PCM) and plays it through AHI.
      amisqueeze SERVER=192.168.1.10
      ```
 
-   A player called "Amiga" shows up in LMS: choose it in the web interface or an app, and play.
+   A player called "Amiga" shows up in the server's web interface: choose it there or in an app, and play.
 5. **To stop it**: Exchange, the system's list of background programs, lists it ("Remove"); or Ctrl-C in its
    window or Shell. To keep the Shell options for the next times, then just type `amisqueeze`:
 
@@ -82,8 +82,10 @@ a fast Amiga; otherwise the server sends raw PCM) and plays it through AHI.
    Copy ENV:amisqueeze.prefs ENVARC:
    ```
 
-On the server side: LMS reachable from the Amiga (ports 3483 and 9000), and, for MP3 files on an Amiga that does
-not decode them, a conversion rule: see [server setup](docs/user-guide.md#server-setup).
+On the server side: the server reachable from the Amiga (ports 3483 and 9000 for LMS, 3483 and 8097 for Music
+Assistant); with LMS, for MP3 files on an Amiga that does not decode them, a conversion rule; with Music
+Assistant, the player's output codec set to `flac` (`wav` on a slow Amiga): see
+[server setup](docs/user-guide.md#server-setup).
 
 Everything else (all the options, sound settings, volume, messages) is in the **[user guide](docs/user-guide.md)**.
 
@@ -94,7 +96,7 @@ C, cross-compiled; tested in WinUAE, not yet on a real Amiga.
 
 **amisqueeze** works:
 
-- **as a player**: it shows up in LMS and plays through AHI; play, pause, seek, stop, next track without a gap,
+- **as a player**: it shows up in LMS and Music Assistant and plays through AHI; play, pause, seek, stop, next track without a gap,
   volume;
 - **raw PCM**: 8 to 32 bits, mono or stereo, up to 48 kHz;
 - **FLAC**: decoded on the Amiga when the CPU is fast enough (a PiStorm-class CPU, measured at start-up), otherwise
@@ -105,7 +107,8 @@ C, cross-compiled; tested in WinUAE, not yet on a real Amiga.
 - **on the Amiga**: started from a Shell or from the Workbench (icon, options in its ToolTypes, at boot from
   `SYS:WBStartup`), listed in Exchange, which stops it; a log file (`LOG`) if wanted.
 
-Tested in WinUAE with emulated networking and LMS 9.1.1: listening, one hour of playback. On a 28 MHz 68020, sound
+Tested in WinUAE with emulated networking: LMS 9.1.1 (listening, one hour of playback) and Music Assistant 2.10.7
+(listening). On a 28 MHz 68020, sound
 through AHI and Paula takes about two thirds of the CPU. The user guide lists
 [what has been tried](docs/user-guide.md#requirements), the [known limits](docs/user-guide.md#known-limits) and
 some [troubleshooting](docs/user-guide.md#troubleshooting).
