@@ -41,5 +41,8 @@ uint32_t ring_peek(const struct ring *r, uint32_t offset, void *dst, uint32_t n)
 uint32_t ring_read(struct ring *r, void *dst, uint32_t n);
 /* Drops n bytes from the read side (n <= ring_used) */
 void ring_consume(struct ring *r, uint32_t n);
+/* Drops the bytes written after stream position `total` (a total_in value), from the write side; never the ones
+ * consumed already: below total_out, everything left is dropped */
+void ring_truncate(struct ring *r, uint64_t total);
 
 #endif

@@ -20,6 +20,13 @@ are previews, tested in WinUAE only, not yet on a real Amiga.
   all; and how to set Music Assistant up for amisqueeze (Squeezelite provider, ports, published address, volume).
   The README no longer speaks of LMS only (diagram, quick start, server side, status).
 
+### Fixed
+
+- With LMS, removing, moving or replacing the next track of the playlist (or reshuffling it) while a track plays
+  no longer cuts the playing track: amisqueeze stopped it, losing up to its last seconds still in the buffer
+  (about 6 s of PCM, 9 s of FLAC). Only the next track is dropped now, and the new next one follows without a
+  gap.
+
 ## [0.6] - 2026-10-21
 
 ### Changed

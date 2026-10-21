@@ -7,7 +7,9 @@
  *     (autostart 1: STMs; autostart 0: STMl, then strm u);
  *   end of the HTTP body -> DSCO + STMd: the server then sends the next track, appended to the buffer, and
  *     STMs is sent again when the output reaches it (gapless);
- *   buffer empty: STMo while still streaming, STMu once everything was played.
+ *   buffer empty: STMo while still streaming, STMu once everything was played;
+ *   strm f (LMS: the next track removed, moved or reshuffled) drops the track being streamed, not the one playing:
+ *     its stream is closed without DSCO, its data dropped, and the next strm s follows the track playing.
  * The ring buffer holds the stream as received; the decoder of each track (decoder.h; raw PCM is copied as is)
  * turns it into PCM for a sink: the platform's audio output (AHI, blocks managed by audio.c), or the virtual
  * output, which consumes it at the PCM rate like a sound card (host build, NOAUDIO, OUTPUT); with the OUTPUT
@@ -68,6 +70,25 @@ void stream_stop(struct player *p)
     output_reset(p);
     p->out.state = OUTPUT_STOPPED;
     p->out.starved = 0;
+}
+
+void stream_flush(struct player *p)
+{
+    struct output *o = &p->out;
+    struct track *t;
+
+    if (o->state != OUTPUT_RUNNING && o->state != OUTPUT_PAUSED) {
+        stream_stop(p);                 /* nothing playing: the track dropped is the only one */
+        return;
+    }
+    stream_close(p);                    /* no DSCO: the server does not wait for the end of that stream */
+    p->stream.state = STREAM_IDLE;
+    if (o->queued == 0)                 /* the track playing is the one streamed: it plays what it received */
+        return;
+    t = &o->queue[--o->queued];         /* the track the last strm s queued */
+    if (o->dec.ops != NULL && o->dec.track == t->start)
+        stop_decoder(p);                /* audio output: its first blocks, already filled, end the track playing */
+    ring_truncate(&p->ring, t->start);  /* its data, what the decoding has not taken yet */
 }
 
 /* The stream ends early (connection failed, error): DSCO with the reason; a track without any data is dropped */

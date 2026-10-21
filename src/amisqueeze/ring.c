@@ -115,3 +115,17 @@ void ring_consume(struct ring *r, uint32_t n)
     r->used -= n;
     r->total_out += n;
 }
+
+void ring_truncate(struct ring *r, uint64_t total)
+{
+    uint32_t n;
+
+    if (total < r->total_out)
+        total = r->total_out;
+    if (total >= r->total_in)
+        return;
+    n = (uint32_t)(r->total_in - total);    /* <= used */
+    r->wpos = r->wpos >= n ? r->wpos - n : r->wpos + r->size - n;
+    r->used -= n;
+    r->total_in = total;
+}

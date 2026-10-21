@@ -211,6 +211,38 @@ static void test_ring(void)
     ring_free(&r);
 }
 
+/* Dropping the last bytes written (strm f): across the end of the buffer, never what was consumed */
+static void test_ring_truncate(void)
+{
+    struct ring r;
+    uint8_t *w, out[16];
+
+    CHECK(ring_init(&r, 16));
+    ring_write_space(&r, &w);
+    memcpy(w, "0123456789abcdef", 16);
+    ring_commit(&r, 16);
+    ring_consume(&r, 6);
+    ring_write_space(&r, &w);
+    memcpy(w, "gh", 2);                 /* "6789abcdefgh", the write position wrapped around to 2 */
+    ring_commit(&r, 2);
+    ring_truncate(&r, 20);              /* past what was written: nothing to drop */
+    CHECK(ring_used(&r) == 12 && r.total_in == 18);
+    ring_truncate(&r, 14);              /* back across the end of the buffer: "6789abcd" left */
+    CHECK(ring_used(&r) == 8 && r.total_in == 14 && r.wpos == 14);
+    CHECK(ring_write_space(&r, &w) == 2 && w == r.buf + 14);
+    memcpy(w, "XY", 2);
+    ring_commit(&r, 2);
+    CHECK(ring_peek(&r, 0, out, 16) == 10 && !memcmp(out, "6789abcdXY", 10));
+    ring_consume(&r, 4);
+    ring_truncate(&r, 8);               /* below what was consumed (10): everything left is dropped */
+    CHECK(ring_used(&r) == 0 && r.total_in == 10 && r.total_out == 10 && r.wpos == r.rpos);
+    ring_write_space(&r, &w);
+    memcpy(w, "ij", 2);
+    ring_commit(&r, 2);
+    CHECK(ring_read(&r, out, 16) == 2 && !memcmp(out, "ij", 2) && r.total_out == 12);
+    ring_free(&r);
+}
+
 static void test_http_header_end(void)
 {
     CHECK(http_header_end(http_ok, (int)strlen(http_ok)) == (int)strlen(http_ok));
@@ -1923,6 +1955,267 @@ static void test_decoder_no_start_audio(void)
     teardown(&p);
 }
 
+/* ---- strm f (flush) ---- */
+
+static uint8_t track_c[PCM_BPS / 2];
+
+/* strm f while the next track streams (LMS: the next track removed, moved or reshuffled): that track is dropped,
+ * the one playing goes on, and the next strm s follows it. A goes through the widening decoder: a stream position
+ * taken for an output one (or the reverse) would show. */
+static void test_flush(void)
+{
+    struct player p;
+    uint32_t na = PCM_BPS / 10, nb = PCM_BPS / 4, nc = PCM_BPS / 10;   /* A: 200 ms once decoded; C: 100 ms */
+
+    fill(track_a, sizeof(track_a), 21);
+    fill(track_b, sizeof(track_b), 22);
+    fill(track_c, sizeof(track_c), 23);
+    setup_file(&p);
+    open_stream(&p, '1', 1);
+    use_widen(&p);
+    stub_feed_stream(track_a, (int)na);
+    drain_stream(&p);
+    stub_stream_end();
+    stream_io(&p, PLAT_READ);
+    stub_now += 50;
+    output_tick(&p, stub_now);
+    stub_reset();
+    open_stream(&p, '1', 1);                            /* B, still streaming */
+    use_widen(&p);
+    stub_feed_stream(track_b, (int)nb);
+    drain_stream(&p);
+
+    clear_tx();
+    feed_strm('f', NULL, 0, 0, 0, NULL);
+    drain(&p);
+    CHECK(!strcmp(trace(), "STAT:STMf"));               /* no DSCO nor STMd for the dropped stream */
+    CHECK(!stub_stream_open && p.stream.state == STREAM_IDLE && stream_events(&p) == 0);
+    CHECK(p.out.state == OUTPUT_RUNNING && p.out.queued == 0 && output_elapsed_ms(&p) == 50);
+    CHECK(ring_used(&p.ring) == na * 3 / 4);            /* A's 150 ms left, nothing of B */
+
+    stub_reset();
+    open_stream(&p, '1', 1);                            /* C, the new next track: raw PCM */
+    stub_feed_stream(track_c, (int)nc);
+    drain_stream(&p);
+    stub_stream_end();
+    stream_io(&p, PLAT_READ);
+    clear_tx();
+    stub_now += 140;
+    output_tick(&p, stub_now);
+    CHECK(count_in_trace("STAT:STMs") == 0 && output_elapsed_ms(&p) == 190);  /* still A */
+    stub_now += 20;
+    output_tick(&p, stub_now);
+    CHECK(count_in_trace("STAT:STMs") == 1 && output_elapsed_ms(&p) == 10);   /* C, timed from its start */
+    play_for(&p, 300);
+    CHECK(p.out.state == OUTPUT_STOPPED && count_in_trace("STAT:STMu") == 1 && count_in_trace("STAT:STMs") == 1);
+    widen(decoded, track_a, na);
+    memcpy(decoded + 2 * na, track_c, nc);
+    CHECK(stub_file_len == (int)(2 * na + nc) && !memcmp(stub_file, decoded, 2 * na + nc));
+    teardown(&p);
+}
+
+/* strm f while paused, the next track received whole: still paused where it was; A then plays to its end */
+static void test_flush_paused(void)
+{
+    struct player p;
+    uint32_t na = PCM_BPS / 5, nb = PCM_BPS / 10;       /* A: 200 ms */
+
+    fill(track_a, sizeof(track_a), 24);
+    fill(track_b, sizeof(track_b), 25);
+    setup_file(&p);
+    open_stream(&p, '1', 1);
+    stub_feed_stream(track_a, (int)na);
+    drain_stream(&p);
+    stub_stream_end();
+    stream_io(&p, PLAT_READ);
+    stub_now += 100;
+    output_tick(&p, stub_now);
+    stub_reset();
+    open_stream(&p, '1', 1);
+    stub_feed_stream(track_b, (int)nb);
+    drain_stream(&p);
+    stub_stream_end();
+    stream_io(&p, PLAT_READ);
+    feed_strm('p', NULL, 0, 0, 0, NULL);
+    drain(&p);
+
+    clear_tx();
+    feed_strm('f', NULL, 0, 0, 0, NULL);
+    drain(&p);
+    CHECK(!strcmp(trace(), "STAT:STMf"));
+    CHECK(p.out.state == OUTPUT_PAUSED && p.out.queued == 0 && output_elapsed_ms(&p) == 100);
+    CHECK(ring_used(&p.ring) == na / 2);
+    feed_strm('u', NULL, 0, 0, 0, NULL);
+    drain(&p);
+    play_for(&p, 300);
+    CHECK(p.out.state == OUTPUT_STOPPED && count_in_trace("STAT:STMu") == 1 && count_in_trace("STAT:STMs") == 0);
+    CHECK(stub_file_len == (int)na && !memcmp(stub_file, track_a, na));
+    teardown(&p);
+}
+
+/* Plays the blocks queued to the end; STMs once, when the bytes played reach `boundary` */
+static void play_out_boundary(struct player *p, uint64_t boundary)
+{
+    int guard, seen = 0;
+
+    clear_tx();
+    for (guard = 0; guard < 20 && p->out.state == OUTPUT_RUNNING; guard++) {
+        finish(p);
+        if (!seen && count_in_trace("STAT:STMs") == 1) {
+            seen = 1;
+            CHECK(audio_played(p, stub_now, 0) == boundary && output_elapsed_ms(p) == 0);
+        }
+    }
+    CHECK(seen && count_in_trace("STAT:STMs") == 1 && count_in_trace("STAT:STMu") == 1);
+}
+
+/* Audio output, strm f before the decoding reaches the next track: none of it reaches the device, the new next
+ * track follows A */
+static void test_flush_audio(void)
+{
+    struct player p;
+    uint32_t nb = 30000, nc = 20000;
+
+    fill(track_a, sizeof(track_a), 26);
+    fill(track_b, sizeof(track_b), 27);
+    fill(track_c, sizeof(track_c), 28);
+    setup_audio(&p, 0);
+    open_stream(&p, '1', 1);
+    stub_feed_stream(track_a, sizeof(track_a));          /* A: 1 s */
+    drain_stream(&p);
+    stub_stream_end();
+    stream_io(&p, PLAT_READ);
+    output_tick(&p, stub_now);
+    stub_reset();
+    open_stream(&p, '1', 1);
+    stub_feed_stream(track_b, (int)nb);                 /* B, still streaming */
+    drain_stream(&p);
+
+    clear_tx();
+    feed_strm('f', NULL, 0, 0, 0, NULL);
+    drain(&p);
+    CHECK(!strcmp(trace(), "STAT:STMf") && !stub_stream_open);
+    CHECK(p.out.state == OUTPUT_RUNNING && p.out.queued == 0 && audio_pending(&p) == AUDIO_BLOCKS);
+    CHECK(ring_used(&p.ring) == sizeof(track_a) - AUDIO_BLOCKS * BLOCK);
+
+    stub_reset();
+    open_stream(&p, '1', 1);
+    stub_feed_stream(track_c, (int)nc);
+    drain_stream(&p);
+    stub_stream_end();
+    stream_io(&p, PLAT_READ);
+    play_out_boundary(&p, sizeof(track_a));
+    to_device(expect, track_a, sizeof(track_a), 0);
+    to_device(expect + sizeof(track_a), track_c, nc, 0);
+    CHECK(stub_audio_out_len == (int)(sizeof(track_a) + nc) && !memcmp(stub_audio_out, expect, sizeof(track_a) + nc));
+    CHECK(stub_audio_bad == 0);
+    teardown(&p);
+}
+
+/* Audio output, strm f once the decoding has reached the next track (in the last blocks of A): the block of it
+ * already filled plays as the end of A, without STMs; the rest of it is dropped, the new next track follows */
+static void test_flush_audio_reached(void)
+{
+    struct player p;
+    uint32_t na = 40000, nb = 60000, nc = 20000;
+
+    fill(track_a, sizeof(track_a), 29);
+    fill(track_b, sizeof(track_b), 30);
+    fill(track_c, sizeof(track_c), 31);
+    setup_audio(&p, 0);
+    open_stream(&p, '1', 1);
+    stub_feed_stream(track_a, (int)na);                 /* A: 32768 + 7232 bytes */
+    drain_stream(&p);
+    stub_stream_end();
+    stream_io(&p, PLAT_READ);
+    stub_reset();
+    open_stream(&p, '1', 1);
+    stub_feed_stream(track_b, (int)nb);
+    drain_stream(&p);
+    stub_stream_end();
+    stream_io(&p, PLAT_READ);
+    output_tick(&p, stub_now);
+    CHECK(audio_pending(&p) == AUDIO_BLOCKS && ring_used(&p.ring) == nb - BLOCK);   /* B's first block filled */
+
+    clear_tx();
+    feed_strm('f', NULL, 0, 0, 0, NULL);
+    drain(&p);
+    CHECK(!strcmp(trace(), "STAT:STMf"));
+    CHECK(p.out.state == OUTPUT_RUNNING && p.out.queued == 0 && ring_used(&p.ring) == 0 && p.out.dec.ops == NULL);
+
+    stub_reset();
+    open_stream(&p, '1', 1);
+    stub_feed_stream(track_c, (int)nc);
+    drain_stream(&p);
+    stub_stream_end();
+    stream_io(&p, PLAT_READ);
+    play_out_boundary(&p, na + BLOCK);
+    to_device(expect, track_a, na, 0);
+    to_device(expect + na, track_b, BLOCK, 0);
+    to_device(expect + na + BLOCK, track_c, nc, 0);
+    CHECK(stub_audio_out_len == (int)(na + BLOCK + nc) && !memcmp(stub_audio_out, expect, na + BLOCK + nc));
+    CHECK(stub_audio_bad == 0);
+    teardown(&p);
+}
+
+/* strm f while the track playing is still streaming (no next track; LMS does not send it then): the stream is
+ * closed without DSCO, what was received plays to its end */
+static void test_flush_current(void)
+{
+    struct player p;
+    uint32_t n = 50000;
+
+    fill(track_a, sizeof(track_a), 32);
+    setup_file(&p);
+    open_stream(&p, '1', 1);
+    stub_feed_stream(track_a, (int)n);
+    drain_stream(&p);
+    play_for(&p, 100);
+    clear_tx();
+    feed_strm('f', NULL, 0, 0, 0, NULL);
+    drain(&p);
+    CHECK(!strcmp(trace(), "STAT:STMf") && !stub_stream_open && p.stream.state == STREAM_IDLE);
+    CHECK(p.out.state == OUTPUT_RUNNING && ring_used(&p.ring) == n - PCM_BPS / 10);
+    play_for(&p, 1000);
+    CHECK(p.out.state == OUTPUT_STOPPED && !strcmp(trace(), "STAT:STMf STAT:STMu"));
+    CHECK(stub_file_len == (int)n && !memcmp(stub_file, track_a, n));
+    teardown(&p);
+}
+
+/* strm f with nothing playing yet (the only track is the one dropped), and strm f then q (Music Assistant, before
+ * each new track): a stop */
+static void test_flush_stop(void)
+{
+    struct player p;
+
+    setup(&p, "Amiga");
+    CHECK(slim_connect(&p, 0));
+    open_stream(&p, '1', 255);
+    stub_feed_stream(pcm, 50000);                       /* below the threshold: not started */
+    drain_stream(&p);
+    CHECK(p.out.state == OUTPUT_STOPPED && p.out.queued == 1);
+    clear_tx();
+    feed_strm('f', NULL, 0, 0, 0, NULL);
+    drain(&p);
+    CHECK(!strcmp(trace(), "STAT:STMf") && !stub_stream_open && p.stream.state == STREAM_IDLE);
+    CHECK(p.out.state == OUTPUT_STOPPED && p.out.queued == 0 && ring_used(&p.ring) == 0);
+    teardown(&p);
+
+    setup(&p, "Amiga");
+    CHECK(slim_connect(&p, 0));
+    open_stream(&p, '1', 1);
+    stub_feed_stream(pcm, 50000);
+    drain_stream(&p);
+    CHECK(p.out.state == OUTPUT_RUNNING);
+    clear_tx();
+    feed_strm('f', NULL, 0, 0, 0, NULL);
+    feed_strm('q', NULL, 0, 0, 0, NULL);
+    drain(&p);
+    CHECK(!strcmp(trace(), "STAT:STMf STAT:STMf") && !stub_stream_open);
+    CHECK(p.out.state == OUTPUT_STOPPED && p.out.queued == 0 && ring_used(&p.ring) == 0);
+    teardown(&p);
+}
+
 /* ENV:Sys/ahi.prefs as saved by the AHI 6 preferences in WinUAE (plan step 1.10): the Music unit (255), then units
  * 0 (Paula 14-bit stereo++, 27429 Hz), 1 (Toccata stereo++, 44100 Hz), 2 (Paula 8-bit stereo++) and 3 (Toccata
  * plain stereo) */
@@ -2134,6 +2427,7 @@ static void test_tooltypes(void)
 int main(void)
 {
     test_ring();
+    test_ring_truncate();
     test_http_header_end();
     test_mac();
     test_helo();
@@ -2178,6 +2472,12 @@ int main(void)
     test_decoder_virtual();
     test_decoder_no_start();
     test_decoder_no_start_audio();
+    test_flush();
+    test_flush_paused();
+    test_flush_audio();
+    test_flush_audio_reached();
+    test_flush_current();
+    test_flush_stop();
     test_ahi_mode();
     test_start_mode();
     test_lame_header();

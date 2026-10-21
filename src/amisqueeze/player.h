@@ -220,8 +220,11 @@ void stream_free(struct player *p);
 void stream_start(struct player *p, uint32_t ip, uint16_t port, const uint8_t *request, int request_len,
                   uint32_t threshold, int autostart, const struct pcm_format *fmt, const struct decoder_ops *ops);
 uint32_t pcm_bytes_per_sec(const struct pcm_format *f);
-/* strm q / f: closes the stream and empties the buffer */
+/* strm q: closes the stream and empties the buffer */
 void stream_stop(struct player *p);
+/* strm f: drops the track being streamed (the last one queued), the track playing goes on; a stop when nothing
+ * plays */
+void stream_flush(struct player *p);
 /* The stream socket became readable / writable (PLAT_READ, PLAT_WRITE) */
 void stream_io(struct player *p, int ready);
 /* Events wanted on the stream socket (0 = none: idle, or buffer full) */

@@ -240,8 +240,11 @@ static void process_strm(struct player *p, const uint8_t *pkt, int len)
         slim_send_stat(p, "STMt", get32(pkt + 18));
         break;
     case 'q':                               /* stop */
-    case 'f':                               /* flush */
         stream_stop(p);
+        slim_send_stat(p, "STMf", 0);
+        break;
+    case 'f':                               /* flush: drop the track being streamed (the next one) */
+        stream_flush(p);
         slim_send_stat(p, "STMf", 0);
         break;
     case 'p':                               /* pause; a non-zero interval (synchronised players) is ignored */

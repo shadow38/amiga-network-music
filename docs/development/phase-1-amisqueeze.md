@@ -50,7 +50,8 @@ belongs to the task that opened it; packets serialised field by field; buffers a
     that later steps replace with a file (1.3) and AHI (1.4); byte counters;
   - states: `STMc` (connected), `STMs` (playback started), `STMd` (end of data), `STMu` (buffer empty), buffer
     fullness and elapsed time in `STAT`;
-  - `strm q`/`f`: stop and flush; autostart 2 and 3 (wait for `cont`, radio metadata) played as 0 and 1; `cont`
+  - `strm q`: stop; `strm f`: flush (0.7, 2026-10-21: drops only the track being streamed, the playing one goes
+    on; until then a stop); autostart 2 and 3 (wait for `cont`, radio metadata) played as 0 and 1; `cont`
     itself ignored ("not handled"): internet radios' metadata (ICY) is planned for 0.9.
 - **Criterion**, measured on the server through its CLI, not on the web page (its progress bar animates by itself
   between refreshes, even when nothing plays): `waitingToPlay` goes back to 0 once the player reports the start;
