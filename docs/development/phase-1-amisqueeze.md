@@ -279,7 +279,7 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   memory. Test configuration: `win32.iconified_pause=false`, `win32.inactive_pause=false` (an emulation paused
   by a stray key had stopped an earlier run).
 
-## 1.7 Other PCM formats and Music Assistant 🔶 (1.7a done, 1.7b first test and WAV header validated 2026-10-21)
+## 1.7 Other PCM formats and Music Assistant 🔶 (1.7a done, 1.7b first test, WAV header validated, `mp3` and `aac` tried 2026-10-21)
 
 - **Content**: WAV and AIFF headers (format `?` + header parsing, or explicit values); 48 kHz; mono; 8 and 24 bits
   if the server sends them. Music Assistant: the player's `wav` output codec (MA offers no raw PCM); check what MA
@@ -375,6 +375,27 @@ belongs to the task that opened it; packets serialised field by field; buffers a
     without a gap at the boundaries. CPU load while playing 24 bits at 48 kHz: 75 % (`cpucount`, 2046 rounds in
     10 s against 8204 idle; 61-68 % in 1.4c, 16 bits at 44.1 kHz). Not tried: `mp3`, `aac` codecs (next item of
     0.7).
+- **1.7b, the `mp3` and `aac` codecs** (2026-10-21, amisqueeze 0.7-dev, MA 2.10.7; WinUAE JIT + FPU,
+  `amisqueeze.fpu`, Toccata). No code changed; the user guide gained a table of MA's output codecs.
+  - **MA always transcodes** (read in `controllers/streams/controller.py`, `serve_queue_item_stream`): each track is
+    decoded to PCM, then a last ffmpeg encodes it to the player's codec (`mp3` at 320 kbit/s), even an MP3 file.
+  - **`mp3` works**: `strm s` with format `m` and no parameters, autostart 2 (3 for the next track), then `codc`
+    and `cont` (ignored, as with FLAC). Heard by the user: playback, pause and resume, seek (a new stream from the
+    position), the next track appended after `STMd`; no `STMo`. But **not gapless**: ffmpeg writing to a pipe
+    leaves out the `Info`/LAME header (checked in the container: the same pipeline gives 165137 bytes for
+    `gapless-1.mp3`, the size amisqueeze received, without the header; to a file it writes one), so the encoder
+    delay and padding are played. Heard on the 12 s glide of 1.8d: the boundaries can be heard, with small
+    crackles at times (the second lossy encoding of a pure tone); the same three tracks with the `flac` codec: no
+    crackle, seamless. Nothing amisqueeze can do reliably without the header: the user guide recommends `flac`.
+  - **`aac`**: `strm s` with format `a`; amisqueeze answers `STMf`, `stream format a not supported`, `STMn`, then
+    nothing more (no noise, no hang, no retry from MA). MA knew (its log: "Player did not report support for
+    content_type audio/aac, playback might fail") and sends it anyway; its Squeezelite provider ignores the decoder
+    error event of `STMn`, so its web UI shows the track playing, the time running then back to 0, until the user
+    stops it. LMS, by contrast, moves on to the next track on `STMn` (`playerStreamingFailed`). Not changed (decided
+    with the user on 2026-10-21): sending `STMu` after `STMn` would make MA move on, but LMS could then skip twice;
+    an idea for later, per server at best. `amisqueeze` (no FPU) gets MA's `mp3` the same way (format `m` refused).
+  - **Seen once, MA's side**: two requests for the same track were answered with 44 bytes (an ID3 tag, no audio);
+    amisqueeze skipped the track (`no MP3 frame found`, `STMu`); the third try played. Nothing in MA's log.
 
 ## 1.8 Local decoding: FLAC, then MP3 ✅
 

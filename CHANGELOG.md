@@ -13,6 +13,12 @@ are previews, tested in WinUAE only, not yet on a real Amiga.
   the samples in its format (Music Assistant announces 16 bits and sends 24), where it played loud noise. A WAV it
   cannot play (floating point, more than 2 channels) is skipped with a message.
 
+### Changed
+
+- User guide and README: Music Assistant tried (2.10.7), with a table of its output codecs: `flac` (the best
+  choice) and `wav` (for a slow Amiga) play well, `mp3` only with `amisqueeze.fpu` and not gapless, `aac` not at
+  all.
+
 ## [0.6] - 2026-10-21
 
 ### Changed

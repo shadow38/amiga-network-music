@@ -14,8 +14,8 @@ development roadmap in [docs/development](development/README.md).
 ## amisqueeze
 
 amisqueeze turns the Amiga into a network music player for the music servers that speak slimproto, the protocol of
-Logitech's Squeezebox players: [Lyrion Music Server](https://lyrion.org) (LMS), tested, and Music Assistant, not
-tested yet. The server (and its web interface or apps) sees and controls it like any other player.
+Logitech's Squeezebox players: [Lyrion Music Server](https://lyrion.org) (LMS) and Music Assistant, both tested
+(see [server setup](#server-setup)). The server (and its web interface or apps) sees and controls it like any other player.
 
 ### Current state
 
@@ -69,7 +69,7 @@ expected to work, not checked:
 | AmigaOS | 3.2.3; 3.0 and 3.1 from a Shell without AHI; 2.04 starts | 3.1.4, 3.5, 3.9 |
 | TCP/IP | WinUAE's emulation (`bsdsocket_emu`) | Roadshow, AmiTCP, AmiNetXDuo |
 | Sound | AHI 6.6 with `paula.audio` and a Toccata card | AHI 4.x, other cards, a PiStorm's own outputs |
-| Server | Lyrion Music Server 9.1.1 | other LMS versions, Music Assistant |
+| Server | Lyrion Music Server 9.1.1, Music Assistant 2.10.7 | other versions |
 
 ### Server setup
 
@@ -98,8 +98,17 @@ Lyrion Music Server needs little for amisqueeze:
   It uses the `sox` program shipped with LMS, as its built-in `ogg pcm` rule does, but without `-r`: LMS tells the
   player the file's own rate (forcing 44100 Hz would play 48 kHz files 9 % too fast). `FT:{START=trim %s}` lets
   LMS start within a track (seeking).
-- **Music Assistant**: not tested yet. It offers no raw PCM output (its per-player output codecs are `flac`, the
-  default, `mp3`, `aac` and `wav`).
+- **Music Assistant** (tried with 2.10.7): it drives amisqueeze through its Squeezelite provider. It transcodes
+  every track to the player's output codec (in the player's settings), so choose one that amisqueeze plays:
+
+  | Output codec | With amisqueeze |
+  |---|---|
+  | `flac` (the default) | the best choice: lossless, gapless; needs a fast Amiga (see [decoding on the Amiga](#decoding-on-the-amiga-flac-mp3-bench)) |
+  | `wav` | for a slow Amiga (a 68020 without FPU): no decoding, but about 2 Mbit/s on the network (24 bits) |
+  | `mp3` | only with `amisqueeze.fpu`; Music Assistant encodes it on the fly without the information that makes MP3 gapless: the change of track can be heard, and some sounds get small artefacts from the second lossy encoding |
+  | `aac` | not played: amisqueeze refuses the stream, but Music Assistant still shows the track as playing |
+
+  With `amisqueeze` (no FPU), `mp3` is refused like `aac`.
 
 ### Installation
 
@@ -519,7 +528,8 @@ Rules:
 - Internet radios that mix their metadata into the stream may cut regularly with `amisqueeze.fpu` (see
   [decoding on the Amiga](#decoding-on-the-amiga-flac-mp3-bench)).
 - Synchronising players (LMS's player groups) is not supported, nor tried.
-- Music Assistant has not been tried.
+- With Music Assistant, the `aac` output codec does not play, nor `mp3` with `amisqueeze`; its `mp3` is not
+  gapless (see [server setup](#server-setup)).
 - With `QUIET`, an invalid `MAC` or an `OUTPUT` file that cannot be created is reported in the log only.
 
 ## amilms

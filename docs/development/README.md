@@ -59,7 +59,7 @@ How to build and test: [CONTRIBUTING.md](../../CONTRIBUTING.md).
 | 1.5 amisqueeze: commands and volume | ✅ 2026-10-19 |
 | 1.6 amisqueeze: robustness | ✅ 2026-10-19 |
 | 1.7a amisqueeze: other PCM formats (LMS) | ✅ 2026-10-19 |
-| 1.7b amisqueeze: Music Assistant | 🔶 first test 2026-10-21: FLAC works; `wav` sends a 24-bit WAV announced as 16 bits: its header read, validated in WinUAE on 2026-10-21 (slow 68020, Paula); the other codecs to try (version 0.7) |
+| 1.7b amisqueeze: Music Assistant | 🔶 first test 2026-10-21: FLAC works; `wav` sends a 24-bit WAV announced as 16 bits: its header read, validated in WinUAE on 2026-10-21 (slow 68020, Paula); `mp3` works with `amisqueeze.fpu` but not gapless (MA encodes it without a LAME header), `aac` refused with `STMn` (MA ignores it), tried on 2026-10-21 |
 | 1.8 amisqueeze: local decoding (FLAC, then MP3) | ✅ 2026-10-19 (FLAC; MP3 in `amisqueeze.fpu`) |
 | 1.8d amisqueeze: MP3 without gaps between tracks | ✅ 2026-10-20 (version 0.4) |
 | 1.9 amisqueeze: real machine | ⬜ tried with 0.7, release 0.8 |

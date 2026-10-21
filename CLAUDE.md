@@ -55,7 +55,7 @@ Decided (2026-10-18): two programs in this repository, one `src/<prog>/` directo
 
 - **amisqueeze**: slimproto player with AHI output, for LMS (Music Assistant speaks slimproto too; decided
   2026-10-19: Music Assistant is tested only after version 0.2; first tried on 2026-10-21, plan step 1.7b: FLAC
-  works, `wav` does not yet);
+  and `wav` work, `mp3` with `amisqueeze.fpu` but not gapless, `aac` not);
 - **amilms** (working name; **amiremote** proposed, to be decided by study step 2.0): remote control, one
   portable core with two server back ends behind a common interface, LMS text CLI (TCP 9090) first, then the
   Music Assistant API (JSON over WebSocket, token), an MPD back end noted as an idea (step 2.12); a Shell front
@@ -177,8 +177,9 @@ With `flc` and `mp3` advertised, LMS sends FLAC and MP3 files as they are (forma
 - Music Assistant: per-player output codecs `flac` (default), `mp3`, `aac`, `wav` (seen in `constants.py`,
   `CONF_ENTRY_OUTPUT_CODEC`); everything transcoded to that codec. Observed with MA 2.10.7 (2026-10-21, step
   1.7b): `strm s` without parameters, autostart 2/3, then `codc` and `cont` after the response headers (ignored
-  by amisqueeze; fine with FLAC); `wav` = a WAV with its header, 24 bits while `strm` and `codc` say 16 bits: to
-  play it, read the WAV header (not done, when to decide).
+  by amisqueeze; fine with FLAC and MP3); `wav` = a WAV with its header, 24 bits while `strm` and `codc` say 16
+  bits: the header is read at the start of each PCM track (1.7b); `mp3` = encoded to a pipe without a LAME header,
+  so not gapless; `aac` = refused with `STMn`, which MA ignores (its UI shows the track playing).
 
 ## Toolchain
 

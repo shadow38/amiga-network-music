@@ -36,7 +36,7 @@ a fast Amiga; otherwise the server sends raw PCM) and plays it through AHI.
 | Server | | Status |
 |---|---|---|
 | [Lyrion Music Server](https://lyrion.org) (LMS) | the free, open-source Squeezebox server, formerly Logitech Media Server, now developed by its community; Windows, macOS, Linux, NAS, Raspberry Pi, Docker | **tested** (9.1.1) |
-| [Music Assistant](https://music-assistant.io) | a more recent server, close to Home Assistant, which drives Squeezebox players with the same protocol | not tested yet |
+| [Music Assistant](https://music-assistant.io) | a more recent server, close to Home Assistant, which drives Squeezebox players with the same protocol | **tested** (2.10.7), with its `flac` or `wav` output codec |
 
 ## Programs
 
