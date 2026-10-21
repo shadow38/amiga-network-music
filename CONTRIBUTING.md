@@ -171,6 +171,30 @@ badge at the top of the README shows the result of the latest run. The Amiga bui
 - Dedicated test configurations (a fast machine like a PiStorm, a slow 68020, AHI, automated runs) are planned:
   steps 0.4 to 0.7 of the [tooling plan](docs/development/phase-0-tooling.md).
 
+### Checks the host tests cannot make
+
+- **Stack**: AmigaOS does not detect a stack overflow (silent corruption), and a Shell with a large stack hides
+  one: from 0.2 to 0.4, `amisqueeze` overflowed the default 4 KB at every start, unseen by tests run from a Shell
+  with 256 KB. To measure what is used, add a temporary probe in `main()` (fill the stack from `tc_SPLower` up to
+  below the current pointer with a pattern, find at the end how much of it was overwritten) and run the program
+  from a script that starts with `Stack 4096`. `-fstack-usage` gives the size of each function's frame.
+- **Speed**: without its JIT, WinUAE at its fastest is about a 68020 at 45 MHz, a slow Amiga. For a fast one such
+  as a PiStorm, enable the JIT (68020, 32-bit addressing, not cycle-exact) and, for `amisqueeze.fpu`,
+  `compfpu=true`: without it the JIT interprets the FPU instructions (MP3 at 1.8x real time instead of 74x). A
+  68040 needs its CPU library in the emulated system.
+- **Memory**: `Avail` before and after a few play and stop cycles; watch its `Largest` column too, where a
+  corrupted free memory list shows first.
+- **Sound**: Paula through AHI (`paula.audio`) is the main test, an AHI sound card (Toccata in WinUAE) the 16-bit
+  reference. With Paula in WinUAE, use `SWAP` (left and right come out swapped). Judge Paula's sound at volume 100
+  on the server: a lower volume scales the samples down and brings out Paula's 14-bit noise (a crackle at 50).
+- **On the server**: measure through its CLI (`<player> time ?`, `<player> mode ?`, the playlist index), never on
+  its web page, whose progress bar moves by itself.
+- **`OUTPUT` comparisons** (`tools/pcm-compare.py`, byte by byte): start playback with a single `play`, and compare
+  only once the output has drained (`output: end of playback` with `VERBOSE`) and amisqueeze has stopped. Good
+  references: a counter pattern in FLAC (decoded losslessly by LMS), MP3s decoded by the server's own `sox`. Make
+  test MP3s without an ID3v1 tag (`lame --id3v2-only`): LMS strips it before converting, and `sox` then drops the
+  last frame.
+
 ## Debugging
 
 No source-level debugging yet. Meanwhile, WinUAE's built-in debugger (`Shift+F12`) follows the program at the

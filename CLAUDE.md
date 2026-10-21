@@ -16,27 +16,22 @@ only for a **published** release; 1.0 = first really usable version (tested on t
 our own: ask the user. A release = a Git tag `amisqueeze-<version>` + a GitHub Release with a zip (the Amiga
 executables and their `.info` icons, `LICENSE`, `README.md`, `CHANGELOG.md`, the user guide and its images) and
 short notes, made with the GitHub CLI once the user has approved the notes; the zip's SHA-256 goes in the notes and
-in a `<zip>.sha256` file attached to the release (decided 2026-10-21; written by `make dist` since 0.7, with the line for the notes: zip, file and notes from the same run). **Before every release tag** (plan step
-3.5, decided 2026-10-20; two levels decided the same day, for cost): a light review of the range since the previous
-tag, `/release-review <previous tag>` (three agents, limited to the diff and what it reaches); a full audit,
+in a `<zip>.sha256` file attached to the release (decided 2026-10-21; written by `make dist` since 0.7, with the
+line for the notes: zip, file and notes from the same run). **Before every release tag** (plan step 3.5, decided
+2026-10-20; two levels decided the same day, for cost): a light review of the range since the previous tag,
+`/release-review <previous tag>` (three agents, limited to the diff and what it reaches); a full audit,
 `/release-review <previous tag> full` (four agents, the whole repository), only at milestones: before 1.0, or after
 a big change of architecture (Music Assistant, splitting `stream.c`). Findings scored 75 or more are fixed, or
 accepted by the user with the reason in the report (an urgent fix may ship after a review of its own diff); the
 review tooling changes only when a review misses a real defect, or when the user decides it. Remarks that come
 after a version's review (outside readings, new ideas) go to the next version by default; only a real defect, or
-the user's choice, brings one into the current version (decided 2026-10-21, against over-quality). `CHANGELOG.md` (Keep a
-Changelog, added 2026-10-20): note each user-visible change under "Unreleased" as it is made, and give that part
-the version and date at the release; the `$VER:` date is the release date. Between releases the number reads
-`<next>-dev`, so that a build in between is not taken for the last release. 0.1 = first release (2026-10-19: AHI
-audio, volume, robustness, tested in WinUAE only); 0.2 = second release (2026-10-19: FLAC decoded on fast Amigas,
-8/24/32-bit PCM, tested in WinUAE only); 0.3 = third release (2026-10-20: MP3 decoded by `amisqueeze.fpu`, two
-executables, documentation reworked, tested in WinUAE only); 0.4 = fourth release (2026-10-20: MP3 without gaps,
-fixed volume through LMS, AHI mode warning); 0.5 = fifth release (2026-10-20: `LOG`, Workbench start, commodity,
-stack of `amisqueeze` and FLAC seek fixed); 0.6 = sixth release (2026-10-21: the review fixes, troubleshooting,
-known limits and what has been tried in the user guide, ASCII documents in the zip, the zip's SHA-256 with the
-release; the first light review), followed by 0.7-dev; the first public push of 2026-10-18 had no tag.
-The number appears in the two `$VER:` strings (`amiga.c`: `amisqueeze` and `amisqueeze.fpu`), in `Firmware=` of the
-`HELO` capabilities (`slimproto.c`) and in the user guide.
+the user's choice, brings one into the current version (decided 2026-10-21, against over-quality).
+`CHANGELOG.md` (Keep a Changelog, added 2026-10-20): note each user-visible change under "Unreleased" as it is
+made, and give that part the version and date at the release; the `$VER:` date is the release date. Between
+releases the number reads `<next>-dev`, so that a build in between is not taken for the last release. The releases
+so far: `CHANGELOG.md` (0.1 to 0.6, all tested in WinUAE only). The number appears in the two `$VER:` strings
+(`amiga.c`: `amisqueeze` and `amisqueeze.fpu`), in `Firmware=` of the `HELO` capabilities (`slimproto.c`) and in
+the user guide.
 
 **Licence: MIT** (`LICENSE`, "Copyright (c) 2026 shadow38"), decided 2026-10-18. squeezelite and LMS are GPL:
 read them to **understand** the protocol and its expected behaviour (message layouts, when to send which state),
@@ -49,47 +44,27 @@ Targets (2026-10-18): classic Amigas, 68020 or better, of two kinds: **fast** (P
 FPU) and **slow** (a 68020 accelerator without FPU); sound through **AHI**: Paula (`paula.audio`, Amigas without a
 sound card) or an AHI driver (sound card, or the PiStorm's own outputs: I2S DAC of the PiStorm32-lite FPGA
 firmware, HDMI with a Pi 4). Code only `ahi.device` features of AHI 4 (tested with AHI 6.6; 4.x expected to
-work, not checked). The WinUAE test configurations reproduce both kinds (step 0.4); Paula is the main audio test,
-Toccata a 16-bit reference.
+work, not checked). The WinUAE test configurations reproduce both kinds (step 0.4). **Before testing on the
+Amiga**, read "Checks the host tests cannot make" in `CONTRIBUTING.md` (stack, speed, memory, sound, measures on
+the server, `OUTPUT` comparisons).
 
 Decided (2026-10-18): two programs in this repository, one `src/<prog>/` directory each, shared code in
 `src/common/` (to create with amilms; none yet):
 
-- **amisqueeze**: slimproto player with AHI output, for LMS (Music Assistant speaks slimproto too; decided
-  2026-10-19: Music Assistant is tested only after version 0.2; first tried on 2026-10-21, plan step 1.7b: FLAC
-  and `wav` work, `mp3` with `amisqueeze.fpu` but not gapless, `aac` not);
+- **amisqueeze**: slimproto player with AHI output, for LMS and Music Assistant (since 0.7, plan step 1.7b);
 - **amilms** (working name; **amiremote** proposed, to be decided by study step 2.0): remote control, one
   portable core with two server back ends behind a common interface, LMS text CLI (TCP 9090) first, then the
   Music Assistant API (JSON over WebSocket, token), an MPD back end noted as an idea (step 2.12); a Shell front
-  end first, then a GUI front end calling the same core in the same program (not a GUI driving a CLI program). Decided 2026-10-19: study 2.0 (common interface, MA
-  feasibility, name) before any amilms code. Track search is one of its main goals (step 2.4). For Music
-  Assistant, the existing Home Assistant client ami2ha already offers basic control (play/pause, next, volume, no
+  end first, then a GUI front end calling the same core in the same program (not a GUI driving a CLI program).
+  Decided 2026-10-19: study 2.0 (common interface, MA feasibility, name) before any amilms code. Track search is
+  one of its main goals (step 2.4). For Music Assistant, the existing Home Assistant client ami2ha already offers basic control (play/pause, next, volume, no
   search): noted in the phase 2 plan.
 
 Work proceeds in testable steps, each validated with the user **before** writing code: the plan is in
 `docs/development/` (keep the statuses up to date). User-facing behaviour (options, messages) is documented in
-`docs/user-guide.md`: update it with every change visible to users. Steps 1.1b (default options in
-`ENV:amisqueeze.prefs`), 1.2 (stream received, virtual output) and 1.3 (`OUTPUT` file) validated on 2026-10-18.
-Step 1.4: 1.4a and 1.4b done (AHI output); 1.4c listening done on 2026-10-19 (test tones, a whole 48 kHz track as
-MP3 and FLAC, Paula needs `SWAP` in WinUAE); rest of 1.4c measured the same day (2 KB stack OK then, before the
-decoders: see Stack in Pitfalls; no leak, CPU load on the slow 68020 profile: 61-68 % with Paula, almost all of it
-AHI; 2-5 % with `NOAUDIO`). Step 1.4 validated on 2026-10-19. Step 1.5 (volume from `audg`) validated on
-2026-10-19. Step 1.6 (robustness) on 2026-10-19: reconnection storm fixed (wait 5 s after a session shorter than 10
-s), AHI memory corruption avoided (volume applied to the samples, see Pitfalls); validated on 2026-10-19. Release
-0.1 published on 2026-10-19. Step 1.7a (8, 24 and 32-bit samples converted to 16 bits for AHI; LMS strips WAV/AIFF
-headers, files above 48 kHz not playable until FLAC decoding) done on 2026-10-19. Step 1.8 on the branch `decoding`
-(merged into `main` after each validated sub-step): 1.8a done (decoder stage, see below); 1.8b done (FLAC with
-dr_flac, `FLAC=AUTO|ON|OFF`, `BENCH`); release 0.2 published on 2026-10-19, then 0.3-dev; 1.8c done on 2026-10-19
-(MP3 with minimp3 in `amisqueeze.fpu`, `MP3=AUTO|ON|OFF`); release 0.3 published on 2026-10-20. Release 0.4 the
-same day (1.8d MP3 without gaps, the volume modes done as LMS's fixed volume setting with `HasDigitalOut=1`, the
-AHI mode warning). Release 0.5 the same day (`LOG`, Workbench start with icons and ToolTypes, a commodity, the
-stack of `amisqueeze` and FLAC seek fixed, the outside review's points: see "Outside review" in
-`docs/development/README.md`), then 0.6-dev. Next releases (decided 2026-10-20, table in
-`docs/development/README.md`; changed the same day, and again on 2026-10-21): 0.6 = the fixes from the review
-reports; 0.7 = Music Assistant (1.7b: the WAV header, the other codecs, a user guide part), with the findings
-moved from the 0.6 review, the outside reading's remarks and `architecture.md`; 0.8 = the real machine (1.9,
-tried with 0.7, LMS and Music Assistant) and what it shows; 0.9 = internet radios' metadata (ICY), server
-discovery. Then the remote's study (2.0).
+`docs/user-guide.md`: update it with every change visible to users. Where each step stands and what the next
+releases hold (0.7 Music Assistant, 0.8 the real machine, 0.9 ICY and server discovery, then the remote's study
+2.0): "Where we are" and "Next releases" in `docs/development/README.md`, the only place they are kept.
 Documentation review of 2026-10-19: points announced in the plan but neither done nor dropped are listed under
 "Open points" in `docs/development/README.md`, for the user to decide (never implement them unasked).
 
@@ -97,7 +72,8 @@ Step 1.8c (mp3.c, minimp3.c, `amisqueeze.fpu`; the build variants in `CONTRIBUTI
 when the bytes after a frame are not the next header: it is called only with a frame and the next header in its 16
 KB staging buffer (a full buffer for the first frame), or at the end of the track. MP3 gapless (step 1.8d,
 2026-10-20): the LAME header of the first frame gives the delays and padding to drop (`mp3_lame_header`); after a
-seek LMS resends that frame first, so the end limit is never reached. In the zip, both executables; in `$VER:`, `amisqueeze` or `amisqueeze.fpu` (two lines in `amiga.c` to bump).
+seek LMS resends that frame first, so the end limit is never reached. In the zip, both executables; in `$VER:`,
+`amisqueeze` or `amisqueeze.fpu` (two lines in `amiga.c` to bump).
 
 Step 1.8a (decoder.h, decoder.c): the ring's positions (bytes of the stream) and the output's (bytes of decoded
 PCM) are never to be mixed (`architecture.md`); raw PCM cannot reveal a mix-up: the test-only "widening" decoder
@@ -105,41 +81,37 @@ in `tests/test_core.c` can.
 
 Step 1.8b (flac.c, dr_flac.c, bench.c): dr_flac takes a short read for the end of the stream and reads ahead (4 KB
 cache), so a frame is decoded only when the buffer holds a whole one, and a track ends for the output only when
-the decoder says `finished`. After a seek or a resume, LMS sends a FLAC file from a frame boundary without its header
-(fixed 2026-10-20: a STREAMINFO is made up from the first frame's header). Third-party code goes in `third_party/` (version, commit, licence in a README), built
-in its own file without our warnings (`THIRD_PARTY` in the Makefile). A file that includes a third-party header and
-reads its structures must use the same configuration macros as the file that builds it. FLAC speed in WinUAE:
-without JIT even "max" speed is a 68020 at about 45 MHz (level 8 at 0.2x real time); a PiStorm-like test needs the
-JIT (68020, 32-bit addressing, no cycle-exact; a 68040 needs its CPU library, missing from the test HDF).
+the decoder says `finished`. After a seek or a resume, LMS sends a FLAC file from a frame boundary without its
+header (fixed 2026-10-20: a STREAMINFO is made up from the first frame's header). Third-party code goes in
+`third_party/` (version, commit, licence in a README), built in its own file without our warnings (`THIRD_PARTY`
+in the Makefile). A file that includes a third-party header and reads its structures must use the same
+configuration macros as the file that builds it. FLAC speed in WinUAE without JIT: level 8 at 0.2x real time (the
+test HDF has no 68040 CPU library: a PiStorm-like test uses the 68020 with the JIT).
 
 Step 1.2 (stream.c, ring.c; the stream, the ring and the statuses in `architecture.md`): STMt is not printed with
-VERBOSE (one per second). Criteria are measured on the server through its CLI (`<player> time ?`, mode, playlist
-index), never on the web page, whose progress bar animates by itself.
+VERBOSE (one per second). Criteria are measured on the server through its CLI, never on its web page.
 
 Step 1.3: `OUTPUT=<file>` writes what the virtual output plays (`hand_over()` in `stream.c`, the only place
-where the output hands PCM over; raw PCM as received, the rest as decoded), one file per run. Byte-exact checks
-with `tools/pcm-compare.py`: a counter pattern in FLAC (decoded losslessly by LMS) and MP3s decoded by the server's
-own `sox` command. Start playback with a single `play`, and compare only after the output has drained (`output: end
-of playback`) and amisqueeze has stopped. With AHI, `OUTPUT` keeps the virtual output (no sound). LMS strips an
-MP3's ID3v1 tag before conversion, and `sox` then drops the last frame: test MP3s without ID3v1 (`lame
---id3v2-only`).
+where the output hands PCM over; raw PCM as received, the rest as decoded), one file per run. With AHI, `OUTPUT`
+keeps the virtual output (no sound). How to compare it byte by byte: `CONTRIBUTING.md`.
 
 Step 1.4 (AHI: `audio.c` portable, the `ahi.device` calls in `amiga.c`): `ahi.device` rules learnt from its
 source (AHI 6.0), to keep: chain a request (`ahir_Link`) only to one already **playing** (linked to a waiting
-one, it never plays nor ends), so at most two requests with the device; abort the **playing** one first (it takes the linked one along; the reverse order leaves a stale reference that hangs the
-device); `CMD_STOP` does not pause what is playing (pause = abort, then send the rest again); a non-real-time mode
-("Filesave") on a device unit writes only silence. The test stub enforces the first two rules (`stub_audio_bad`).
+one, it never plays nor ends), so at most two requests with the device; abort the **playing** one first (it takes
+the linked one along; the reverse order leaves a stale reference that hangs the device); `CMD_STOP` does not
+pause what is playing (pause = abort, then send the rest again); a non-real-time mode ("Filesave") on a device
+unit writes only silence. The test stub enforces the first two rules (`stub_audio_bad`).
 **Never send `ahir_Volume` below full** (found in step 1.6): with AHI 6.6 and `paula.audio`, requests sent again
 after an abort (a resume) with a low volume corrupt the free memory list, and the system hangs or amisqueeze dies
 later; the core scales the samples instead (two 256-entry tables, no multiplication per sample). Check memory with
-the `Largest` column of `Avail`: a jump there is the first sign of a corruption.
+the `Largest` column of `Avail`.
 
 amisqueeze state: control connection (step 1.1) validated on 2026-10-18 in WinUAE (`bsdsocket_emu`,
 `SERVER=127.0.0.1`) with LMS 9.1.1: the player shows up in LMS and reconnects by itself after a server restart.
 `HELO` advertises `Model=squeezelite` (so LMS recognises it) and `ModelName=AmiSqueeze`. LMS 9.1 has no default
 `mp3 pcm` rule: a regular user's server won't have it, hence local MP3 decoding (step 1.8c, `amisqueeze.fpu`);
-for the builds that leave MP3 to the server, the rule is documented in the user guide (server setup) and in plan step 0.2 (without `-r`, with
-`trim` for seeking).
+for the builds that leave MP3 to the server, the rule is documented in the user guide (server setup) and in plan
+step 0.2 (without `-r`, with `trim` for seeking).
 
 ## Design choices (player)
 
@@ -203,15 +175,15 @@ for the builds that leave MP3 to the server, the rule is documented in the user 
   needs about 5.5 KB (4.6 KB in `drflac_open` alone), minimp3 about 17.5 KB. **Found by an outside review on
   2026-10-20**: until then `amisqueeze` (68020) ran on the Shell's 4 KB and overflowed at every start (FLAC speed
   measure) since 0.2; the WinUAE tests never saw it because they ran from a remote-control Shell with a 256 KB
-  stack. Check: a temporary probe in `main()` (fill the stack below the current pointer with a pattern from
-  `tc_SPLower`, scan it at the end) run from a script with `Stack 4096` (never from a Shell with a large stack);
-  2026-10-20: 5.6 KB of 16 KB used while playing FLAC with a seek, 17.8 KB of 32 KB for `amisqueeze.fpu` with FLAC
-  and MP3. Redo it when `-fstack-usage` shows the deepest path growing by more than 1 KB, or when a new decoder,
+  stack. Check: the probe of `CONTRIBUTING.md` ("Checks the host tests cannot make"), from a script with `Stack
+  4096`, never from a Shell with a large stack; 2026-10-20: 5.6 KB of 16 KB used while playing FLAC with a
+  seek, 17.8 KB of 32 KB for `amisqueeze.fpu` with FLAC and MP3. Redo it when `-fstack-usage` shows the deepest path growing by more than 1 KB, or when a new decoder,
   library or start-up path is linked (decided 2026-10-21: a few bytes more do not call for it); measure frames
   with `-fstack-usage`.
 - **`-m68881` and libnix**: libnix links a start-up check (`__fpucheck`) that, without an FPU, shows an alert and
   quits before `main()` without a message: `amiga.c` replaces it with an empty one and checks `AttnFlags` itself.
-  minimp3 keeps about 17 KB on the stack (`mp3dec_decode_frame`): see Stack above. The `-m68881` code uses `fintrz` and `fmovecr`, emulated (slowly) by the CPU library on a 68040/68060.
+  minimp3 keeps about 17 KB on the stack (`mp3dec_decode_frame`): see Stack above. The `-m68881` code uses
+  `fintrz` and `fmovecr`, emulated (slowly) by the CPU library on a 68040/68060.
 - **`$VER:` string** (found at the 0.3 release): kept non-const, in the data hunk. Const, it sat in the code hunk,
   and AmigaOS 3.2's `Version` printed "amiseeze 0.3" for the 0.3 build although the bytes were right (only when
   reading the file as an executable; the 0.2 build was fine). Before each release, check `Version <exe> FULL`
@@ -223,10 +195,8 @@ for the builds that leave MP3 to the server, the rule is documented in the user 
   the window (0.6; `MAC` and `OUTPUT`, checked by the core, go to the log only). amisqueeze is
   a commodity ("Remove" in Exchange = Ctrl-C), one at a time (`CBERR_DUP`); a second start does nothing to the
   running one (decided with the user).
-- **WinUAE JIT and FPU**: without `compfpu=true` the JIT interprets FPU instructions (MP3 at 1.8x real time
-  instead of 74x): a PiStorm-like test of `amisqueeze.fpu` needs it.
-- **Volume with Paula**: samples scaled down (low LMS volume) bring out Paula's noise through AHI (14 bits): a
-  crackle at 50, gone at 100. Judge Paula's sound at volume 100.
+- **WinUAE and Paula when testing**: the JIT needs `compfpu=true` for `amisqueeze.fpu`, Paula needs `SWAP` and is
+  judged at volume 100 (details in `CONTRIBUTING.md`).
 - Strings shown on the Amiga and files read by the Amiga: ASCII only (ISO-8859-1 on the Amiga), LF line endings.
   The README and the user guide are among them, since they ship in the zip (decided 2026-10-21): `...`, `-`, `|`
   rather than their typographic forms.
