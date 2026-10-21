@@ -98,8 +98,21 @@ Lyrion Music Server needs little for amisqueeze:
   It uses the `sox` program shipped with LMS, as its built-in `ogg pcm` rule does, but without `-r`: LMS tells the
   player the file's own rate (forcing 44100 Hz would play 48 kHz files 9 % too fast). `FT:{START=trim %s}` lets
   LMS start within a track (seeking).
-- **Music Assistant** (tried with 2.10.7): it drives amisqueeze through its Squeezelite provider. It transcodes
-  every track to the player's output codec (in the player's settings), so choose one that amisqueeze plays:
+- **Music Assistant** (tried with 2.10.7): it drives amisqueeze through its Squeezelite provider. It needs:
+  - **The provider**: in Settings > Player providers, add "Squeezelite". Its "Slimproto port" is 3483 by default.
+  - **Ports** reachable from the Amiga: 3483/tcp (players) and 8097/tcp, Music Assistant's stream server, where
+    players fetch the audio (its "TCP Port" in Settings > System > Streams); open both in the server's firewall.
+    `SERVER` is the address of Music Assistant's computer, as for LMS above.
+  - **The address it gives for the streams**: Music Assistant tells the player where to fetch each track, at the
+    address it detects for itself. If the Amiga cannot reach that address (Music Assistant runs in a container,
+    or the computer has several networks), amisqueeze connects but no track plays: give the address the Amiga
+    reaches the computer on in "Published IP address" (an advanced setting of Settings > System > Streams), an IP
+    address, not a host name.
+  - **The volume**: Music Assistant gives a new player a volume of 20, almost silent: turn it up before judging the
+    sound (with Paula, keep it high, see [volume](#volume)).
+
+  Music Assistant transcodes every track to the player's output codec (in the player's settings), so choose one
+  that amisqueeze plays:
 
   | Output codec | With amisqueeze |
   |---|---|
@@ -488,7 +501,7 @@ Rules:
 | `the icon's ToolTypes: ...` | started from the Workbench, a ToolType cannot be read (unknown value, bad number...); shown in the window, which stays open |
 | `the icon's ToolTypes are too long` | the ToolTypes together exceed what amisqueeze reads (about 500 characters) |
 | `cannot write to the log <file>: error N, log closed` | writing the `LOG` file failed (disk full...); playback goes on without the log |
-| `stream: cannot connect: error N` | the audio stream port of LMS (HTTP, 9000 by default) cannot be reached |
+| `stream: cannot connect: error N` | the server's audio stream port cannot be reached (HTTP: 9000 by default with LMS, 8097 with Music Assistant) |
 | `stream: connection lost before the response headers`, `stream: send: error N` | the audio stream broke before any music came: that track is not played |
 | `stream: recv: error N` | the audio stream broke during a track: what was received plays, then the next track follows |
 | other `stream: ...` and `output: ...` messages (with `VERBOSE` only) | stream events: parameters, connection, headers received, end of the track data; output: AHI unit or virtual output, track started, buffer empty, end of playback, `OUTPUT` file opened and bytes written to it |
@@ -501,7 +514,8 @@ Rules:
   address: check `SERVER` (see [server setup](#server-setup)), that LMS runs, and that the server's firewall lets
   3483/tcp in. `connected to the server` means the connection is up.
 - **It connects, but a track does not play or is skipped at once.** `stream: cannot connect` means the server's
-  web port (9000/tcp) is blocked. `stream format X not supported`, or nothing at all, with "Couldn't create command
+  stream port is blocked (LMS: its web port, 9000/tcp; Music Assistant: 8097/tcp, or a wrong "Published IP
+  address", see [server setup](#server-setup)). `stream format X not supported`, or nothing at all, with "Couldn't create command
   line" in LMS's `server.log`: LMS has no rule to convert that file to raw PCM, typically MP3 with `amisqueeze`
   (add the rule of the [server setup](#server-setup), or use `amisqueeze.fpu` on an Amiga with an FPU), or a file
   above 48 kHz when FLAC is not decoded here.

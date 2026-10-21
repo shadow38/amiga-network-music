@@ -396,6 +396,11 @@ belongs to the task that opened it; packets serialised field by field; buffers a
     an idea for later, per server at best. `amisqueeze` (no FPU) gets MA's `mp3` the same way (format `m` refused).
   - **Seen once, MA's side**: two requests for the same track were answered with 44 bytes (an ID3 tag, no audio);
     amisqueeze skipped the track (`no MP3 frame found`, `STMu`); the third try played. Nothing in MA's log.
+- **1.7b, the user guide part** (2026-10-21): in "Server setup", what Music Assistant needs for amisqueeze: the
+  Squeezelite provider, ports 3483 and 8097, the "Published IP address" when MA's own address cannot be reached
+  from the Amiga, the volume of 20 given to a new player; setting labels read in MA 2.10.7 (`translations/en.json`,
+  frontend). Left out (decided with the user): installing the servers, LMS and MA on the same computer (a
+  development setup).
 
 ## 1.8 Local decoding: FLAC, then MP3 ✅
 

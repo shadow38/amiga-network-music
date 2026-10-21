@@ -17,7 +17,7 @@ are previews, tested in WinUAE only, not yet on a real Amiga.
 
 - User guide and README: Music Assistant tried (2.10.7), with a table of its output codecs: `flac` (the best
   choice) and `wav` (for a slow Amiga) play well, `mp3` only with `amisqueeze.fpu` and not gapless, `aac` not at
-  all.
+  all; and how to set Music Assistant up for amisqueeze (Squeezelite provider, ports, published address, volume).
 
 ## [0.6] - 2026-10-21
 
