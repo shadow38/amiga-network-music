@@ -113,7 +113,10 @@ Run `make sdk` (task **Amiga: sync headers (.sdk)**) after installing or updatin
 
 `make dist` (`sh tools/amiga-make.sh dist`) builds the release archive `out/amisqueeze-<version>.zip`: the Amiga
 executables and their icons, `LICENSE`, the README, the changelog and the user guide with its images
-(`docs/images/`). Before a release, the "Unreleased" part of `CHANGELOG.md` gets the version number and the date.
+(`docs/images/`), and next to it `out/amisqueeze-<version>.zip.sha256`, its SHA-256 in the format of `sha256sum`
+(checked with `sha256sum -c`); it ends with the line that gives the SHA-256 in the release notes. Each run makes a
+new zip (new dates, new SHA-256): attach the zip and the `.sha256` of the same run, and copy that run's line into
+the notes. Before a release, the "Unreleased" part of `CHANGELOG.md` gets the version number and the date.
 `make dist` refuses to build the archive unless `tools/check-version.py --release` accepts the version: not a
 `-dev` one, the same in both `$VER:` strings, `Firmware=`, the user guide and the README, with its section at the
 top of the changelog, dated as the `$VER:` strings, and nothing left under "Unreleased".
