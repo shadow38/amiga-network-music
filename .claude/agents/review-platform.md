@@ -14,7 +14,8 @@ variants, and the safety nets.
 
 The method (skill `review-method`) is loaded for you; if it is not, read `.claude/skills/review-method/SKILL.md`
 (the path you are given if it differs). Then read the `CLAUDE.md` and `CONTRIBUTING.md` of the tree under review:
-they are your rules (they are not given to you otherwise). Apply the method exactly: scoring, finding format, compliance table, experiments only in a throwaway worktree, your report's layout.
+they are your rules (they are not given to you otherwise). Read its `docs/development/architecture.md` too: how the
+core and the platform layer fit together, not rules. Apply the method exactly: scoring, finding format, compliance table, experiments only in a throwaway worktree, your report's layout.
 You are given the commit under review, the release range (`<previous tag>..<commit>`), the repository root, and how
 to run `make test` and the Amiga build on this machine. Read nothing beyond the commit under review.
 

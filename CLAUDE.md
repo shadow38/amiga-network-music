@@ -4,7 +4,9 @@ Personal project: network music for classic Amiga (AmigaOS 3.x), in C, tested in
 users (what it is, quick start; decided 2026-10-19: keep it short); building, tests, layout, tasks and how to
 propose a change are in `CONTRIBUTING.md` at the root (moved there from `docs/development/building.md` on
 2026-10-19, the GitHub convention); `docs/` holds the user guide and its images, `docs/development/` the plan; the
-server setup is in the user guide; this file keeps context, decisions and pitfalls. Public GitHub repository
+server setup is in the user guide; how the player works (portable core and platform layer, the data path, the two
+kinds of position, the statuses, what of slimproto is handled) is in `docs/development/architecture.md` (0.7); this
+file keeps context, decisions and pitfalls. Public GitHub repository
 `shadow38/amiga-network-music`: **nothing specific to the developer's workstation goes here** (local
 paths, corporate proxy, personal settings, neighbouring folders); those live in local files outside the
 repository. Documentation, code comments and program messages are in English.
@@ -91,19 +93,15 @@ discovery. Then the remote's study (2.0).
 Documentation review of 2026-10-19: points announced in the plan but neither done nor dropped are listed under
 "Open points" in `docs/development/README.md`, for the user to decide (never implement them unasked).
 
-Step 1.8c (mp3.c, minimp3.c, `amisqueeze.fpu`): two Amiga executables from the same sources, `amisqueeze`
-(68020) and `amisqueeze.fpu` (`-m68881`, `AMISQUEEZE_FPU`; `AMISQUEEZE_MP3` compiles the MP3 decoder, also in the
-host build). minimp3 resets itself when the bytes after a frame are not the next header: it is called only with a
-frame and the next header in its 16 KB staging buffer (a full buffer for the first frame), or at the end of the
-track. MP3 gapless (step 1.8d, 2026-10-20): the LAME header of the first frame gives the delays and padding to
-drop (`mp3_lame_header`); after a seek LMS resends that frame first, so the end limit is never reached. In the
-zip, both executables; in `$VER:`, `amisqueeze` or `amisqueeze.fpu` (two lines in `amiga.c` to bump).
+Step 1.8c (mp3.c, minimp3.c, `amisqueeze.fpu`; the build variants in `CONTRIBUTING.md`): minimp3 resets itself
+when the bytes after a frame are not the next header: it is called only with a frame and the next header in its 16
+KB staging buffer (a full buffer for the first frame), or at the end of the track. MP3 gapless (step 1.8d,
+2026-10-20): the LAME header of the first frame gives the delays and padding to drop (`mp3_lame_header`); after a
+seek LMS resends that frame first, so the end limit is never reached. In the zip, both executables; in `$VER:`, `amisqueeze` or `amisqueeze.fpu` (two lines in `amiga.c` to bump).
 
-Step 1.8a (decoder.h, decoder.c): the ring buffer holds the stream as received; the decoder of each track writes
-PCM into the AHI blocks or for the virtual output. Two kinds of position, never to be mixed: the ring's (bytes of
-the stream: where each track's data begins, `track.start`) and the output's (bytes of decoded PCM: `out.handed`,
-`track.out_start`, everything played, elapsed time, boundaries). Raw PCM cannot reveal a mix-up (same size on both
-sides): the test-only "widening" decoder in `tests/test_core.c` can.
+Step 1.8a (decoder.h, decoder.c): the ring's positions (bytes of the stream) and the output's (bytes of decoded
+PCM) are never to be mixed (`architecture.md`); raw PCM cannot reveal a mix-up: the test-only "widening" decoder
+in `tests/test_core.c` can.
 
 Step 1.8b (flac.c, dr_flac.c, bench.c): dr_flac takes a short read for the end of the stream and reads ahead (4 KB
 cache), so a frame is decoded only when the buffer holds a whole one, and a track ends for the output only when
@@ -114,11 +112,7 @@ reads its structures must use the same configuration macros as the file that bui
 without JIT even "max" speed is a 68020 at about 45 MHz (level 8 at 0.2x real time); a PiStorm-like test needs the
 JIT (68020, 32-bit addressing, no cycle-exact; a 68040 needs its CPU library, missing from the test HDF).
 
-Step 1.2 (stream.c, ring.c): HTTP stream with a non-blocking connection; one 1 MB ring buffer, reported to LMS
-as both the stream and the output buffer (raw PCM needs no decoding); a virtual output consumes it at the PCM rate
-(the point where the file output, 1.3, and AHI, 1.4, plug in). States as in squeezelite: STMf, STMc, RESP, STMs,
-STMt every second while playing, DSCO + STMd at the end of the data, the next track appended (gapless) with STMs at
-the boundary, STMo / STMu when the buffer is empty, STMl for autostart 0, pause / unpause. STMt is not printed with
+Step 1.2 (stream.c, ring.c; the stream, the ring and the statuses in `architecture.md`): STMt is not printed with
 VERBOSE (one per second). Criteria are measured on the server through its CLI (`<player> time ?`, mode, playlist
 index), never on the web page, whose progress bar animates by itself.
 
@@ -130,11 +124,9 @@ of playback`) and amisqueeze has stopped. With AHI, `OUTPUT` keeps the virtual o
 MP3's ID3v1 tag before conversion, and `sox` then drops the last frame: test MP3s without ID3v1 (`lame
 --id3v2-only`).
 
-Step 1.4 (AHI): the output hands bytes to a sink, the virtual output (host build, `NOAUDIO`, `OUTPUT`) or the
-audio output (`audio.c`, portable: blocks, conversion, played bytes, pause; `ahi.device` calls in `amiga.c`).
-`ahi.device` rules learnt from its source (AHI 6.0), to keep: chain a request (`ahir_Link`) only to one already
-**playing** (linked to a waiting one, it never plays nor ends), so at most two requests with the device; abort the
-**playing** one first (it takes the linked one along; the reverse order leaves a stale reference that hangs the
+Step 1.4 (AHI: `audio.c` portable, the `ahi.device` calls in `amiga.c`): `ahi.device` rules learnt from its
+source (AHI 6.0), to keep: chain a request (`ahir_Link`) only to one already **playing** (linked to a waiting
+one, it never plays nor ends), so at most two requests with the device; abort the **playing** one first (it takes the linked one along; the reverse order leaves a stale reference that hangs the
 device); `CMD_STOP` does not pause what is playing (pause = abort, then send the rest again); a non-real-time mode
 ("Filesave") on a device unit writes only silence. The test stub enforces the first two rules (`stub_audio_bad`).
 **Never send `ahir_Volume` below full** (found in step 1.6): with AHI 6.6 and `paula.audio`, requests sent again
@@ -144,22 +136,17 @@ the `Largest` column of `Avail`: a jump there is the first sign of a corruption.
 
 amisqueeze state: control connection (step 1.1) validated on 2026-10-18 in WinUAE (`bsdsocket_emu`,
 `SERVER=127.0.0.1`) with LMS 9.1.1: the player shows up in LMS and reconnects by itself after a server restart.
-`HELO` advertises `Model=squeezelite` (so LMS recognises it) and `ModelName=AmiSqueeze`. Observed `strm s` for an
-MP3 transcoded by LMS: format `p`, size `1` (16 bits), rate `3` (44.1 kHz), channels `2`, endianness `1`
-(**little-endian**: to be swapped for AHI on 68k), autostart `1`, stream address = the control connection's
-address, request `GET /stream.mp3?player=<mac> HTTP/1.0`. LMS 9.1 has no default `mp3 pcm` rule: a regular
-user's server won't have it, hence local MP3 decoding (step 1.8c, `amisqueeze.fpu`); for the builds that leave MP3
-to the server, the rule is documented in the user guide (server setup) and in plan step 0.2 (without `-r`, with
+`HELO` advertises `Model=squeezelite` (so LMS recognises it) and `ModelName=AmiSqueeze`. LMS 9.1 has no default
+`mp3 pcm` rule: a regular user's server won't have it, hence local MP3 decoding (step 1.8c, `amisqueeze.fpu`);
+for the builds that leave MP3 to the server, the rule is documented in the user guide (server setup) and in plan step 0.2 (without `-r`, with
 `trim` for seeking).
-With `flc` and `mp3` advertised, LMS sends FLAC and MP3 files as they are (format `f`, `m`), WAV as PCM.
 
 ## Design choices (player)
 
-- **Portable core + platform layer** (step 0.6, 2026-10-18): every file of `src/amisqueeze/` but `amiga.c` and
-  `posix.c` (player, slimproto, stream, ring, audio, decoder, flac, mp3, bench) is standard C (`<stdint.h>`, no
-  Amiga or POSIX header); everything system-related goes through `platform.h`, implemented by `amiga.c` (Amiga
-  build only) and `posix.c` (host build only). Keep the core free of system calls; keep the
-  platform layers thin. The main loop (timeouts, reconnection) lives in the core.
+- **Portable core + platform layer** (step 0.6, 2026-10-18; described in `architecture.md`): every file of
+  `src/amisqueeze/` but `amiga.c` and `posix.c` is standard C (`<stdint.h>`, no Amiga or POSIX header);
+  everything system-related goes through `platform.h`. Keep the core free of system calls; keep the platform
+  layers thin. The main loop (timeouts, reconnection) lives in the core.
 - One task and one loop around `plat_wait()` (`WaitSelect()` on the Amiga: a `SocketBase` belongs to the task
   that opened it; `select()` on POSIX, SIGINT/SIGTERM without `SA_RESTART` = Ctrl-C).
 - Addresses and ports in **host byte order** in the core; `htonl`/`ntohl` only in the platform layers (no-ops on
@@ -167,7 +154,6 @@ With `flc` and `mp3` advertised, LMS sends FLAC and MP3 files as they are (forma
 - Fields serialised byte by byte, no packed structures; 32-bit values are `uint32_t` (the MAC hash too, so both
   builds derive the same MAC).
 - Advertise in `HELO` only the formats actually decoded.
-- Framing: server → client = 2-byte length + opcode; client → server = opcode + 4-byte length.
 - Output goes through `msg()` with the **standard printf format** (`format(printf)` attribute, `-Werror=format`
   on both builds; on the Amiga: libnix `vsnprintf` into a static buffer, then `Write()` to `Output()`, unbuffered,
   so a log redirected to a file is readable while the program runs); raw bytes through `msg_raw()`. Never
@@ -175,11 +161,8 @@ With `flc` and `mp3` advertised, LMS sends FLAC and MP3 files as they are (forma
   `msg_raw()` and the `LOG` file (decided 2026-10-20, review of 0.5). Cast 32-bit values to the type the
   specifier names (`(unsigned long)` with `%lX`); `%c` for chars (not `%lc`).
 - Music Assistant: per-player output codecs `flac` (default), `mp3`, `aac`, `wav` (seen in `constants.py`,
-  `CONF_ENTRY_OUTPUT_CODEC`); everything transcoded to that codec. Observed with MA 2.10.7 (2026-10-21, step
-  1.7b): `strm s` without parameters, autostart 2/3, then `codc` and `cont` after the response headers (ignored
-  by amisqueeze; fine with FLAC and MP3); `wav` = a WAV with its header, 24 bits while `strm` and `codc` say 16
-  bits: the header is read at the start of each PCM track (1.7b); `mp3` = encoded to a pipe without a LAME header,
-  so not gapless; `aac` = refused with `STMn`, which MA ignores (its UI shows the track playing).
+  `CONF_ENTRY_OUTPUT_CODEC`), everything transcoded to that codec; how it differs from LMS (MA 2.10.7, step 1.7b)
+  is in `architecture.md`.
 
 ## Toolchain
 

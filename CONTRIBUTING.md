@@ -68,7 +68,7 @@ obj-host/, out-host/  host objects and executables (generated)
                       (skills/review-method), four review agents (agents/), the entry point
                       (skills/release-review, /release-review <previous tag> [full])
 docs/user-guide.md    user guide
-docs/development/     development plan (roadmap, steps, design decisions)
+docs/development/     development plan (roadmap, steps, design decisions); architecture.md: how amisqueeze works
 CONTRIBUTING.md       this page
 CHANGELOG.md          what changed in each release (updated with each one)
 Makefile              build (m68k-amigaos-gcc must be in the PATH; HOSTCC for the host build)
@@ -137,7 +137,8 @@ such a fault (a plain write, `(an)+`, `-(an)`, `dbra`) and a few without.
 
 amisqueeze is split into a **portable core** in standard C (no Amiga headers) and a thin **platform layer**
 (`platform.h`): `amiga.c` on AmigaOS, `posix.c` on Linux and other POSIX systems. The same core therefore also
-runs on the build machine, where it is fast to test:
+runs on the build machine, where it is fast to test (how the core and the platform layer fit together:
+[architecture](docs/development/architecture.md)):
 
 ```sh
 make host                         # out-host/amisqueeze, with AddressSanitizer and UBSan

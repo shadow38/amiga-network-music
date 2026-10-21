@@ -1,0 +1,174 @@
+# Architecture of amisqueeze
+
+For developers: how the player is organised, how the audio goes from the network to AHI, and what of slimproto it
+handles. Building and testing are in [CONTRIBUTING.md](../../CONTRIBUTING.md); why each step was done the way it
+was is in the [plan](README.md). The code comments give the details; this page gives the picture.
+
+## Portable core and platform layer
+
+Every file of `src/amisqueeze/` but `amiga.c` and `posix.c` is the **portable core**: standard C, no Amiga or
+POSIX header. Whatever touches the system (sockets, clock, files, the audio device, the wait) goes through
+`platform.h`.
+
+| File | Role |
+|---|---|
+| `player.c` | set-up from the options, the main loop, reconnection, the FLAC and MP3 decision at start-up |
+| `slimproto.c` | the control connection: framing, incoming packets, `HELO`, `STAT`, `RESP`, `DSCO`, `SETD` |
+| `stream.c` | the HTTP stream, the queue of tracks, the output (which decoder runs, track boundaries, elapsed time, statuses), the virtual output |
+| `ring.c` | the 1 MB ring buffer of stream bytes |
+| `decoder.c`, `flac.c`, `mp3.c` | the decoders: raw PCM (and a WAV header), FLAC (dr_flac), MP3 (minimp3, `AMISQUEEZE_MP3` only) |
+| `audio.c` | the audio output's blocks: order, conversion to 16-bit big-endian, volume, `SWAP`, bytes played, pause |
+| `bench.c` | the decoding speed (built-in samples `bench_flac.c`, `bench_mp3.c`), for `AUTO` and `BENCH` |
+
+`platform.h` has three implementations:
+
+- `amiga.c`: bsdsocket.library (`WaitSelect()`), timer.device, dos.library, ahi.device; also the entry point
+  (`ReadArgs`, `ENV:amisqueeze.prefs`, Workbench start and ToolTypes, `LOG`, the commodity);
+- `posix.c`: the host build, for tests and debugging; no audio device: its entry point never asks for the audio
+  output (`UNIT`, `NOAUDIO`, `SWAP` accepted and ignored), so always the virtual output;
+- `tests/stub_platform.c`: the unit tests (`tests/test_core.c`), with a simulated clock and sockets, and a fake
+  audio device that counts the requests ahi.device would mishandle (`stub_audio_bad`).
+
+One task, one loop (`run()` in `player.c`): `plat_wait()` on the control socket and, while there is one, the
+stream socket (writable while connecting, readable while the ring has room), with a timeout of 100 ms while
+something streams or plays and 1 s otherwise. On the Amiga, the end of an AHI request also wakes it up. Each turn:
+the control packet, then the stream socket, then `output_tick()`. Addresses and ports are in host byte order in the
+core; only the platform layers convert them.
+
+Builds of the same sources: `out/amisqueeze` (68020, FLAC), `out/amisqueeze.fpu` (68020 + 68881, `AMISQUEEZE_FPU`
+and `AMISQUEEZE_MP3`: FLAC and MP3), `out-host/amisqueeze` (`posix.c`, with the MP3 decoder, ASan and UBSan).
+
+## Data path
+
+```mermaid
+flowchart LR
+    server["Server (LMS, Music Assistant)"]
+    slim["slimproto.c: control connection (TCP 3483)"]
+    http["stream.c: HTTP stream"]
+    ring["ring.c: ring buffer (stream bytes)"]
+    dec["decoder of the track (pcm, flac, mp3, skip)"]
+    out["stream.c: output (boundaries, elapsed time)"]
+    virt["virtual output (paced at the PCM rate)"]
+    file["OUTPUT file"]
+    blocks["audio.c: 3 blocks (16-bit, volume, SWAP)"]
+    ahi["amiga.c: ahi.device"]
+
+    server -->|"strm, audg, setd"| slim
+    slim -->|"STAT, RESP, DSCO, SETD"| server
+    slim -->|"strm s"| http
+    server -->|"HTTP body"| http
+    http --> ring --> dec --> out
+    out -->|"hand_over()"| virt
+    virt -.->|"OUTPUT="| file
+    out -->|"audio_submit()"| blocks --> ahi
+```
+
+- **`strm s`** gives the stream's address (0 = the control connection's), the HTTP request (sent as is), the
+  format and a threshold. `stream_start()` queues a track at the ring's write position and connects without
+  blocking; the response headers go back to the server in `RESP`.
+- **The ring buffer** holds the stream as received, several tracks back to back (gapless). When it is full, the
+  stream socket is no longer read: TCP slows the server down. The single buffer is reported in `STAT` as both the
+  stream buffer and the output buffer.
+- **The output** starts once `threshold` bytes have arrived (or the whole track). It asks the decoder of the track
+  at the ring's read position for PCM; a decoder never reads past its track's end (`until_next_track()`), and a
+  track whose decoder cannot start gets the `skip` decoder, which drops its data.
+- **The sink** takes the PCM: the virtual output (host build, `NOAUDIO`, `OUTPUT`) consumes it at the PCM rate, as
+  a sound card would, through `hand_over()`, the only place where `OUTPUT` writes; the audio output fills
+  `audio.c`'s blocks with whole frames of one track, at most two with the device (one playing, one linked to it)
+  and one filled in advance, about 0.6 s in all. `OUTPUT` keeps the virtual output, so that the file holds exactly
+  what was handed over.
+
+## Two kinds of position
+
+A decoder turns N bytes of the stream into M bytes of PCM, so positions are counted in two units that must never
+be mixed:
+
+- **the ring's, in bytes of the stream**: `ring.total_in` and `ring.total_out` (since the last `ring_clear()`,
+  whatever the wrap-around), `track.start` (where a track's data begins), `decoder.track` (the track being
+  decoded); `strm f` truncates the ring at a `track.start`;
+- **the output's, in bytes of decoded PCM**: `out.handed` (handed to the sink since the last reset),
+  `track.out_start` (where the track begins in the output), and the bytes played (`sink_played()`: an estimate
+  from the AHI blocks, or `handed` for the virtual output).
+
+The link between them: when the reading reaches a queued track and the decoder holds nothing more of the previous
+one (`finished`: dr_flac and minimp3 read ahead), that track's `out_start` is set to `handed` (`reach_tracks()`).
+The boundary is reported (`STMs`) when the bytes played reach it (`next_track_due()`); elapsed time is
+`(played - cur.out_start)` at the rate of the decoded format. Raw PCM has the same size on both sides and hides a
+mix-up: the test-only "widening" decoder of `tests/test_core.c` makes the output bigger than the input, and
+reveals it.
+
+## A track's life: the statuses
+
+What the server expects, as squeezelite behaves (written from the protocol, not from its code):
+
+1. `strm s` -> `STMf`; connected and request sent -> `STMc`; response headers -> `RESP`.
+2. Threshold reached: autostart 1 -> `STMs`; autostart 0 -> `STMl`, then `strm u` -> `STMr` (and `STMs`).
+3. While playing: `STMt` every second, and in reply to each `strm t` (its timestamp echoed); `strm p` -> `STMp`,
+   `strm u` -> `STMr`.
+4. End of the HTTP body -> `DSCO` 0 + `STMd`. The server then sends the next track's `strm s`; its data is appended
+   to the ring and `STMs` is sent again when the output reaches it.
+5. Buffer and sink empty: `STMo` while still streaming (the network is too slow), `STMu` once everything has been
+   played. A stream that fails sends `DSCO` with its reason (1 local, 2 remote, 3 unreachable).
+
+**`STMd` is sent at the end of the data received, not at the end of the decoding** (squeezelite sends it when its
+decoder has finished). With a 1 MB ring, the server's next `strm s` therefore comes while up to 1 MB of the
+current track (about 6 s of PCM, 9 s of FLAC) is still waiting in the same buffer. When LMS changes its mind about
+the next track (removed, moved, reshuffled), it sends `strm f` and expects the playing track to go on: clearing
+the ring would cut it. So `strm f` drops only the last queued track: its stream closed without `DSCO`, its data
+taken back from the ring (`ring_truncate()` at its `track.start`); with the audio output, a block of it already
+filled plays at the end of the current track (at most about 0.6 s). With nothing playing, `strm f` is a stop.
+This was the `strm f` defect fixed in 0.7.
+
+**LMS drops every status after a `strm s` until `STMc`** (its stream start). A `strm s` refused at once (a format
+this build does not decode, a request over 1 KB) is therefore answered `STMf`, `STMc`, then `STMn`
+(`slim_send_refusal()`), as by a player whose decoder fails once the stream has started; LMS then moves on to the
+next track. Music Assistant ignores `STMn`.
+
+## What of slimproto is handled
+
+Framing: server to client, a 2-byte length then a 4-byte opcode and the data; client to server, the opcode, a
+4-byte length, then the data. Every field is serialised byte by byte, big-endian, without packed structures.
+
+**Sent**:
+
+- `HELO`: device id 12 (SqueezePlay), the MAC (derived from the name unless `MAC`), uuid and byte counts at 0,
+  `0x4000` in the channel list on a reconnection; capabilities `Model=squeezelite` (so that LMS recognises the
+  player), `ModelName=AmiSqueeze`, `Firmware=<version>`, `AccuratePlayPoints=0`, `HasDigitalOut=1` (LMS then offers
+  its fixed volume setting), `MaxSampleRate=48000`, then the formats decoded here: `pcm` always, `flc` and `mp3`
+  as decided at start-up (`FLAC`, `MP3` options; `AUTO` measures the speed). LMS then sends FLAC and MP3 files as
+  they are (formats `f`, `m`), WAV and AIFF as raw PCM (headers stripped), and converts the rest.
+- `STAT` (the statuses above), `RESP`, `DSCO`, `SETD` (the player name).
+
+**Received and handled**:
+
+- `strm s`: autostart, format (`p`, `f`, `m`), sample size, rate and channel codes, endianness, threshold, port,
+  address, request. The other fields (S/PDIF, transition, flags, output threshold, replay gain) are ignored. For
+  `f` and `m` the parameters are a guess until the decoder reads the stream. Seen from LMS for an MP3 it converts:
+  format `p`, size `1` (16 bits), rate `3` (44.1 kHz), channels `2`, endianness `1` (little-endian: `audio.c`
+  swaps it for AHI), autostart `1`, the control connection's address, request
+  `GET /stream.mp3?player=<mac> HTTP/1.0`.
+- `strm t`, `q`, `f`, `p` (interval 0), `u`.
+- `audg`: the 16.16 gains, already on the server's volume curve, applied to the samples by `audio.c`; adjust 0 =
+  fixed volume (samples untouched). ahi.device always gets full volume (see `audio.c` for why).
+- `setd` id 0: the player name, set or queried; answered with `SETD`.
+
+**Received and ignored on purpose**:
+
+- `aude` (S/PDIF and DAC on or off): printed with `VERBOSE` only;
+- `strm a` (skip ahead) and `strm p` with an interval: for synchronised players; `strm u` resumes at once, whatever
+  time it gives;
+- autostart 2 and 3 (wait for `cont`, for radio metadata): played as 0 and 1.
+
+**Not handled** (message "not handled", nothing done): `cont`, `codc`, `vers`, `grfb`, `grfe`, `serv`, and any
+other opcode. Not done at all: internet radios' metadata (ICY, planned for 0.9, see the plan), server discovery
+(UDP, 0.9), synchronisation between players, displays and IR.
+
+**Music Assistant** (seen with 2.10.7, plan step 1.7b) speaks the same protocol, with differences. It
+transcodes everything to the output codec set for the player (`flac` by default, `mp3`, `aac`, `wav`):
+
+- `strm s` without the stream's parameters for FLAC and MP3, autostart 2 or 3, then `codc` (the codec) and `cont`
+  after the response headers: amisqueeze reads the body at once, and MA sends `strm u`;
+- its `wav` output codec sends a WAV header, 24 bits while `strm s` says 16: `decoder.c` reads the header at the
+  start of each PCM track and plays its format;
+- its `mp3` codec has no LAME header (not gapless); `aac` is refused (`STMn`, which MA ignores);
+- `strm f` then `strm q` before each new track; `audg` 50 at each connection, then the player's volume.
