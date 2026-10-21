@@ -548,9 +548,19 @@ def scenario_flac_rate_0():
           "nothing played, reported, STMu sent")
 
 
+def crc8(data):
+    """CRC-8 of a FLAC frame header (polynomial 0x07)"""
+    crc = 0
+    for b in data:
+        crc ^= b
+        for _ in range(8):
+            crc = (crc << 1 ^ 0x07 if crc & 0x80 else crc << 1) & 0xFF
+    return crc
+
+
 def flac_frame(data, n):
     """(offset, PCM frames per FLAC frame) of frame n of a test FLAC file (fixed block size, n < 128): a frame sync
-    whose header has the right frame number and CRC-8, past the metadata blocks"""
+    whose header has the right frame number and CRC-8, past the metadata blocks; its header is 6 bytes long"""
     pos, last = 4, False
     while not last:
         last, size = data[pos] & 0x80, int.from_bytes(data[pos + 1:pos + 4], "big")
@@ -559,13 +569,8 @@ def flac_frame(data, n):
         pos += 4 + size
     while True:
         pos = data.index(b"\xff\xf8", pos)
-        crc = 0
-        for b in data[pos:pos + 4] + bytes([n]):                        # header up to the frame number, here
-            crc ^= b
-            for _ in range(8):
-                crc = (crc << 1 ^ 0x07 if crc & 0x80 else crc << 1) & 0xFF
         if data[pos + 4] == n and data[pos + 2] >> 4 not in (0, 6, 7) and data[pos + 2] & 15 in (9, 10) \
-                and data[pos + 5] == crc:
+                and data[pos + 5] == crc8(data[pos:pos + 4] + bytes([n])):    # header up to the frame number, here
             return pos, block
         pos += 1
 
@@ -594,6 +599,34 @@ def scenario_flac_seek():
               % (name, n, len(data), len(want), first_difference(data, want)))
         if data != want:
             print(out)
+
+
+def scenario_flac_seek_rejected():
+    print("-- FLAC seek whose first frame leaves its rate or sample size to STREAMINFO (not sent): track skipped")
+    for what, byte, mask in [("rate", 2, 0x0F), ("sample size", 3, 0x0E)]:
+        file = flac_file("s16-l5.flac")
+        offset, _ = flac_frame(file, 5)
+        data = bytearray(file[offset:])
+        data[byte] &= ~mask & 0xFF          # code 0: "get it from STREAMINFO"
+        data[5] = crc8(data[:5])            # a valid header, as an encoder would write it
+        path = os.path.join(tempfile.mkdtemp(), "play.pcm")
+        http = HttpServer(data=bytes(data), chunk=3000, pause=0.001)
+        http.start()
+        server, proc, s = start_session("FlacSeek", "OUTPUT=" + path)
+        try:
+            send_strm_flac(s, http)
+            s.until("STAT:STMd")
+            try:
+                s.until("STAT:STMu", timeout=5)
+                ended = True
+            except TimeoutError:
+                ended = False
+        finally:
+            rc, out = stop(proc)
+            server.close()
+        check(ended and rc == 0 and len(read_output(path)) == 0
+              and "flac: cannot start from the middle of this file, track skipped" in out,
+              "%s in STREAMINFO: nothing played, reported, STMu sent" % what)
 
 
 def scenario_flac_gapless():
@@ -920,6 +953,7 @@ if __name__ == "__main__":
     scenario_flac()
     scenario_flac_rate_0()
     scenario_flac_seek()
+    scenario_flac_seek_rejected()
     scenario_flac_gapless()
     scenario_flac_off()
     scenario_mp3()

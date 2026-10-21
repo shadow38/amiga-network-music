@@ -92,7 +92,7 @@ then 0.9.
 | 0.4 | MP3 without gaps (1.8d), fixed volume through LMS's own setting, the AHI mode warning (1.10): all done | host and WinUAE |
 | 0.5 | `LOG=<file>`, start from the Workbench with an icon and ToolTypes, a commodity stopped from Exchange (1.10); seeking in a FLAC decoded on the Amiga fixed (1.8b); the outside review's fixes (stack of `amisqueeze`, tests): all done | host and WinUAE |
 | 0.6 | the fixes from the review reports (decided with the user on 2026-10-20): the open findings of the two acceptance reviews (documentation, the icon's `WINDOW` with `SMART`, a decoder that cannot start, a FLAC rate of 0, gaps in `check-saves.py`, guards without a test), the ICY limitation written in the user guide; then its release review (light, the first in real use) | host and WinUAE |
-| 0.7 | Music Assistant (1.7b, decided with the user on 2026-10-21): the WAV header read at the start of a PCM stream (MA's `wav` codec, 24 bits announced as 16), the other output codecs tried (`mp3` with `amisqueeze.fpu`; a clear failure for a codec the build cannot play), a short Music Assistant part in the user guide; two findings moved from the 0.6 review: `strm f` stops the playing track (its R4; ✅ confirmed against LMS and fixed on 2026-10-21), a test of the rejection side of the FLAC seek fix (its R3); from an outside reading of the code (2026-10-21): a stream request too long for amisqueeze reported to LMS as a failure (now dropped silently, LMS waits), `make dist` writing the zip's SHA-256 (done by hand at 0.6); for developers (decided with the user on 2026-10-20, from an outside reading of the documentation), `docs/development/architecture.md`: the portable core and the platform layer, the data path from the network to AHI with a diagram, what of slimproto is handled and what is ignored, taken out of `CLAUDE.md` | host and WinUAE, with LMS and Music Assistant |
+| 0.7 | Music Assistant (1.7b, decided with the user on 2026-10-21): the WAV header read at the start of a PCM stream (MA's `wav` codec, 24 bits announced as 16), the other output codecs tried (`mp3` with `amisqueeze.fpu`; a clear failure for a codec the build cannot play), a short Music Assistant part in the user guide; two findings moved from the 0.6 review: `strm f` stops the playing track (its R4; ✅ confirmed against LMS and fixed on 2026-10-21), a test of the rejection side of the FLAC seek fix (its R3; ✅ done on 2026-10-21); from an outside reading of the code (2026-10-21): a stream request too long for amisqueeze reported to LMS as a failure (now dropped silently, LMS waits), `make dist` writing the zip's SHA-256 (done by hand at 0.6); for developers (decided with the user on 2026-10-20, from an outside reading of the documentation), `docs/development/architecture.md`: the portable core and the platform layer, the data path from the network to AHI with a diagram, what of slimproto is handled and what is ignored, taken out of `CLAUDE.md` | host and WinUAE, with LMS and Music Assistant |
 | 0.8 | the real machine (1.9, tried with 0.7, LMS and Music Assistant): what it shows; from the outside reading of the code, only if the real machine shows gaps while it works, more AHI blocks or a higher task priority | on the real machine and network |
 | 0.9 | internet radios' metadata (ICY, see below) and automatic server discovery (1.10), after the real network | host for the code; validated on the real machine and network |
 
@@ -117,7 +117,7 @@ then 0.9.
   seen failing without its fix (planted in a throwaway copy), then passing;
 - moved to 0.7 (decided with the user at the [0.6 review](reviews/0.6.md), 2026-10-20): `strm f` stops the
   playing track (0.3..0.4, first replay; ✅ fixed on 2026-10-21, see below), the rejection side of the FLAC seek
-  fix untested (0.4..0.5 R6);
+  fix untested (0.4..0.5 R6; ✅ tested on 2026-10-21, see below);
 - ✅ `strm f` (0.6 review R4), confirmed and fixed on 2026-10-21: LMS sends it only when the track being streamed
   is no longer the next one (next track removed, moved or replaced, reshuffle; `Playlist.pm`,
   `StreamingController.pm` `_FlushGetNext`) and expects the playing track to go on; amisqueeze stopped it, a
@@ -129,6 +129,11 @@ then 0.9.
   output, a block of it already filled plays as the end of the playing track (at most 3 blocks, about 0.6 s);
   with nothing playing, a stop as before. Music Assistant sends `f` then `q` before each new track: unchanged.
   Tests `test_flush*`, `test_ring_truncate`, seen failing before the fix;
+- ✅ the rejection side of the FLAC seek fix (0.6 review R3), tested on 2026-10-21: `scenario_flac_seek_rejected`
+  sends, as after a seek, a frame whose header leaves its rate, then its sample size, to STREAMINFO (code 0, CRC-8
+  recomputed); expected: the "cannot start from the middle of this file" message, nothing played, `STMu`. Seen
+  failing in a throwaway copy with the check of `flac.c:214` removed (both cases), and with `rate == 0` or
+  `bits == 0` taken out of `flac.c:161` (the matching case);
 - ✅ found by the 0.6 review and fixed before the release: `QUIET` without `LOG` still lost the errors found after
   the log was opened (R1, checked in WinUAE); a line of the skip decoder without a test (R2,
   `test_decoder_no_start_audio`).
