@@ -26,6 +26,9 @@ are previews, tested in WinUAE only, not yet on a real Amiga.
   no longer cuts the playing track: amisqueeze stopped it, losing up to its last seconds still in the buffer
   (about 6 s of PCM, 9 s of FLAC). Only the next track is dropped now, and the new next one follows without a
   gap.
+- A stream request longer than amisqueeze handles (over 1 KB, as some signed internet radio addresses are), or
+  a format it cannot play, now makes LMS move on to the next track: until now LMS waited for that track forever
+  (amisqueeze's refusal came before the status LMS waits for, and was dropped).
 
 ## [0.6] - 2026-10-21
 

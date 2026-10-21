@@ -247,6 +247,8 @@ With `flc` and `mp3` advertised, LMS sends FLAC and MP3 files as they are (forma
 - Strings shown on the Amiga and files read by the Amiga: ASCII only (ISO-8859-1 on the Amiga), LF line endings.
   The README and the user guide are among them, since they ship in the zip (decided 2026-10-21): `...`, `-`, `|`
   rather than their typographic forms.
+- **LMS drops every status after a `strm s` until `STMc`** (found 2026-10-21 in its sources): a refusal sent at
+  once (`STMn`) must come after a `STMc`, or LMS never hears of it and waits for that track forever.
 - WinUAE syntax checked in `cfgfile.cpp`: `filesystem2=rw,DEVICE:Volume:path,bootpri`; `chipmem_size` in 512 KB
   units, `fastmem_size` in MB; networking emulation `bsdsocket_emu=true`.
 

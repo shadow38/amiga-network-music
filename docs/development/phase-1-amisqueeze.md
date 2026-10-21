@@ -392,9 +392,12 @@ belongs to the task that opened it; packets serialised field by field; buffers a
     nothing more (no noise, no hang, no retry from MA). MA knew (its log: "Player did not report support for
     content_type audio/aac, playback might fail") and sends it anyway; its Squeezelite provider ignores the decoder
     error event of `STMn`, so its web UI shows the track playing, the time running then back to 0, until the user
-    stops it. LMS, by contrast, moves on to the next track on `STMn` (`playerStreamingFailed`). Not changed (decided
-    with the user on 2026-10-21): sending `STMu` after `STMn` would make MA move on, but LMS could then skip twice;
-    an idea for later, per server at best. `amisqueeze` (no FPU) gets MA's `mp3` the same way (format `m` refused).
+    stops it. LMS, by contrast, moves on to the next track on `STMn` (`playerStreamingFailed`), but only after
+    `STMc`: it drops any status between a `strm s` and `STMc`, and amisqueeze sent `STMn` before it, so LMS
+    ignored it too (found later the same day in LMS's sources; fixed in 0.7: `STMc`, then `STMn`). Not changed
+    (decided with the user on 2026-10-21, when LMS was thought to move on already): sending `STMu` after `STMn`
+    would make MA move on, but LMS could then skip twice; an idea for later, per server at best. `amisqueeze` (no
+    FPU) gets MA's `mp3` the same way (format `m` refused).
   - **Seen once, MA's side**: two requests for the same track were answered with 44 bytes (an ID3 tag, no audio);
     amisqueeze skipped the track (`no MP3 frame found`, `STMu`); the third try played. Nothing in MA's log.
 - **1.7b, the user guide part** (2026-10-21): in "Server setup", what Music Assistant needs for amisqueeze: the

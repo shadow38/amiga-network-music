@@ -475,7 +475,7 @@ Rules:
 | `no news from the server, reconnecting` | the server stayed silent for 35 s; amisqueeze reconnects |
 | `connection closed by the server` | the server closed the connection; amisqueeze reconnects |
 | `not enough memory for the 1024 KB stream buffer` | not enough free memory to start |
-| `stream format X not supported` | LMS sent a format other than raw PCM, FLAC or (`amisqueeze.fpu`) MP3 (no conversion rule for that format) |
+| `stream format X not supported` | LMS sent a format other than raw PCM, FLAC or (`amisqueeze.fpu`) MP3 (no conversion rule for that format): LMS moves on to the next track |
 | `FLAC: level 8 decoded at ...x real time: ...` | the start-up measure (`FLAC=AUTO`): whether FLAC is decoded here or converted by the server |
 | `MP3: 320 kbit/s decoded at ...x real time: ...` | the same for MP3 (`MP3=AUTO`, `amisqueeze.fpu`) |
 | `FLAC level 8 (the slowest) decoded at ...x real time: FLAC=AUTO lets this machine decode FLAC` (or `leaves FLAC to the server`), the same for MP3 | the output of `BENCH` |
@@ -493,7 +493,7 @@ Rules:
 | `not enough memory for the audio blocks` (or `for the audio output`) | the 3 audio blocks (96 KB) or the AHI requests cannot be allocated; amisqueeze stops |
 | `timer.device unavailable` | the system timer cannot be opened (should not happen); amisqueeze stops |
 | `strm ... not handled`, `strm too short`, `... not handled (N bytes)`, `packet too short`, `invalid packet size` | the server sent a message amisqueeze does not know or that is malformed: it is ignored (an invalid size closes the connection, and amisqueeze reconnects). Worth reporting, with the server's name and version; `cont not handled` is expected with some internet radios (see [decoding on the Amiga](#decoding-on-the-amiga-flac-mp3-bench)) |
-| `stream: request too long`, `stream: response headers too long` | the audio stream's HTTP request or answer exceeds what amisqueeze handles (1 KB, 2 KB): that track is not played |
+| `stream: request too long`, `stream: response headers too long` | the audio stream's HTTP request or answer exceeds what amisqueeze handles (1 KB, 2 KB): that track is not played (for a request too long, LMS moves on to the next track) |
 | `cannot create <file>: error N` | the `OUTPUT` file cannot be created (missing directory, write-protected disk); amisqueeze stops. On a volume that is not mounted, AmigaDOS first asks for it to be inserted; this message follows a Cancel |
 | `cannot write to <file>: error N, file closed` | writing the `OUTPUT` file failed (disk full...); playback goes on without the file |
 | `cannot open the log <file>: error N, going on without it` | the `LOG` file cannot be opened (missing directory, write-protected disk); amisqueeze plays without a log |

@@ -9,7 +9,8 @@
  *     STMs is sent again when the output reaches it (gapless);
  *   buffer empty: STMo while still streaming, STMu once everything was played;
  *   strm f (LMS: the next track removed, moved or reshuffled) drops the track being streamed, not the one playing:
- *     its stream is closed without DSCO, its data dropped, and the next strm s follows the track playing.
+ *     its stream is closed without DSCO, its data dropped, and the next strm s follows the track playing;
+ *   strm s refused (format not decoded, request too long) -> STMc + STMn: the server moves on to the next track.
  * The ring buffer holds the stream as received; the decoder of each track (decoder.h; raw PCM is copied as is)
  * turns it into PCM for a sink: the platform's audio output (AHI, blocks managed by audio.c), or the virtual
  * output, which consumes it at the PCM rate like a sound card (host build, NOAUDIO, OUTPUT); with the OUTPUT
@@ -111,6 +112,7 @@ void stream_start(struct player *p, uint32_t ip, uint16_t port, const uint8_t *r
 
     if (request_len > (int)sizeof(s->request)) {
         msg("amisqueeze: stream: request too long (%d bytes)\n", request_len);
+        slim_send_refusal(p);           /* the track playing, if any, goes on */
         return;
     }
     stream_close(p);                    /* a stream still running is abandoned */

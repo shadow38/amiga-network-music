@@ -622,17 +622,16 @@ static void test_not_pcm(void)
     clear_tx();
     feed_strm('s', fmt, 0, 9000, 0, request);
     drain(&p);
-    CHECK(!strcmp(trace(), "STAT:STMf STAT:STMn"));
+    CHECK(!strcmp(trace(), "STAT:STMf STAT:STMc STAT:STMn"));     /* STMc first: LMS ignores STMn before it */
     CHECK(p.stream.state == STREAM_IDLE && !stub_stream_open);
     teardown(&p);
 }
 
 /* A strm s whose HTTP request is longer than the 1 KB kept for it: refused, no stream opened (copied, it would
  * overwrite the fields after the request, which the sanitizers do not see) */
-static void test_request_too_long(void)
+static void feed_strm_too_long(void)
 {
     static uint8_t b[24 + 1025];
-    struct player p;
 
     memset(b, 'x', sizeof(b));
     memset(b, 0, 24);
@@ -640,12 +639,21 @@ static void test_request_too_long(void)
     memcpy(b + 1, "1p1321\001", 7);
     b[18] = 9000 >> 8;
     b[19] = 9000 & 0xff;
+    stub_feed_packet("strm", b, (int)sizeof(b));
+}
+
+/* ...and reported to the server as a track it cannot play (STMc + STMn), so that LMS moves on to the next one */
+static void test_request_too_long(void)
+{
+    struct player p;
+
     setup(&p, "Amiga");
     CHECK(slim_connect(&p, 0));
     clear_tx();
-    stub_feed_packet("strm", b, (int)sizeof(b));
+    feed_strm_too_long();
     drain(&p);
     CHECK(strstr(stub_out, "stream: request too long (1025 bytes)") != NULL);
+    CHECK(!strcmp(trace(), "STAT:STMf STAT:STMc STAT:STMn"));
     CHECK(p.stream.state == STREAM_IDLE && !stub_stream_open);
     teardown(&p);
 }
@@ -2182,6 +2190,31 @@ static void test_flush_current(void)
     teardown(&p);
 }
 
+/* The next track's request too long while a track plays (its stream done): refused, the track playing untouched */
+static void test_request_too_long_playing(void)
+{
+    struct player p;
+    uint32_t n = 50000;
+
+    fill(track_a, sizeof(track_a), 33);
+    setup_file(&p);
+    open_stream(&p, '1', 1);
+    stub_feed_stream(track_a, (int)n);
+    drain_stream(&p);
+    stub_stream_end();
+    stream_io(&p, PLAT_READ);
+    play_for(&p, 100);
+    clear_tx();
+    feed_strm_too_long();
+    drain(&p);
+    CHECK(!strcmp(trace(), "STAT:STMf STAT:STMc STAT:STMn"));
+    CHECK(p.out.state == OUTPUT_RUNNING && p.out.queued == 0 && ring_used(&p.ring) == n - PCM_BPS / 10);
+    play_for(&p, 1000);
+    CHECK(p.out.state == OUTPUT_STOPPED && !strcmp(trace(), "STAT:STMf STAT:STMc STAT:STMn STAT:STMu"));
+    CHECK(stub_file_len == (int)n && !memcmp(stub_file, track_a, n));
+    teardown(&p);
+}
+
 /* strm f with nothing playing yet (the only track is the one dropped), and strm f then q (Music Assistant, before
  * each new track): a stop */
 static void test_flush_stop(void)
@@ -2477,6 +2510,7 @@ int main(void)
     test_flush_audio();
     test_flush_audio_reached();
     test_flush_current();
+    test_request_too_long_playing();
     test_flush_stop();
     test_ahi_mode();
     test_start_mode();

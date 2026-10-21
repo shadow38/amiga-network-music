@@ -209,6 +209,7 @@ void slim_disconnect(struct player *p);
 /* Reads whatever is available on the socket; 0 if the connection is lost. */
 int slim_receive(struct player *p);
 void slim_send_stat(struct player *p, const char *event, uint32_t server_ts);
+void slim_send_refusal(struct player *p);
 void slim_send_resp(struct player *p, const char *headers, int len);
 void slim_send_dsco(struct player *p, int reason);
 

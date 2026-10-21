@@ -116,6 +116,15 @@ void slim_send_stat(struct player *p, const char *event, uint32_t server_ts)
     send_all(p, pkt, (int)(b - pkt));
 }
 
+/* A strm s refused (format not decoded, request too long): STMn, so that the server moves on to the next track.
+ * LMS drops every status after a strm s until STMc (its stream start), so STMc comes first, as from a player
+ * whose decoder fails once the stream has started. */
+void slim_send_refusal(struct player *p)
+{
+    slim_send_stat(p, "STMc", 0);
+    slim_send_stat(p, "STMn", 0);
+}
+
 /* Response headers of the stream, passed on to the server */
 void slim_send_resp(struct player *p, const char *headers, int len)
 {
@@ -210,7 +219,7 @@ static void process_strm_s(struct player *p, const uint8_t *pkt, int len)
     slim_send_stat(p, "STMf", 0);
     if (ops == NULL) {                      /* raw PCM, FLAC, and MP3 in the builds that have its decoder */
         msg("amisqueeze: stream format %c not supported\n", pkt[6]);
-        slim_send_stat(p, "STMn", 0);
+        slim_send_refusal(p);
         return;
     }
     if (autostart < 0 || autostart > 3)
