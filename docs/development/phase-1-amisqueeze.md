@@ -279,7 +279,7 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   memory. Test configuration: `win32.iconified_pause=false`, `win32.inactive_pause=false` (an emulation paused
   by a stray key had stopped an earlier run).
 
-## 1.7 Other PCM formats and Music Assistant 🔶 (1.7a done, 1.7b first test and WAV header 2026-10-21)
+## 1.7 Other PCM formats and Music Assistant 🔶 (1.7a done, 1.7b first test and WAV header validated 2026-10-21)
 
 - **Content**: WAV and AIFF headers (format `?` + header parsing, or explicit values); 48 kHz; mono; 8 and 24 bits
   if the server sends them. Music Assistant: the player's `wav` output codec (MA offers no raw PCM); check what MA
@@ -366,7 +366,15 @@ belongs to the task that opened it; packets serialised field by field; buffers a
     throwaway copy (nine changes planted: no header read, header and data in one call, which ASan reports as an
     AHI block overrun, no pad byte, no data limit, no wait for a header cut short, two `ring_peek` faults, no check
     of a rate of 0, none of a missing format chunk, which UBSan reports as a division by zero). The
-    header captured from MA on 2026-10-21 has the layout the tests build. WinUAE: to do.
+    header captured from MA on 2026-10-21 has the layout the tests build.
+  - **Validated in WinUAE on 2026-10-21**: slow 68020 profile without JIT, `amisqueeze`, Paula (unit 0, `SWAP`),
+    MA 2.10.7 with the `wav` codec. 32 streams in the session (tracks started from the web UI, pauses, seeks, each
+    a new stream with its header), all read: 24 bits at 44.1 or 48 kHz; no `STMo`, no `wav:` message. Two gapless
+    boundaries (MA appends the next track after `STMd` with autostart 3; the second one after a seek 15 s before
+    the end), one of them from 48 to 44.1 kHz. Heard by the user: right pitch, no crackle at volume 100, fluid and
+    without a gap at the boundaries. CPU load while playing 24 bits at 48 kHz: 75 % (`cpucount`, 2046 rounds in
+    10 s against 8204 idle; 61-68 % in 1.4c, 16 bits at 44.1 kHz). Not tried: `mp3`, `aac` codecs (next item of
+    0.7).
 
 ## 1.8 Local decoding: FLAC, then MP3 ✅
 
