@@ -72,7 +72,7 @@ How to build and test: [CONTRIBUTING.md](../../CONTRIBUTING.md).
 | 2.12 remote: MPD | ⬜ idea, after Music Assistant |
 | 3.1 Licence and user documentation | 🔶 licence: MIT; user guide kept up to date |
 | 3.2 Aminet archive | ⬜ |
-| 3.3 Public versions | 🔶 0.1 to 0.5 published (tags, GitHub releases, changelog); CI: host tests |
+| 3.3 Public versions | 🔶 0.1 to 0.6 published (tags, GitHub releases, changelog); CI: host tests |
 | 3.4 Setup guides: minimal server, the Amiga on the network | ⬜ before 1.0 |
 | 3.5 Review before each release (method, review agents, rules inventory, checks) | ✅ 2026-10-20: 3.5a to 3.5c done; 3.5d stopped after the version strings check; 3.5e the release rule in `CLAUDE.md`, no review of HEAD (the next review is the one before 0.6); the tooling changes only when a review misses a real defect |
 
