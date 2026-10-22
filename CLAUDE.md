@@ -13,13 +13,20 @@ repository. Documentation, code comments and program messages are in English.
 
 **Versioning** (decided 2026-10-18, completed 2026-10-19): 0.x until the main feature works; the version changes
 only for a **published** release; 1.0 = first really usable version (tested on the real machine). Never bump it on
-our own: ask the user. A release = a Git tag `amisqueeze-<version>` + a GitHub Release with a zip (the Amiga
-executables and their `.info` icons, `LICENSE`, `README.md`, `CHANGELOG.md`, the user guide and its images) and
-short notes, made with the GitHub CLI once the user has approved the notes; the zip's SHA-256 goes in the notes and
-in a `<zip>.sha256` file attached to the release (decided 2026-10-21; written by `make dist` since 0.7, with the
-line for the notes: zip, file and notes from the same run). **Before every release tag** (plan step 3.5, decided
-2026-10-20; two levels decided the same day, for cost): a light review of the range since the previous tag,
-`/release-review <previous tag>` (three agents, limited to the diff and what it reaches); a full audit,
+our own: ask the user. A release = a Git tag `amisqueeze-<version>` + a GitHub Release with a zip and a `.lha`
+holding the same files (the Amiga executables and their `.info` icons, `LICENSE`, `README.md`, `CHANGELOG.md`, the
+user guide and its images), the Aminet `.readme`, and short notes, made with the GitHub CLI once the user has
+approved the notes; each archive's SHA-256 goes in the notes and in a `<archive>.sha256` file attached to the
+release (decided 2026-10-21; written by `make dist` since 0.7, with the lines for the notes: archives, files and
+notes from the same run). The `.lha` and `.readme` since 0.7 (plan step 3.2, decided 2026-10-23): made by `lha`
+of the image `amigadev/crosstools`, readme from `dist/amisqueeze.readme`; for Aminet (1.0), the files are renamed
+without the version (Aminet's rule) and `Uploader:` gets an e-mail address. The `.lha` extracted on the Amiga
+(LhA in WinUAE, the files compared, the scenarios run on what it gives; plan step 3.2) is tried again only when the
+making of the archive changes (image or `lha` version, `make-dist.py`'s options, a new kind of file in it) and
+once before the Aminet upload (decided 2026-10-23); otherwise the checks of `make dist` are enough. **Before every
+release tag** (plan step 3.5, decided 2026-10-20; two levels decided the same day, for cost): a light review of
+the range since the previous tag, `/release-review <previous tag>` (three agents, limited to the diff and what it
+reaches); a full audit,
 `/release-review <previous tag> full` (four agents, the whole repository), only at milestones: before 1.0, or after
 a big change of architecture (Music Assistant, splitting `stream.c`). Also before every release tag (step 0.10,
 decided 2026-10-23): `python3 tools/winuae/run-scenarios.py` all OK in WinUAE (JIT + 68882 with `compfpu`), on the
@@ -201,8 +208,8 @@ step 0.2 (without `-r`, with `trim` for seeking).
 - **WinUAE and Paula when testing**: the JIT needs `compfpu=true` for `amisqueeze.fpu`, Paula needs `SWAP` and is
   judged at volume 100 (details in `CONTRIBUTING.md`).
 - Strings shown on the Amiga and files read by the Amiga: ASCII only (ISO-8859-1 on the Amiga), LF line endings.
-  The README and the user guide are among them, since they ship in the zip (decided 2026-10-21): `...`, `-`, `|`
-  rather than their typographic forms.
+  The README and the user guide are among them, since they ship in the archives (decided 2026-10-21): `...`, `-`,
+  `|` rather than their typographic forms.
 - **LMS drops every status after a `strm s` until `STMc`** (found 2026-10-21 in its sources): a refusal sent at
   once (`STMn`) must come after a `STMc`, or LMS never hears of it and waits for that track forever.
 - WinUAE syntax checked in `cfgfile.cpp`: `filesystem2=rw,DEVICE:Volume:path,bootpri`; `chipmem_size` in 512 KB

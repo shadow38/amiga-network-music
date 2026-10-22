@@ -11,7 +11,7 @@ Back to the [plan](README.md).
   conversion rule if needed; program options).
 - **Criterion**: a user who does not know the project installs and runs amisqueeze using the guide alone.
 
-## 3.2 Aminet archive ⬜
+## 3.2 Aminet archive 🔶
 
 - **Content**: `.lha` archive (executables, icons, AmigaGuide or text documentation), Aminet-format `.readme`,
   version numbers (`$VER:`).
@@ -22,7 +22,31 @@ Back to the [plan](README.md).
     `Uploader:` read `shadow38` for now: **to correct (name, e-mail address) before the upload to Aminet**. To
     decide when designing it, proposed: the archive made by `lha` (jca02266/lha, built in the build environment;
     `lhasa` only extracts), the user guide shipped as text as it is (AmigaGuide later, if needed);
-  - **with 1.0**: the upload to Aminet (`.lha` and `.readme`), by the user or at their explicit request.
+  - **with 1.0**: the upload to Aminet (`.lha` and `.readme`), by the user or at their explicit request. Before
+    it (decided with the user on 2026-10-23): the files renamed without the version, `amisqueeze.lha` and
+    `amisqueeze.readme` (Aminet: "Version numbers should be part of the readme file, not part of the filename";
+    an update is uploaded again under the same name; the content, so the SHA-256, unchanged); a drawer icon for
+    the archive's directory, which the Workbench does not show without one (in the zip too, `tools/make-icon.py`
+    to extend); `Uploader:` with an e-mail address, which Aminet requires.
+- **Done with 0.7** (2026-10-23, decided with the user that day): `make dist` builds `out/<prog>-<version>.lha`
+  with `lha` of the image `amigadev/crosstools` (LHa for UNIX 1.14i, jca02266: nothing to build), method `-lh5-`
+  and header level 1 (the default of LhA 2.15 on the Amiga), from the same files as the zip copied with fixed
+  modes (755 for the executables, 644 for the rest); it tests it (`lha t`), compares its files and sizes with the
+  zip's, and writes its `.sha256`. The readme is `dist/amisqueeze.readme` with its version filled in, checked
+  against Aminet's rules ([The Readme file](https://wiki.aminet.net/The_Readme_file): `Short:` first and of 40
+  characters at most, the required fields, lines of 78 characters at most, LF; ASCII besides), by `make dist`
+  and by `make test`. `make dist DEV=1` accepts a development version, to try them. Tried on the 0.7-dev build:
+  extracted by LhA 2.15 (Aminet `util/arc/lha.run`) in RAM: of a 3.2.3 system that had no LhA (all the files
+  `----rwed`, both executables started from there: `Version`, `BENCH`), by `lhasa` 0.4.0 on Linux and by
+  Windows' `tar`, each time the twelve files identical to the sources; the executables extracted on the Amiga
+  put in `NM:`, and the WinUAE scenarios (0.10) all OK on them.
+- **When to try it again on the Amiga** (decided with the user on 2026-10-23): not at every release, whose
+  archives `make dist` checks (`lha t`, the files and sizes against the zip's, the readme, the SHA-256) and whose
+  executables the scenarios test; only when the making of the archive changes (another image or version of
+  `lha`, other options in `make-dist.py`, a new kind of file such as the drawer icon), and once before the Aminet
+  upload, on the archive to be uploaded: LhA in a system that has none, extraction into `RAM:`, protection bits,
+  `Version` and `BENCH` from there, the files compared with the sources, the scenarios on the extracted
+  executables.
 - **Criterion**: the archive extracts on a clean system in WinUAE (LhA) and on the host (`lhasa`), and the WinUAE
   scenarios (0.10) pass on what it holds; at 1.0, the archive is on Aminet.
 

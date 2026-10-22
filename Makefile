@@ -8,9 +8,11 @@
 #   make host     host build of the programs listed in HOST_PROGS (out-host/), native compiler $(HOSTCC)
 #   make test     host build, unit tests of the portable core (tests/test_core.c), then scenarios against the
 #                 host build of amisqueeze driven by a fake server (tests/fake_server.py, python3)
-#   make dist     release archive of amisqueeze: out/amisqueeze-<version>.zip (both executables and their icons,
-#                 LICENSE, README.md, CHANGELOG.md, the user guide and its images), the version read from its $VER:
-#                 string, and its SHA-256 in out/amisqueeze-<version>.zip.sha256 (tools/make-dist.py, python3)
+#   make dist     release archives of amisqueeze: out/amisqueeze-<version>.zip and .lha (both executables and their
+#                 icons, LICENSE, README.md, CHANGELOG.md, the user guide and its images), the version read from
+#                 its $VER: string, their SHA-256 in out/amisqueeze-<version>.zip.sha256 and .lha.sha256, and the
+#                 Aminet readme out/amisqueeze-<version>.readme (tools/make-dist.py, python3, lha); DEV=1 accepts a
+#                 development version, to try them (never published)
 #   make cpucount the free CPU meter of the tests (tools/amiga/cpucount.c -> out/cpucount), a developer tool:
 #                 built on demand only, never by make all nor in the release archive
 #   make clean    removes every build directory
@@ -102,11 +104,13 @@ out-host/test_core: obj-host/tests/test_core.o obj-host/tests/stub_platform.o \
 	$(HOSTCC) $(HOST_LDFLAGS) -o $@ $^
 
 # tools/check-version.py: the version number agrees everywhere (make dist checks it again through make-dist.py,
-# with --release: no -dev version, the CHANGELOG section and its date); tests/check-saves.s: the assembly safeguard
-# must name each _bad_ function there, and no _good_ one
+# with --release: no -dev version, the CHANGELOG section and its date); make-dist.py --check-readme: the Aminet
+# readme made from dist/amisqueeze.readme follows Aminet's rules (make dist checks it again); tests/check-saves.s:
+# the assembly safeguard must name each _bad_ function there, and no _good_ one
 SAVES_BAD := _bad_dbra _bad_plain _bad_postinc _bad_predec _bad_tst_postinc
 test: host out-host/test_core
 	python3 tools/check-version.py
+	python3 tools/make-dist.py --check-readme amisqueeze
 	python3 tools/check-saves.py tests/check-saves.s | sed -n 's/.* error: \([a-z_]*\) modifies.*/\1/p' | sort | \
 	    tr '\n' ' ' | grep -qx '$(SAVES_BAD) ' && echo "check-saves: self-test passed" || \
 	    { echo "check-saves: self-test failed, expected: $(SAVES_BAD)"; python3 tools/check-saves.py tests/check-saves.s; exit 1; }
@@ -114,7 +118,7 @@ test: host out-host/test_core
 	python3 tests/fake_server.py out-host/amisqueeze
 
 dist: out/amisqueeze out/amisqueeze.fpu out/amisqueeze.info out/amisqueeze.fpu.info
-	python3 tools/make-dist.py amisqueeze
+	python3 tools/make-dist.py $(if $(DEV),--dev) amisqueeze
 
 # Developer tools that run on the Amiga (tools/amiga/), plain 68000 code
 cpucount: out/cpucount

@@ -1,0 +1,42 @@
+Short:        Squeezebox network music player (AHI)
+Uploader:     shadow38
+Author:       shadow38
+Type:         mus/play
+Version:      @VERSION@
+Architecture: m68k-amigaos >= 3.0.0
+Requires:     68020+, a TCP/IP stack, driver/audio/m68k-amigaos-ahiusr.lha
+Distribution: Aminet
+
+amisqueeze turns a classic Amiga into a network music player: a Squeezebox
+player for the music servers that speak slimproto, Lyrion Music Server (LMS)
+and Music Assistant. The server, its web page or its phone apps see and drive
+the Amiga like any other player in the house: play, pause, seek, next track,
+volume.
+
+The music comes over the network as an HTTP stream and plays through AHI
+(Paula, or a sound card). The server sends raw PCM, or amisqueeze decodes FLAC
+itself on a fast Amiga, and MP3 too with an FPU.
+
+Two executables of the same program:
+
+  amisqueeze      any Amiga with a 68020 or better
+  amisqueeze.fpu  an Amiga with an FPU (68881/68882, 68040/68060, PiStorm with
+                  Emu68): the same, and MP3 decoded on the Amiga
+
+Both run from the Shell or from the Workbench (options in the icon's tool
+types), as a commodity.
+
+What it needs:
+
+  - AmigaOS 3.x and a 68020 or better; about 1.1 MB of free memory;
+  - a TCP/IP stack providing bsdsocket.library (Roadshow, AmiTCP...);
+  - AHI (driver/audio/m68k-amigaos-ahiusr.lha and the driver of your sound
+    output, driver/audio/m68k-amigaos-ahidrv.lha for Paula);
+  - a music server on the network: Lyrion Music Server or Music Assistant.
+
+user-guide.md, in the archive, tells how to set up the server, install and
+run amisqueeze, and what its options and messages mean; CHANGELOG.md lists
+the changes of each version.
+
+Free software, MIT licence. Source code, issues and releases:
+https://github.com/shadow38/amiga-network-music

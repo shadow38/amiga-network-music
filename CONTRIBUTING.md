@@ -81,7 +81,8 @@ tools/make-test-audio.sh makes the test sounds (tones, sides, sweep, gapless MP3
 tools/winuae/         test scenarios run in WinUAE from the host (run-scenarios.py runs them all; serial shell
                       and LMS CLI clients)
 tools/amiga/cpucount.c free CPU meter run on the Amiga for the load measures (make cpucount, not released)
-tools/make-dist.py    builds the release archive (make dist)
+tools/make-dist.py    builds the release archives and the Aminet readme (make dist)
+dist/amisqueeze.readme the Aminet readme, its version filled in by make dist
 tools/check-version.py checks that the version number agrees everywhere (make test, make dist)
 tools/bin2c.py        turns a file into a C array (the built-in FLAC and MP3 samples of the speed measurement)
 tools/make-icon.py    draws the Workbench icons (out/<prog>.info, classic AmigaOS format) built with the programs
@@ -117,12 +118,20 @@ wsl --cd $PWD --exec sh tools/amiga-make.sh
 
 Run `make sdk` (task **Amiga: sync headers (.sdk)**) after installing or updating the toolchain, for IntelliSense.
 
-`make dist` (`sh tools/amiga-make.sh dist`) builds the release archive `out/amisqueeze-<version>.zip`: the Amiga
-executables and their icons, `LICENSE`, the README, the changelog and the user guide with its images
-(`docs/images/`), and next to it `out/amisqueeze-<version>.zip.sha256`, its SHA-256 in the format of `sha256sum`
-(checked with `sha256sum -c`); it ends with the line that gives the SHA-256 in the release notes. Each run makes a
-new zip (new dates, new SHA-256): attach the zip and the `.sha256` of the same run, and copy that run's line into
-the notes. Before a release, the "Unreleased" part of `CHANGELOG.md` gets the version number and the date.
+`make dist` (`sh tools/amiga-make.sh dist`) builds the release archives `out/amisqueeze-<version>.zip` and
+`out/amisqueeze-<version>.lha`, which hold the same files: the Amiga executables and their icons, `LICENSE`, the
+README, the changelog and the user guide with its images (`docs/images/`), in an `amisqueeze-<version>/`
+directory. Next to each archive, `<archive>.sha256` holds its SHA-256 in the format of `sha256sum` (checked with
+`sha256sum -c`), and `out/amisqueeze-<version>.readme` is the Aminet readme, `dist/amisqueeze.readme` with its
+version filled in. The `.lha` needs `lha` (LHa for UNIX, [jca02266/lha](https://github.com/jca02266/lha)), which
+the image `amigadev/crosstools` has; it is made with method `-lh5-` and header level 1, what LhA 2.15 writes on
+the Amiga, then tested (`lha t`) and its files and sizes compared with the zip's. The readme is checked against
+Aminet's rules (the fields, `Short:` of 40 characters at most, lines of 78 at most, ASCII, LF; `make test` checks
+it too). `make dist` ends with the lines that give the SHA-256 in the release notes. Each run makes new archives
+(new dates, new SHA-256): attach the archives, their `.sha256` and the readme of the same run, and copy that run's
+lines into the notes. Before a release, the "Unreleased" part of `CHANGELOG.md` gets the version number and the
+date. `make dist DEV=1` accepts a development version, to try the archives (`out/amisqueeze-<x.y>-dev.*`, never
+published).
 `make dist` refuses to build the archive unless `tools/check-version.py --release` accepts the version: not a
 `-dev` one, the same in both `$VER:` strings, `Firmware=`, the user guide and the README, with its section at the
 top of the changelog, dated as the `$VER:` strings, and nothing left under "Unreleased".

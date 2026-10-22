@@ -9,6 +9,8 @@ are previews, tested in WinUAE only, not yet on a real Amiga.
 
 ### Added
 
+- An LhA archive (`.lha`) next to the zip, with the same files, to unpack on the Amiga itself, and its SHA-256;
+  and the readme of an Aminet upload (`.readme`), ready for the upload to Aminet planned with 1.0.
 - WAV sent with its header, as Music Assistant's `wav` output codec does: amisqueeze reads the header and plays
   the samples in its format (Music Assistant announces 16 bits and sends 24), where it played loud noise. A WAV it
   cannot play (floating point, more than 2 channels) is skipped with a message.

@@ -125,10 +125,14 @@ Lyrion Music Server needs little for amisqueeze:
 
 ### Installation
 
-The archive comes from the project's [releases](https://github.com/shadow38/amiga-network-music/releases); each
-release gives its SHA-256 (in its notes and in a `.sha256` file), to check the archive before unpacking it, for
-instance with `sha256sum` on Linux or `Get-FileHash` in PowerShell. It holds two executables of the same program;
-take the one that suits the Amiga:
+The archive comes from the project's [releases](https://github.com/shadow38/amiga-network-music/releases), as a
+zip or as an LhA archive (`.lha`, since 0.7) holding the same files: the `.lha` unpacks on the Amiga itself with
+LhA, the zip on a PC. AmigaOS 3.2 has no LhA: Aminet's `util/arc/lha.run` unpacks itself into the current
+directory when run, giving `lha_68k`, `lha_68020` and `lha_68040`; copy the one for your CPU to `C:LhA`, then
+`LhA x amisqueeze-<version>.lha RAM:` unpacks amisqueeze into `RAM:`. Each release gives the
+SHA-256 of both (in its notes and in `.sha256` files), to check an archive before unpacking it, for instance with
+`sha256sum` on Linux or `Get-FileHash` in PowerShell. It holds two executables of the same program; take the one
+that suits the Amiga:
 
 | Executable | For | Decodes itself |
 |---|---|---|
