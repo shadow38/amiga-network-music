@@ -66,8 +66,8 @@ tests use:
 - A "Filesave" mode on a unit plays nothing (it is not real time): the bytes amisqueeze plays are checked with
   its `OUTPUT` option instead.
 - The AHI preferences are read from `ENV:Sys/ahi.prefs`: a test can change a unit for the session by writing that
-  file (lost at the next start, `ENV:` being copied from `ENVARC:`), then `Avail FLUSH` so that `ahi.device`
-  reads it again. With `VERBOSE`, amisqueeze prints the mode and frequency it reads there.
+  file (lost at the next start, `ENV:` being copied from `ENVARC:`), then `Avail FLUSH` (as the tests of
+  2026-10-22 did). With `VERBOSE`, amisqueeze prints the mode and frequency it reads there.
 
 ## Driving the Amiga from the host
 
@@ -140,8 +140,8 @@ itself). With LMS, the CLI on TCP port 9090, one command per line:
 Stop the player and clear its playlist before starting amisqueeze: LMS resumes a playback left running by an
 interrupted test.
 
-**WinUAE's clock falls behind real time** (seen on the slow profile: about 28 s lost during a two-minute run, in
-jumps, seemingly at the stream restarts). LMS adds to the player's last elapsed time the delay since that status
+**WinUAE's clock falls behind real time** (seen on the slow profile: about 28 s lost during a two-minute run;
+where exactly is not known). LMS adds to the player's last elapsed time the delay since that status
 message, measured with the player's clock, and follows a clock that falls behind only after about 50 messages.
 So after a seek or a new start, LMS's absolute time is wrong for about 50 s (for instance the track's length 3 s
 after a seek near its end), while intervals stay right. Compare intervals in WinUAE; judge absolute times on a
@@ -160,8 +160,8 @@ Such a counter is not in the repository yet. The results so far: step 1.4c and 1
 ## Test sounds
 
 `sh tools/make-test-audio.sh [DIR]` makes them (default `out/test-audio`), with `sox`, `flac`, `lame` and
-`python3`; put them in the server's music folder and rescan. All are at half of full scale. Bring your own music
-for the rest: the test sounds check the player, not the listening pleasure.
+`python3`; put them in the server's music folder and rescan. The tones are at half of full scale. Bring your own
+music for the rest: the test sounds check the player, not the listening pleasure.
 
 | File | What it is | What to check |
 |---|---|---|

@@ -156,8 +156,9 @@ step 0.2 (without `-r`, with `trim` for seeking).
   fail: rerun before suspecting the code, and say so.
 - **VS Code**: open each repository on its own (task names are the same everywhere, shortcuts can target them by
   name); extensions `prb28.amiga-assembly`, `ms-vscode.cpptools` and `spencerwmiles.vscode-task-buttons`.
-- **WinUAE** 6.0; Kickstart ROMs are not versioned (licensed). No test configuration in the repository yet (plan
-  steps 0.4 to 0.7).
+- **WinUAE** 6.0; Kickstart ROMs are not versioned (licensed). Test machine: the template
+  `winuae/amisqueeze-test.uae` and `docs/development/testing.md` (profiles, AHI units, serial shell, amiagent,
+  server-side measures, CPU load, test sounds from `tools/make-test-audio.sh`; since 2026-10-22).
 
 ## Pitfalls
 
