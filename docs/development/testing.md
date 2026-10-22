@@ -25,14 +25,34 @@ put your paths in place of its `<...>`, and start it with `winuae64.exe -f <your
 |---|---|
 | A1200, AGA, 68020, 2 MB chip, 8 MB fast | the classic target; Zorro II fast RAM (a 16-bit bus, slower than an accelerator's own) |
 | `bsdsocket_emu=true` | WinUAE provides `bsdsocket.library` through the host's network: no TCP/IP stack in the Amiga, and a server on the host is `127.0.0.1` |
-| `filesystem2=rw,NM:...:<repository>/out` | the programs under test as `NM:`, as soon as `make` has written them |
-| `filesystem2=ro,WT:...` | your test scripts as `WT:` (optional) |
+| `filesystem2=rw,NM:...:<repository>/out` | the programs under test as `NM:` (see [the two volumes](#the-two-volumes)) |
+| `filesystem2=ro,WT:...` | your Amiga-side test tools as `WT:` (optional) |
 | `sound_stereo_separation=10` | full separation (the default 7 mixes the sides: left would be heard on the right) |
 | `toccata=true` | an emulated 16-bit sound card, the reference for Paula |
 | `win32.serial_port=TCP://127.0.0.1:1234` | the [serial shell](#serial-shell); the `win32.` prefix is required (otherwise "unknown config entry" in `winuaebootlog.txt`) |
 | `win32.iconified_pause=false`, `win32.inactive_pause=false` | long unattended runs: a paused emulation once stopped an hour of playback after 5 minutes |
 
 **Never start two configurations on the same hard file at once**: it would be corrupted.
+
+### The two volumes
+
+Host folders mounted as Amiga volumes, so that nothing is copied onto the system hard file:
+
+- **`NM:`** ("NetMusic", read-write): the repository's `out/` folder. What `make` writes there runs at once
+  (`NM:amisqueeze SERVER=127.0.0.1 VERBOSE`), and what amisqueeze writes there is read on the host as it runs: its
+  `LOG` and `OUTPUT` files (`LOG=NM:amisqueeze.log`), or a redirected output (`Run NM:amisqueeze >NM:out.log ...`).
+- **`WT:`** ("WinUAE Test", read-only): your own Amiga-side tools, none of which is in the repository. For
+  instance:
+  - a CPU counter for the [load measures](#cpu-load), started with `Run WT:<counter> >NM:cpu.log 10`;
+  - AmigaDOS scripts run with `Execute WT:<script>`: a test sequence (versions, `Avail`, a playback with its log),
+    the installation of AHI, MUI or the serial shell from their archives, a test tone through AHI;
+  - amiagent and its start-up script;
+  - the test machine's sign: `S:User-Startup` starts test-only programs (amiagent) only when `WT:` is mounted, so
+    that the same hard file started from another configuration runs none of them (see
+    [amiagent](#amiagent-optional)).
+
+  Read-only, so that a test cannot change its own tools. amisqueeze itself needs only `NM:`: without `WT:`, test
+  from a Shell.
 
 ## Profiles
 
