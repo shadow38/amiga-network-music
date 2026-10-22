@@ -1,0 +1,60 @@
+; amisqueeze-test.uae - WinUAE 6.0 test machine of amiga-network-music (docs/development/testing.md)
+;
+; A template: copy it outside the repository and replace each <...> with a path of your machine (the ROM, the
+; system hard file, the repository's out/ folder, a folder for your test scripts). Start it with
+;   winuae64.exe -f <your copy>.uae
+; and choose a profile with -s overrides (testing.md, "Profiles"), for example the slow one:
+;   winuae64.exe -f <your copy>.uae -s cpu_compatible=true -s cpu_speed=real -s cpu_multiplier=4
+; Never start two configurations on the same hard file at the same time: it would be corrupted.
+config_description=amiga-network-music test machine: A1200, 68020, AmigaOS 3.x on a hard file, WinUAE networking
+use_gui=no
+
+; Kickstart 3.1 or later (3.2 tested); ROMs are licensed, not provided
+kickstart_rom_file=<path to the Kickstart ROM>
+
+chipset_compatible=A1200
+chipset=aga
+rtc=MSM6242B
+
+; Default profile: a 68020 as fast as the host allows (the other profiles change these lines with -s)
+cpu_model=68020
+cpu_24bit_addressing=true
+cpu_compatible=false
+cpu_speed=max
+cachesize=0
+
+; 2 MB chip RAM, 8 MB fast RAM (Zorro II: a 16-bit bus, slower than an accelerator's own memory)
+chipmem_size=4
+fastmem_size=8
+
+nr_floppies=1
+floppy_speed=0
+
+; The system: AmigaOS 3.x installed on a hard file, with AHI 6 and MUI (testing.md, "What you need")
+hardfile2=rw,DH0:<path to the system hard file>.hdf,0,0,0,512,0,,ide0
+
+; The programs under test, as NM: (the repository's out/ folder, written by make)
+filesystem2=rw,NM:NetMusic:<path to the repository's out folder>,-128
+; Your test scripts, as WT:, read-only (optional)
+filesystem2=ro,WT:WinUAETest:<path to a folder of test scripts>,-128
+
+; Networking: WinUAE provides bsdsocket.library through the host's network stack (no TCP/IP stack to install in
+; the Amiga; a server on the host is 127.0.0.1)
+bsdsocket_emu=true
+
+; Sound: Paula with full stereo separation (10 = 100 %; the default 7 mixes the sides), and an emulated Toccata
+; card (Zorro II, AHI driver toccata.audio) as the 16-bit reference
+sound_output=exact
+sound_stereo_separation=10
+toccata=true
+
+; The Amiga's serial port on a local TCP socket, for a Shell driven from the host (testing.md, "Serial shell").
+; The win32. prefix is required: without it WinUAE ignores the line ("unknown config entry" in winuaebootlog.txt)
+win32.serial_port=TCP://127.0.0.1:1234
+
+; Long unattended runs: never pause the emulation when its window is minimised or inactive
+win32.iconified_pause=false
+win32.inactive_pause=false
+
+; Clipboard shared with the host (optional)
+clipboard_sharing=true

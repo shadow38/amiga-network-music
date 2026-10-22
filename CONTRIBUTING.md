@@ -68,13 +68,16 @@ obj-host/, out-host/  host objects and executables (generated)
                       (skills/review-method), four review agents (agents/), the entry point
                       (skills/release-review, /release-review <previous tag> [full])
 docs/user-guide.md    user guide
-docs/development/     development plan (roadmap, steps, design decisions); architecture.md: how amisqueeze works
+docs/development/     development plan (roadmap, steps, design decisions); architecture.md: how amisqueeze works;
+                      testing.md: testing in WinUAE
+winuae/               WinUAE test machine (a template: amisqueeze-test.uae)
 CONTRIBUTING.md       this page
 CHANGELOG.md          what changed in each release (updated with each one)
 Makefile              build (m68k-amigaos-gcc must be in the PATH; HOSTCC for the host build)
 tools/amiga-make.sh   runs make with whichever toolchain is available (see "Building")
 tools/check-saves.py  checks the generated assembly (safeguard against a gcc bug, see "Building")
 tools/pcm-compare.py  compares the PCM written by amisqueeze (OUTPUT option) with a reference, byte by byte
+tools/make-test-audio.sh makes the test sounds (tones, sides, sweep, gapless MP3s, counter pattern)
 tools/make-dist.py    builds the release archive (make dist)
 tools/check-version.py checks that the version number agrees everywhere (make test, make dist)
 tools/bin2c.py        turns a file into a C array (the built-in FLAC and MP3 samples of the speed measurement)
@@ -168,8 +171,10 @@ badge at the top of the README shows the result of the latest run. The Amiga bui
   is reachable from the Amiga (`127.0.0.1` is the host's loopback).
 - Mount `out/` as an Amiga volume (`filesystem2=rw,<DEVICE>:<Volume>:<path to out>,-128`), then run the program
   from a Shell, e.g. `NM:amisqueeze SERVER=127.0.0.1 VERBOSE` with the volume mounted as `NM:`.
-- Dedicated test configurations (a fast machine like a PiStorm, a slow 68020, AHI, automated runs) are planned:
-  steps 0.4 to 0.7 of the [tooling plan](docs/development/phase-0-tooling.md).
+- The test machine (a configuration template in `winuae/`), its profiles (a slow 68020, a fast one like a
+  PiStorm, with or without FPU), the AHI units, driving the Amiga from the host (serial shell, amiagent), the
+  server side, the CPU load and the test sounds (`tools/make-test-audio.sh`):
+  [docs/development/testing.md](docs/development/testing.md).
 
 ### Checks the host tests cannot make
 

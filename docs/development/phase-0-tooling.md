@@ -63,6 +63,10 @@ Back to the [plan](README.md).
   `amisqueeze.fpu`, a 68882 (`fpu_model=68882`) and the JIT's FPU compiler (`compfpu=true`; without it FPU
   instructions are interpreted: MP3 at 1.8x real time instead of 74x). Speeds measured there are not those of a
   real machine (1.9). No versioned template yet.
+- **Template, versioned** (2026-10-22, decided with the user): `winuae/amisqueeze-test.uae`, with placeholders
+  for the machine-specific paths, and the profiles as command-line overrides, described in
+  [testing.md](testing.md) with the rest of the test setup. Still open: a 68040 profile (its CPU library in the
+  test system).
 - **Criterion**: the configuration boots, `bsdsocket.library` is available, amisqueeze connects to the server.
 
 ## 0.5 AHI in the emulated Amiga ✅ (2026-10-18)
@@ -135,6 +139,9 @@ phase 1; the figures below are those of 0.6.
 - **Done since, local setup only** (2026-10-19): a script that restarts WinUAE in a given profile and waits for the
   shell; scripted scenarios for the steps (commands through LMS's CLI, robustness through a TCP relay, `OUTPUT`
   comparisons, listening runs), all outside the repository.
+- **Documented** (2026-10-22, [testing.md](testing.md)): the serial shell and the rules its client must follow,
+  amiagent (an optional server in the Amiga, used through its MCP server since 2026-10-19), the measures on the
+  server and the CPU load; the test sounds made by `tools/make-test-audio.sh`.
 - **To do**: a generic version of the host scripts in `tools/` (the serial shell, the restart, a scenario), so
   that the criterion holds from the repository alone.
 - **Criterion**: one command on the host starts WinUAE, waits, runs a scenario and prints its result.
