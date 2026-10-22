@@ -39,6 +39,9 @@ Back to the [plan](README.md).
   amisqueeze 0.6 (2026-10-21): the same, and the zip's SHA-256 in the notes and in a `.sha256` file, computed by
   hand; since 0.7 (2026-10-21) `make dist` writes that file (format of `sha256sum`, checked with `sha256sum -c`)
   and prints the line for the notes: the zip, its `.sha256` and the notes come from the same run.
+- **Scenarios in WinUAE** (decided with the user on 2026-10-23, from step 0.10): before each tag, besides the
+  review (3.5), `python3 tools/winuae/run-scenarios.py` all OK on the build to be tagged, in the JIT profile with
+  a 68882 and `compfpu` ([winuae-scenarios.md](winuae-scenarios.md)); first for 0.7.
 - **Continuous integration** (decided 2026-10-19): GitHub Actions, in two parts. First, done before 0.3: on each
   push, `make test` (host build, unit tests, fake server) on GitHub's Linux machine; the badge or the run's page
   tells whether a commit passes. Then, before 1.0: the Amiga build (the `amigadev/crosstools` image, the Docker mode of

@@ -78,7 +78,8 @@ tools/amiga-make.sh   runs make with whichever toolchain is available (see "Buil
 tools/check-saves.py  checks the generated assembly (safeguard against a gcc bug, see "Building")
 tools/pcm-compare.py  compares the PCM written by amisqueeze (OUTPUT option) with a reference, byte by byte
 tools/make-test-audio.sh makes the test sounds (tones, sides, sweep, gapless MP3s, counter pattern)
-tools/winuae/         test scenarios run in WinUAE from the host (serial shell and LMS CLI clients, play-tone.py)
+tools/winuae/         test scenarios run in WinUAE from the host (run-scenarios.py runs them all; serial shell
+                      and LMS CLI clients)
 tools/amiga/cpucount.c free CPU meter run on the Amiga for the load measures (make cpucount, not released)
 tools/make-dist.py    builds the release archive (make dist)
 tools/check-version.py checks that the version number agrees everywhere (make test, make dist)
@@ -176,8 +177,9 @@ badge at the top of the README shows the result of the latest run. The Amiga bui
 - The test machine (a configuration template in `winuae/`), its profiles (a slow 68020, a fast one like a
   PiStorm, with or without FPU), the AHI units, driving the Amiga from the host (serial shell, amiagent), the
   server side, the CPU load and the test sounds (`tools/make-test-audio.sh`):
-  [docs/development/testing.md](docs/development/testing.md); a scenario run from the host, which prints OK or
-  the reason of a failure: [docs/development/winuae-scenarios.md](docs/development/winuae-scenarios.md).
+  [docs/development/testing.md](docs/development/testing.md); the scenarios run from the host before a release
+  (`python3 tools/winuae/run-scenarios.py`), which print OK or the reason of a failure:
+  [docs/development/winuae-scenarios.md](docs/development/winuae-scenarios.md).
 
 ### Checks the host tests cannot make
 

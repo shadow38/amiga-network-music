@@ -21,7 +21,9 @@ line for the notes: zip, file and notes from the same run). **Before every relea
 2026-10-20; two levels decided the same day, for cost): a light review of the range since the previous tag,
 `/release-review <previous tag>` (three agents, limited to the diff and what it reaches); a full audit,
 `/release-review <previous tag> full` (four agents, the whole repository), only at milestones: before 1.0, or after
-a big change of architecture (Music Assistant, splitting `stream.c`). Findings scored 75 or more are fixed, or
+a big change of architecture (Music Assistant, splitting `stream.c`). Also before every release tag (step 0.10,
+decided 2026-10-23): `python3 tools/winuae/run-scenarios.py` all OK in WinUAE (JIT + 68882 with `compfpu`), on the
+build to be tagged (`docs/development/winuae-scenarios.md`). Findings scored 75 or more are fixed, or
 accepted by the user with the reason in the report (an urgent fix may ship after a review of its own diff); the
 review tooling changes only when a review misses a real defect, or when the user decides it. Remarks that come
 after a version's review (outside readings, new ideas) go to the next version by default; only a real defect, or

@@ -203,6 +203,8 @@ music for the rest: the test sounds check the player, not the listening pleasure
 
 ## Automated scenarios
 
-[winuae-scenarios.md](winuae-scenarios.md): `tools/winuae/` runs a test from the host (starting WinUAE if needed)
-and prints `OK` or the reason of the failure, with an exit code; one scenario so far, a test tone played through
-AHI with LMS. Its serial shell client also runs one command: `python3 tools/winuae/amiga_shell.py "Status"`.
+[winuae-scenarios.md](winuae-scenarios.md): `tools/winuae/` runs tests from the host (starting WinUAE if needed)
+and prints `OK` or the reason of the failure, with an exit code: a test tone, LMS's commands through AHI and
+`OUTPUT` comparisons (PCM, FLAC and MP3 decoded on the Amiga), all of them with
+`python3 tools/winuae/run-scenarios.py`, in the JIT profile with a 68882. Its serial shell client also runs one
+command: `python3 tools/winuae/amiga_shell.py "Status"`.

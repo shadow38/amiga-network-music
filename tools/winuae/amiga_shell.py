@@ -20,6 +20,9 @@ import time
 
 # The prompt: "3.System:> " (process number, current directory)
 PROMPT = re.compile(r"(^|[\r\n])\d+\.[^\r\n]*> ?$")
+# What ends Run's output: "[CLI n]", then the next prompt, which the program started in the background can follow
+# on the same line with its own output (the prompt is then not at the end)
+RUN_DONE = re.compile(r"\[CLI \d+\][\s\S]*(^|[\r\n])\d+\.[^\r\n]*?> ")
 # The console's control sequences (CSI = 0x9B or ESC [, e.g. CSI 20h around the prompt) and lone control
 # characters (0x0F before the prompt); tab, CR and LF are kept
 CSI = re.compile(r"(\x9b|\x1b\[)[0-9;?]*[ -/]*[@-~]")
@@ -86,10 +89,10 @@ class AmigaShell:
         self.send("\r")
         return self.read_until(PROMPT, seconds)[1]
 
-    def run(self, command, timeout=15):
+    def run(self, command, timeout=15, until=PROMPT):
         """Runs one command line; returns its output lines. The command is typed without Return and its echo
         compared first: if characters were lost, the line is erased (backspaces) and typed again, so a command
-        received wrong is never run."""
+        received wrong is never run. until: what ends the output (the next prompt; RUN_DONE for Run)."""
         if not self.prompt():
             raise ShellError("no prompt from the serial shell")
         self.log(f"> {command}")
@@ -108,7 +111,7 @@ class AmigaShell:
             self.send("\b" * (len(command) + 2))
             raise ShellError(f"command not received right after 4 attempts: {command}")
         self.send("\r")
-        text, done = self.read_until(PROMPT, timeout)
+        text, done = self.read_until(until, timeout)
         lines = [line for line in re.split(r"\r\n|\n|\r", text)
                  if line.strip() and line.strip() != command and not PROMPT.search(line)]
         self.log("\n".join(lines))

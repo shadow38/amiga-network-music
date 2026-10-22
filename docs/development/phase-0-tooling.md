@@ -179,7 +179,7 @@ phase 1; the figures below are those of 0.6.
   start a library track: playback was started from the web UI. amisqueeze was tried instead of squeezelite (1.7b).
   Not done: an API token (needed by 2.8).
 
-## 0.10 Regression scenarios in WinUAE ⬜
+## 0.10 Regression scenarios in WinUAE 🔶 (LMS part done 2026-10-23; Music Assistant before 1.0)
 
 - **Goal**: before a release, replay in WinUAE what `make test` cannot check: the Amiga platform layer (AHI,
   bsdsocket, `Break`), the real servers (LMS, Music Assistant) and the 68k build, so that a release is validated
@@ -193,3 +193,29 @@ phase 1; the figures below are those of 0.6.
   Not in it: the measures (CPU load, long runs, the slow relay) and the old ROMs, which stay manual.
 - **Criterion**: one command runs the scenarios, each in less than 2 minutes, and prints OK or the reason of each
   failure.
+- **Design** (agreed with the user on 2026-10-22): one profile for all, the JIT and a 68882 with `compfpu`
+  (decoding on the Amiga at least twice real time, `amisqueeze.fpu`), checked by the runner with `BENCH`, which
+  then warms AHI up once; what the scenarios share in `scenario.py` (`play-tone.py` moved onto it); every scenario
+  checks that the stream came in the format it tests (`stream: format` in the log) and that the fast memory and
+  its largest block are given back (`Avail FLUSH` before and after); LMS's commands run twice, FLAC decoded by the
+  server (raw PCM, the A1200's path) and on the Amiga (where a seek comes without the FLAC header), the pause and
+  resume at volume 50 (meant to catch the AHI defect of step 1.6, set off by LMS's fade before a pause, in the
+  memory check: see Done, it does not); the counter pattern made again
+  at each run, no reference file to keep. **MP3 decoded on the Amiga is not compared byte by byte**, contrary to
+  the content proposed above (decided with the user): its floating point gives a few samples off by one from any
+  other decoder, so it is checked against the tones it holds (exact length, the sine fitted on each side, at least
+  60 dB of signal-to-noise ratio).
+- **Done** (2026-10-23): `tools/winuae/run-scenarios.py` and six scenarios, described in
+  [winuae-scenarios.md](winuae-scenarios.md): `play-tone`, `commands-pcm`, `commands-flac`, `output-pcm`,
+  `output-flac`, `output-mp3`; all OK in about 4 minutes from a fresh boot with LMS 9.1.1 (each from 18 to 50 s),
+  failures checked (a track missing: exit code 2; the memory check: 1, amisqueeze stopped all the same; the MP3
+  case run with `amisqueeze`, which LMS feeds raw PCM: 1, "stream formats p p, expected only m"; the slow
+  profile: the runner stops with exit code 2 and the profile to use). Found on the way: `Run`'s prompt can be
+  followed on the same line by the output of the program started, which made the serial shell client wait 30 s
+  (`RUN_DONE`); the first AHI run after a boot keeps about 12 KB (AHI's, hence the warm-up), and `Run` itself
+  sometimes 1,064 bytes (under the 16 KB of tolerance). The measured values: MP3 at 72 and 77 dB, 0.475 of full
+  scale. A mutation test (decided with the user on 2026-10-23): `ahir_Volume` made to follow the volume again, as
+  before the fix of step 1.6; `commands-pcm` still passed, memory unchanged to the byte although the resume came
+  at 0.0 %: the defect does not show in this profile and this short run, so the scenarios do not guard against
+  it (the constant full volume in `amiga.c` does); code put back, `git diff src/` empty, checked again. Left: the
+  Music Assistant scenario, before 1.0.
