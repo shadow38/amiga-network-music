@@ -22,6 +22,9 @@ are previews, tested in WinUAE only, not yet on a real Amiga.
 
 ### Fixed
 
+- With `NOAUDIO`, amisqueeze took about 40 % of a 68020 at 28 MHz (since 0.2): it read the stream a few hundred
+  bytes at a time, hundreds of times a second. It now reads once 8 KB of its buffer are free: about 5 % (measured
+  in WinUAE). Playback through AHI already read in large blocks and is unchanged.
 - With LMS, removing, moving or replacing the next track of the playlist (or reshuffling it) while a track plays
   no longer cuts the playing track: amisqueeze stopped it, losing up to its last seconds still in the buffer
   (about 6 s of PCM, 9 s of FLAC). Only the next track is dropped now, and the new next one follows without a

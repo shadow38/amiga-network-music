@@ -466,6 +466,30 @@ static void test_stream_sequence(void)
     teardown(&p);
 }
 
+/* While the body streams, the socket is read only once 8 KB of the buffer are free: an output that frees a few
+ * bytes at a time does not make a read each time */
+static void test_read_min_space(void)
+{
+    struct player p;
+    uint8_t *w;
+
+    setup(&p, "Amiga");
+    CHECK(slim_connect(&p, 0));
+    strm_pcm(&p, '1', 1);
+    stream_io(&p, PLAT_WRITE);
+    stub_feed_stream(http_ok, (int)strlen(http_ok));
+    drain_stream(&p);
+    CHECK(p.stream.state == STREAM_BODY && stream_events(&p) == PLAT_READ);
+    while (ring_space(&p.ring) > 0)
+        ring_commit(&p.ring, ring_write_space(&p.ring, &w));   /* the buffer full, as the server keeps it */
+    CHECK(stream_events(&p) == 0);
+    ring_consume(&p.ring, 8 * 1024 - 1);
+    CHECK(stream_events(&p) == 0);                      /* 1 byte short of 8 KB free */
+    ring_consume(&p.ring, 1);
+    CHECK(stream_events(&p) == PLAT_READ);
+    teardown(&p);
+}
+
 /* The next track is appended while the previous one plays: STMs again at the boundary */
 static void test_gapless(void)
 {
@@ -2470,6 +2494,7 @@ int main(void)
     test_fragmented();
     test_bad_length();
     test_stream_sequence();
+    test_read_min_space();
     test_gapless();
     test_gapless_format();
     test_pause();

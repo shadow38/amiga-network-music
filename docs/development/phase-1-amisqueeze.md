@@ -178,7 +178,8 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   - CPU load on the slow profile (68020 without FPU, WinUAE approximate mode at 4 x 7.09 = 28.4 MHz, as a
     typical A1200 accelerator; free CPU counted by a priority -128 loop, load = 1 - count while playing / count
     when idle, 10 s windows): through AHI and Paula, **66-68 % in 14 bits** (unit 0) and **61-65 % in 8 bits** (unit 2), for
-    44.1 and 48 kHz streams, no `STMo`, LMS time exact; with `NOAUDIO`, 2-5 %. So nearly all of it is the sound
+    44.1 and 48 kHz streams, no `STMo`, LMS time exact; with `NOAUDIO`, 2-5 % (true until step 1.8a, see 1.9,
+    2026-10-22). So nearly all of it is the sound
     output: AHI resampling and mixing for Paula (27,429 Hz), plus the byte swap into the AHI blocks (not measured
     apart; estimated at a few percent). Limits of the figure: WinUAE's networking runs TCP/IP on the host (a real
     stack, Roadshow, adds its own load) and its Zorro II fast RAM is not the accelerator's own RAM. About a third
@@ -617,6 +618,48 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   log, then the `STMo` lines and the clean stop; the logs on a disk, not in `RAM:`. The rest is by hand. If the
   load does not fit: in 0.8, a lower rate asked of the server (`MaxSampleRate` in `HELO`, if LMS resamples for
   it: to check), or the direct Paula output (1.11).
+- **Load of the lighter AHI settings, measured in WinUAE** (2026-10-22, 0.7-dev at `60a14fa`), to know which one
+  to try first in step 4: slow profile (68020, about 28 MHz, no FPU, as the ACA1221lc), LMS 9.1.1, a 156 s song
+  resampled to a 44.1 kHz 16-bit FLAC, sent as raw PCM by the server (`FLAC=AUTO` leaves FLAC to it on this
+  profile: `stream: format p, size 1, rate 3`), `amisqueeze` with `SWAP` and `VERBOSE`, LMS volume 100. Method of
+  1.4c: free CPU counted by `cpucount` at priority -128, load = 1 - count while playing / count when idle, three
+  10 s windows per setting, the first 15 s after `play`; idle measured before and after the series (8,258 to
+  8,334, mean 8,288). Mode and frequency as read from `ENV:Sys/ahi.prefs` and printed by `VERBOSE`
+  (`output: AHI unit ...`); the 22 kHz rows coming out lower confirm AHI used them. No `STMo` in any run.
+
+  | Setting (Paula, stereo++) | Counts (10 s) | Load per window | Load |
+  |---|---|---|---|
+  | 14 bits, 27,429 Hz (reference) | 2867, 2870, 2891 | 65.4, 65.4, 65.1 % | 65 % |
+  | 14 bits, 22,050 Hz | 3402, 3398, 3400 | 59.0, 59.0, 59.0 % | 59 % |
+  | 8 bits, 27,429 Hz | 3275, 3278, 3271 | 60.5, 60.5, 60.5 % | 60.5 % |
+  | 8 bits, 22,050 Hz | 3732, 3719, 3732 | 55.0, 55.1, 55.0 % | 55 % |
+  | `NOAUDIO` (two runs) | 5118, 4860, 4797; 4906, 5361, 4662 | 35.3 to 43.8 % | 40 % |
+  | `NOAUDIO`, with the fix below (idle 8,309 that session) | 7937, 7925, 7917 | 4.5, 4.6, 4.7 % | 4.6 % |
+
+  Each lighter setting saves about 5 to 6 points of CPU, both together about 10: none changes the picture (more
+  than half of the CPU still goes to playback). The windows repeat within 0.1 point, but the slow profile is
+  WinUAE's approximate mode, not cycle-exact (chip RAM writes, which grow with the bit depth and the rate, may
+  weigh differently on the real A1200): which of the two saves more is for the real machine to tell. The reference
+  matches 1.4c (66-68 %); `NOAUDIO` does not (2-5 % in 1.4c, 40 % now, its windows spread over several points).
+  Found the same day by bisection (`NOAUDIO`, two windows per build): 3.7 % at `b4a1459` (1.7a), 35 % at
+  `148ba47` (1.8a, the decoder stage: the virtual output now copies the PCM out of the ring instead of dropping it
+  in place), 31 % for the current code with that copy left out (so the copy is about 10 points, the rest not
+  located yet). The AHI path is not affected: `8ecb2cf` (1.4c) against `60a14fa` in the same session, unit 0,
+  three windows each: 66.6 % and 65.3 %. Throwaway counters in the main loop (turns, stream reads, bytes in, per
+  10 s) showed why: with `NOAUDIO`, about 47 turns and 38 reads of 4.7 KB a second at `b4a1459`, 470 to 875 turns
+  and as many reads of about 200 bytes from `148ba47` on; through AHI, 12 turns and 5.4 reads of 32 KB (a whole
+  block) before and after. The stream was read as soon as one byte of the ring was free, and the virtual output
+  frees a few hundred bytes at each turn, so the loop kept reading what it had just freed; each turn does more
+  since 1.8a (the copy, the decoder calls), and every turn reads the clock (`plat_now_ms()`, `ReadEClock` and a
+  64-bit division, already so before 1.8a): a counter build with one more such call per turn went up to 95 %, a
+  hint that it is costly, not a measure of it. Why 1.8a tipped the loop into this rhythm is not understood; the
+  cause common to both is removed instead. **Fixed** (2026-10-22, decided with the user for 0.7, so that `NOAUDIO` can
+  isolate the network's cost on the real machine): during the body, the stream is read only once 8 KB of the ring
+  are free (at most a quarter of it; `READ_MIN_SPACE` in `stream.c`, unit test `test_read_min_space`). Measured in
+  the same way: `NOAUDIO` 4.6 % (three windows), 18 turns and 9 reads of about 20 KB a second; AHI unit 0
+  65.3 %, its counters unchanged. Not counted, as in 1.4c: the real network (TCP/IP stack such as Roadshow, the
+  PCMCIA card whose bytes the CPU copies), which WinUAE's emulated `bsdsocket.library` runs on the host; and
+  WinUAE's fast RAM is not the accelerator's own.
 
 ## 1.10 Finishing touches 🔶 (versions 0.4 to 0.9: the parts of 0.4 and 0.5 done)
 

@@ -22,6 +22,11 @@
 #include "platform.h"
 #include "player.h"
 
+/* While the body streams, the socket is read only once this much of the buffer is free (at most a quarter of it):
+ * the virtual output frees a few hundred bytes at each turn of the loop, and reading them at once kept the loop
+ * awake (WinUAE, 68020 at 28 MHz: 700 to 900 reads of 200 bytes a second, 40 % of the CPU with NOAUDIO) */
+#define READ_MIN_SPACE (8UL * 1024UL)
+
 static void stop_decoder(struct player *p);
 
 int stream_init(struct player *p)
@@ -159,8 +164,11 @@ int stream_events(const struct player *p)
         return PLAT_WRITE;
     case STREAM_HEADERS:                /* body bytes may follow the headers in the same read */
         return ring_space(&p->ring) >= sizeof(s->headers) ? PLAT_READ : 0;
-    case STREAM_BODY:
-        return ring_space(&p->ring) > 0 ? PLAT_READ : 0;
+    case STREAM_BODY: {
+        uint32_t min = p->ring.size / 4 < READ_MIN_SPACE ? p->ring.size / 4 : READ_MIN_SPACE;
+
+        return ring_space(&p->ring) >= (min > 0 ? min : 1) ? PLAT_READ : 0;
+    }
     default:
         return 0;
     }
