@@ -143,7 +143,14 @@ phase 1; the figures below are those of 0.6.
   amiagent (an optional server in the Amiga, used through its MCP server since 2026-10-19), the measures on the
   server and the CPU load; the test sounds made by `tools/make-test-audio.sh`.
 - **To do**: a generic version of the host scripts in `tools/` (the serial shell, the restart, a scenario), so
-  that the criterion holds from the repository alone.
+  that the criterion holds from the repository alone. **Next** (agreed with the user on 2026-10-22, to design with
+  them before writing it): one minimal example in `tools/winuae/`, Python 3 with the standard library only (no
+  PowerShell, nothing of the developer's machine): a serial shell client following the rules of
+  [testing.md](testing.md), an LMS CLI client, and one scenario (start amisqueeze on an AHI unit, play
+  `tone-440.flac` from the [test sounds](testing.md#test-sounds), check the elapsed time on the server and
+  `output: end of playback` in the log, stop it cleanly), printing OK or the reason of the failure, with an exit
+  code. To decide then: its options, whether it starts WinUAE itself, what it checks. Other scenarios later, on
+  the same model, if they are needed.
 - **Criterion**: one command on the host starts WinUAE, waits, runs a scenario and prints its result.
 
 ## 0.8 Source-level debugging ⬜ (optional)
