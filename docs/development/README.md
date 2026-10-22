@@ -49,7 +49,7 @@ How to build and test: [CONTRIBUTING.md](../../CONTRIBUTING.md); testing in WinU
 | 0.4 WinUAE test configuration | 🔶 local profiles (slow 68020, fast JIT), no versioned template |
 | 0.5 AHI in the emulated Amiga (Paula, Toccata) | ✅ 2026-10-18 |
 | 0.6 Host-side tests (`make test`) | ✅ 2026-10-18 |
-| 0.7 Automated runs in WinUAE | 🔶 serial shell and scenarios, local only |
+| 0.7 Automated runs in WinUAE | 🔶 2026-10-22: `tools/winuae/`, one scenario (a test tone through AHI with LMS); to be confirmed by the user |
 | 0.8 Source-level debugging (optional) | ⬜ |
 | 1.1 amisqueeze: control connection | ✅ 2026-10-18 |
 | 1.1b amisqueeze: default options (`ENV:amisqueeze.prefs`) | ✅ 2026-10-18 |

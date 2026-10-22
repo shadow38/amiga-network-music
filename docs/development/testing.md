@@ -201,8 +201,8 @@ music for the rest: the test sounds check the player, not the listening pleasure
 | `gapless-1.mp3` to `gapless-3.mp3` | a 12 s glide from 220 to 880 Hz cut in three MP3s | in one playlist, a continuous glide: no click or gap at the two boundaries (gapless MP3) |
 | `test-pattern.flac` | the counter pattern of `tools/pcm-compare.py`, 20 s | not to listen to: the `OUTPUT` file compared byte by byte (`pcm-compare.py --counter`, see [CONTRIBUTING.md](../../CONTRIBUTING.md#checks-the-host-tests-cannot-make)) |
 
-## Not in the repository yet
+## Automated scenarios
 
-The host scripts that drive the tests (the serial shell client, restarting WinUAE in a profile, the scenarios of
-the plan's steps through LMS's CLI, a load measure around `cpucount`) exist only in a local setup: step 0.7 of
-[phase-0-tooling.md](phase-0-tooling.md) plans a generic version.
+[winuae-scenarios.md](winuae-scenarios.md): `tools/winuae/` runs a test from the host (starting WinUAE if needed)
+and prints `OK` or the reason of the failure, with an exit code; one scenario so far, a test tone played through
+AHI with LMS. Its serial shell client also runs one command: `python3 tools/winuae/amiga_shell.py "Status"`.

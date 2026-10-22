@@ -126,7 +126,7 @@ phase 1; the figures below are those of 0.6.
   Amiga build replayed the 1.1/1.1b cases in WinUAE with the same messages as before the split, and the host
   build connects to a real LMS 9.1.1 with the same MAC as the Amiga build.
 
-## 0.7 Logging and automated runs in WinUAE 🔶
+## 0.7 Logging and automated runs in WinUAE 🔶 (criterion met on 2026-10-22, to be confirmed by the user)
 
 - **Goal**: run a test in WinUAE and read its result from the host, without manual steps.
 - **Done (2026-10-18, local setup)**: a **serial shell**. WinUAE connects the Amiga's serial port to a local TCP
@@ -142,15 +142,16 @@ phase 1; the figures below are those of 0.6.
 - **Documented** (2026-10-22, [testing.md](testing.md)): the serial shell and the rules its client must follow,
   amiagent (an optional server in the Amiga, used through its MCP server since 2026-10-19), the measures on the
   server and the CPU load; the test sounds made by `tools/make-test-audio.sh`.
-- **To do**: a generic version of the host scripts in `tools/` (the serial shell, the restart, a scenario), so
-  that the criterion holds from the repository alone. **Next** (agreed with the user on 2026-10-22, to design with
-  them before writing it): one minimal example in `tools/winuae/`, Python 3 with the standard library only (no
-  PowerShell, nothing of the developer's machine): a serial shell client following the rules of
-  [testing.md](testing.md), an LMS CLI client, and one scenario (start amisqueeze on an AHI unit, play
-  `tone-440.flac` from the [test sounds](testing.md#test-sounds), check the elapsed time on the server and
-  `output: end of playback` in the log, stop it cleanly), printing OK or the reason of the failure, with an exit
-  code. To decide then: its options, whether it starts WinUAE itself, what it checks. Other scenarios later, on
-  the same model, if they are needed.
+- **Done** (2026-10-22, designed with the user): `tools/winuae/`, Python 3 with the standard library only, described
+  in [winuae-scenarios.md](winuae-scenarios.md): a serial shell client following the rules of
+  [testing.md](testing.md), an LMS CLI client, and one scenario, `play-tone.py` (amisqueeze on an AHI unit plays
+  `tone-440.flac`; checks the output used, LMS's play mode, the elapsed time as an interval, the track's length by
+  the host's clock, the end of playback and a clean stop; prints OK or the reason, with an exit code). Decided: it
+  starts WinUAE only when its serial shell does not answer and WinUAE is not running, and never stops it; player
+  `Amiga` by default; no CHANGELOG entry (a developer tool); no check of these scripts in `make test`. Validated in
+  WinUAE with LMS 9.1.1: a run that starts WinUAE itself, a run on the running one, and the failures (no WinUAE:
+  exit code 2; a track not in the library: 2; the virtual output instead of AHI: 1, amisqueeze stopped all the
+  same). The restart in a profile stays local. Other scenarios later, on the same model, if they are needed.
 - **Criterion**: one command on the host starts WinUAE, waits, runs a scenario and prints its result.
 
 ## 0.8 Source-level debugging ⬜ (optional)
