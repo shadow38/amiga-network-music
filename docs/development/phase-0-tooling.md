@@ -126,7 +126,7 @@ phase 1; the figures below are those of 0.6.
   Amiga build replayed the 1.1/1.1b cases in WinUAE with the same messages as before the split, and the host
   build connects to a real LMS 9.1.1 with the same MAC as the Amiga build.
 
-## 0.7 Logging and automated runs in WinUAE 🔶 (criterion met on 2026-10-22, to be confirmed by the user)
+## 0.7 Logging and automated runs in WinUAE ✅ (2026-10-22)
 
 - **Goal**: run a test in WinUAE and read its result from the host, without manual steps.
 - **Done (2026-10-18, local setup)**: a **serial shell**. WinUAE connects the Amiga's serial port to a local TCP
@@ -178,3 +178,18 @@ phase 1; the figures below are those of 0.6.
   need the Squeezelite provider, added by hand; it also serves an LMS-like CLI (9090, no token), too limited to
   start a library track: playback was started from the web UI. amisqueeze was tried instead of squeezelite (1.7b).
   Not done: an API token (needed by 2.8).
+
+## 0.10 Regression scenarios in WinUAE ⬜
+
+- **Goal**: before a release, replay in WinUAE what `make test` cannot check: the Amiga platform layer (AHI,
+  bsdsocket, `Break`), the real servers (LMS, Music Assistant) and the 68k build, so that a release is validated
+  on a solid base (decided with the user on 2026-10-22, before the release of 0.7).
+- **Content**: a few scenarios in `tools/winuae/` on the model of `play-tone.py` (0.7,
+  [winuae-scenarios.md](winuae-scenarios.md)), to design with the user before writing them. Proposed: LMS's
+  commands through AHI (pause, resume, seek, stop, two tracks in a row, the `Largest` column of `Avail` before and
+  after); a byte-by-byte `OUTPUT` comparison of the Amiga build (FLAC and MP3, `tools/pcm-compare.py`); these two
+  before the release of 0.7. Music Assistant before 1.0: its LMS-like CLI cannot start a library track (see 0.9),
+  so the scenario goes through its API, which needs a token and a small WebSocket client (reused by amilms, 2.8).
+  Not in it: the measures (CPU load, long runs, the slow relay) and the old ROMs, which stay manual.
+- **Criterion**: one command runs the scenarios, each in less than 2 minutes, and prints OK or the reason of each
+  failure.

@@ -15,7 +15,16 @@ Back to the [plan](README.md).
 
 - **Content**: `.lha` archive (executables, icons, AmigaGuide or text documentation), Aminet-format `.readme`,
   version numbers (`$VER:`).
-- **Criterion**: the archive installs on a clean machine (WinUAE) and the programs work.
+- **In two parts** (decided with the user on 2026-10-22):
+  - **with 0.7**: `make dist` also builds `out/<prog>-<version>.lha` (the same files as the zip) with its
+    `.sha256`, and the Aminet `.readme` (`Short:`, `Author:`, `Uploader:`, `Type: mus/play`, `Version:`,
+    `Architecture:`, `Requires:`, then the description), all attached to the GitHub Release. `Author:` and
+    `Uploader:` read `shadow38` for now: **to correct (name, e-mail address) before the upload to Aminet**. To
+    decide when designing it, proposed: the archive made by `lha` (jca02266/lha, built in the build environment;
+    `lhasa` only extracts), the user guide shipped as text as it is (AmigaGuide later, if needed);
+  - **with 1.0**: the upload to Aminet (`.lha` and `.readme`), by the user or at their explicit request.
+- **Criterion**: the archive extracts on a clean system in WinUAE (LhA) and on the host (`lhasa`), and the WinUAE
+  scenarios (0.10) pass on what it holds; at 1.0, the archive is on Aminet.
 
 ## 3.3 Public versions 🔶
 
