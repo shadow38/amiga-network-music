@@ -11,6 +11,8 @@
 #   make dist     release archive of amisqueeze: out/amisqueeze-<version>.zip (both executables and their icons,
 #                 LICENSE, README.md, CHANGELOG.md, the user guide and its images), the version read from its $VER:
 #                 string, and its SHA-256 in out/amisqueeze-<version>.zip.sha256 (tools/make-dist.py, python3)
+#   make cpucount the free CPU meter of the tests (tools/amiga/cpucount.c -> out/cpucount), a developer tool:
+#                 built on demand only, never by make all nor in the release archive
 #   make clean    removes every build directory
 #   make sdk      copies the toolchain headers into .sdk/ (IntelliSense)
 
@@ -61,7 +63,7 @@ host_srcs  = $(filter-out src/$(1)/amiga.c,$(wildcard src/$(1)/*.c))
 TOOLCHAIN = $(abspath $(dir $(shell command -v $(CC)))..)
 GCC_INC   = $(shell $(CC) -print-file-name=include)
 
-.PHONY: all clean sdk host test dist $(PROGS)
+.PHONY: all clean sdk host test dist cpucount $(PROGS)
 
 all: $(PROGS)
 
@@ -113,6 +115,15 @@ test: host out-host/test_core
 
 dist: out/amisqueeze out/amisqueeze.fpu out/amisqueeze.info out/amisqueeze.fpu.info
 	python3 tools/make-dist.py amisqueeze
+
+# Developer tools that run on the Amiga (tools/amiga/), plain 68000 code
+cpucount: out/cpucount
+out/cpucount: obj/tools/cpucount.o | out
+	$(CC) $(LDFLAGS) -o $@ $^
+obj/tools/cpucount.o: tools/amiga/cpucount.c
+	@mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) -Wno-pointer-sign -MMD -MP -save-temps=obj -c -o $@ $<
+	python3 tools/check-saves.py obj/tools/cpucount.s
 
 # Check of the generated assembly (kept in obj/<prog>/*.s): tools/check-saves.py fails the build if a function
 # modifies a d2-d7/a2-a6 register without saving it (gcc 16.1 bug, fixed in 16.2; kept as a safeguard).

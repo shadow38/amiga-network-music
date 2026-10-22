@@ -78,6 +78,7 @@ tools/amiga-make.sh   runs make with whichever toolchain is available (see "Buil
 tools/check-saves.py  checks the generated assembly (safeguard against a gcc bug, see "Building")
 tools/pcm-compare.py  compares the PCM written by amisqueeze (OUTPUT option) with a reference, byte by byte
 tools/make-test-audio.sh makes the test sounds (tones, sides, sweep, gapless MP3s, counter pattern)
+tools/amiga/cpucount.c free CPU meter run on the Amiga for the load measures (make cpucount, not released)
 tools/make-dist.py    builds the release archive (make dist)
 tools/check-version.py checks that the version number agrees everywhere (make test, make dist)
 tools/bin2c.py        turns a file into a C array (the built-in FLAC and MP3 samples of the speed measurement)

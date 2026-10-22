@@ -41,9 +41,7 @@ Host folders mounted as Amiga volumes, so that nothing is copied onto the system
 - **`NM:`** ("NetMusic", read-write): the repository's `out/` folder. What `make` writes there runs at once
   (`NM:amisqueeze SERVER=127.0.0.1 VERBOSE`), and what amisqueeze writes there is read on the host as it runs: its
   `LOG` and `OUTPUT` files (`LOG=NM:amisqueeze.log`), or a redirected output (`Run NM:amisqueeze >NM:out.log ...`).
-- **`WT:`** ("WinUAE Test", read-only): your own Amiga-side tools, none of which is in the repository. For
-  instance:
-  - a CPU counter for the [load measures](#cpu-load), started with `Run WT:<counter> >NM:cpu.log 10`;
+- **`WT:`** ("WinUAE Test", read-only): your own Amiga-side tools, kept outside the repository. For instance:
   - AmigaDOS scripts run with `Execute WT:<script>`: a test sequence (versions, `Avail`, a playback with its log),
     the installation of AHI, MUI or the serial shell from their archives, a test tone through AHI;
   - amiagent and its start-up script;
@@ -169,13 +167,20 @@ real machine or with the host build.
 
 ## CPU load
 
-Count the CPU left over: a small program at the lowest priority (-128) counts loop rounds for a fixed time on the
-Amiga's clock (`DateStamp()`) and prints the count. Run it on its own (`Run`), once with nothing playing and once
-while amisqueeze plays, in the same session and for the same time (10 s windows, several of them); load = 1 -
-count while playing / count when idle. Start the measuring window a few seconds after playback starts (the
-buffer fills first), and send nothing to the Amiga during a window (the serial shell and amiagent cost CPU too).
-Such a counter is not in the repository yet. The results so far: step 1.4c and 1.9 of the
-[plan](phase-1-amisqueeze.md).
+Count the CPU left over with `cpucount` ([`tools/amiga/cpucount.c`](../../tools/amiga/cpucount.c), built by
+`make cpucount` into `out/`, so `NM:cpucount` in WinUAE; plain 68000 code, copy it to a real machine as it is): at
+the lowest priority (-128), it counts loop rounds for a number of seconds of the Amiga's clock and prints the
+count. Run it on its own, never in the foreground of a Shell driven from the host:
+
+```
+Run >NIL: NM:cpucount >NM:cpu-idle.log 10
+```
+
+Once with nothing playing and once while amisqueeze plays, in the same session and for the same time (10 s
+windows, several of them); load = 1 - count while playing / count when idle (on the slow profile, about 8,300
+rounds in 10 s when idle). Start the measuring window a few seconds after playback starts (the buffer fills
+first), and send nothing to the Amiga during a window (the serial shell and amiagent cost CPU too). The results
+so far: steps 1.4c and 1.9 of the [plan](phase-1-amisqueeze.md).
 
 ## Test sounds
 
@@ -199,5 +204,5 @@ music for the rest: the test sounds check the player, not the listening pleasure
 ## Not in the repository yet
 
 The host scripts that drive the tests (the serial shell client, restarting WinUAE in a profile, the scenarios of
-the plan's steps through LMS's CLI, the CPU counter) exist only in a local setup: step 0.7 of
+the plan's steps through LMS's CLI, a load measure around `cpucount`) exist only in a local setup: step 0.7 of
 [phase-0-tooling.md](phase-0-tooling.md) plans a generic version.
