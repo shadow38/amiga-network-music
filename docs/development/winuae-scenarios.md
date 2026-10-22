@@ -80,9 +80,26 @@ What they need:
   twice real time (FLAC runs at 0.2x without the JIT). `run-scenarios.py` checks it with `NM:amisqueeze.fpu BENCH`
   and stops (exit code 2) on another profile. Paula through AHI works in it as well.
 - **The builds**: `amisqueeze` and `amisqueeze.fpu` in `out/` (`make`).
-- **The server**: LMS with the [test sounds](testing.md#test-sounds) in its library: `tone-440.flac`,
-  `tone-440-48k.flac`, `sweep.flac`, `test-pattern.flac`, `test-20s.mp3`.
 - **AHI unit 0** set up (any mode; `Paula:14 bit stereo++` in [AHI](testing.md#ahi)).
+- **An LMS server running** before the scenarios start (tested with LMS 9.1.1), see below.
+
+The server must be Lyrion Music Server: Music Assistant cannot run these scenarios (its LMS-like CLI cannot start
+a library track; its own scenario comes before 1.0). What the scenarios expect of it:
+
+- **Reachable on `127.0.0.1`** from both sides: from the host, its CLI (TCP 9090); from the Amiga, slimproto (TCP
+  3483) and its web port (9000 by default), which serves the stream. With `bsdsocket_emu` the Amiga uses the
+  host's network, so `127.0.0.1` is the host: run LMS on the host, or forward those ports to it. Elsewhere, give
+  `--lms` (the CLI as the host reaches it) and `--server` (the server as the Amiga reaches it).
+- **Its CLI open without a password**: with LMS's password protection on (Settings > Advanced > Security), the
+  CLI expects a `login` first, which the scenarios do not send.
+- **The [test sounds](testing.md#test-sounds) in its library**, scanned (a rescan after copying them):
+  `tone-440.flac`, `tone-440-48k.flac`, `sweep.flac`, `test-pattern.flac`, `test-20s.mp3`. Nothing else: no
+  `mp3 pcm` conversion rule is needed (MP3 is decoded on the Amiga).
+- **A player of its own**: the scenarios drive the player named `--name` (`Amiga` by default): they stop it,
+  clear its playlist and change its volume (set back at the end). Do not run them while someone listens through a
+  player of that name.
+
+An LMS that does not answer stops a scenario at once with exit code 2 ("no LMS CLI on 127.0.0.1:9090").
 
 With WinUAE already started in that profile:
 

@@ -14,7 +14,9 @@ behind this setup: 0.4, 0.5 and 0.7 of [phase-0-tooling.md](phase-0-tooling.md).
 - **AHI 6 and MUI** in that system, from Aminet, as the [user guide](../user-guide.md#installing-ahi) describes;
   WinUAE's Toccata card, the 16-bit reference, also needs `toccata.library` (Aminet).
 - **A server** reachable from the host: Lyrion Music Server or Music Assistant, set up as the
-  [user guide](../user-guide.md) says, with the [test sounds](#test-sounds) in its music folder.
+  [user guide](../user-guide.md) says, with the [test sounds](#test-sounds) in its music folder. The
+  [automated scenarios](#automated-scenarios) need LMS, running, on the host or forwarded to it
+  ([what they expect of it](winuae-scenarios.md#running-them)).
 
 ## The test machine
 
