@@ -660,6 +660,17 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   65.3 %, its counters unchanged. Not counted, as in 1.4c: the real network (TCP/IP stack such as Roadshow, the
   PCMCIA card whose bytes the CPU copies), which WinUAE's emulated `bsdsocket.library` runs on the host; and
   WinUAE's fast RAM is not the accelerator's own.
+- **Elapsed time after a seek, in WinUAE** (2026-10-22, while checking the fix above): on the slow profile, LMS's
+  `time ?` is wrong for a while after a seek or a new start: 156 s (the track's length) 3 s after a seek to 146 s,
+  about 20 s instead of 5 s just after a new start; the same with `8ecb2cf` (1.4c), with AHI and `NOAUDIO`, with
+  an MP3 and a FLAC. Not amisqueeze's: its elapsed time is right (a throwaway build printing every `STAT`: 0 at
+  the new `STMs`, 1,009 ms a second later, the next track's `STMs` 10.15 s after the seek), and the host build
+  (HostTest) gets the right times from the same LMS. The emulated Amiga's clock falls behind real time (about 28 s
+  lost during a two-minute run, in jumps, seemingly at the stream restarts), and LMS adds to the last elapsed time
+  the delay since that `STAT`, measured with the player's clock, following a clock that falls behind only after
+  about 50 messages (`trackJiffiesEpoch` in `Slim/Player/Player.pm`). Intervals stay right (+30.03 s in 30.02 s).
+  So the elapsed time after a command is judged on the real machine (step 5 of the protocol above); the 1.4c
+  statement "seek ... all as with the virtual output" was true of both outputs alike.
 
 ## 1.10 Finishing touches 🔶 (versions 0.4 to 0.9: the parts of 0.4 and 0.5 done)
 
