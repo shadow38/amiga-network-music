@@ -593,7 +593,11 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   the card), a PCMCIA Ethernet card, Paula. The slow WinUAE profile (68020 at about 28 MHz) is close to it, but
   WinUAE's network costs the Amiga nothing: the real TCP/IP stack and the PCMCIA card (the CPU copies every byte
   received) are the unknown. Without an FPU it runs `amisqueeze`, FLAC is left to the server: everything comes as
-  raw PCM, about 176 KB/s at CD quality, the hardest case for that card.
+  raw PCM, about 176 KB/s at CD quality, the hardest case for that card. A first estimate in WinUAE (tools-11,
+  2026-10-24, AmiNetXDuo, the stack planned for this machine, on an emulated NE2000 card; this machine's card is a
+  Xircom, `xircomce2.device`): on the slow profile, raw PCM at CD quality costs about 45 % of the CPU with
+  `NOAUDIO` instead of 4.5 % with WinUAE's emulated network, and 92 % through Paula instead of 53 %. An order of
+  magnitude only (another driver and card, PCMCIA accesses not cycle-exact, Zorro II memory): what to watch here.
 - **Protocol** (agreed 2026-10-20), with an LMS server on the local network (ports 3483 and its web port), and
   a computer reaching its CLI to read the elapsed time:
   1. the machine: `Version FULL`, `Avail` (with its `Largest` column), `BENCH`; the CPU left when idle;

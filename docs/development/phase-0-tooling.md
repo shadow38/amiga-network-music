@@ -220,3 +220,46 @@ phase 1; the figures below are those of 0.6.
   at 0.0 %: the defect does not show in this profile and this short run, so the scenarios do not guard against
   it (the constant full volume in `amiga.c` does); code put back, `git diff src/` empty, checked again. Left: the
   Music Assistant scenario, before 1.0.
+
+## tools-11 A real TCP/IP stack in WinUAE ✅ (2026-10-24)
+
+- **Goal**: an estimate of what the network costs the CPU of the A1200 (player-9) before the real machine: with
+  `bsdsocket_emu`, WinUAE runs the TCP/IP stack on the host and the Amiga pays nothing for it (decided with the
+  user on 2026-10-24, for 0.8).
+- **Content**: a "real network" profile ([testing.md](testing.md), Real network): the slow profile (a 68020 at
+  28.4 MHz) without `bsdsocket_emu`, with WinUAE's NE2000-compatible PCMCIA card on its slirp NAT and 4 MB of fast
+  memory (more covers the PCMCIA space at `$600000`, and the Kickstart's `card.resource` does not start, as on a
+  real A1200); in the Amiga, AmiNetXDuo (MIT, [github.com/tinic/AmiNetXDuo](https://github.com/tinic/AmiNetXDuo)),
+  the stack planned for the A1200, release 1.0.0-rc2 (its SHA-256 checked), its "Fat" variant (compiled for a
+  68020 or better, the one the A1200 will run), started only when WinUAE provides no `bsdsocket.library`, so the
+  other profiles are unchanged. The server on the host is reached at slirp's gateway address (10.0.2.2, LMS
+  only); amiagent through a slirp port redirection.
+- **Driver** (changed with the user on 2026-10-24): AmiNetXDuo's own `anxnet.device`, first agreed, does not open
+  on WinUAE's emulated card ("unit 0 did not open": WinUAE's log shows it never writes the card's configuration
+  register, so it refuses the card while reading its CIS, which is minimal there). `cnet.device` 1.9 instead
+  (Aminet `driver/net/cnetdevice`, public domain, 68020 version), the driver AmiNetXDuo's own tests use with that
+  emulated card.
+- **Measure**: the CPU load as in player-4c ([testing.md](testing.md), CPU load), raw PCM at 44.1 kHz and 16 bits
+  (FLAC decoded by the server, about 176 KB/s, the A1200's case), with `NOAUDIO` and with Paula, with
+  `bsdsocket_emu` and with AmiNetXDuo; the difference is the estimate.
+- **Limits**: the A1200's card is a Xircom (`xircomce2.device`), so the stack is the real one but not the driver
+  nor the card; the slow profile is not cycle-exact, so the cost of the PCMCIA accesses is approximate; the 4 MB
+  of Zorro II fast memory are neither the size nor the speed of the accelerator's own (11.2 MB, kept with a
+  PCMCIA card as far as the user knows, to check in player-9). An order of magnitude, which player-9 measures for
+  real.
+- **Criterion**: amisqueeze plays from LMS through AmiNetXDuo in the "real network" profile; the loads measured
+  and written under player-9, with the limits above.
+- **Done** (2026-10-24): amisqueeze 0.7 played `song-44k.flac` from LMS 9.1.1 through AmiNetXDuo and
+  `cnet.device` (DHCP from slirp, 10.0.2.15), with `NOAUDIO` and through Paula (AHI unit 0), no `STMo`. Rounds of
+  `cpucount` in 10 s, three windows each, every profile measured in one session:
+
+  | | `bsdsocket_emu` | AmiNetXDuo, `cnet.device` |
+  |---|---|---|
+  | idle | 8,294 8,275 8,260 | 8,042 8,015 8,034 (the stack idle: 3 %) |
+  | `NOAUDIO` | 7,912 7,896 7,893: **4.5 %** | 4,613 4,500 4,184: **45 %** |
+  | Paula (AHI unit 0) | 3,871 3,889 3,880: **53 %** | 745 544 620: **92 %** |
+
+  So the network, which WinUAE's emulation hid, takes about 40 % of a 68020 at 28 MHz for raw PCM at CD quality,
+  and playback through Paula leaves about 8 % of it. Found on the way: WinUAE's newer syntax for the card
+  (`ne2000pcmcia_rom_file=:ENABLED`; `ne2000_pcmcia=` is read only from configurations older than 3.4), the 4 MB
+  limit above, and slirp accepting a connection on the host even when nothing listens in the Amiga.

@@ -68,6 +68,33 @@ the CPU lines on the command line (`-s name=value`):
 Not a 68040: it needs its CPU library (`68040.library`) in the system. Speeds measured in WinUAE are not those
 of a real machine: the plan leaves timings to the real machines (step player-9).
 
+### Real network
+
+With `bsdsocket_emu`, the TCP/IP stack runs on the host and costs the Amiga nothing. To count it (step tools-11),
+add to a profile (usually **slow**):
+
+```
+-s bsdsocket_emu=false -s ne2000pcmcia_rom_file=:ENABLED -s ne2000pcmcia_rom_options=inserted=true
+-s slirp_redir=tcp:7846:7846:10.0.2.15 -s fastmem_size=4
+```
+
+- **The card**: WinUAE's NE2000-compatible PCMCIA card (a CNet CN40BC to the Amiga), on slirp, WinUAE's own NAT:
+  its DHCP gives the Amiga 10.0.2.15, and the host is 10.0.2.2 (`SERVER=10.0.2.2`). The older
+  `ne2000_pcmcia=slirp` is read only from configurations older than WinUAE 3.4, and is ignored otherwise.
+- **4 MB of fast memory at most**: beyond, the Zorro II memory covers the PCMCIA space (`$600000`) and the
+  Kickstart's `card.resource` does not start ("no PCMCIA slot"), as on a real A1200.
+- **In the Amiga**: a TCP/IP stack and a SANA-II driver for that card. Tried: AmiNetXDuo 1.0.0-rc2 ("fat"
+  variant) with `cnet.device` 1.9 (Aminet `driver/net/cnetdevice`, 68020 version); AmiNetXDuo's own
+  `anxnet.device` does not open on the emulated card. Start the stack from `S:User-Startup` only when no
+  `bsdsocket.library` answers (`FailAt 21`, `Version >NIL: bsdsocket.library`, `If WARN`), so that the same hard
+  file still boots the other profiles on WinUAE's emulation.
+- **amiagent** through `slirp_redir` (port 7846 of the host to the Amiga): slirp accepts the connection on the
+  host even when nothing listens in the Amiga, then closes it, so a successful connect does not mean amiagent is
+  up. The redirected port listens on all the host's interfaces, as with `bsdsocket_emu`: the firewall rule of
+  [amiagent](#amiagent-optional) still applies.
+- **The serial shell** sometimes loses characters in this profile (a command is retyped, or not sent): keep its
+  command lines short.
+
 ## AHI
 
 Set the units in `SYS:Prefs/AHI` (the [user guide](../user-guide.md#setting-up-the-unit) explains the modes). The
