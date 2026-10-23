@@ -110,7 +110,10 @@ it comes after these releases, or alongside if the user wants it.
 
 - 0.8: the real machine (player-9, tried with 0.7, LMS and Music Assistant): what it shows; from the outside
   reading of the code, only if the real machine shows gaps while it works, more AHI blocks or a higher task
-  priority.
+  priority; in the user guide's Paula part (decided with the user on 2026-10-23), that the LED filter (a 3.3 kHz
+  low-pass) needs no tool to turn it off: `paula.audio` turns it off while playing and back on afterwards (seen in
+  WinUAE on 2026-10-23 with AHI 6.6, bit 1 of CIA-A `$BFE001`), once the real machine has confirmed it (player-9,
+  step 3 of its protocol).
 - 0.9: internet radios' metadata (ICY, see [Outside review](#outside-review-2026-10-20)) and automatic server discovery (player-10),
   after the real network.
 - 1.0: before it, the setup guides (publish-4), a full audit (publish-5), perhaps an attestation of the archives'

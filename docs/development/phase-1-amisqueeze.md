@@ -599,7 +599,8 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   1. the machine: `Version FULL`, `Avail` (with its `Largest` column), `BENCH`; the CPU left when idle;
   2. connection (player-1): the player shows up, renaming it from LMS, a server restart;
   3. sound (player-4): the 440 Hz tone, left then right (with `SWAP` if needed: WinUAE swapped them), a whole track
-     without crackles;
+     without crackles; with Paula, the power LED dims while playing (`paula.audio` turns the LED filter off, bit 1
+     of CIA-A `$BFE001` at 1, and back on afterwards: seen in WinUAE on 2026-10-23);
   4. load, the key point: LMS's fixed volume, a 44.1 kHz FLAC for 5 minutes with `VERBOSE` and `LOG`, the CPU
      left while playing (an idle-loop counter at the lowest priority, as in player-4c), the `STMo` of the log (the
      buffer ran empty: a gap) and the gaps heard. If there are some, again with, in this order: Paula's 8-bit mode,
