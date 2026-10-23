@@ -10,7 +10,7 @@ Back to the [plan](README.md).
   toolchain in the `PATH`, local script, Docker), VS Code tasks.
 - **Criterion**: `make clean all` produces `out/amisqueeze`; touching a `.h` rebuilds the `.c` files that include
   it.
-- **Remaining**: the Docker mode of `amiga-make.sh` has not been tested yet.
+- **Docker mode**: tested since 2026-10-23, the CI's Amiga build takes it (publish-3).
 
 ## tools-2 Test LMS server ✅ (2026-10-18)
 
@@ -52,7 +52,8 @@ Back to the [plan](README.md).
   - two profiles (decided 2026-10-18): **fast**, close to a PiStorm with Emu68 (68040 with FPU, 32-bit
     addressing, Zorro III memory, tens of MB); **slow**, a 68020 accelerator without FPU at its real speed (not
     "as fast as possible", so that CPU load can be measured: Paula mixing, later the decoders);
-  - a versioned configuration template in `winuae/`, with machine-specific paths kept in a local, unversioned file.
+  - a versioned configuration template in `winuae/`, with machine-specific paths kept in a local, unversioned file
+    (done on 2026-10-22, see "Template, versioned" below).
 - **Slow profile, local** (2026-10-19, for step player-4c): the provisional configuration started with the CPU
   settings overridden (`-s cpu_compatible=true -s cpu_speed=real -s cpu_multiplier=4`, a 68020 at about
   28 MHz, as a typical A1200 accelerator); no versioned template yet.

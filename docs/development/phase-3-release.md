@@ -119,9 +119,9 @@ Back to the [plan](README.md).
   proof that can be opened (file:line, test, scenario, dated measurement); a measurement expires when what it
   measures changes; a safety net is only real once seen failing on a planted defect; a rule a script can check
   becomes a script; everything a server sends is untrusted; "not supported yet" has consequences for users.
-- **When** (decided with the user on 2026-10-20): before **every** release tag, a full review of the range since
-  the previous tag; findings scored 75 or more are fixed, or accepted by the user with the reason written in the
-  report. Releases follow the plan's milestones, not single steps, so that reviews stay few. Exception: an urgent
+- **When** (decided with the user on 2026-10-20; the full review at every tag replaced the same day by the two
+  levels below): before **every** release tag, a full review of the range since the previous tag; findings
+  scored 75 or more are fixed, or accepted by the user with the reason written in the report. Releases follow the plan's milestones, not single steps, so that reviews stay few. Exception: an urgent
   fix may ship after a review of its own diff only; the next release then gets a full review from the last fully
   reviewed tag.
 - **Where**: the tooling in the repository (`.claude/`: one method skill, four review agents, the
@@ -182,7 +182,8 @@ Back to the [plan](README.md).
     acceptance reports still open are fixed in one batch, listed with the user.
 - **Stop** (decided with the user on 2026-10-20): step publish-5 is over. From now on each release gets its review and
   nothing more; the tooling (method, agents, checks) changes only when a review misses a real defect, never for its
-  own sake.
+  own sake, or by the user's decision (as on 2026-10-23, the steps renamed and the rules moved to
+  `CONTRIBUTING.md`).
 - **Two levels** (decided with the user on 2026-10-20, after the 0.6 fixes: a full review costs about 10-20 $ and
   1 h 30 for each release, and repeats the same whole-repository inventories): a light review for each release
   (`/release-review <previous tag>`: three agents, limited to the diff and what it reaches, the questions marked

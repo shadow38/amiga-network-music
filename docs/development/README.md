@@ -128,6 +128,11 @@ it comes after these releases, or alongside if the user wants it.
   is published, rather than on a local build before the tag (`CONTRIBUTING.md`, Releasing; `phase-3-release.md`,
   publish-2). For 0.7: the draft's `.lha` extracted by LhA in WinUAE, its executables' SHA-256 those tried before
   the tag, `Version FULL` for both.
+- From its 50 list, brought into 0.7 by the user on 2026-10-23 (the rest goes to 0.8 and 0.9, below): the plan's
+  stale statuses (tools-1, tools-4, player-7b, publish-5, the "When" and "Stop" of publish-5; ✅ done on
+  2026-10-23); a WAV sample rate whose bytes per second wrap 32 bits, which stalled the track: refused above
+  384 kHz, with 0, as `sample rate not supported` (✅ done on 2026-10-23: a case in `test_wav_refused`, seen
+  failing without the bound).
 - To check before its tag (decided with the user on 2026-10-23), since the executables now come from the pinned
   image (same gcc 16.2.1b, but a rebuilt image: libnix, NDK or binutils may differ; about 1.1 KB more each) while
   the WinUAE checks of 2026-10-23 ran on the previous image's: `run-scenarios.py` all OK on the build to be
@@ -141,9 +146,25 @@ it comes after these releases, or alongside if the user wants it.
   priority; in the user guide's Paula part (decided with the user on 2026-10-23), that the LED filter (a 3.3 kHz
   low-pass) needs no tool to turn it off: `paula.audio` turns it off while playing and back on afterwards (seen in
   WinUAE on 2026-10-23 with AHI 6.6, bit 1 of CIA-A `$BFE001`), once the real machine has confirmed it (player-9,
-  step 3 of its protocol).
+  step 3 of its protocol). The 50 list of the [0.7 review](reviews/0.7.md) (put there on 2026-10-23, by the
+  project's rule; what to do of each item is decided with the user when 0.8 is planned):
+  - safety nets with a hole: `fake_server.py` scenarios that ignore the exit code; `check-saves.py` blind to
+    fp2-fp7; no script for the ASCII rule but on the Aminet readme; nothing checks that `___stkinit` is linked;
+    eight server-input checks no test feeds (`slimproto.c`, `stream.c`); the "nothing playing" branch of
+    `stream_flush` untested; no fake-server scenario for `strm f` or a refused stream;
+  - absurd input: `PORT` and `UNIT` without range (an open point below);
+  - documentation: the "about 1.1 MB" of the user guide against about 1.23 MiB from the constants (to measure on
+    the real machine, player-9); the guide's catch-all message row without `stream: WAV header`; `architecture.md`
+    on when the stream socket is read (since `READ_MIN_SPACE`); "(HostTest)" in `phase-1-amisqueeze.md`; three
+    decisions not marked as agreed with the user (the format refusal as STMc then STMn, the CI actions pinned by
+    SHA, `cpucount`);
+  - smaller: `cpucount`'s tick overflow; the release draft not waiting for the tests; the CI not compiling
+    `cpucount` nor the Python tools; the no-MP3 branches never compiled by `make test`.
 - 0.9: internet radios' metadata (ICY, see [Outside review](#outside-review-2026-10-20)) and automatic server discovery (player-10),
-  after the real network.
+  after the real network. With it, from the 50 list of the 0.7 review: the HTTP status line never checked, the
+  body of a direct stream played before LMS's `cont` (a redirect or an error page played as a track, the `body`
+  frame of playlist URLs), the 88.2 kHz rate code refused as an unsupported format; the polarity and output
+  channel flags, transitions and replay gain ignored without a line in the guide.
 - 1.0: before it, the setup guides (publish-4), a full audit (publish-5), perhaps an attestation of the archives'
   provenance (`actions/attest-build-provenance` in `release.yml`, from an outside reading on 2026-10-23, left for
   1.0 by the user: little use to Amiga users, the reproducible build already lets anyone check), the Music
@@ -157,7 +178,7 @@ it comes after these releases, or alongside if the user wants it.
 | tools-1 Toolchain | ✅ 2026-10-18 |
 | tools-2 Test LMS server | ✅ 2026-10-18 |
 | tools-3 Reference player | ✅ 2026-10-18 |
-| tools-4 WinUAE test configuration | 🔶 local profiles (slow 68020, fast JIT), no versioned template |
+| tools-4 WinUAE test configuration | 🔶 the versioned template `winuae/amisqueeze-test.uae` (2026-10-22), the slow 68020 and fast JIT profiles as its overrides ([testing.md](testing.md)); a 68040 profile still open |
 | tools-5 AHI in the emulated Amiga (Paula, Toccata) | ✅ 2026-10-18 |
 | tools-6 Host-side tests (`make test`) | ✅ 2026-10-18 |
 | tools-7 Automated runs in WinUAE | ✅ 2026-10-22: `tools/winuae/`, one scenario (a test tone through AHI with LMS) |
@@ -172,7 +193,7 @@ it comes after these releases, or alongside if the user wants it.
 | player-5 Commands and volume | ✅ 2026-10-19 |
 | player-6 Robustness | ✅ 2026-10-19 |
 | player-7a Other PCM formats (LMS) | ✅ 2026-10-19 |
-| player-7b Music Assistant | 🔶 first test 2026-10-21: FLAC works; `wav` sends a 24-bit WAV announced as 16 bits: its header read, validated in WinUAE on 2026-10-21 (slow 68020, Paula); `mp3` works with `amisqueeze.fpu` but not gapless (MA encodes it without a LAME header), `aac` refused with `STMn` (MA ignores it), tried on 2026-10-21; Music Assistant part of the user guide written on 2026-10-21 |
+| player-7b Music Assistant | 🔶 first test 2026-10-21: FLAC works; `wav` sends a 24-bit WAV announced as 16 bits: its header read, validated in WinUAE on 2026-10-21 (slow 68020, Paula); `mp3` works with `amisqueeze.fpu` but not gapless (MA encodes it without a LAME header), `aac` refused with `STMn` (MA ignores it), tried on 2026-10-21; Music Assistant part of the user guide written on 2026-10-21; left: the short check by hand before the 0.7 tag, if the user wants it (FLAC, the `aac` row) |
 | player-8 Local decoding (FLAC, then MP3) | ✅ 2026-10-19 (FLAC; MP3 in `amisqueeze.fpu`) |
 | player-8d MP3 without gaps between tracks | ✅ 2026-10-20 (version 0.4) |
 | player-9 Real machine | ⬜ tried with 0.7, release 0.8 |
@@ -186,7 +207,7 @@ it comes after these releases, or alongside if the user wants it.
 | publish-2 Aminet archive | 🔶 2026-10-23: `make dist` builds the `.lha` and its Aminet `.readme` (for the 0.7 GitHub Release), tried in WinUAE (LhA 2.15) and on the host (`lhasa`); the upload to Aminet with 1.0 |
 | publish-3 Public versions | 🔶 0.1 to 0.6 published (tags, GitHub releases, changelog); CI: host tests, and the Amiga build with `make dist DEV=1`, its archives kept as the run's artifact; a draft release made from a tag (2026-10-23) |
 | publish-4 Setup guides: minimal server, the Amiga on the network | ⬜ before 1.0 |
-| publish-5 Review before each release (method, review agents, rules inventory, checks) | ✅ 2026-10-20: publish-5a to publish-5c done; publish-5d stopped after the version strings check; publish-5e the release rule in `CLAUDE.md` (in `CONTRIBUTING.md`, Releasing, since 2026-10-23), no review of HEAD (the next review is the one before 0.6); the tooling changes only when a review misses a real defect |
+| publish-5 Review before each release (method, review agents, rules inventory, checks) | ✅ 2026-10-20: publish-5a to publish-5c done; publish-5d stopped after the version strings check; publish-5e the release rule in `CLAUDE.md` (in `CONTRIBUTING.md`, Releasing, since 2026-10-23), no review of HEAD; the tooling changes only when a review misses a real defect, or by the user's decision. Reviews since: [0.6](reviews/0.6.md) (light, 2026-10-20), [0.7](reviews/0.7.md) (full audit, 2026-10-23) |
 
 Phase 0 moves forward as needed: a tooling step is done when a step of phase 1 or 2 needs it. Phases 1 and 2 can
 progress in parallel.

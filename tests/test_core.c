@@ -1485,7 +1485,8 @@ static void test_wav_refused(void)
         { "wav: sample size not supported, track skipped", 1, 2, 44100, 0, 16, 0, 0 },   /* a frame of 0 bytes */
         { "wav: sample size not supported, track skipped", 1, 2, 44100, 40, 16, 0, 0 },
         { "wav: number of channels not supported, track skipped", 1, 0, 44100, 16, 16, 0, 0 }, /* a frame of 0 bytes */
-        { "wav: sample rate of 0, track skipped", 1, 2, 0, 16, 16, 0, 0 },
+        { "wav: sample rate not supported, track skipped", 1, 2, 0, 16, 16, 0, 0 },
+        { "wav: sample rate not supported, track skipped", 1, 2, 0x40000000, 16, 16, 0, 0 },   /* 2^32 bytes a second */
         { "wav: format chunk too short, track skipped", 1, 2, 44100, 16, 14, 0, 0 },
         { "wav: no format chunk, track skipped", 1, 2, 44100, 16, 0, 0, 0 },
         { "wav: header too long, track skipped", 1, 2, 44100, 16, 16, 5000, 0 },

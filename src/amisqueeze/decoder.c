@@ -13,6 +13,7 @@
 #include "platform.h"
 
 #define WAV_HEADER_MAX 4096                 /* bytes before the data chunk */
+#define WAV_RATE_MAX 384000                 /* Hz; keeps the bytes per second (at most 8 per frame) within 32 bits */
 
 enum { PCM_HEADER, PCM_DATA, PCM_DROP };   /* d->phase */
 enum { WAV_NONE, WAV_WAIT, WAV_FOUND, WAV_BAD };
@@ -55,8 +56,8 @@ static int wav_format(const uint8_t *b, uint32_t n, struct pcm_format *f)
         return wav_bad("sample size not supported");
     if (channels < 1 || channels > 2)
         return wav_bad("number of channels not supported");
-    if (rate == 0)
-        return wav_bad("sample rate of 0");
+    if (rate == 0 || rate > WAV_RATE_MAX)
+        return wav_bad("sample rate not supported");
     f->rate = rate;
     f->channels = (uint8_t)channels;
     f->sample_bytes = (uint8_t)(bits / 8);
