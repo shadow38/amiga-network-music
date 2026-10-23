@@ -245,13 +245,15 @@ phase 1; the figures below are those of 0.6.
 - **Limits**: the A1200's card is a Xircom (`xircomce2.device`), so the stack is the real one but not the driver
   nor the card; the slow profile is not cycle-exact, so the cost of the PCMCIA accesses is approximate; the 4 MB
   of Zorro II fast memory are neither the size nor the speed of the accelerator's own (11.2 MB, kept with a
-  PCMCIA card as far as the user knows, to check in player-9). An order of magnitude, which player-9 measures for
-  real.
+  PCMCIA card as far as the user knows, to check in player-9); with the stack up (about 1.3 MB of fast memory),
+  playback puts about 266 KB in chip memory (4 KB with `bsdsocket_emu`), slower for the CPU, which the A1200's
+  11.2 MB would avoid: the figures with AmiNetXDuo may be somewhat high. An order of magnitude, which player-9
+  measures for real.
 - **Criterion**: amisqueeze plays from LMS through AmiNetXDuo in the "real network" profile; the loads measured
   and written under player-9, with the limits above.
 - **Done** (2026-10-24): amisqueeze 0.7 played `song-44k.flac` from LMS 9.1.1 through AmiNetXDuo and
   `cnet.device` (DHCP from slirp, 10.0.2.15), with `NOAUDIO` and through Paula (AHI unit 0), no `STMo`. Rounds of
-  `cpucount` in 10 s, three windows each, every profile measured in one session:
+  `cpucount` in 10 s, three windows each; each column in its own session, with its own idle reference:
 
   | | `bsdsocket_emu` | AmiNetXDuo, `cnet.device` |
   |---|---|---|
@@ -260,6 +262,9 @@ phase 1; the figures below are those of 0.6.
   | Paula (AHI unit 0) | 3,871 3,889 3,880: **53 %** | 745 544 620: **92 %** |
 
   So the network, which WinUAE's emulation hid, takes about 40 % of a 68020 at 28 MHz for raw PCM at CD quality,
-  and playback through Paula leaves about 8 % of it. Found on the way: WinUAE's newer syntax for the card
+  and playback through Paula leaves about 8 % of it. The `bsdsocket_emu` column was measured with 8 MB of fast
+  memory; again with 4 MB, as the other: 8,305 8,280 8,275 idle, 7,906 7,903 7,922 `NOAUDIO`, 3,859 3,863 3,866
+  Paula, the same. Paula there is 53 %, where player-4c and 0.7 measured about 65 % in the same mode (14 bits,
+  27,429 Hz): not explained, so these figures compare only within a session. Found on the way: WinUAE's newer syntax for the card
   (`ne2000pcmcia_rom_file=:ENABLED`; `ne2000_pcmcia=` is read only from configurations older than 3.4), the 4 MB
   limit above, and slirp accepting a connection on the host even when nothing listens in the Amiga.

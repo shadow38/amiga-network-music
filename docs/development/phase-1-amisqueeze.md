@@ -597,7 +597,9 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   2026-10-24, AmiNetXDuo, the stack planned for this machine, on an emulated NE2000 card; this machine's card is a
   Xircom, `xircomce2.device`): on the slow profile, raw PCM at CD quality costs about 45 % of the CPU with
   `NOAUDIO` instead of 4.5 % with WinUAE's emulated network, and 92 % through Paula instead of 53 %. An order of
-  magnitude only (another driver and card, PCMCIA accesses not cycle-exact, Zorro II memory): what to watch here.
+  magnitude only (another driver and card, PCMCIA accesses not cycle-exact, 4 MB of Zorro II memory, some of the
+  playback in chip memory): what to watch here, with the memory the stack takes (about 1.3 MB of fast memory in
+  WinUAE).
 - **Protocol** (agreed 2026-10-20), with an LMS server on the local network (ports 3483 and its web port), and
   a computer reaching its CLI to read the elapsed time:
   1. the machine: `Version FULL`, `Avail` (with its `Largest` column), `BENCH`; the CPU left when idle;
