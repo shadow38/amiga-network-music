@@ -54,7 +54,7 @@ statuses in [Where we are](#where-we-are).
 | Version | Theme | Steps | Status | Tested on |
 |---|---|---|---|---|
 | 0.1 to 0.6 | the player for LMS: PCM, FLAC, MP3 (`amisqueeze.fpu`), MP3 without gaps, `LOG`, start from the Workbench, the review fixes | player-1 to player-8d, player-10 (part) | ✅ published from 2026-10-19 to 2026-10-21 ([changelog](../../CHANGELOG.md)) | host and WinUAE |
-| 0.7 | Music Assistant; the `.lha`, the Amiga build in CI, the release made from a tag | player-7b, tools-10 (LMS), publish-2 (`.lha`), publish-3 | 🔶 content done; the review and the checks before the tag remain | host and WinUAE, with LMS and Music Assistant |
+| 0.7 | Music Assistant; the `.lha`, the Amiga build in CI, the release made from a tag | player-7b, tools-10 (LMS), publish-2 (`.lha`), publish-3 | 🔶 content done; the `CLAUDE.md` move, the full audit and the checks before the tag remain | host and WinUAE, with LMS and Music Assistant |
 | 0.8 | the real machine: what it shows | player-9 | ⬜ | the real machine and network |
 | 0.9 | internet radios' metadata (ICY), automatic server discovery | player-10 (end) | ⬜ | host for the code; the real machine and network |
 | 1.0 | setup guides, a full audit, the Music Assistant scenario, the upload to Aminet | publish-4, publish-5, tools-10 (Music Assistant), publish-2 (Aminet) | ⬜ | the real machine |
@@ -98,8 +98,20 @@ it comes after these releases, or alongside if the user wants it.
   archives, published by the user (✅ done on 2026-10-23).
 - The steps renamed and this roadmap (decided with the user on 2026-10-23, from an outside reading of the
   documentation: step numbers read as versions; ✅ done on 2026-10-23).
+- `CLAUDE.md` kept for what only Claude needs (decided with the user on 2026-10-23, before the full audit so that
+  it checks the move): the rules of working with the user, one line for each critical "never" rule with a pointer
+  to where it is explained, and a table "before touching X, read Y"; everything a human contributor should know
+  (release process, design choices, notes on each module, toolchain and pitfalls) moved to `CONTRIBUTING.md` and
+  `architecture.md` only, the documents the review agents already read (no new document, the agents unchanged);
+  `rules.md` pointing to sections instead of `CLAUDE.md` line numbers (89 of them, already off); no separate
+  "living docs": the executable scenarios, the user guide and `architecture.md` are that. Shown to the user before
+  its commit.
 - Before its tag, a full audit (publish-5) instead of the light review (decided with the user on 2026-10-23), on
-  the state after the renaming of the steps.
+  the state after the renaming of the steps and the `CLAUDE.md` move; each step in a fresh session (the move,
+  then the audit, then the release).
+- To decide with the user before the tag (asked on 2026-10-23, not answered yet): the release date, the `.lha`
+  tried again in WinUAE (the image changed since its trial: recommended), a short Music Assistant check by hand
+  (FLAC) in WinUAE.
 - To check before its tag (decided with the user on 2026-10-23), since the executables now come from the pinned
   image (same gcc 16.2.1b, but a rebuilt image: libnix, NDK or binutils may differ; about 1.1 KB more each) while
   the WinUAE checks of 2026-10-23 ran on the previous image's: `run-scenarios.py` all OK on the build to be
