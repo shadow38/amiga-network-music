@@ -73,7 +73,10 @@ Back to the [plan](README.md).
   job runs `sh tools/amiga-make.sh all dist DEV=1`, with the image pinned by its digest, then prints the
   executables' SHA-256; its `.lha` and `.zip` kept 14 days as the run's artifacts, each on its own and not wrapped in a zip, decided with the user on 2026-10-23 for
   0.7 after an outside reading, so that a development build can be tried without building it) and the release
-  archive made by GitHub from a tag.
+  archive made by GitHub from a tag (✅ done on 2026-10-23, brought forward to 0.7 by the user: `release.yml`,
+  on a tag `amisqueeze-*`, makes a draft pre-release with the archives of `make dist`, their `.sha256` and the
+  readme; the user writes the notes, compares the executables' SHA-256 with the build tried in WinUAE and
+  publishes; run by hand, a trial in a draft to delete).
 
 ## 3.4 Setup guides: server and network (noted 2026-10-19) ⬜
 

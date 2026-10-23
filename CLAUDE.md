@@ -15,8 +15,10 @@ repository. Documentation, code comments and program messages are in English.
 only for a **published** release; 1.0 = first really usable version (tested on the real machine). Never bump it on
 our own: ask the user. A release = a Git tag `amisqueeze-<version>` + a GitHub Release with a zip and a `.lha`
 holding the same files (the Amiga executables and their `.info` icons, `LICENSE`, `README.md`, `CHANGELOG.md`, the
-user guide and its images), the Aminet `.readme`, and short notes, made with the GitHub CLI once the user has
-approved the notes; each archive's SHA-256 goes in the notes and in a `<archive>.sha256` file attached to the
+user guide and its images), the Aminet `.readme`, and short notes. Since 0.7 (decided 2026-10-23) pushing the tag
+makes a **draft** release (`.github/workflows/release.yml`: the archives built by the CI from the tag, the pinned
+image); the user publishes it once the notes are written and approved and the executables' SHA-256 of the job's
+summary are those of the build tried in WinUAE (reproducible build); each archive's SHA-256 goes in the notes and in a `<archive>.sha256` file attached to the
 release (decided 2026-10-21; written by `make dist` since 0.7, with the lines for the notes: archives, files and
 notes from the same run). The `.lha` and `.readme` since 0.7 (plan step 3.2, decided 2026-10-23): made by `lha`
 of the image `amigadev/crosstools`, readme from `dist/amisqueeze.readme`; for Aminet (1.0), the files are renamed

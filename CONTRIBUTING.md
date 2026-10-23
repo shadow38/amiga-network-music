@@ -139,6 +139,15 @@ published).
 `-dev` one, the same in both `$VER:` strings, `Firmware=`, the user guide and the README, with its section at the
 top of the changelog, dated as the `$VER:` strings, and nothing left under "Unreleased".
 
+The published archives are made by GitHub from the tag (`.github/workflows/release.yml`, since 0.7): pushing a tag
+`amisqueeze-<version>` runs `make dist` through the Docker way of `tools/amiga-make.sh` (the pinned image), checks
+that the archives bear the tag's version, and makes a **draft** pre-release with the archives, their `.sha256` and
+the readme, its notes holding the SHA-256 lines and a place for the rest. The executables' SHA-256 are in the job's
+summary: the build is reproducible, so they must be those of the build tried in WinUAE before the tag. The draft is
+published by hand once its notes are written. Run by hand (Actions, "release", "Run workflow"), the workflow is a
+trial: the development archives in a draft marked never to publish, to delete afterwards (a draft's tag is created
+only when it is published).
+
 Per-program options live in the `Makefile` (`<prog>_CFLAGS`): network programs target the 68020 (`-m68020`).
 amisqueeze is built twice: `out/amisqueeze` (68020, no FPU) and `out/amisqueeze.fpu` (68020 + 68881, with the MP3
 decoder, `AMISQUEEZE_FPU` and `AMISQUEEZE_MP3`); the host build has the MP3 decoder too.
