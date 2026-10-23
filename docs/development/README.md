@@ -132,7 +132,8 @@ it comes after these releases, or alongside if the user wants it.
   stale statuses (tools-1, tools-4, player-7b, publish-5, the "When" and "Stop" of publish-5; ✅ done on
   2026-10-23); a WAV sample rate whose bytes per second wrap 32 bits, which stalled the track: refused above
   384 kHz, with 0, as `sample rate not supported` (✅ done on 2026-10-23: a case in `test_wav_refused`, seen
-  failing without the bound).
+  failing without the bound); `architecture.md` on when the stream socket is read, stale since `READ_MIN_SPACE`
+  (✅ done on 2026-10-23).
 - To check before its tag (decided with the user on 2026-10-23), since the executables now come from the pinned
   image (same gcc 16.2.1b, but a rebuilt image: libnix, NDK or binutils may differ; about 1.1 KB more each) while
   the WinUAE checks of 2026-10-23 ran on the previous image's: `run-scenarios.py` all OK on the build to be
@@ -154,8 +155,8 @@ it comes after these releases, or alongside if the user wants it.
     `stream_flush` untested; no fake-server scenario for `strm f` or a refused stream;
   - absurd input: `PORT` and `UNIT` without range (an open point below);
   - documentation: the "about 1.1 MB" of the user guide against about 1.23 MiB from the constants (to measure on
-    the real machine, player-9); the guide's catch-all message row without `stream: WAV header`; `architecture.md`
-    on when the stream socket is read (since `READ_MIN_SPACE`); "(HostTest)" in `phase-1-amisqueeze.md`; three
+    the real machine, player-9); the guide's catch-all message row without `stream: WAV header`;
+    "(HostTest)" in `phase-1-amisqueeze.md`; three
     decisions not marked as agreed with the user (the format refusal as STMc then STMn, the CI actions pinned by
     SHA, `cpucount`);
   - smaller: `cpucount`'s tick overflow; the release draft not waiting for the tests; the CI not compiling

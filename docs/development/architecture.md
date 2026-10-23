@@ -30,7 +30,7 @@ POSIX header. Whatever touches the system (sockets, clock, files, the audio devi
   audio device that counts the requests ahi.device would mishandle (`stub_audio_bad`).
 
 One task, one loop (`run()` in `player.c`): `plat_wait()` on the control socket and, while there is one, the
-stream socket (writable while connecting, readable while the ring has room), with a timeout of 100 ms while
+stream socket (writable while connecting, readable once the ring has room enough), with a timeout of 100 ms while
 something streams or plays and 1 s otherwise. On the Amiga, the end of an AHI request also wakes it up. Each turn:
 the control packet, then the stream socket, then `output_tick()`. Addresses and ports are in host byte order in the
 core; only the platform layers convert them.
@@ -68,9 +68,11 @@ flowchart LR
 - **`strm s`** gives the stream's address (0 = the control connection's), the HTTP request (sent as is), the
   format and a threshold. `stream_start()` queues a track at the ring's write position and connects without
   blocking; the response headers go back to the server in `RESP`.
-- **The ring buffer** holds the stream as received, several tracks back to back (gapless). When it is full, the
-  stream socket is no longer read: TCP slows the server down. The single buffer is reported in `STAT` as both the
-  stream buffer and the output buffer.
+- **The ring buffer** holds the stream as received, several tracks back to back (gapless). The stream socket is
+  read only once 8 KB of it are free (`READ_MIN_SPACE`, a quarter of a smaller ring), 2 KB for the response
+  headers: reading the few hundred bytes the output frees at each turn kept the loop awake (40 % of a 68020 at
+  28 MHz with `NOAUDIO`, 4.6 % since). When it is full, TCP slows the server down. The single buffer is reported
+  in `STAT` as both the stream buffer and the output buffer.
 - **The output** starts once `threshold` bytes have arrived (or the whole track). It asks the decoder of the track
   at the ring's read position for PCM; a decoder never reads past its track's end (`until_next_track()`), and a
   track whose decoder cannot start gets the `skip` decoder, which drops its data.
