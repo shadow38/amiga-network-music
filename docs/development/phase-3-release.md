@@ -67,6 +67,8 @@ Back to the [plan](README.md).
   amisqueeze 0.6 (2026-10-21): the same, and the zip's SHA-256 in the notes and in a `.sha256` file, computed by
   hand; since 0.7 (2026-10-21) `make dist` writes that file (format of `sha256sum`, checked with `sha256sum -c`)
   and prints the line for the notes: the zip, its `.sha256` and the notes come from the same run.
+  amisqueeze 0.7 (2026-10-23): the zip and the `.lha` with the same files, each with its `.sha256`, and the Aminet
+  `.readme`, made by the CI from the tag as a draft, its `.lha` tried in WinUAE before the user publishes it.
 - **Scenarios in WinUAE** (decided with the user on 2026-10-23, from step tools-10): before each tag, besides the
   review (publish-5), `python3 tools/winuae/run-scenarios.py` all OK on the build to be tagged, in the JIT profile with
   a 68882 and `compfpu` ([winuae-scenarios.md](winuae-scenarios.md)); first for 0.7.

@@ -19,7 +19,7 @@ Logitech's Squeezebox players: [Lyrion Music Server](https://lyrion.org) (LMS) a
 
 ### Current state
 
-Version 0.7 in development. The latest release, 0.6, is a preview: tested in WinUAE only, not yet on a real Amiga.
+Version 0.7, a preview: tested in WinUAE only, not yet on a real Amiga.
 
 What amisqueeze does:
 

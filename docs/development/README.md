@@ -54,7 +54,7 @@ statuses in [Where we are](#where-we-are).
 | Version | Theme | Steps | Status | Tested on |
 |---|---|---|---|---|
 | 0.1 to 0.6 | the player for LMS: PCM, FLAC, MP3 (`amisqueeze.fpu`), MP3 without gaps, `LOG`, start from the Workbench, the review fixes | player-1 to player-8d, player-10 (part) | ✅ published from 2026-10-19 to 2026-10-21 ([changelog](../../CHANGELOG.md)) | host and WinUAE |
-| 0.7 | Music Assistant; the `.lha`, the Amiga build in CI, the release made from a tag | player-7b, tools-10 (LMS), publish-2 (`.lha`), publish-3 | 🔶 content done; the full audit and the checks before the tag remain | host and WinUAE, with LMS and Music Assistant |
+| 0.7 | Music Assistant; the `.lha`, the Amiga build in CI, the release made from a tag | player-7b, tools-10 (LMS), publish-2 (`.lha`), publish-3 | 🔶 content, full audit and the checks before the tag done (2026-10-23); the draft made from the tag, its `.lha` tried, then published by the user | host and WinUAE, with LMS and Music Assistant |
 | 0.8 | the real machine: what it shows | player-9 | ⬜ | the real machine and network |
 | 0.9 | internet radios' metadata (ICY), automatic server discovery | player-10 (end) | ⬜ | host for the code; the real machine and network |
 | 1.0 | setup guides, a full audit, the Music Assistant scenario, the upload to Aminet | publish-4, publish-5, tools-10 (Music Assistant), publish-2 (Aminet) | ⬜ | the real machine |
@@ -120,9 +120,15 @@ it comes after these releases, or alongside if the user wants it.
   its guard removed: a division by zero for 0 bits or 0 channels, the alarm for the chunk length). Seen on the
   way, brought into 0.7 by the user the same day (minor): a header of 0 channels said `more than 2 channels`, now
   `number of channels not supported` (✅ done on 2026-10-23, the user guide and the CHANGELOG with it).
-- To decide with the user before the tag (asked on 2026-10-23, not answered yet): the release date, a short Music
-  Assistant check by hand (FLAC) in WinUAE, with it the `aac` row of the user guide (the refusal now STMc then
-  STMn: does Music Assistant still show the track as playing? the 0.7 review's 50 list).
+- To decide with the user before the tag (asked on 2026-10-23, answered the same day): released on 2026-10-23,
+  after a short Music Assistant check by hand in WinUAE (✅ done on 2026-10-23, Music Assistant 2.10.7, the build
+  to be tagged, Paula through AHI, and a slimproto relay printing each status's elapsed time): FLAC (Music
+  Assistant sends 24 bits) plays, pauses, resumes, seeks and ends; the PCM written by `OUTPUT` is the music; after
+  a seek, the elapsed time sent starts again from 0 (Music Assistant adds the position; its progress bar jumps
+  ahead for a moment, its own doing: the `STMt` it reads are right). `aac`: `STMc` then `STMn` each time; Music
+  Assistant then sends nothing more and shows the track as playing, its time running to about 4 s and back to 0,
+  again and again (once it went on to the next track): the user guide's `aac` row stays as it is. Seen on the way:
+  the messages Music Assistant sends that amisqueeze ignores (0.8, below).
 - Its R2, fixed (decided with the user on 2026-10-23): the `.lha` tried again on the Amiga is not a question but a
   rule, the image having changed since its trial; and it is now tried on the draft's own `.lha`, before the draft
   is published, rather than on a local build before the tag (`CONTRIBUTING.md`, Releasing; `phase-3-release.md`,
@@ -138,7 +144,14 @@ it comes after these releases, or alongside if the user wants it.
   image (same gcc 16.2.1b, but a rebuilt image: libnix, NDK or binutils may differ; about 1.1 KB more each) while
   the WinUAE checks of 2026-10-23 ran on the previous image's: `run-scenarios.py` all OK on the build to be
   tagged, the stack probe redone for both executables (from a script with `Stack 4096`, `CONTRIBUTING.md`, "Checks
-  the host tests cannot make"), `Version <exe> FULL` for both.
+  the host tests cannot make"), `Version <exe> FULL` for both. ✅ done on 2026-10-23 on the release build (version
+  0.7, the pinned image; SHA-256 `342d888b68f47c310e6a453439491c09d68bfde21e224b0a45c901bbbed86919` for
+  `amisqueeze`, `77caa4a5ab481b5d4230fcd204e5bf4dcbb82d57403618a7abe305a58c006882` for `amisqueeze.fpu`): the six
+  scenarios OK (JIT, 68882 with `compfpu`); `Version FULL` gives `amisqueeze 0.7 (10/23/2026)` and
+  `amisqueeze.fpu 0.7 (10/23/2026)`; the stack, from a script with `Stack 4096` (a throwaway build with the probe;
+  the release build rebuilt afterwards, the same SHA-256), 5600 bytes of 16384 for `amisqueeze` playing two FLAC
+  tracks with a seek in each, 17544 of 32768 for `amisqueeze.fpu` with FLAC then MP3, a seek in each (5.6 and
+  17.8 KB on 2026-10-20).
 
 **Later versions in detail:**
 
@@ -161,6 +174,10 @@ it comes after these releases, or alongside if the user wants it.
     SHA, `cpucount`);
   - smaller: `cpucount`'s tick overflow; the release draft not waiting for the tests; the CI not compiling
     `cpucount` nor the Python tools; the no-MP3 branches never compiled by `make test`.
+
+  Seen at the Music Assistant check before the 0.7 tag (2026-10-23, by the user): the messages Music Assistant
+  sends and amisqueeze ignores (`vers`, `grfb`, `grfe` at each connection, `codc` and `cont` at each track) read
+  as errors, and the user guide's messages table calls `... not handled` worth reporting.
 - 0.9: internet radios' metadata (ICY, see [Outside review](#outside-review-2026-10-20)) and automatic server discovery (player-10),
   after the real network. With it, from the 50 list of the 0.7 review: the HTTP status line never checked, the
   body of a direct stream played before LMS's `cont` (a redirect or an error page played as a track, the `body`
@@ -194,7 +211,7 @@ it comes after these releases, or alongside if the user wants it.
 | player-5 Commands and volume | ✅ 2026-10-19 |
 | player-6 Robustness | ✅ 2026-10-19 |
 | player-7a Other PCM formats (LMS) | ✅ 2026-10-19 |
-| player-7b Music Assistant | 🔶 first test 2026-10-21: FLAC works; `wav` sends a 24-bit WAV announced as 16 bits: its header read, validated in WinUAE on 2026-10-21 (slow 68020, Paula); `mp3` works with `amisqueeze.fpu` but not gapless (MA encodes it without a LAME header), `aac` refused with `STMn` (MA ignores it), tried on 2026-10-21; Music Assistant part of the user guide written on 2026-10-21; left: the short check by hand before the 0.7 tag, if the user wants it (FLAC, the `aac` row) |
+| player-7b Music Assistant | ✅ 2026-10-23: first test 2026-10-21: FLAC works; `wav` sends a 24-bit WAV announced as 16 bits: its header read, validated in WinUAE on 2026-10-21 (slow 68020, Paula); `mp3` works with `amisqueeze.fpu` but not gapless (MA encodes it without a LAME header), `aac` refused with `STMn` (MA ignores it), tried on 2026-10-21; Music Assistant part of the user guide written on 2026-10-21; the short check by hand before the 0.7 tag done on 2026-10-23 (FLAC, the `aac` row confirmed; see 0.7 in detail) |
 | player-8 Local decoding (FLAC, then MP3) | ✅ 2026-10-19 (FLAC; MP3 in `amisqueeze.fpu`) |
 | player-8d MP3 without gaps between tracks | ✅ 2026-10-20 (version 0.4) |
 | player-9 Real machine | ⬜ tried with 0.7, release 0.8 |

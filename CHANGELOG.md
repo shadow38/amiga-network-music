@@ -7,6 +7,8 @@ are previews, tested in WinUAE only, not yet on a real Amiga.
 
 ## [Unreleased]
 
+## [0.7] - 2026-10-23
+
 ### Added
 
 - An LhA archive (`.lha`) next to the zip, with the same files, to unpack on the Amiga itself, and its SHA-256;
@@ -156,7 +158,8 @@ Lyrion Music Server (LMS) as a player and plays through AHI.
 - Options `SERVER`, `PORT`, `NAME`, `MAC`, `UNIT` (AHI unit), `SWAP`, `NOAUDIO`, `OUTPUT`, `VERBOSE`; default
   options in `ENV:amisqueeze.prefs`.
 
-[Unreleased]: https://github.com/shadow38/amiga-network-music/compare/amisqueeze-0.6...HEAD
+[Unreleased]: https://github.com/shadow38/amiga-network-music/compare/amisqueeze-0.7...HEAD
+[0.7]: https://github.com/shadow38/amiga-network-music/compare/amisqueeze-0.6...amisqueeze-0.7
 [0.6]: https://github.com/shadow38/amiga-network-music/compare/amisqueeze-0.5...amisqueeze-0.6
 [0.5]: https://github.com/shadow38/amiga-network-music/compare/amisqueeze-0.4...amisqueeze-0.5
 [0.4]: https://github.com/shadow38/amiga-network-music/compare/amisqueeze-0.3...amisqueeze-0.4
