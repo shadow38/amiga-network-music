@@ -112,7 +112,12 @@ it comes after these releases, or alongside if the user wants it.
   `CLAUDE.md` alone.
 - Before its tag, a full audit (publish-5) instead of the light review (decided with the user on 2026-10-23), on
   the state after the renaming of the steps and the `CLAUDE.md` move; each step in a fresh session (the move,
-  then the audit, then the release).
+  then the audit, then the release). ✅ done on 2026-10-23: [report](reviews/0.7.md), two findings at 75.
+- Its R1, fixed (decided with the user on 2026-10-23): the WAV header's guards no test saw removed, each now
+  caught by a test (✅ done on 2026-10-23: in `test_wav_refused`, 0 and 40 bits, 0 channels, a track ending
+  between two chunks, a chunk length near 2^32 under an alarm, a whole track shorter than a RIFF header; in
+  `test_wav_limited`, a raw PCM track after a WAV with a data size; each seen failing in a throwaway copy with
+  its guard removed: a division by zero for 0 bits or 0 channels, the alarm for the chunk length).
 - To decide with the user before the tag (asked on 2026-10-23, not answered yet): the release date, the `.lha`
   tried again in WinUAE (the image changed since its trial: recommended), a short Music Assistant check by hand
   (FLAC) in WinUAE.

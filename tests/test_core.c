@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "platform.h"
 #include "player.h"
@@ -1428,6 +1429,27 @@ static void test_wav_header(void)
     teardown(&p);
 }
 
+/* A track of the first len bytes of wav_buf (then n bytes of track_a if with_data), then a track of n bytes of
+ * track_b, raw PCM; played on the virtual output */
+static void play_after_wav(struct player *p, uint32_t len, int with_data, uint32_t n)
+{
+    setup_file(p);
+    open_stream(p, '1', 0);
+    stub_feed_stream(wav_buf, (int)len);
+    if (with_data)
+        stub_feed_stream(track_a, (int)n);
+    drain_stream(p);
+    stub_stream_end();
+    stream_io(p, PLAT_READ);
+    stub_reset();
+    open_stream(p, '1', 0);                             /* the next track, raw PCM */
+    stub_feed_stream(track_b, (int)n);
+    drain_stream(p);
+    stub_stream_end();
+    stream_io(p, PLAT_READ);
+    play_for(p, 2000);
+}
+
 /* A plain format chunk, a LIST chunk of odd size (and its pad byte), a data size that is not a whole number of
  * frames, a LIST chunk after the data: only the whole frames of the data are played */
 static void test_wav_limited(void)
@@ -1436,10 +1458,18 @@ static void test_wav_limited(void)
     uint32_t h = wav(wav_buf, 1, 2, 48000, 16, 16, 25, 1001), n = 1001;
 
     fill(track_a, sizeof(track_a), 22);
+    fill(track_b, sizeof(track_b), 26);
     memcpy(track_a + n, "LIST\x1e\0\0\0", 8);           /* 30 bytes of tags after the data */
     CHECK(play_wav(&p, wav_buf, h, h, track_a, n + 38) == 1000 && !memcmp(stub_file, track_a, 1000));
     CHECK(strstr(stub_out, "stream: WAV header: 16 bits, 48000 Hz, 2 channel(s), 1001 bytes") != NULL);
     CHECK(p.out.state == OUTPUT_STOPPED && p.out.cur.out_fmt.rate == 48000);
+    teardown(&p);
+    /* the next track, raw PCM, is not limited by the WAV's data size: played whole */
+    h = wav(wav_buf, 1, 2, 44100, 16, 16, 0, 1000);
+    n = PCM_BPS / 10;
+    play_after_wav(&p, h, 1, n);
+    CHECK(stub_file_len == (int)(1000 + n) && !memcmp(stub_file, track_a, 1000));
+    CHECK(!memcmp(stub_file + 1000, track_b, n) && p.out.state == OUTPUT_STOPPED);
     teardown(&p);
 }
 
@@ -1452,42 +1482,48 @@ static void test_wav_refused(void)
         { "wav: not integer PCM, track skipped", 0xfffe, 2, 44100, 32, 40, 0, 0 },    /* sub-format: float */
         { "wav: more than 2 channels, track skipped", 1, 6, 44100, 16, 16, 0, 0 },
         { "wav: sample size not supported, track skipped", 1, 2, 44100, 12, 16, 0, 0 },
+        { "wav: sample size not supported, track skipped", 1, 2, 44100, 0, 16, 0, 0 },   /* a frame of 0 bytes */
+        { "wav: sample size not supported, track skipped", 1, 2, 44100, 40, 16, 0, 0 },
+        { "wav: more than 2 channels, track skipped", 1, 0, 44100, 16, 16, 0, 0 },       /* a frame of 0 bytes */
         { "wav: sample rate of 0, track skipped", 1, 2, 0, 16, 16, 0, 0 },
         { "wav: format chunk too short, track skipped", 1, 2, 44100, 16, 14, 0, 0 },
         { "wav: no format chunk, track skipped", 1, 2, 44100, 16, 0, 0, 0 },
         { "wav: header too long, track skipped", 1, 2, 44100, 16, 16, 5000, 0 },
         { "wav: the track ends in its header, track skipped", 1, 2, 44100, 16, 16, 0, 30 },
+        { "wav: the track ends in its header, track skipped", 1, 2, 44100, 16, 16, 0, 36 },  /* between chunks */
     };
     struct player p;
-    uint32_t c, n = PCM_BPS / 10;
+    uint32_t c, h, n = PCM_BPS / 10;
 
     fill(track_a, sizeof(track_a), 23);
     fill(track_b, sizeof(track_b), 24);
     for (c = 0; c < sizeof(cases) / sizeof(cases[0]); c++) {
-        uint32_t h = wav(wav_buf, cases[c].tag, cases[c].channels, cases[c].rate, cases[c].bits, cases[c].fmt_len,
-                         cases[c].list_len, 0xffffffff);
-
+        h = wav(wav_buf, cases[c].tag, cases[c].channels, cases[c].rate, cases[c].bits, cases[c].fmt_len,
+                cases[c].list_len, 0xffffffff);
         if (cases[c].tag == 0xfffe)
             wav_buf[12 + 8 + 24] = 3;                   /* KSDATAFORMAT_SUBTYPE_IEEE_FLOAT */
-        setup_file(&p);
-        open_stream(&p, '1', 0);
-        stub_feed_stream(wav_buf, (int)(cases[c].cut ? cases[c].cut : h));
-        if (!cases[c].cut)
-            stub_feed_stream(track_a, (int)n);
-        drain_stream(&p);
-        stub_stream_end();
-        stream_io(&p, PLAT_READ);
-        stub_reset();
-        open_stream(&p, '1', 0);                        /* the next track, raw PCM */
-        stub_feed_stream(track_b, (int)n);
-        drain_stream(&p);
-        stub_stream_end();
-        stream_io(&p, PLAT_READ);
-        play_for(&p, 2000);
+        play_after_wav(&p, cases[c].cut ? cases[c].cut : h, !cases[c].cut, n);
         CHECK(strstr(stub_out, cases[c].why) != NULL);
         CHECK(stub_file_len == (int)n && !memcmp(stub_file, track_b, n) && p.out.state == OUTPUT_STOPPED);
         teardown(&p);
     }
+    /* a chunk length near 2^32, which would wrap the header's end round to the chunk's start: refused (a loop
+     * without end turned into a failure by the alarm) */
+    h = wav(wav_buf, 1, 2, 44100, 16, 16, 0, 0xffffffff);
+    memcpy(wav_buf + h - 8, "LIST", 4);
+    set_le32(wav_buf + h - 4, 0xfffffff8);
+    alarm(30);
+    play_after_wav(&p, h, 1, n);
+    alarm(0);
+    CHECK(strstr(stub_out, "wav: header too long, track skipped") != NULL);
+    CHECK(stub_file_len == (int)n && !memcmp(stub_file, track_b, n) && p.out.state == OUTPUT_STOPPED);
+    teardown(&p);
+    /* a whole track shorter than a RIFF header: raw PCM, played as announced */
+    memcpy(wav_buf, track_a, 8);
+    play_after_wav(&p, 8, 0, n);
+    CHECK(stub_file_len == (int)(8 + n) && !memcmp(stub_file, track_a, 8) && !memcmp(stub_file + 8, track_b, n));
+    CHECK(strstr(stub_out, "wav:") == NULL && p.out.state == OUTPUT_STOPPED);
+    teardown(&p);
     memcpy(track_a, "RIFF\0\0\0\0AIFF", 12);           /* not a WAV header: raw PCM */
     CHECK(play_wav(&p, track_a, 0, 0, track_a, n) == (int)n && !memcmp(stub_file, track_a, n));
     CHECK(strstr(stub_out, "WAV") == NULL && strstr(stub_out, "wav:") == NULL);
