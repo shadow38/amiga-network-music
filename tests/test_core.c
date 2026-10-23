@@ -1480,11 +1480,11 @@ static void test_wav_refused(void)
     static const struct { const char *why; uint32_t tag, channels, rate, bits, fmt_len, list_len, cut; } cases[] = {
         { "wav: not integer PCM, track skipped", 3, 2, 44100, 32, 16, 0, 0 },         /* floating point */
         { "wav: not integer PCM, track skipped", 0xfffe, 2, 44100, 32, 40, 0, 0 },    /* sub-format: float */
-        { "wav: more than 2 channels, track skipped", 1, 6, 44100, 16, 16, 0, 0 },
+        { "wav: number of channels not supported, track skipped", 1, 6, 44100, 16, 16, 0, 0 },
         { "wav: sample size not supported, track skipped", 1, 2, 44100, 12, 16, 0, 0 },
         { "wav: sample size not supported, track skipped", 1, 2, 44100, 0, 16, 0, 0 },   /* a frame of 0 bytes */
         { "wav: sample size not supported, track skipped", 1, 2, 44100, 40, 16, 0, 0 },
-        { "wav: more than 2 channels, track skipped", 1, 0, 44100, 16, 16, 0, 0 },       /* a frame of 0 bytes */
+        { "wav: number of channels not supported, track skipped", 1, 0, 44100, 16, 16, 0, 0 }, /* a frame of 0 bytes */
         { "wav: sample rate of 0, track skipped", 1, 2, 0, 16, 16, 0, 0 },
         { "wav: format chunk too short, track skipped", 1, 2, 44100, 16, 14, 0, 0 },
         { "wav: no format chunk, track skipped", 1, 2, 44100, 16, 0, 0, 0 },

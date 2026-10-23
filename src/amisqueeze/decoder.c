@@ -54,7 +54,7 @@ static int wav_format(const uint8_t *b, uint32_t n, struct pcm_format *f)
     if (bits % 8 != 0 || bits < 8 || bits > 32)
         return wav_bad("sample size not supported");
     if (channels < 1 || channels > 2)
-        return wav_bad("more than 2 channels");
+        return wav_bad("number of channels not supported");
     if (rate == 0)
         return wav_bad("sample rate of 0");
     f->rate = rate;

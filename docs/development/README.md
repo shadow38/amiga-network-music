@@ -117,7 +117,9 @@ it comes after these releases, or alongside if the user wants it.
   caught by a test (✅ done on 2026-10-23: in `test_wav_refused`, 0 and 40 bits, 0 channels, a track ending
   between two chunks, a chunk length near 2^32 under an alarm, a whole track shorter than a RIFF header; in
   `test_wav_limited`, a raw PCM track after a WAV with a data size; each seen failing in a throwaway copy with
-  its guard removed: a division by zero for 0 bits or 0 channels, the alarm for the chunk length).
+  its guard removed: a division by zero for 0 bits or 0 channels, the alarm for the chunk length). Seen on the
+  way, brought into 0.7 by the user the same day (minor): a header of 0 channels said `more than 2 channels`, now
+  `number of channels not supported` (✅ done on 2026-10-23, the user guide and the CHANGELOG with it).
 - To decide with the user before the tag (asked on 2026-10-23, not answered yet): the release date, the `.lha`
   tried again in WinUAE (the image changed since its trial: recommended), a short Music Assistant check by hand
   (FLAC) in WinUAE.

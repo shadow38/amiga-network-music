@@ -488,7 +488,7 @@ Rules:
 | `MP3=ON: this build does not decode MP3 ...` | `MP3=ON` given to `amisqueeze`: MP3 stays with the server |
 | `flac: ... , track skipped` | a FLAC stream that cannot be decoded (not FLAC, no STREAMINFO, a sample rate of 0, more than 2 channels; after a seek, `cannot start from the middle of this file`: a rare file whose frames leave their format to its header): the next track follows |
 | `mp3: no MP3 frame found, track skipped` | an MP3 stream without a single MP3 frame: the next track follows |
-| `wav: ..., track skipped` | a WAV header that amisqueeze cannot play (`not integer PCM`: floating point or compressed; `more than 2 channels`; `sample size not supported`: other than 8, 16, 24 or 32 bits; `sample rate of 0`; `no format chunk`; a header cut short, too short or longer than 4 KB): the next track follows |
+| `wav: ..., track skipped` | a WAV header that amisqueeze cannot play (`not integer PCM`: floating point or compressed; `number of channels not supported`: other than 1 or 2; `sample size not supported`: other than 8, 16, 24 or 32 bits; `sample rate of 0`; `no format chunk`; a header cut short, too short or longer than 4 KB): the next track follows |
 | `flac: not enough memory`, `mp3: not enough memory`, then `...: cannot decode this track, skipped` | not enough free memory for the decoder of that track: the next track follows |
 | `the FLAC decoding speed cannot be measured` (or MP3) | `BENCH` could not run the measure (not enough memory) |
 | `cannot open ahi.device unit N (is AHI installed? NOAUDIO plays without sound)` | AHI missing, or that unit cannot be opened; amisqueeze stops |
