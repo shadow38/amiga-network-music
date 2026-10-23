@@ -10,10 +10,12 @@ Using the programs is covered in the [user guide](docs/user-guide.md); what come
   agreed content and success criterion (see the plan), and a change may already be planned, or ruled out.
 - `make test` must pass (GitHub runs it on each pull request); add tests for what you change in the portable core.
   The Amiga build must also be tried in WinUAE (see below): the tests run the core on the build machine only.
+- A change users can see (an option, a message, a behaviour) is documented in the
+  [user guide](docs/user-guide.md) and noted under "Unreleased" in `CHANGELOG.md` (see [Releasing](#releasing)).
 - Code, comments, documentation and program messages are in English; strings shown on the Amiga stay ASCII.
 - The licence is MIT: no code copied from GPL projects (squeezelite and LMS are references for the protocol's
-  behaviour, never a source of code); third-party code only under an MIT-compatible licence, in `third_party/`
-  with its origin and licence.
+  behaviour, never a source of code); third-party code only under an MIT-compatible licence (public domain, MIT,
+  BSD, zlib...; not GPL: no libmad), in `third_party/` with its origin and licence (see [Code rules](#code-rules)).
 
 ## Requirements
 
@@ -27,7 +29,8 @@ Two ways to get the toolchain:
 
 - **native install** (Linux, macOS, WSL on Windows): `m68k-amigaos-gcc` in the `PATH`;
 - **Docker**: the [`amigadev/crosstools`](https://hub.docker.com/r/amigadev/crosstools) image, tag
-  `m68k-amigaos-gcc10` (a historical name: it follows the AmigaPorts toolchain, now GCC 16). It also ships gdb,
+  `m68k-amigaos-gcc10` (a historical name: it follows the AmigaPorts toolchain, now GCC 16; installed in
+  `/opt/m68k-amigaos`). It also ships gdb,
   vasm and vamos. The tag moves when the image is rebuilt, so `tools/amiga-make.sh` pins it by its digest
   (`REFERENCE_IMAGE`, the toolchain the releases are built with). To move to a newer image: put its digest there,
   build, run `make test` and the scenarios in WinUAE, and compare the executables' SHA-256 printed by the CI with a
@@ -55,7 +58,8 @@ Note that in the `amigadev/crosstools` image, `gcc` is the Amiga cross-compiler:
 ## Repository layout
 
 ```
-src/<prog>/           C sources, one directory per program -> out/<prog>
+src/<prog>/           C sources, one directory per program -> out/<prog>; code shared between programs will go
+                      in src/common/ (with amilms, none yet)
 src/amisqueeze/       portable core (player, slimproto, stream, ring, audio, decoders: decoder, flac, mp3, bench),
                       system services behind platform.h: amiga.c (AmigaOS, Amiga build only), posix.c
                       (Linux/POSIX, host build only)
@@ -66,10 +70,12 @@ obj/, out/            Amiga objects and executables (generated; obj/amisqueeze-f
 obj-host/, out-host/  host objects and executables (generated)
 .sdk/                 copy of the toolchain headers, for IntelliSense (generated)
 .vscode/              tasks (build, clean, headers) and IntelliSense configuration
-.github/workflows/    continuous integration: make test on GitHub (tests.yml)
+.github/workflows/    continuous integration: make test and the Amiga build on each push (tests.yml), the draft
+                      release made from a tag (release.yml)
 .claude/              the review before each release, for Claude Code (plan step publish-5): the method
                       (skills/review-method), four review agents (agents/), the entry point
                       (skills/release-review, /release-review <previous tag> [full])
+CLAUDE.md             for Claude Code: how to work with the maintainer, pointers to this page and the others
 docs/user-guide.md    user guide
 docs/development/     development plan (roadmap, steps, design decisions); architecture.md: how amisqueeze works;
                       testing.md: testing in WinUAE; winuae-scenarios.md: the scenarios of tools/winuae/
@@ -141,16 +147,8 @@ top of the changelog, dated as the `$VER:` strings, and nothing left under "Unre
 
 Both workflows pin their actions by commit SHA, the version in a comment (as `tools/amiga-make.sh` pins the image
 by its digest; to update one, take the commit of its new tag), and their checkout keeps no token
-(`persist-credentials: false`), since the build's container mounts the whole repository.
-
-The published archives are made by GitHub from the tag (`.github/workflows/release.yml`, since 0.7): pushing a tag
-`amisqueeze-<version>` runs `make dist` through the Docker way of `tools/amiga-make.sh` (the pinned image), checks
-that the archives bear the tag's version, and makes a **draft** pre-release with the archives, their `.sha256` and
-the readme, its notes holding the SHA-256 lines and a place for the rest. The executables' SHA-256 are in the job's
-summary: the build is reproducible, so they must be those of the build tried in WinUAE before the tag. The draft is
-published by hand once its notes are written. Run by hand (Actions, "release", "Run workflow"), the workflow is a
-trial: the development archives in a draft marked never to publish, to delete afterwards (a draft's tag is created
-only when it is published).
+(`persist-credentials: false`), since the build's container mounts the whole repository. The published archives
+are made by GitHub from the tag (`.github/workflows/release.yml`, see [Releasing](#releasing)).
 
 Per-program options live in the `Makefile` (`<prog>_CFLAGS`): network programs target the 68020 (`-m68020`).
 amisqueeze is built twice: `out/amisqueeze` (68020, no FPU) and `out/amisqueeze.fpu` (68020 + 68881, with the MP3
@@ -162,7 +160,9 @@ checks before assembling. The build fails if a function modifies a register the 
 (d2-d7, a2-a6) without saving it. This was a bug in `m68k-amigaos-gcc` 16.1.1b (image
 `wischner/gcc-m68k-amiga:1.1.0`): programs crashed with an *address error* `#80000003`. It is fixed in 16.2, but
 the GCC 16 port is recent. `make test` checks the safeguard itself on `tests/check-saves.s`: a few functions with
-such a fault (a plain write, `(an)+`, `-(an)`, `dbra`) and a few without.
+such a fault (a plain write, `(an)+`, `-(an)`, `dbra`) and a few without. No compiler option avoided the bug
+(`-O1`, `-Os`, `-O2`, `-mlra`, `-mno-lra`); it was fixed in 16.2-rc16. The GCC 16 port is still young: when a crash
+makes no sense, look at the generated assembly.
 
 ## Host build and tests
 
@@ -199,13 +199,74 @@ zip (on the run's page, for a signed-in GitHub user): a development build to try
 on the `.lha`, gh 2.102), but `gh api repos/shadow38/amiga-network-music/actions/artifacts/<id>/zip > <file>`,
 the ids given by `gh api repos/shadow38/amiga-network-music/actions/runs/<run id>/artifacts`.
 
+The tests use real time (playback pacing, reconnection delays), so a slow runner can make one fail: rerun it
+before suspecting the code.
+
+## Code rules
+
+amisqueeze targets classic Amigas with a 68020 or better, of two kinds: **fast** (a PiStorm with Emu68: a 68040
+with FPU) and **slow** (a 68020 accelerator without FPU), with sound through AHI: Paula (`paula.audio`, on Amigas
+without a sound card) or another AHI driver (a sound card, or the PiStorm's own outputs: the I2S DAC of the
+PiStorm32-lite FPGA firmware, HDMI with a Pi 4). The code uses only the `ahi.device` features of AHI 4 (tested
+with AHI 6.6; 4.x is expected to work, not checked). How the parts fit together:
+[architecture](docs/development/architecture.md).
+
+- **Portable core**: every file of `src/amisqueeze/` but `amiga.c` and `posix.c` is standard C (`<stdint.h>`, no
+  Amiga or POSIX header); everything system-related goes through `platform.h`. Keep the core free of system calls
+  and the platform layers thin; the main loop (timeouts, reconnection) lives in the core.
+- **One task, one loop** around `plat_wait()`: `WaitSelect()` on the Amiga, where a `SocketBase` belongs to the
+  task that opened it; `select()` on POSIX, with SIGINT and SIGTERM set without `SA_RESTART`, so that Ctrl-C stops
+  the wait.
+- **Byte order**: addresses and ports in host byte order in the core; `htonl`/`ntohl` only in the platform layers
+  (no-ops on 68k, essential on x86).
+- **Serialisation**: fields byte by byte, no packed structures; 32-bit values are `uint32_t` (the MAC hash too, so
+  that both builds derive the same MAC).
+- **`HELO`** advertises only the formats the build actually decodes.
+- **Positions**: the ring's (bytes of the stream) and the output's (bytes of decoded PCM) are never mixed
+  ([two kinds of position](docs/development/architecture.md#two-kinds-of-position)). Raw PCM cannot reveal a
+  mix-up: the test-only "widening" decoder of `tests/test_core.c` can.
+- **`OUTPUT`** writes from `hand_over()` in `stream.c` only, the one place where the output hands PCM over.
+- **Messages** go through `msg()`, with the standard printf format (`format(printf)` attribute, `-Werror=format`
+  on both builds; on the Amiga, libnix `vsnprintf` into a static buffer, then `Write()` to `Output()`,
+  unbuffered, so that a log redirected to a file can be read while the program runs), raw bytes through
+  `msg_raw()`. Never `Printf`, `PutStr` or `printf` directly, except inside the platform layers' own
+  implementation of `msg()`, `msg_raw()` and the `LOG` file. Cast 32-bit values to the type the specifier names
+  (`(unsigned long)` with `%lX`); `%c` for chars (not `%lc`). `STMt` (one a second) is not printed with `VERBOSE`.
+- **Text for the Amiga**: strings shown on the Amiga and files it reads are ASCII only (the Amiga uses
+  ISO-8859-1, the sources are UTF-8), with LF line endings. The README and the user guide are among them, since
+  they ship in the archives: `...`, `-`, `|` rather than their typographic forms.
+- **ahi.device**: keep the rules of [AHI](docs/development/architecture.md#ahi) (a request chained only to one
+  already playing, the playing one aborted first, `CMD_STOP` is no pause). **Never send `ahir_Volume` below
+  full**: the core scales the samples instead.
+- **Third-party code** goes in `third_party/`, unmodified, with its version, commit and licence in a `README.txt`,
+  each library built in a file of its own without our warnings (`THIRD_PARTY` in the `Makefile`). A file that
+  includes a third-party header and reads its structures must use the same configuration macros as the file that
+  builds it: otherwise the structures' layout differs, without a warning. What each decoder needs from its
+  caller: [decoders](docs/development/architecture.md#decoders).
+
+### Stack and memory
+
+- The default Shell stack is 4 KB, and AmigaOS does not detect an overflow (silent corruption). Big buffers are
+  static or allocated, never on the stack.
+- Both executables set `__stack` (16 KB `amisqueeze`, 32 KB `amisqueeze.fpu`, in `amiga.c`) and link libnix's
+  `__stkinit`, which gives them that stack when the Shell's is smaller: dr_flac needs about 5.5 KB (4.6 KB in
+  `drflac_open` alone), minimp3 about 17.5 KB (most of it in `mp3dec_decode_frame`).
+- Measured on 2026-10-20 with the probe of [Checks the host tests cannot make](#checks-the-host-tests-cannot-make),
+  from a script with `Stack 4096`: 5.6 KB of 16 KB used by `amisqueeze` playing FLAC with a seek, 17.8 KB of
+  32 KB by `amisqueeze.fpu` with FLAC and MP3. Redo it when `-fstack-usage` shows the deepest path growing by more
+  than 1 KB, or when a new decoder, library or start-up path is linked; a few bytes more do not call for it.
+- Memory: see `Avail` in [Checks the host tests cannot make](#checks-the-host-tests-cannot-make).
+
 ## Testing in WinUAE
 
 - Enable WinUAE's networking emulation: `bsdsocket_emu=true`. WinUAE then provides `bsdsocket.library` itself,
   through the host's network stack: no TCP/IP stack to install in the Amiga, and a server reachable from the host
   is reachable from the Amiga (`127.0.0.1` is the host's loopback).
 - Mount `out/` as an Amiga volume (`filesystem2=rw,<DEVICE>:<Volume>:<path to out>,-128`), then run the program
-  from a Shell, e.g. `NM:amisqueeze SERVER=127.0.0.1 VERBOSE` with the volume mounted as `NM:`.
+  from a Shell, e.g. `NM:amisqueeze SERVER=127.0.0.1 VERBOSE` with the volume mounted as `NM:`. In a WinUAE
+  configuration file (syntax checked in WinUAE's `cfgfile.cpp`), `chipmem_size` counts in 512 KB units and
+  `fastmem_size` in MB.
+- Kickstart ROMs are licensed: never in the repository.
 - The test machine (a configuration template in `winuae/`), its profiles (a slow 68020, a fast one like a
   PiStorm, with or without FPU), the AHI units, driving the Amiga from the host (serial shell, amiagent), the
   server side, the CPU load and the test sounds (`tools/make-test-audio.sh`):
@@ -220,10 +281,11 @@ the ids given by `gh api repos/shadow38/amiga-network-music/actions/runs/<run id
   with 256 KB. To measure what is used, add a temporary probe in `main()` (fill the stack from `tc_SPLower` up to
   below the current pointer with a pattern, find at the end how much of it was overwritten) and run the program
   from a script that starts with `Stack 4096`. `-fstack-usage` gives the size of each function's frame.
-- **Speed**: without its JIT, WinUAE at its fastest is about a 68020 at 45 MHz, a slow Amiga. For a fast one such
-  as a PiStorm, enable the JIT (68020, 32-bit addressing, not cycle-exact) and, for `amisqueeze.fpu`,
-  `compfpu=true`: without it the JIT interprets the FPU instructions (MP3 at 1.8x real time instead of 74x). A
-  68040 needs its CPU library in the emulated system.
+- **Speed**: without its JIT, WinUAE at its fastest is about a 68020 at 45 MHz, a slow Amiga (FLAC level 8 decodes
+  at 0.2x real time). For a fast one such as a PiStorm, enable the JIT (68020, 32-bit addressing, not cycle-exact)
+  and, for `amisqueeze.fpu`, `compfpu=true`: without it the JIT interprets the FPU instructions (MP3 at 1.8x real
+  time instead of 74x). A 68040 needs its CPU library in the emulated system: without one, emulate a 68020 with
+  the JIT.
 - **Memory**: `Avail` before and after a few play and stop cycles; watch its `Largest` column too, where a
   corrupted free memory list shows first.
 - **Sound**: Paula through AHI (`paula.audio`) is the main test, an AHI sound card (Toccata in WinUAE) the 16-bit
@@ -237,14 +299,68 @@ the ids given by `gh api repos/shadow38/amiga-network-music/actions/runs/<run id
   test MP3s without an ID3v1 tag (`lame --id3v2-only`): LMS strips it before converting, and `sox` then drops the
   last frame.
 
+## Releasing
+
+**Versions**: 0.x until the main feature works; 1.0 is the first really usable version, tried on the real machine.
+The version changes only for a published release. Between releases the number reads `<next>-dev`, so that a build
+in between is not taken for the last release. The number appears in the two `$VER:` strings of `amiga.c`
+(`amisqueeze` and `amisqueeze.fpu`), in `Firmware=` of the `HELO` capabilities (`slimproto.c`) and in the user
+guide; `tools/check-version.py` checks that they agree (see [Host build and tests](#host-build-and-tests)). The
+`$VER:` date is the release date.
+
+**`CHANGELOG.md`** follows [Keep a Changelog](https://keepachangelog.com/): each user-visible change goes under
+"Unreleased" as it is made; at the release, that part gets the version number and the date.
+
+**A release** is a Git tag `amisqueeze-<version>` and a GitHub Release with the zip and the `.lha` (the same
+files: see `make dist` in [Building](#building)), the `.sha256` of each, the Aminet `.readme`, and short notes
+holding each archive's SHA-256.
+
+**Before the tag**, on the build to be tagged:
+
+1. a review of the release with Claude Code (plan step publish-5, the tools in `.claude/`): a light review of the
+   range since the previous tag, `/release-review <previous tag>` (three agents, limited to the diff and what it
+   reaches); at milestones only (before 1.0, after a big change of architecture such as Music Assistant or
+   splitting `stream.c`), a full audit, `/release-review <previous tag> full` (four agents, the whole repository).
+   Its report goes in `docs/development/reviews/`. Findings scored 75 or more are fixed, or accepted by the
+   maintainer with the reason in the report; an urgent fix may ship after a review of its own diff. Remarks that
+   come after a version's review (outside readings, new ideas) go to the next version, unless they show a real
+   defect or the maintainer chooses otherwise;
+2. `python3 tools/winuae/run-scenarios.py` all OK in WinUAE (JIT, 68882 with `compfpu`):
+   [winuae-scenarios.md](docs/development/winuae-scenarios.md);
+3. `Version <exe> FULL` for both executables in WinUAE (see `$VER:` in [Pitfalls](#pitfalls));
+4. the stack measured again, when [Stack and memory](#stack-and-memory) says so;
+5. the `.lha` extracted by LhA on the Amiga (in WinUAE: its files compared, the scenarios run on what it gives),
+   only when the making of the archive changes (the image or the version of `lha`, the options of
+   `make-dist.py`, a new kind of file in it) and once before an upload to Aminet; otherwise the checks of
+   `make dist` are enough;
+6. the "Unreleased" part of `CHANGELOG.md` given the version and the date, the version number set everywhere
+   (`make dist` refuses anything else).
+
+**The archives are made by GitHub from the tag** (`.github/workflows/release.yml`, since 0.7): pushing a tag
+`amisqueeze-<version>` runs `make dist` through the Docker way of `tools/amiga-make.sh` (the pinned image), checks
+that the archives bear the tag's version, and makes a **draft** pre-release with the archives, their `.sha256` and
+the readme, its notes holding the SHA-256 lines and a place for the rest. The executables' SHA-256 are in the job's
+summary: the build is reproducible, so they must be those of the build tried in WinUAE before the tag. The draft is
+published by hand once its notes are written and approved. Run by hand (Actions, "release", "Run workflow"), the
+workflow is a trial: the development archives in a draft marked never to publish, to delete afterwards (a draft's
+tag is created only when it is published).
+
+**Aminet** (from 1.0): the files are renamed without the version (Aminet's rule), and the readme's `Uploader:`
+gets an e-mail address.
+
 ## Debugging
 
 No source-level debugging yet. Meanwhile, WinUAE's built-in debugger (`Shift+F12`) follows the program at the
-assembly level. Planned (step tools-8): `bgdbserver` (Aminet `dev/debug/bgdbserver`) in the emulated Amiga, with
-WinUAE's `bsdsocket.library` emulation, and `m68k-amigaos-gdb` (`target remote …:2345`) driven by cpptools; build
-with `-g`.
+assembly level. Planned (step tools-8): `bgdbserver` (bebbo, Aminet `dev/debug/bgdbserver`) in the emulated Amiga,
+with WinUAE's `bsdsocket.library` emulation, and `m68k-amigaos-gdb` (`target remote …:2345`) driven by a cpptools
+`launch.json`; build with `-g`. To check first: that WinUAE's port 2345 can be reached from wherever gdb runs.
+Ruled out: uae-dap (prb28), which needs SAS/C `LINE DEBUG` hunks, and Bartman's amiga-debug (its own toolchain,
+NDK 3.9, no libc).
 
 ## VS Code
+
+Open each repository on its own: the task names are the same in every repository, so that shortcuts can target
+them by name.
 
 Recommended extensions: `ms-vscode.cpptools` (C IntelliSense, using the headers in `.sdk/`),
 `prb28.amiga-assembly` (68k assembly highlighting) and `spencerwmiles.vscode-task-buttons` (task buttons).
@@ -256,12 +372,31 @@ Tasks (`.vscode/tasks.json`, calling `tools/amiga-make.sh`, through WSL on Windo
 `.vscode/settings.json` (Task Buttons extension). Keyboard shortcuts can target tasks by name
 (`workbench.action.tasks.runTask`).
 
-## Notes
+## Pitfalls
 
-- Protocol references: squeezelite (`slimproto.c`, `slimproto.h`, `stream.c`, `pcm.c`,
+- **Protocol references**: squeezelite (`slimproto.c`, `slimproto.h`, `stream.c`, `pcm.c`,
   https://github.com/ralph-irving/squeezelite) and LMS (`Slim/Networking/Slimproto.pm`). They are GPL: read to
-  understand the protocol's behaviour, never copied (the project is MIT).
-- `vamos` (shipped with the `amigadev/crosstools` image) runs command-line tools that only use dos.library, but
-  not windowed or network programs, and crashes on `printf`: test in WinUAE. Run 68020 programs with `vamos -C
-  68020`. Its `GetVar` ignores global variables (`ENV:`), so default options cannot be tested with it.
-- Strings shown on the Amiga: stick to ASCII (the Amiga uses ISO-8859-1, the sources are UTF-8).
+  understand the protocol's behaviour (message layouts, when to send which status), never copied (the project is
+  MIT).
+- **The compiler**: gcc 16.1.1b generated wrong code, hence the safeguard of [Building](#building).
+- **vamos** (shipped with the `amigadev/crosstools` image) runs command-line tools that only use dos.library: it
+  crashes on `printf` (libnix), has no windows and no real `bsdsocket.library` (its stub makes amisqueeze retry
+  forever: kill it). Run 68020 programs with `vamos -C 68020` (otherwise alert `00068020`). Its `GetVar` ignores
+  global variables (`ENV:`) and returns 0, so default options cannot be tested with it. Useful for argument
+  parsing only: test the rest in WinUAE.
+- **`-m68881` and libnix**: libnix links a start-up check (`__fpucheck`) that, without an FPU, shows an alert and
+  quits before `main()` without a message: `amiga.c` replaces it with an empty one and checks `AttnFlags` itself.
+  The `-m68881` code uses `fintrz` and `fmovecr`, emulated (slowly) by the CPU library of a 68040 or 68060.
+- **The `$VER:` string** stays non-const, in the data hunk (`tools/check-version.py` checks it). Const, it sat in
+  the code hunk, and AmigaOS 3.2's `Version` printed "amiseeze 0.3" for the 0.3 build although the bytes were
+  right (only when reading the file as an executable). Hence `Version <exe> FULL` for both executables before
+  each release.
+- **Workbench start and libnix**: started from the Workbench, libnix opens the console named by `__stdiowin`
+  before `main()`; `amiga.c` sets it to NULL and opens its own once it has read the icon (`WINDOW`, `QUIET`). A
+  `CON:` window needs `SMART`, or it loses its text when uncovered. With `QUIET` there is no output (`msg()`
+  checks `Output()`), except during start-up (`main()`, up to `bsdsocket.library`): a message then opens the
+  window (`MAC` and `OUTPUT`, checked by the core, go to the log only).
+- **The commodity**: amisqueeze is a commodity ("Remove" in Exchange = Ctrl-C), one at a time (`CBERR_DUP`); a
+  second start does nothing to the running one.
+- **LMS drops every status after a `strm s` until `STMc`**: a refusal must come after a `STMc`, or LMS waits for
+  that track forever ([architecture](docs/development/architecture.md#a-tracks-life-the-statuses)).

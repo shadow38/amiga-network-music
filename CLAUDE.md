@@ -1,234 +1,74 @@
 # CLAUDE.md — amiga-network-music
 
-Personal project: network music for classic Amiga (AmigaOS 3.x), in C, tested in WinUAE. The `README.md` is for
-users (what it is, quick start; decided 2026-10-19: keep it short); building, tests, layout, tasks and how to
-propose a change are in `CONTRIBUTING.md` at the root (moved there from `docs/development/building.md` on
-2026-10-19, the GitHub convention); `docs/` holds the user guide and its images, `docs/development/` the plan; the
-server setup is in the user guide; how the player works (portable core and platform layer, the data path, the two
-kinds of position, the statuses, what of slimproto is handled) is in `docs/development/architecture.md` (0.7); this
-file keeps context, decisions and pitfalls. Public GitHub repository
-`shadow38/amiga-network-music`: **nothing specific to the developer's workstation goes here** (local
-paths, corporate proxy, personal settings, neighbouring folders); those live in local files outside the
-repository. Documentation, code comments and program messages are in English.
+For Claude Code. What a human contributor needs is in the repository's own documents, not here: `README.md` (for
+users, kept short), `docs/user-guide.md` (options, messages, server setup), `CONTRIBUTING.md` (building, tests,
+code rules, testing in WinUAE, releasing, pitfalls), `docs/development/architecture.md` (how amisqueeze works),
+`docs/development/testing.md` (the WinUAE test machine), `docs/development/README.md` (the plan: roadmap, where
+each step stands, open points). This file keeps only how to work with the maintainer, the rules never to break,
+and what to read before touching what. Public GitHub repository `shadow38/amiga-network-music`; documentation,
+code comments and program messages in English.
 
-**Versioning** (decided 2026-10-18, completed 2026-10-19): 0.x until the main feature works; the version changes
-only for a **published** release; 1.0 = first really usable version (tested on the real machine). Never bump it on
-our own: ask the user. A release = a Git tag `amisqueeze-<version>` + a GitHub Release with a zip and a `.lha`
-holding the same files (the Amiga executables and their `.info` icons, `LICENSE`, `README.md`, `CHANGELOG.md`, the
-user guide and its images), the Aminet `.readme`, and short notes. Since 0.7 (decided 2026-10-23) pushing the tag
-makes a **draft** release (`.github/workflows/release.yml`: the archives built by the CI from the tag, the pinned
-image); the user publishes it once the notes are written and approved and the executables' SHA-256 of the job's
-summary are those of the build tried in WinUAE (reproducible build); each archive's SHA-256 goes in the notes and in a `<archive>.sha256` file attached to the
-release (decided 2026-10-21; written by `make dist` since 0.7, with the lines for the notes: archives, files and
-notes from the same run). The `.lha` and `.readme` since 0.7 (plan step publish-2, decided 2026-10-23): made by `lha`
-of the image `amigadev/crosstools`, readme from `dist/amisqueeze.readme`; for Aminet (1.0), the files are renamed
-without the version (Aminet's rule) and `Uploader:` gets an e-mail address. The `.lha` extracted on the Amiga
-(LhA in WinUAE, the files compared, the scenarios run on what it gives; plan step publish-2) is tried again only when the
-making of the archive changes (image or `lha` version, `make-dist.py`'s options, a new kind of file in it) and
-once before the Aminet upload (decided 2026-10-23); otherwise the checks of `make dist` are enough. **Before every
-release tag** (plan step publish-5, decided 2026-10-20; two levels decided the same day, for cost): a light review of
-the range since the previous tag, `/release-review <previous tag>` (three agents, limited to the diff and what it
-reaches); a full audit,
-`/release-review <previous tag> full` (four agents, the whole repository), only at milestones: before 1.0, or after
-a big change of architecture (Music Assistant, splitting `stream.c`). Also before every release tag (step tools-10,
-decided 2026-10-23): `python3 tools/winuae/run-scenarios.py` all OK in WinUAE (JIT + 68882 with `compfpu`), on the
-build to be tagged (`docs/development/winuae-scenarios.md`). Findings scored 75 or more are fixed, or
-accepted by the user with the reason in the report (an urgent fix may ship after a review of its own diff); the
-review tooling changes only when a review misses a real defect, or when the user decides it. Remarks that come
-after a version's review (outside readings, new ideas) go to the next version by default; only a real defect, or
-the user's choice, brings one into the current version (decided 2026-10-21, against over-quality).
-`CHANGELOG.md` (Keep a Changelog, added 2026-10-20): note each user-visible change under "Unreleased" as it is
-made, and give that part the version and date at the release; the `$VER:` date is the release date. Between
-releases the number reads `<next>-dev`, so that a build in between is not taken for the last release. The releases
-so far: `CHANGELOG.md` (0.1 to 0.6, all tested in WinUAE only). The number appears in the two `$VER:` strings
-(`amiga.c`: `amisqueeze` and `amisqueeze.fpu`), in `Firmware=` of the `HELO` capabilities (`slimproto.c`) and in
-the user guide.
+## Working with the maintainer
 
-**Licence: MIT** (`LICENSE`, "Copyright (c) 2026 shadow38"), decided 2026-10-18. squeezelite and LMS are GPL:
-read them to **understand** the protocol and its expected behaviour (message layouts, when to send which state),
-then write our own code; **never copy blocks of their code**. Third-party libraries must have an MIT-compatible
-licence (public domain, MIT, BSD, zlib…; e.g. dr_flac, minimp3), not GPL (no libmad).
+- Work proceeds in testable steps, named `tools-<n>`, `player-<n>`, `remote-<n>`, `publish-<n>` (never a number
+  that reads as a version; until 2026-10-23 `<phase>.<n>`, kept in older review reports and commits). The content
+  and success criterion of a step are agreed with the user **before** any code. A finished step: criterion checked,
+  documentation up to date, one commit. Decisions are recorded in the plan, dated ("decided with the user on
+  <date>").
+- Which version brings which steps, and where each step stands: "Roadmap" and "Where we are" in
+  `docs/development/README.md`, the only place they are kept; keep the statuses up to date.
+- Each user-visible change: the user guide updated and a line under "Unreleased" in `CHANGELOG.md`, as it is made.
+- `make test` after every change to the core; extend the tests with each step.
+- Never implement an "Open point" of the plan unasked. No amilms code before its study (step remote-0).
+- Always the user's decision, never ours: bumping the version; publishing a release (the CI makes a draft from the
+  tag); changing the pinned image (`REFERENCE_IMAGE`); changing the review tooling (`.claude/`), except when a
+  review missed a real defect.
+- Before a release tag: `CONTRIBUTING.md`, Releasing. Findings scored 75 or more are fixed, or accepted by the user
+  with the reason in the report. Remarks that come after a version's review (outside readings, new ideas) go to
+  the next version by default; only a real defect, or the user's choice, brings one into the current version
+  (against over-quality).
+- After a push: watch the CI run in the background, without waiting for it (`gh run list --commit <sha>` for its
+  id, then `gh run watch <id> --exit-status`), and speak of it only when it fails. A failure may come from a slow
+  runner (the tests use real time): rerun before suspecting the code, and say so.
+- Before testing on the Amiga or in WinUAE: `CONTRIBUTING.md`, "Checks the host tests cannot make".
 
-## Project: amisqueeze and amilms
+## Never
 
-Targets (2026-10-18): classic Amigas, 68020 or better, of two kinds: **fast** (PiStorm with Emu68: a 68040 with
-FPU) and **slow** (a 68020 accelerator without FPU); sound through **AHI**: Paula (`paula.audio`, Amigas without a
-sound card) or an AHI driver (sound card, or the PiStorm's own outputs: I2S DAC of the PiStorm32-lite FPGA
-firmware, HDMI with a Pi 4). Code only `ahi.device` features of AHI 4 (tested with AHI 6.6; 4.x expected to
-work, not checked). The WinUAE test configurations reproduce both kinds (step tools-4). **Before testing on the
-Amiga**, read "Checks the host tests cannot make" in `CONTRIBUTING.md` (stack, speed, memory, sound, measures on
-the server, `OUTPUT` comparisons).
+One line each; the pointer says where it is explained.
 
-Decided (2026-10-18): two programs in this repository, one `src/<prog>/` directory each, shared code in
-`src/common/` (to create with amilms; none yet):
+- Nothing specific to the developer's workstation in the repository (local paths, corporate proxy, personal
+  settings, neighbouring folders, how the toolchain is installed on one machine): those live in local files
+  outside it.
+- No code copied from squeezelite or LMS (GPL; the project is MIT): read them to understand the protocol, then
+  write our own. Third-party code only under an MIT-compatible licence (`CONTRIBUTING.md`, Proposing a change and
+  Code rules).
+- No `ahir_Volume` below full (`architecture.md`, AHI).
+- No mixing of the ring's positions and the output's (`architecture.md`, Two kinds of position).
+- No big buffer on the stack, and no stack measurement from a Shell with a large stack (`CONTRIBUTING.md`, Stack
+  and memory).
+- No `printf`, `Printf` or `PutStr` called directly: `msg()` and `msg_raw()`, except inside the platform layers'
+  own implementation of `msg()`, `msg_raw()` and the `LOG` file (`CONTRIBUTING.md`, Code rules).
+- No const `$VER:` string (`CONTRIBUTING.md`, Pitfalls).
+- Nothing but ASCII and LF line endings in what the Amiga shows or reads, the README and the user guide included
+  (`CONTRIBUTING.md`, Code rules).
+- No refusal (`STMn`) of a `strm s` before its `STMc`: LMS drops every status after a `strm s` until `STMc`, and
+  then waits for that track forever (`architecture.md`, A track's life).
+- No measurement on the server's web page: through its CLI (`CONTRIBUTING.md`, Checks the host tests cannot make).
+- No Kickstart ROM in the repository (licensed).
 
-- **amisqueeze**: slimproto player with AHI output, for LMS and Music Assistant (since 0.7, plan step player-7b);
-- **amilms** (working name; **amiremote** proposed, to be decided by study step remote-0): remote control, one
-  portable core with two server back ends behind a common interface, LMS text CLI (TCP 9090) first, then the
-  Music Assistant API (JSON over WebSocket, token), an MPD back end noted as an idea (step remote-12); a Shell front
-  end first, then a GUI front end calling the same core in the same program (not a GUI driving a CLI program).
-  Decided 2026-10-19: study remote-0 (common interface, MA feasibility, name) before any amilms code. Track search is
-  one of its main goals (step remote-4). For Music Assistant, the existing Home Assistant client ami2ha already offers basic control (play/pause, next, volume, no
-  search): noted in the phase 2 plan.
+## Before touching X, read Y
 
-Work proceeds in testable steps, each validated with the user **before** writing code: the plan is in
-`docs/development/` (keep the statuses up to date). User-facing behaviour (options, messages) is documented in
-`docs/user-guide.md`: update it with every change visible to users. Which version brings which steps (0.7 Music
-Assistant, 0.8 the real machine, 0.9 ICY and server discovery, 1.0, then the remote) and where each step stands:
-"Roadmap" and "Where we are" in `docs/development/README.md`, the only place they are kept. Steps are named
-`tools-<n>`, `player-<n>`, `remote-<n>`, `publish-<n>` (phases 0 to 3), never with a number that reads as a
-version (until 2026-10-23 `<phase>.<n>`, kept in older review reports and commits).
-Documentation review of 2026-10-19: points announced in the plan but neither done nor dropped are listed under
-"Open points" in `docs/development/README.md`, for the user to decide (never implement them unasked).
-
-Step player-8c (mp3.c, minimp3.c, `amisqueeze.fpu`; the build variants in `CONTRIBUTING.md`): minimp3 resets itself
-when the bytes after a frame are not the next header: it is called only with a frame and the next header in its 16
-KB staging buffer (a full buffer for the first frame), or at the end of the track. MP3 gapless (step player-8d,
-2026-10-20): the LAME header of the first frame gives the delays and padding to drop (`mp3_lame_header`); after a
-seek LMS resends that frame first, so the end limit is never reached. In the zip, both executables; in `$VER:`,
-`amisqueeze` or `amisqueeze.fpu` (two lines in `amiga.c` to bump).
-
-Step player-8a (decoder.h, decoder.c): the ring's positions (bytes of the stream) and the output's (bytes of decoded
-PCM) are never to be mixed (`architecture.md`); raw PCM cannot reveal a mix-up: the test-only "widening" decoder
-in `tests/test_core.c` can.
-
-Step player-8b (flac.c, dr_flac.c, bench.c): dr_flac takes a short read for the end of the stream and reads ahead (4 KB
-cache), so a frame is decoded only when the buffer holds a whole one, and a track ends for the output only when
-the decoder says `finished`. After a seek or a resume, LMS sends a FLAC file from a frame boundary without its
-header (fixed 2026-10-20: a STREAMINFO is made up from the first frame's header). Third-party code goes in
-`third_party/` (version, commit, licence in a README), built in its own file without our warnings (`THIRD_PARTY`
-in the Makefile). A file that includes a third-party header and reads its structures must use the same
-configuration macros as the file that builds it. FLAC speed in WinUAE without JIT: level 8 at 0.2x real time (the
-test HDF has no 68040 CPU library: a PiStorm-like test uses the 68020 with the JIT).
-
-Step player-2 (stream.c, ring.c; the stream, the ring and the statuses in `architecture.md`): STMt is not printed with
-VERBOSE (one per second). Criteria are measured on the server through its CLI, never on its web page.
-
-Step player-3: `OUTPUT=<file>` writes what the virtual output plays (`hand_over()` in `stream.c`, the only place
-where the output hands PCM over; raw PCM as received, the rest as decoded), one file per run. With AHI, `OUTPUT`
-keeps the virtual output (no sound). How to compare it byte by byte: `CONTRIBUTING.md`.
-
-Step player-4 (AHI: `audio.c` portable, the `ahi.device` calls in `amiga.c`): `ahi.device` rules learnt from its
-source (AHI 6.0), to keep: chain a request (`ahir_Link`) only to one already **playing** (linked to a waiting
-one, it never plays nor ends), so at most two requests with the device; abort the **playing** one first (it takes
-the linked one along; the reverse order leaves a stale reference that hangs the device); `CMD_STOP` does not
-pause what is playing (pause = abort, then send the rest again); a non-real-time mode ("Filesave") on a device
-unit writes only silence. The test stub enforces the first two rules (`stub_audio_bad`).
-**Never send `ahir_Volume` below full** (found in step player-6): with AHI 6.6 and `paula.audio`, requests sent again
-after an abort (a resume) with a low volume corrupt the free memory list, and the system hangs or amisqueeze dies
-later; the core scales the samples instead (two 256-entry tables, no multiplication per sample). Check memory with
-the `Largest` column of `Avail`.
-
-amisqueeze state: control connection (step player-1) validated on 2026-10-18 in WinUAE (`bsdsocket_emu`,
-`SERVER=127.0.0.1`) with LMS 9.1.1: the player shows up in LMS and reconnects by itself after a server restart.
-`HELO` advertises `Model=squeezelite` (so LMS recognises it) and `ModelName=AmiSqueeze`. LMS 9.1 has no default
-`mp3 pcm` rule: a regular user's server won't have it, hence local MP3 decoding (step player-8c, `amisqueeze.fpu`);
-for the builds that leave MP3 to the server, the rule is documented in the user guide (server setup) and in plan
-step tools-2 (without `-r`, with `trim` for seeking).
-
-## Design choices (player)
-
-- **Portable core + platform layer** (step tools-6, 2026-10-18; described in `architecture.md`): every file of
-  `src/amisqueeze/` but `amiga.c` and `posix.c` is standard C (`<stdint.h>`, no Amiga or POSIX header);
-  everything system-related goes through `platform.h`. Keep the core free of system calls; keep the platform
-  layers thin. The main loop (timeouts, reconnection) lives in the core.
-- One task and one loop around `plat_wait()` (`WaitSelect()` on the Amiga: a `SocketBase` belongs to the task
-  that opened it; `select()` on POSIX, SIGINT/SIGTERM without `SA_RESTART` = Ctrl-C).
-- Addresses and ports in **host byte order** in the core; `htonl`/`ntohl` only in the platform layers (no-ops on
-  68k, essential on x86).
-- Fields serialised byte by byte, no packed structures; 32-bit values are `uint32_t` (the MAC hash too, so both
-  builds derive the same MAC).
-- Advertise in `HELO` only the formats actually decoded.
-- Output goes through `msg()` with the **standard printf format** (`format(printf)` attribute, `-Werror=format`
-  on both builds; on the Amiga: libnix `vsnprintf` into a static buffer, then `Write()` to `Output()`, unbuffered,
-  so a log redirected to a file is readable while the program runs); raw bytes through `msg_raw()`. Never
-  `Printf`/`PutStr`/`printf` directly, except inside the platform layers' own implementation of `msg()`,
-  `msg_raw()` and the `LOG` file (decided 2026-10-20, review of 0.5). Cast 32-bit values to the type the
-  specifier names (`(unsigned long)` with `%lX`); `%c` for chars (not `%lc`).
-- Music Assistant: per-player output codecs `flac` (default), `mp3`, `aac`, `wav` (seen in `constants.py`,
-  `CONF_ENTRY_OUTPUT_CODEC`), everything transcoded to that codec; how it differs from LMS (MA 2.10.7, step player-7b)
-  is in `architecture.md`.
-
-## Toolchain
-
-- **Toolchain**: `m68k-amigaos-gcc` 16.2 (AmigaPorts), NDK 3.2 (v47 headers, including bsdsocket/Roadshow and
-  AHI), libnix, `make`, `python3`; reference image `amigadev/crosstools:m68k-amigaos-gcc10` (historical tag that
-  follows GCC 16; prefix `/opt/m68k-amigaos`, with vasm, gdb, vamos), pinned by digest in `tools/amiga-make.sh`
-  (`REFERENCE_IMAGE`, decided 2026-10-23: the tag moves; changing it is a decision for the user, with the checks
-  of `CONTRIBUTING.md`, Requirements). The repository stays **generic**: how the
-  toolchain is installed on a given machine is not described here.
-- **Building**: `sh tools/amiga-make.sh [all|clean|sdk|host|test|<prog>]`, which tries in order `$AMIGA_MAKE`,
-  the toolchain in the `PATH`, `../amiga-make.local.sh` (outside the repository), then Docker (the CI's way). On
-  Windows: through WSL (VS Code tasks: `wsl.exe --cd ${workspaceFolder} --exec sh tools/amiga-make.sh …`, default
-  distribution).
-- **Host build and tests**: `make host` (core + `posix.c`, `$(HOSTCC)`, default `cc`, with ASan + UBSan) and
-  `make test` (`tests/test_core.c` on `tests/stub_platform.c`, then `tests/fake_server.py` against
-  `out-host/amisqueeze`; needs a native compiler and python3, no LMS). Run `make test` after every change to the
-  core; extend the tests with each step (player-2: stream scenarios in the fake server). The Amiga build is still
-  checked in WinUAE (different platform layer). GitHub Actions runs `make test` on each push
-  (`.github/workflows/tests.yml`, Ubuntu 24.04, decided 2026-10-19), and since 2026-10-23 the Amiga build and
-  `make dist DEV=1` through the Docker way of `tools/amiga-make.sh` (the pinned image; the executables' SHA-256 in
-  the job's log; the `.lha` and the `.zip` kept 14 days as two artifacts, not wrapped in a zip, decided 2026-10-23): after a push,
-  watch the run **in the background**, without waiting for it (decided 2026-10-23: it is almost always green and
-  the same builds run locally; `gh run list --commit <sha>` for its id, then `gh run watch <id> --exit-status`),
-  and speak of it only when it fails; the tests use real time (playback pacing, reconnection delays), so a slow runner could make one
-  fail: rerun before suspecting the code, and say so.
-- **VS Code**: open each repository on its own (task names are the same everywhere, shortcuts can target them by
-  name); extensions `prb28.amiga-assembly`, `ms-vscode.cpptools` and `spencerwmiles.vscode-task-buttons`.
-- **WinUAE** 6.0; Kickstart ROMs are not versioned (licensed). Test machine: the template
-  `winuae/amisqueeze-test.uae` and `docs/development/testing.md` (profiles, AHI units, serial shell, amiagent,
-  server-side measures, CPU load, test sounds from `tools/make-test-audio.sh`; since 2026-10-22).
-
-## Pitfalls
-
-- **gcc 16.1.1b (wischner 1.1.0) generated wrong code**: a register picked by reload (e.g. `d2`) was used without
-  being saved in the prologue → corruption in the caller, *address error* `#80000003` in WinUAE. No option avoided
-  it (-O1/-Os/-O2, -mlra/-mno-lra, -fbbb=-…); fixed in 16.2-rc16. Safeguard: the Makefile goes through `-S` and
-  `tools/check-saves.py` (fails the build). The GCC 16 port is at RC stage: be wary, check the assembly.
-- **vamos** only runs pure dos.library tools: it crashes on `printf` (libnix), no windows, no real bsdsocket (its
-  stub makes amisqueeze retry forever: kill it). Use `vamos -C 68020` for 68020 builds (otherwise alert
-  `00068020`). Its `GetVar` ignores global variables (`ENV:`) and returns 0. Useful for argument parsing only;
-  test the rest in WinUAE.
-- **Stack**: the default Shell stack is 4 KB and AmigaOS does not detect overflows (silent corruption). Big buffers
-  are static or allocated, never on the stack. Both executables set `__stack` (16 KB `amisqueeze`, 32 KB
-  `amisqueeze.fpu`) and link libnix's `__stkinit`, which gives that stack when the Shell's is smaller: dr_flac
-  needs about 5.5 KB (4.6 KB in `drflac_open` alone), minimp3 about 17.5 KB. **Found by an outside review on
-  2026-10-20**: until then `amisqueeze` (68020) ran on the Shell's 4 KB and overflowed at every start (FLAC speed
-  measure) since 0.2; the WinUAE tests never saw it because they ran from a remote-control Shell with a 256 KB
-  stack. Check: the probe of `CONTRIBUTING.md` ("Checks the host tests cannot make"), from a script with `Stack
-  4096`, never from a Shell with a large stack; 2026-10-20: 5.6 KB of 16 KB used while playing FLAC with a
-  seek, 17.8 KB of 32 KB for `amisqueeze.fpu` with FLAC and MP3. Redo it when `-fstack-usage` shows the deepest path growing by more than 1 KB, or when a new decoder,
-  library or start-up path is linked (decided 2026-10-21: a few bytes more do not call for it); measure frames
-  with `-fstack-usage`.
-- **`-m68881` and libnix**: libnix links a start-up check (`__fpucheck`) that, without an FPU, shows an alert and
-  quits before `main()` without a message: `amiga.c` replaces it with an empty one and checks `AttnFlags` itself.
-  minimp3 keeps about 17 KB on the stack (`mp3dec_decode_frame`): see Stack above. The `-m68881` code uses
-  `fintrz` and `fmovecr`, emulated (slowly) by the CPU library on a 68040/68060.
-- **`$VER:` string** (found at the 0.3 release): kept non-const, in the data hunk. Const, it sat in the code hunk,
-  and AmigaOS 3.2's `Version` printed "amiseeze 0.3" for the 0.3 build although the bytes were right (only when
-  reading the file as an executable; the 0.2 build was fine). Before each release, check `Version <exe> FULL`
-  for both executables in WinUAE.
-- **Workbench start and libnix** (step player-10): libnix opens the console named by `__stdiowin` before `main()` when
-  started from the Workbench; `amiga.c` sets it to NULL and opens its own after reading the icon (`WINDOW`,
-  `QUIET`). A `CON:` window needs `SMART`, or it loses its text when uncovered. With `QUIET` there is no output
-  (`msg()` checks `Output()`), except during start-up (`main()`, up to `bsdsocket.library`): a message then opens
-  the window (0.6; `MAC` and `OUTPUT`, checked by the core, go to the log only). amisqueeze is
-  a commodity ("Remove" in Exchange = Ctrl-C), one at a time (`CBERR_DUP`); a second start does nothing to the
-  running one (decided with the user).
-- **WinUAE and Paula when testing**: the JIT needs `compfpu=true` for `amisqueeze.fpu`, Paula needs `SWAP` and is
-  judged at volume 100 (details in `CONTRIBUTING.md`).
-- Strings shown on the Amiga and files read by the Amiga: ASCII only (ISO-8859-1 on the Amiga), LF line endings.
-  The README and the user guide are among them, since they ship in the archives (decided 2026-10-21): `...`, `-`,
-  `|` rather than their typographic forms.
-- **LMS drops every status after a `strm s` until `STMc`** (found 2026-10-21 in its sources): a refusal sent at
-  once (`STMn`) must come after a `STMc`, or LMS never hears of it and waits for that track forever.
-- WinUAE syntax checked in `cfgfile.cpp`: `filesystem2=rw,DEVICE:Volume:path,bootpri`; `chipmem_size` in 512 KB
-  units, `fastmem_size` in MB; networking emulation `bsdsocket_emu=true`.
-
-## Source-level debugging (step tools-8, optional)
-
-Chosen approach: `bgdbserver` (bebbo, Aminet `dev/debug/bgdbserver`) in the emulated Amiga + WinUAE's
-`bsdsocket.library` emulation + `m68k-amigaos-gdb` (`target remote …:2345`) + a cpptools `launch.json`; build with
-`-g`. To validate first: reaching WinUAE (port 2345) from wherever gdb runs.
-Ruled out: uae-dap/prb28 (requires SAS/C LINE DEBUG hunks), Bartman's amiga-debug (its own toolchain, NDK 3.9, no
-libc). WinUAE's built-in debugger (Shift+F12) remains available at the assembly level.
+| Before touching | Read |
+|---|---|
+| the portable core (`src/amisqueeze/` but `amiga.c`, `posix.c`) | `architecture.md`; `CONTRIBUTING.md`, Code rules |
+| `stream.c`, `slimproto.c` (statuses, `strm`) | `architecture.md`, A track's life and What of slimproto is handled |
+| `decoder.c`, `flac.c`, `mp3.c`, `third_party/` | `architecture.md`, Decoders; `CONTRIBUTING.md`, Code rules and Stack and memory |
+| `audio.c`, the AHI calls of `amiga.c` | `architecture.md`, AHI |
+| the start-up of `amiga.c`, `__stack`, libnix | `CONTRIBUTING.md`, Stack and memory and Pitfalls |
+| `Makefile`, `tools/check-saves.py`, `tools/amiga-make.sh` | `CONTRIBUTING.md`, Requirements and Building |
+| `tests/`, `.github/workflows/` | `CONTRIBUTING.md`, Host build and tests |
+| the version number, `CHANGELOG.md`, `make dist`, a release | `CONTRIBUTING.md`, Releasing |
+| anything tried in WinUAE | `CONTRIBUTING.md`, Testing in WinUAE; `docs/development/testing.md`, `winuae-scenarios.md` |
+| options, messages | `docs/user-guide.md` |
+| `.claude/` (the review tooling) | `.claude/skills/review-method/SKILL.md`; plan step publish-5 (`phase-3-release.md`) |
+| amilms | `docs/development/phase-2-amilms.md` |

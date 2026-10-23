@@ -168,7 +168,8 @@ Back to the [plan](README.md).
     tags as releases, refused 17 planted defects and HEAD itself with `--release`, also through `make test` and
     `make dist` themselves. Closed there on 2026-10-20 (decided with the user: the step was turning into
     over-quality); the other candidates of `rules.md` stay as ideas, not planned;
-  - **publish-5e** the release rule in `CLAUDE.md` (done on 2026-10-20). The agents and the method read
+  - **publish-5e** the release rule in `CLAUDE.md` (done on 2026-10-20; in `CONTRIBUTING.md`, Releasing, since
+    2026-10-23). The agents and the method read
     [rules.md](rules.md) and name a rule by its ID (`rules.md C12`). The review of HEAD planned here was dropped
     (decided with the user on 2026-10-20: since 0.5, HEAD changed only documentation and review tooling): the next
     review is the one before the 0.6 tag, `/release-review amisqueeze-0.5`, whose launch prompt adds "no `HEAD`

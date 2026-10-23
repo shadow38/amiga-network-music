@@ -54,7 +54,7 @@ statuses in [Where we are](#where-we-are).
 | Version | Theme | Steps | Status | Tested on |
 |---|---|---|---|---|
 | 0.1 to 0.6 | the player for LMS: PCM, FLAC, MP3 (`amisqueeze.fpu`), MP3 without gaps, `LOG`, start from the Workbench, the review fixes | player-1 to player-8d, player-10 (part) | ✅ published from 2026-10-19 to 2026-10-21 ([changelog](../../CHANGELOG.md)) | host and WinUAE |
-| 0.7 | Music Assistant; the `.lha`, the Amiga build in CI, the release made from a tag | player-7b, tools-10 (LMS), publish-2 (`.lha`), publish-3 | 🔶 content done; the `CLAUDE.md` move, the full audit and the checks before the tag remain | host and WinUAE, with LMS and Music Assistant |
+| 0.7 | Music Assistant; the `.lha`, the Amiga build in CI, the release made from a tag | player-7b, tools-10 (LMS), publish-2 (`.lha`), publish-3 | 🔶 content done; the full audit and the checks before the tag remain | host and WinUAE, with LMS and Music Assistant |
 | 0.8 | the real machine: what it shows | player-9 | ⬜ | the real machine and network |
 | 0.9 | internet radios' metadata (ICY), automatic server discovery | player-10 (end) | ⬜ | host for the code; the real machine and network |
 | 1.0 | setup guides, a full audit, the Music Assistant scenario, the upload to Aminet | publish-4, publish-5, tools-10 (Music Assistant), publish-2 (Aminet) | ⬜ | the real machine |
@@ -105,7 +105,8 @@ it comes after these releases, or alongside if the user wants it.
   `architecture.md` only, the documents the review agents already read (no new document, the agents unchanged);
   `rules.md` pointing to sections instead of `CLAUDE.md` line numbers (89 of them, already off); no separate
   "living docs": the executable scenarios, the user guide and `architecture.md` are that. Shown to the user before
-  its commit.
+  its commit (✅ done on 2026-10-23: `CONTRIBUTING.md` gained Code rules with Stack and memory, Releasing and
+  Pitfalls, `architecture.md` Decoders and AHI).
 - Before its tag, a full audit (publish-5) instead of the light review (decided with the user on 2026-10-23), on
   the state after the renaming of the steps and the `CLAUDE.md` move; each step in a fresh session (the move,
   then the audit, then the release).
@@ -170,7 +171,7 @@ it comes after these releases, or alongside if the user wants it.
 | publish-2 Aminet archive | 🔶 2026-10-23: `make dist` builds the `.lha` and its Aminet `.readme` (for the 0.7 GitHub Release), tried in WinUAE (LhA 2.15) and on the host (`lhasa`); the upload to Aminet with 1.0 |
 | publish-3 Public versions | 🔶 0.1 to 0.6 published (tags, GitHub releases, changelog); CI: host tests, and the Amiga build with `make dist DEV=1`, its archives kept as the run's artifact; a draft release made from a tag (2026-10-23) |
 | publish-4 Setup guides: minimal server, the Amiga on the network | ⬜ before 1.0 |
-| publish-5 Review before each release (method, review agents, rules inventory, checks) | ✅ 2026-10-20: publish-5a to publish-5c done; publish-5d stopped after the version strings check; publish-5e the release rule in `CLAUDE.md`, no review of HEAD (the next review is the one before 0.6); the tooling changes only when a review misses a real defect |
+| publish-5 Review before each release (method, review agents, rules inventory, checks) | ✅ 2026-10-20: publish-5a to publish-5c done; publish-5d stopped after the version strings check; publish-5e the release rule in `CLAUDE.md` (in `CONTRIBUTING.md`, Releasing, since 2026-10-23), no review of HEAD (the next review is the one before 0.6); the tooling changes only when a review misses a real defect |
 
 Phase 0 moves forward as needed: a tooling step is done when a step of phase 1 or 2 needs it. Phases 1 and 2 can
 progress in parallel.

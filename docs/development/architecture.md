@@ -37,6 +37,8 @@ core; only the platform layers convert them.
 
 Builds of the same sources: `out/amisqueeze` (68020, FLAC), `out/amisqueeze.fpu` (68020 + 68881, `AMISQUEEZE_FPU`
 and `AMISQUEEZE_MP3`: FLAC and MP3), `out-host/amisqueeze` (`posix.c`, with the MP3 decoder, ASan and UBSan).
+LMS 9.1 has no default `mp3 pcm` conversion rule, so a regular user's server cannot turn MP3 into PCM: hence the
+MP3 decoder of `amisqueeze.fpu`. For the build without it, the rule is in the user guide's server setup.
 
 ## Data path
 
@@ -97,6 +99,38 @@ The boundary is reported (`STMs`) when the bytes played reach it (`next_track_du
 mix-up: the test-only "widening" decoder of `tests/test_core.c` makes the output bigger than the input, and
 reveals it.
 
+## Decoders
+
+What each third-party decoder needs from its caller:
+
+- **FLAC** (`flac.c`, dr_flac): dr_flac takes a short read for the end of the stream, and reads ahead (a 4 KB
+  cache). So a frame is decoded only when the ring holds a whole one, and a track ends for the output only when
+  the decoder says `finished`. After a seek or a resume, LMS sends the file from a frame boundary, without its
+  header: `flac.c` makes up a STREAMINFO from the first frame's header, and refuses a frame whose header leaves
+  its rate or its sample size to STREAMINFO.
+- **MP3** (`mp3.c`, minimp3, `AMISQUEEZE_MP3` only): minimp3 resets itself when the bytes after a frame are not
+  the next header, so it is called only with a frame and the next header in its 16 KB staging buffer (a full
+  buffer for the first frame), or at the end of the track. Without gaps: the LAME header of the first frame gives
+  the encoder's delay and padding to drop (`mp3_lame_header()`); after a seek, LMS sends that frame again first,
+  so the end limit is never reached.
+
+## AHI
+
+`audio.c` (portable) fills the blocks; the `ahi.device` calls are in `amiga.c`. Rules learnt from the source of
+`ahi.device` (AHI 6.0), which the code keeps:
+
+- chain a request (`ahir_Link`) only to one already **playing**: linked to a waiting one, it never plays nor ends;
+  hence at most two requests with the device;
+- abort the **playing** one first: it takes the linked one along; the reverse order leaves a stale reference that
+  hangs the device;
+- `CMD_STOP` does not pause what is playing: a pause aborts the requests, and the rest is sent again on resume;
+- a non-real-time mode ("Filesave") on a device unit writes only silence;
+- `ahir_Volume` always full: with AHI 6.6 and `paula.audio`, requests sent again after an abort (a resume) with a
+  low volume corrupt the free memory list, and the system hangs or amisqueeze dies later. `audio.c` scales the
+  samples instead (two 256-entry tables, no multiplication per sample).
+
+The fake audio device of the unit tests counts the requests that break the first two rules (`stub_audio_bad`).
+
 ## A track's life: the statuses
 
 What the server expects, as squeezelite behaves (written from the protocol, not from its code):
@@ -149,7 +183,7 @@ Framing: server to client, a 2-byte length then a 4-byte opcode and the data; cl
   `GET /stream.mp3?player=<mac> HTTP/1.0`.
 - `strm t`, `q`, `f`, `p` (interval 0), `u`.
 - `audg`: the 16.16 gains, already on the server's volume curve, applied to the samples by `audio.c`; adjust 0 =
-  fixed volume (samples untouched). ahi.device always gets full volume (see `audio.c` for why).
+  fixed volume (samples untouched). ahi.device always gets full volume (see [AHI](#ahi)).
 - `setd` id 0: the player name, set or queried; answered with `SETD`.
 
 **Received and ignored on purpose**:
@@ -164,7 +198,8 @@ other opcode. Not done at all: internet radios' metadata (ICY, planned for 0.9, 
 (UDP, 0.9), synchronisation between players, displays and IR.
 
 **Music Assistant** (seen with 2.10.7, plan step player-7b) speaks the same protocol, with differences. It
-transcodes everything to the output codec set for the player (`flac` by default, `mp3`, `aac`, `wav`):
+transcodes everything to the output codec set for the player (`flac` by default, `mp3`, `aac`, `wav`; its
+`constants.py`, `CONF_ENTRY_OUTPUT_CODEC`):
 
 - `strm s` without the stream's parameters for FLAC and MP3, autostart 2 or 3, then `codc` (the codec) and `cont`
   after the response headers: amisqueeze reads the body at once, and MA sends `strm u`;
