@@ -120,9 +120,14 @@ it comes after these releases, or alongside if the user wants it.
   its guard removed: a division by zero for 0 bits or 0 channels, the alarm for the chunk length). Seen on the
   way, brought into 0.7 by the user the same day (minor): a header of 0 channels said `more than 2 channels`, now
   `number of channels not supported` (✅ done on 2026-10-23, the user guide and the CHANGELOG with it).
-- To decide with the user before the tag (asked on 2026-10-23, not answered yet): the release date, the `.lha`
-  tried again in WinUAE (the image changed since its trial: recommended), a short Music Assistant check by hand
-  (FLAC) in WinUAE.
+- To decide with the user before the tag (asked on 2026-10-23, not answered yet): the release date, a short Music
+  Assistant check by hand (FLAC) in WinUAE, with it the `aac` row of the user guide (the refusal now STMc then
+  STMn: does Music Assistant still show the track as playing? the 0.7 review's 50 list).
+- Its R2, fixed (decided with the user on 2026-10-23): the `.lha` tried again on the Amiga is not a question but a
+  rule, the image having changed since its trial; and it is now tried on the draft's own `.lha`, before the draft
+  is published, rather than on a local build before the tag (`CONTRIBUTING.md`, Releasing; `phase-3-release.md`,
+  publish-2). For 0.7: the draft's `.lha` extracted by LhA in WinUAE, its executables' SHA-256 those tried before
+  the tag, `Version FULL` for both.
 - To check before its tag (decided with the user on 2026-10-23), since the executables now come from the pinned
   image (same gcc 16.2.1b, but a rebuilt image: libnix, NDK or binutils may differ; about 1.1 KB more each) while
   the WinUAE checks of 2026-10-23 ran on the previous image's: `run-scenarios.py` all OK on the build to be

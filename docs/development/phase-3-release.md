@@ -46,7 +46,11 @@ Back to the [plan](README.md).
   `lha`, other options in `make-dist.py`, a new kind of file such as the drawer icon), and once before the Aminet
   upload, on the archive to be uploaded: LhA in a system that has none, extraction into `RAM:`, protection bits,
   `Version` and `BENCH` from there, the files compared with the sources, the scenarios on the extracted
-  executables.
+  executables. At a release (decided with the user on 2026-10-23, from the 0.7 review's R2), on the draft's own
+  `.lha`, made by the CI from the tag, before the draft is published: the archive that ships, not a local double
+  of it (the same executables, but other dates in the archive); a lighter trial, since the executables are those
+  tried before the tag (the build is reproducible): extraction into `RAM:`, protection bits, the executables'
+  SHA-256 those of the build tried, `Version <exe> FULL` for both (`CONTRIBUTING.md`, Releasing).
 - **Criterion**: the archive extracts on a clean system in WinUAE (LhA) and on the host (`lhasa`), and the WinUAE
   scenarios (tools-10) pass on what it holds; at 1.0, the archive is on Aminet.
 

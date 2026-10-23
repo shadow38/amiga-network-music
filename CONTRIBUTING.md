@@ -329,11 +329,7 @@ holding each archive's SHA-256.
    [winuae-scenarios.md](docs/development/winuae-scenarios.md);
 3. `Version <exe> FULL` for both executables in WinUAE (see `$VER:` in [Pitfalls](#pitfalls));
 4. the stack measured again, when [Stack and memory](#stack-and-memory) says so;
-5. the `.lha` extracted by LhA on the Amiga (in WinUAE: its files compared, the scenarios run on what it gives),
-   only when the making of the archive changes (the image or the version of `lha`, the options of
-   `make-dist.py`, a new kind of file in it) and once before an upload to Aminet; otherwise the checks of
-   `make dist` are enough;
-6. the "Unreleased" part of `CHANGELOG.md` given the version and the date, the version number set everywhere
+5. the "Unreleased" part of `CHANGELOG.md` given the version and the date, the version number set everywhere
    (`make dist` refuses anything else).
 
 **The archives are made by GitHub from the tag** (`.github/workflows/release.yml`, since 0.7): pushing a tag
@@ -341,12 +337,17 @@ holding each archive's SHA-256.
 that the archives bear the tag's version, and makes a **draft** pre-release with the archives, their `.sha256` and
 the readme, its notes holding the SHA-256 lines and a place for the rest. The executables' SHA-256 are in the job's
 summary: the build is reproducible, so they must be those of the build tried in WinUAE before the tag. The draft is
-published by hand once its notes are written and approved. Run by hand (Actions, "release", "Run workflow"), the
-workflow is a trial: the development archives in a draft marked never to publish, to delete afterwards (a draft's
-tag is created only when it is published).
+published by hand once its notes are written and approved, and, when the making of the archive changed since its
+last trial on the Amiga (the image or the version of `lha`, the options of `make-dist.py`, a new kind of file in
+it), once the draft's own `.lha` has been extracted by LhA in WinUAE: the files there with their protection bits,
+the executables' SHA-256 those of the build tried before the tag, `Version <exe> FULL` for both (the scenarios
+need not run again: the executables are the same); otherwise the checks of `make dist` are enough. Run by hand
+(Actions, "release", "Run workflow"), the workflow is a trial: the development archives in a draft marked never to
+publish, to delete afterwards (a draft's tag is created only when it is published).
 
 **Aminet** (from 1.0): the files are renamed without the version (Aminet's rule), and the readme's `Uploader:`
-gets an e-mail address.
+gets an e-mail address; the `.lha` to be uploaded is first extracted by LhA in WinUAE, the scenarios run on what
+it gives.
 
 ## Debugging
 
