@@ -4,7 +4,7 @@
 # - amiga: both Amiga executables (with tools/check-saves.py on their assembly) and the release archives in their
 #   development form, built through tools/amiga-make.sh, which finds neither the toolchain nor a local script on the
 #   runner and so takes its Docker way, the one documented for a new contributor, with the image pinned there;
-#   the archives are kept as the run's artifact for 14 days, so that a development build can be tried without
+#   the .lha and the .zip are kept as the run's artifacts for 14 days, so that a development build can be tried without
 #   building it (its version reads <next>-dev, never to be taken for a release).
 name: tests
 
@@ -33,14 +33,19 @@ jobs:
         run: sh tools/amiga-make.sh all dist DEV=1
       - name: SHA-256 of the executables (to compare with a local build from the same image)
         run: sha256sum out/amisqueeze out/amisqueeze.fpu
-      - name: Development archives as the run's artifact
+      # One artifact per archive, uploaded as it is (archive: false, one file each), so that the .lha is downloaded
+      # ready for LhA on the Amiga rather than inside a zip; the artifact takes the file's name.
+      - name: Development .lha as the run's artifact
         uses: actions/upload-artifact@v7
         with:
-          name: amisqueeze-dev
-          path: |
-            out/amisqueeze-*-dev.zip
-            out/amisqueeze-*-dev.lha
-            out/amisqueeze-*-dev.*.sha256
-            out/amisqueeze-*-dev.readme
+          path: out/amisqueeze-*-dev.lha
+          archive: false
+          if-no-files-found: error
+          retention-days: 14
+      - name: Development .zip as the run's artifact
+        uses: actions/upload-artifact@v7
+        with:
+          path: out/amisqueeze-*-dev.zip
+          archive: false
           if-no-files-found: error
           retention-days: 14

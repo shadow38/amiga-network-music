@@ -164,7 +164,7 @@ step 0.2 (without `-r`, with `trim` for seeking).
   checked in WinUAE (different platform layer). GitHub Actions runs `make test` on each push
   (`.github/workflows/tests.yml`, Ubuntu 24.04, decided 2026-10-19), and since 2026-10-23 the Amiga build and
   `make dist DEV=1` through the Docker way of `tools/amiga-make.sh` (the pinned image; the executables' SHA-256 in
-  the job's log; the archives kept 14 days as the artifact `amisqueeze-dev`, decided 2026-10-23): after a push,
+  the job's log; the `.lha` and the `.zip` kept 14 days as two artifacts, not wrapped in a zip, decided 2026-10-23): after a push,
   watch the run **in the background**, without waiting for it (decided 2026-10-23: it is almost always green and
   the same builds run locally; `gh run list --commit <sha>` for its id, then `gh run watch <id> --exit-status`),
   and speak of it only when it fails; the tests use real time (playback pacing, reconnection delays), so a slow runner could make one

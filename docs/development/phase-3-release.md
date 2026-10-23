@@ -71,7 +71,7 @@ Back to the [plan](README.md).
   tells whether a commit passes. Then, before 1.0: the Amiga build (the `amigadev/crosstools` image, the Docker mode of
   `tools/amiga-make.sh`; ✅ done on 2026-10-23, brought forward to 0.7 by the user after an outside reading: a second
   job runs `sh tools/amiga-make.sh all dist DEV=1`, with the image pinned by its digest, then prints the
-  executables' SHA-256; its archives kept 14 days as the run's artifact, decided with the user on 2026-10-23 for
+  executables' SHA-256; its `.lha` and `.zip` kept 14 days as the run's artifacts, each on its own and not wrapped in a zip, decided with the user on 2026-10-23 for
   0.7 after an outside reading, so that a development build can be tried without building it) and the release
   archive made by GitHub from a tag.
 
