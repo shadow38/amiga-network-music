@@ -103,7 +103,7 @@ With the toolchain in the `PATH`, `make` is enough (`make all`, `make clean`, `m
 3. **`../amiga-make.local.sh`** (next to the repository, outside Git), if it exists: same role as `$AMIGA_MAKE`,
    for a setup specific to one machine (container, remote host…);
 4. **Docker**: `docker run` of the `$AMIGA_IMAGE` image (default `amigadev/crosstools:m68k-amigaos-gcc10`), with
-   the repository mounted on `/work`. *Not tested yet.*
+   the repository mounted on `/work`. The CI builds this way on each push (see Host build and tests below).
 
 ```sh
 sh tools/amiga-make.sh            # all
@@ -174,7 +174,9 @@ after a seek, back to back with raw PCM).
 The Amiga build must still be checked in WinUAE: the platform layers differ.
 
 GitHub runs `make test` on each push and pull request (`.github/workflows/tests.yml`, GitHub Actions, Ubuntu); the
-badge at the top of the README shows the result of the latest run. The Amiga build is not part of it yet.
+badge at the top of the README shows the result of the latest run. A second job builds both Amiga executables and
+the archives in their development form (`sh tools/amiga-make.sh all dist DEV=1`, which takes the Docker way on
+GitHub's machine), then prints the image's digest and the compiler's version.
 
 ## Testing in WinUAE
 

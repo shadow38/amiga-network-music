@@ -69,7 +69,9 @@ Back to the [plan](README.md).
 - **Continuous integration** (decided 2026-10-19): GitHub Actions, in two parts. First, done before 0.3: on each
   push, `make test` (host build, unit tests, fake server) on GitHub's Linux machine; the badge or the run's page
   tells whether a commit passes. Then, before 1.0: the Amiga build (the `amigadev/crosstools` image, the Docker mode of
-  `tools/amiga-make.sh`, never tried so far) and the release archive made by GitHub from a tag.
+  `tools/amiga-make.sh`; ✅ done on 2026-10-23, brought forward to 0.7 by the user after an outside reading: a second
+  job runs `sh tools/amiga-make.sh all dist DEV=1`, then prints the image's digest and the compiler's version) and
+  the release archive made by GitHub from a tag.
 
 ## 3.4 Setup guides: server and network (noted 2026-10-19) ⬜
 
