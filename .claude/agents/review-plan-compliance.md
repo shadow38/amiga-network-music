@@ -1,6 +1,6 @@
 ---
 name: review-plan-compliance
-description: Release review of the plan and of the project's rules (docs/development/*.md, CLAUDE.md rules, CHANGELOG against git history, release rules). Run by the release-review entry point in a full audit only, in a fresh context.
+description: Release review of the plan and of the project's rules (docs/development/*.md, CLAUDE.md and CONTRIBUTING.md rules, CHANGELOG against git history, release rules). Run by the release-review entry point in a full audit only, in a fresh context.
 tools: Read, Grep, Glob, Bash
 skills:
   - review-method
@@ -24,9 +24,9 @@ Answer every question, with evidence, even when the answer is "nothing found":
   delivered but still shown as to do, open or missing?
 - **C3.** Every deviation from the plan's planned approach: is it recorded, dated, and marked as agreed with the
   user?
-- **C4.** Every `CLAUDE.md` rule (from the rules inventory if it exists, otherwise from `CLAUDE.md` and
-  `CONTRIBUTING.md` themselves), checked one by one: version strings and dates, release archive content, licences,
-  no copied GPL code, open points not implemented without being asked, English only, nothing specific to the
+- **C4.** Every rule of `CLAUDE.md` and `CONTRIBUTING.md` (from the rules inventory if it exists, otherwise from
+  the two files themselves), checked one by one: version strings and dates, release archive content, licences, no
+  copied GPL code, open points not implemented without being asked, English only, nothing specific to the
   developer's workstation (local file names, paths, proxies, non-English words).
 
 Return your report as the method describes.

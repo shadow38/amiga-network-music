@@ -106,7 +106,10 @@ it comes after these releases, or alongside if the user wants it.
   `rules.md` pointing to sections instead of `CLAUDE.md` line numbers (89 of them, already off); no separate
   "living docs": the executable scenarios, the user guide and `architecture.md` are that. Shown to the user before
   its commit (✅ done on 2026-10-23: `CONTRIBUTING.md` gained Code rules with Stack and memory, Releasing and
-  Pitfalls, `architecture.md` Decoders and AHI).
+  Pitfalls, `architecture.md` Decoders and AHI). Decided with the user the same day, so that the full audit checks
+  the rules where they now live: the review tooling names the rules of `CLAUDE.md` or `CONTRIBUTING.md` (method:
+  A3, A5, scoring, compliance table; `review-platform` P2; `review-plan-compliance` C4), where it named
+  `CLAUDE.md` alone.
 - Before its tag, a full audit (publish-5) instead of the light review (decided with the user on 2026-10-23), on
   the state after the renaming of the steps and the `CLAUDE.md` move; each step in a fresh session (the move,
   then the audit, then the release).

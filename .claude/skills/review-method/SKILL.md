@@ -19,14 +19,15 @@ wrong.
   Code comments are claims too: a comment that states a size, a unit, a range, an invariant, an order or which
   part of the program does something must match the code.
 - **A3. A measurement expires when what it measures changes.** For each limit or measurement recorded in
-  `CLAUDE.md` (stack, memory, CPU load, timings), find the commit that recorded it (`git log -S`), then the later
-  commits that changed what it depends on: call depth, local variables, newly linked code (`third_party/`
-  included), build variants, start-up paths. If anything changed, the measurement is stale until redone.
+  `CLAUDE.md` or `CONTRIBUTING.md` (stack, memory, CPU load, timings), find the commit that recorded it
+  (`git log -S`), then the later commits that changed what it depends on: call depth, local variables, newly
+  linked code (`third_party/` included), build variants, start-up paths. If anything changed, the measurement is
+  stale until redone.
 - **A4. A safety net is only real once you have seen it catch something.** Sanitizers, `make test`, the CI, the
   `tools/check-*.py` scripts: each is assumed to stop a class of errors. Prove it by planting a defect of that
   class in a throwaway worktree and watching the result turn red.
-- **A5. A rule in prose decays; a rule in a script does not.** Each rule of `CLAUDE.md` a program could check will
-  one day be forgotten. Say which ones are not checked by a script.
+- **A5. A rule in prose decays; a rule in a script does not.** Each rule of `CLAUDE.md` or `CONTRIBUTING.md` a
+  program could check will one day be forgotten. Say which ones are not checked by a script.
 - **A6. Everything the server sends is untrusted.** Review the protocol and stream code against everything a
   server may send (other LMS versions, Music Assistant, radio stations' HTTP servers), not only against what the
   test server sent.
@@ -67,11 +68,11 @@ wrong.
 A score is one of the five values above, never a range. When torn between two, pick one and say in one line what
 would move it up or down.
 
-Only findings at 75 or more go in the main list. A finding that breaks an explicit rule of `CLAUDE.md` is at least
-75 by definition, even when it looks minor, with two exceptions: a stale or wrong statement in the internal
-documents (`CLAUDE.md`, the plan and the rest of `docs/development/`) is 50 at most, unless a reader acting on it
-would do something wrong (break a rule, skip a needed check, ship a wrong release); and a broken rule with no
-failure scenario is 50 at most, like any finding (see "Finding format").
+Only findings at 75 or more go in the main list. A finding that breaks an explicit rule of `CLAUDE.md` or
+`CONTRIBUTING.md` is at least 75 by definition, even when it looks minor, with two exceptions: a stale or wrong
+statement in the internal documents (`CLAUDE.md`, the plan and the rest of `docs/development/`) is 50 at most,
+unless a reader acting on it would do something wrong (break a rule, skip a needed check, ship a wrong release);
+and a broken rule with no failure scenario is 50 at most, like any finding (see "Finding format").
 
 A code comment proven false is 75 when it states a limit or an invariant that the code, or a later change, would
 rely on; 50 otherwise. In the user documentation (README, user guide), a statement proven false at the reviewed
@@ -101,7 +102,8 @@ No finding without a failure scenario; if you cannot write one, the score is 50 
 
 ## Compliance table
 
-One line per plan step marked done, per release item, and per `CLAUDE.md` rule in your scope:
+One line per plan step marked done, per release item, and per rule of `CLAUDE.md` or `CONTRIBUTING.md` in
+your scope:
 
 ```
 unit | COVERED | proof (file:lines, test name, scenario)
