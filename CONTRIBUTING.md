@@ -195,8 +195,9 @@ the archives in their development form (`sh tools/amiga-make.sh all dist DEV=1`,
 GitHub's machine), then prints the executables' SHA-256: a local build from the same image gives the same. Its
 `.lha` and `.zip` are kept for 14 days as the run's artifacts, each under its own name and not wrapped in another
 zip (on the run's page, for a signed-in GitHub user): a development build to try without building it, its version
-`<next>-dev` (on a release commit, the release's own number). With the GitHub CLI, not `gh run download`, which takes every artifact for a zip to unpack (it fails
-on the `.lha`, gh 2.102), but `gh api repos/shadow38/amiga-network-music/actions/artifacts/<id>/zip > <file>`,
+`<next>-dev` (on a release commit, the release's own number). With the GitHub CLI, not `gh run download`, which
+takes every artifact for a zip to unpack (it fails on the `.lha`, gh 2.102), but
+`gh api repos/shadow38/amiga-network-music/actions/artifacts/<id>/zip > <file>`,
 the ids given by `gh api repos/shadow38/amiga-network-music/actions/runs/<run id>/artifacts`.
 
 The tests use real time (playback pacing, reconnection delays), so a slow runner can make one fail: rerun it

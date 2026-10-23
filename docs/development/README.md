@@ -54,7 +54,7 @@ statuses in [Where we are](#where-we-are).
 | Version | Theme | Steps | Status | Tested on |
 |---|---|---|---|---|
 | 0.1 to 0.6 | the player for LMS: PCM, FLAC, MP3 (`amisqueeze.fpu`), MP3 without gaps, `LOG`, start from the Workbench, the review fixes | player-1 to player-8d, player-10 (part) | ✅ published from 2026-10-19 to 2026-10-21 ([changelog](../../CHANGELOG.md)) | host and WinUAE |
-| 0.7 | Music Assistant; the `.lha`, the Amiga build in CI, the release made from a tag | player-7b, tools-10 (LMS), publish-2 (`.lha`), publish-3 | 🔶 content, full audit and the checks before the tag done (2026-10-23); the draft made from the tag, its `.lha` tried, then published by the user | host and WinUAE, with LMS and Music Assistant |
+| 0.7 | Music Assistant; the `.lha`, the Amiga build in CI, the release made from a tag | player-7b, tools-10 (LMS), publish-2 (`.lha`), publish-3 | ✅ published on 2026-10-23 ([changelog](../../CHANGELOG.md)) | host and WinUAE, with LMS and Music Assistant |
 | 0.8 | the real machine: what it shows | player-9 | ⬜ | the real machine and network |
 | 0.9 | internet radios' metadata (ICY), automatic server discovery | player-10 (end) | ⬜ | host for the code; the real machine and network |
 | 1.0 | setup guides, a full audit, the Music Assistant scenario, the upload to Aminet | publish-4, publish-5, tools-10 (Music Assistant), publish-2 (Aminet) | ⬜ | the real machine |
@@ -133,7 +133,11 @@ it comes after these releases, or alongside if the user wants it.
   rule, the image having changed since its trial; and it is now tried on the draft's own `.lha`, before the draft
   is published, rather than on a local build before the tag (`CONTRIBUTING.md`, Releasing; `phase-3-release.md`,
   publish-2). For 0.7: the draft's `.lha` extracted by LhA in WinUAE, its executables' SHA-256 those tried before
-  the tag, `Version FULL` for both.
+  the tag, `Version FULL` for both (✅ done on 2026-10-23: the draft's archives checked against their `.sha256`;
+  LhA 2.15 tested and extracted the 14 entries, the 12 files `----rwed`, `Version FULL` 0.7 for both; each file
+  the same byte for byte as the tested build or the repository; the CI's summary gave the same SHA-256; the
+  release published by the user the same day). On the way, the tests workflow failed on the release commit: its
+  artifact steps looked for a `-dev` archive only (fixed before the tag, decided with the user).
 - From its 50 list, brought into 0.7 by the user on 2026-10-23 (the rest goes to 0.8 and 0.9, below): the plan's
   stale statuses (tools-1, tools-4, player-7b, publish-5, the "When" and "Stop" of publish-5; ✅ done on
   2026-10-23); a WAV sample rate whose bytes per second wrap 32 bits, which stalled the track: refused above
@@ -223,7 +227,7 @@ it comes after these releases, or alongside if the user wants it.
 | remote-12 MPD | ⬜ idea, after Music Assistant |
 | publish-1 Licence and user documentation | 🔶 licence: MIT; user guide kept up to date |
 | publish-2 Aminet archive | 🔶 2026-10-23: `make dist` builds the `.lha` and its Aminet `.readme` (for the 0.7 GitHub Release), tried in WinUAE (LhA 2.15) and on the host (`lhasa`); the upload to Aminet with 1.0 |
-| publish-3 Public versions | 🔶 0.1 to 0.6 published (tags, GitHub releases, changelog); CI: host tests, and the Amiga build with `make dist DEV=1`, its archives kept as the run's artifact; a draft release made from a tag (2026-10-23) |
+| publish-3 Public versions | 🔶 0.1 to 0.7 published (tags, GitHub releases, changelog); CI: host tests, and the Amiga build with `make dist DEV=1`, its archives kept as the run's artifact; a draft release made from a tag (2026-10-23) |
 | publish-4 Setup guides: minimal server, the Amiga on the network | ⬜ before 1.0 |
 | publish-5 Review before each release (method, review agents, rules inventory, checks) | ✅ 2026-10-20: publish-5a to publish-5c done; publish-5d stopped after the version strings check; publish-5e the release rule in `CLAUDE.md` (in `CONTRIBUTING.md`, Releasing, since 2026-10-23), no review of HEAD; the tooling changes only when a review misses a real defect, or by the user's decision. Reviews since: [0.6](reviews/0.6.md) (light, 2026-10-20), [0.7](reviews/0.7.md) (full audit, 2026-10-23) |
 
