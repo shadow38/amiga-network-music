@@ -2,7 +2,7 @@
 
 Back to the [plan](README.md).
 
-## 0.1 Toolchain ✅ (2026-10-18)
+## tools-1 Toolchain ✅ (2026-10-18)
 
 - **Goal**: build several programs from one repository, whatever the developer's machine.
 - **Content**: multi-program `Makefile` (`src/<prog>/` → `out/<prog>`), header dependencies, the
@@ -12,7 +12,7 @@ Back to the [plan](README.md).
   it.
 - **Remaining**: the Docker mode of `amiga-make.sh` has not been tested yet.
 
-## 0.2 Test LMS server ✅ (2026-10-18)
+## tools-2 Test LMS server ✅ (2026-10-18)
 
 - **Goal**: a Lyrion Music Server reachable from the emulated Amiga, with a small library.
 - **Content**: any LMS will do (Docker image `lmscommunity/lyrionmusicserver`, distribution package, NAS…).
@@ -21,7 +21,7 @@ Back to the [plan](README.md).
   is reachable from the Amiga.
 - **MP3 to PCM conversion**: LMS 9.1 has no `mp3 pcm` rule (regular players decode MP3 themselves). The test
   server needs one for every build that does not decode MP3 itself (`amisqueeze`, or `amisqueeze.fpu` on a CPU too
-  slow for it, 1.8c), in a `custom-convert.conf` (LMS root directory, or the root of a plugins directory),
+  slow for it, player-8c), in a `custom-convert.conf` (LMS root directory, or the root of a plugins directory),
   modelled on the `ogg pcm` rule and using the `sox` shipped with LMS:
 
   ```
@@ -32,46 +32,46 @@ Back to the [plan](README.md).
 
   Without it, `server.log` says "Couldn't create command line for mp3 playback" and the player receives nothing.
   No `-r 44100` (unlike `ogg pcm`): LMS announces the source file's rate in `strm`, so a forced rate played 48 kHz
-  files 9 % too fast (found in 1.4c); `FT:{START=trim %s}` lets LMS start within a track (seek).
+  files 9 % too fast (found in player-4c); `FT:{START=trim %s}` lets LMS start within a track (seek).
 - **Criterion**: web UI reachable, CLI answering `version ?`, library scanned.
 - **Validated with**: LMS 9.1.1.
 
-## 0.3 Reference player ✅ (2026-10-18)
+## tools-3 Reference player ✅ (2026-10-18)
 
 - **Goal**: a known-good player to validate the server and compare amisqueeze's behaviour.
 - **Content**: squeezelite (Windows builds on SourceForge, `lmsclients` project):
   `squeezelite -s <server>:3483 -n PC-test`.
 - **Criterion**: the player shows up in LMS and plays an MP3 from the library.
 
-## 0.4 WinUAE test configuration 🔶
+## tools-4 WinUAE test configuration 🔶
 
 - **Goal**: emulated machines that reproduce the targets, with emulated networking.
 - **Done (provisional)**: a local configuration, 68020 running AmigaOS 3.2, CPU at maximum speed,
-  `bsdsocket_emu=true`, build output mounted as an Amiga volume. Enough for networking (step 1.1).
+  `bsdsocket_emu=true`, build output mounted as an Amiga volume. Enough for networking (step player-1).
 - **To do**:
   - two profiles (decided 2026-10-18): **fast**, close to a PiStorm with Emu68 (68040 with FPU, 32-bit
     addressing, Zorro III memory, tens of MB); **slow**, a 68020 accelerator without FPU at its real speed (not
     "as fast as possible", so that CPU load can be measured: Paula mixing, later the decoders);
   - a versioned configuration template in `winuae/`, with machine-specific paths kept in a local, unversioned file.
-- **Slow profile, local** (2026-10-19, for step 1.4c): the provisional configuration started with the CPU
+- **Slow profile, local** (2026-10-19, for step player-4c): the provisional configuration started with the CPU
   settings overridden (`-s cpu_compatible=true -s cpu_speed=real -s cpu_multiplier=4`, a 68020 at about
   28 MHz, as a typical A1200 accelerator); no versioned template yet.
-- **Fast profile, local** (2026-10-19, for steps 1.8b and 1.8c): not a 68040 (its CPU library is missing from the
+- **Fast profile, local** (2026-10-19, for steps player-8b and player-8c): not a 68040 (its CPU library is missing from the
   test installation) but a 68020 with WinUAE's JIT compiler, 32-bit addressing
   and no cycle-exact emulation (`cpu_24bit_addressing=false`, `cachesize=16384`, `cycle_exact=false`,
   `cpu_compatible=false`, `cpu_speed=max`): about 230 times the slow profile, the order of a PiStorm. For
   `amisqueeze.fpu`, a 68882 (`fpu_model=68882`) and the JIT's FPU compiler (`compfpu=true`; without it FPU
   instructions are interpreted: MP3 at 1.8x real time instead of 74x). Speeds measured there are not those of a
-  real machine (1.9). No versioned template yet.
+  real machine (player-9). No versioned template yet.
 - **Template, versioned** (2026-10-22, decided with the user): `winuae/amisqueeze-test.uae`, with placeholders
   for the machine-specific paths, and the profiles as command-line overrides, described in
   [testing.md](testing.md) with the rest of the test setup. Still open: a 68040 profile (its CPU library in the
   test system).
 - **Criterion**: the configuration boots, `bsdsocket.library` is available, amisqueeze connects to the server.
 
-## 0.5 AHI in the emulated Amiga ✅ (2026-10-18)
+## tools-5 AHI in the emulated Amiga ✅ (2026-10-18)
 
-- **Goal**: be able to test audio output (step 1.4) in WinUAE.
+- **Goal**: be able to test audio output (step player-4) in WinUAE.
 - **Content**: the AHI package (Aminet) installed in the emulated Amiga, AHI mode set in the preferences; notes for
   the real outputs. Two drivers, both kept for the tests (decided 2026-10-18), Paula first:
   - **Paula** (`paula.audio`, Amiga chipset): what an Amiga without a sound card plays; 8 bits per channel
@@ -81,7 +81,7 @@ Back to the [plan](README.md).
     up to 48 kHz stereo; a 16-bit reference, to tell a fault of the player from Paula's limits (a Zorro II card,
     not available on every Amiga: not a target as such).
   - The PiStorm's own AHI outputs (I2S DAC of the PiStorm32-lite FPGA firmware, HDMI with `emu68-hdmi-audio` on a
-    Pi 4) cannot be emulated: tested on the real machine (1.9).
+    Pi 4) cannot be emulated: tested on the real machine (player-9).
 - **Criterion**: an AHI test program (or `Play16` on a WAV file) plays a correct sound, with each of the two
   drivers.
 - **Done**: AHI 6.0 from Aminet (`m68k-amigaos-ahiusr` and `m68k-amigaos-ahidrv`: `ahi.device` 6.6,
@@ -97,15 +97,15 @@ Back to the [plan](README.md).
   - Paula through AHI (14 bit and 8 bit stereo++ at 27,429 Hz, the maximum with a 15 kHz screen mode): correct
     sound, **left and right swapped**; Paula played directly through `audio.device` (channels 0 and 3 left, 1 and
     2 right) is correct, so the swap comes from `paula.audio`, not from the emulation: to check on a real Amiga
-    (1.9);
+    (player-9);
   - "stereo" modes without "++" put each sound entirely on one side: a stereo stream sent at the centre plays one
-    channel only, on one side. amisqueeze needs a **stereo++** mode (1.4).
+    channel only, on one side. amisqueeze needs a **stereo++** mode (player-4).
   - The `filesave.audio` driver ("Filesave" modes) writes what AHI plays to a file (WAV, AIFF…), but only for
     programs using AHI's library interface: its modes are not real-time, the preferences offer them only for
-    the "Music" unit, and an `ahi.device` unit set to one by hand writes silence (tried in 1.4b).
-- **Prerequisite of**: 1.4.
+    the "Music" unit, and an `ahi.device` unit set to one by hand writes silence (tried in player-4b).
+- **Prerequisite of**: player-4.
 
-## 0.6 Host-side tests ✅ (2026-10-18)
+## tools-6 Host-side tests ✅ (2026-10-18)
 
 Since then, the core grew (stream, ring buffer, audio output, decoders) and the tests with it, at each step of
 phase 1; the figures below are those of 0.6.
@@ -123,10 +123,10 @@ phase 1; the figures below are those of 0.6.
     disconnection and reconnection, Ctrl-C, argument errors). No LMS needed.
 - **Criterion**: `make test` passes; a known regression makes it fail. Validated: 51 unit checks and 17 scenario
   checks pass; a `STAT` length of 52 instead of 53, and swapped bytes in 16-bit fields, both make it fail. The
-  Amiga build replayed the 1.1/1.1b cases in WinUAE with the same messages as before the split, and the host
+  Amiga build replayed the player-1/player-1b cases in WinUAE with the same messages as before the split, and the host
   build connects to a real LMS 9.1.1 with the same MAC as the Amiga build.
 
-## 0.7 Logging and automated runs in WinUAE ✅ (2026-10-22)
+## tools-7 Logging and automated runs in WinUAE ✅ (2026-10-22)
 
 - **Goal**: run a test in WinUAE and read its result from the host, without manual steps.
 - **Done (2026-10-18, local setup)**: a **serial shell**. WinUAE connects the Amiga's serial port to a local TCP
@@ -154,42 +154,42 @@ phase 1; the figures below are those of 0.6.
   same). The restart in a profile stays local. Other scenarios later, on the same model, if they are needed.
 - **Criterion**: one command on the host starts WinUAE, waits, runs a scenario and prints its result.
 
-## 0.8 Source-level debugging ⬜ (optional)
+## tools-8 Source-level debugging ⬜ (optional)
 
 - **Goal**: breakpoints and stepping in C.
 - **Approach**: `bgdbserver` (Aminet `dev/debug/bgdbserver`) in the emulated Amiga, WinUAE's emulated networking,
   `m68k-amigaos-gdb` (`target remote …:2345`) driven by VS Code (cpptools); build with `-g`.
 - **Criterion**: stops on a breakpoint in a function of amisqueeze (e.g. in `player.c`), variables readable.
 
-## 0.9 Test Music Assistant server 🔶 (players side done 2026-10-21; API token not yet)
+## tools-9 Test Music Assistant server 🔶 (players side done 2026-10-21; API token not yet)
 
 - **Goal**: a Music Assistant server reachable from the emulated Amiga, for the Music Assistant back end of the
-  remote (2.8 to 2.11) and for amisqueeze as a Music Assistant player (1.7b).
+  remote (remote-8 to remote-11) and for amisqueeze as a Music Assistant player (player-7b).
 - **Content**: any Music Assistant server will do (Docker image, Home Assistant add-on…), with a small local
   library and an access token for the API. To check: the server's ports (web UI and API, its slimproto port for
   players) and whether they collide with a test LMS on the same machine (both servers use 3483 for players: two
   addresses, or one server at a time).
-- **Criterion**: web UI reachable, API answering with the token, squeezelite (0.3) playing a track from it.
-- **Prerequisite of**: 1.7b, 2.8.
+- **Criterion**: web UI reachable, API answering with the token, squeezelite (tools-3) playing a track from it.
+- **Prerequisite of**: player-7b, remote-8.
 - **Done** (2026-10-21): Music Assistant 2.10.7 (official image `ghcr.io/music-assistant/server`) with the LMS
   test library. Its slimproto port is moved on the host side, so both servers run at once (amisqueeze `PORT=`).
   By default the stream server publishes its own address in `strm`, which the emulated Amiga cannot reach: set
   the published IP (Settings > System > Streams, advanced; `publish_ip`) to the address the Amiga reaches. Players
   need the Squeezelite provider, added by hand; it also serves an LMS-like CLI (9090, no token), too limited to
-  start a library track: playback was started from the web UI. amisqueeze was tried instead of squeezelite (1.7b).
-  Not done: an API token (needed by 2.8).
+  start a library track: playback was started from the web UI. amisqueeze was tried instead of squeezelite (player-7b).
+  Not done: an API token (needed by remote-8).
 
-## 0.10 Regression scenarios in WinUAE 🔶 (LMS part done 2026-10-23; Music Assistant before 1.0)
+## tools-10 Regression scenarios in WinUAE 🔶 (LMS part done 2026-10-23; Music Assistant before 1.0)
 
 - **Goal**: before a release, replay in WinUAE what `make test` cannot check: the Amiga platform layer (AHI,
   bsdsocket, `Break`), the real servers (LMS, Music Assistant) and the 68k build, so that a release is validated
   on a solid base (decided with the user on 2026-10-22, before the release of 0.7).
-- **Content**: a few scenarios in `tools/winuae/` on the model of `play-tone.py` (0.7,
+- **Content**: a few scenarios in `tools/winuae/` on the model of `play-tone.py` (tools-7,
   [winuae-scenarios.md](winuae-scenarios.md)), to design with the user before writing them. Proposed: LMS's
   commands through AHI (pause, resume, seek, stop, two tracks in a row, the `Largest` column of `Avail` before and
   after); a byte-by-byte `OUTPUT` comparison of the Amiga build (FLAC and MP3, `tools/pcm-compare.py`); these two
-  before the release of 0.7. Music Assistant before 1.0: its LMS-like CLI cannot start a library track (see 0.9),
-  so the scenario goes through its API, which needs a token and a small WebSocket client (reused by amilms, 2.8).
+  before the release of 0.7. Music Assistant before 1.0: its LMS-like CLI cannot start a library track (see tools-9),
+  so the scenario goes through its API, which needs a token and a small WebSocket client (reused by amilms, remote-8).
   Not in it: the measures (CPU load, long runs, the slow relay) and the old ROMs, which stay manual.
 - **Criterion**: one command runs the scenarios, each in less than 2 minutes, and prints OK or the reason of each
   failure.
@@ -199,7 +199,7 @@ phase 1; the figures below are those of 0.6.
   checks that the stream came in the format it tests (`stream: format` in the log) and that the fast memory and
   its largest block are given back (`Avail FLUSH` before and after); LMS's commands run twice, FLAC decoded by the
   server (raw PCM, the A1200's path) and on the Amiga (where a seek comes without the FLAC header), the pause and
-  resume at volume 50 (meant to catch the AHI defect of step 1.6, set off by LMS's fade before a pause, in the
+  resume at volume 50 (meant to catch the AHI defect of step player-6, set off by LMS's fade before a pause, in the
   memory check: see Done, it does not); the counter pattern made again
   at each run, no reference file to keep. **MP3 decoded on the Amiga is not compared byte by byte**, contrary to
   the content proposed above (decided with the user): its floating point gives a few samples off by one from any
@@ -215,7 +215,7 @@ phase 1; the figures below are those of 0.6.
   (`RUN_DONE`); the first AHI run after a boot keeps about 12 KB (AHI's, hence the warm-up), and `Run` itself
   sometimes 1,064 bytes (under the 16 KB of tolerance). The measured values: MP3 at 72 and 77 dB, 0.475 of full
   scale. A mutation test (decided with the user on 2026-10-23): `ahir_Volume` made to follow the volume again, as
-  before the fix of step 1.6; `commands-pcm` still passed, memory unchanged to the byte although the resume came
+  before the fix of step player-6; `commands-pcm` still passed, memory unchanged to the byte although the resume came
   at 0.0 %: the defect does not show in this profile and this short run, so the scenarios do not guard against
   it (the constant full volume in `amiga.c` does); code put back, `git diff src/` empty, checked again. Left: the
   Music Assistant scenario, before 1.0.

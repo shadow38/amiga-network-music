@@ -50,7 +50,7 @@ Note that in the `amigadev/crosstools` image, `gcc` is the Amiga cross-compiler:
 - an LMS server reachable from the Amiga, set up as in the user guide's
   [server setup](docs/user-guide.md#server-setup), with the `mp3 pcm` rule (to test the builds that leave MP3 to
   the server); the CLI port (9090/tcp) is handy to drive it from scripts; squeezelite on the PC is handy as a
-  reference player. See also steps 0.2 and 0.3 of the [tooling plan](docs/development/phase-0-tooling.md).
+  reference player. See also steps tools-2 and tools-3 of the [tooling plan](docs/development/phase-0-tooling.md).
 
 ## Repository layout
 
@@ -67,7 +67,7 @@ obj-host/, out-host/  host objects and executables (generated)
 .sdk/                 copy of the toolchain headers, for IntelliSense (generated)
 .vscode/              tasks (build, clean, headers) and IntelliSense configuration
 .github/workflows/    continuous integration: make test on GitHub (tests.yml)
-.claude/              the review before each release, for Claude Code (plan step 3.5): the method
+.claude/              the review before each release, for Claude Code (plan step publish-5): the method
                       (skills/review-method), four review agents (agents/), the entry point
                       (skills/release-review, /release-review <previous tag> [full])
 docs/user-guide.md    user guide
@@ -240,7 +240,7 @@ the ids given by `gh api repos/shadow38/amiga-network-music/actions/runs/<run id
 ## Debugging
 
 No source-level debugging yet. Meanwhile, WinUAE's built-in debugger (`Shift+F12`) follows the program at the
-assembly level. Planned (step 0.8): `bgdbserver` (Aminet `dev/debug/bgdbserver`) in the emulated Amiga, with
+assembly level. Planned (step tools-8): `bgdbserver` (Aminet `dev/debug/bgdbserver`) in the emulated Amiga, with
 WinUAE's `bsdsocket.library` emulation, and `m68k-amigaos-gdb` (`target remote …:2345`) driven by cpptools; build
 with `-g`.
 

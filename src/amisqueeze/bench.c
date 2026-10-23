@@ -1,5 +1,5 @@
 /*
- * bench.c - portable core: how fast this machine decodes FLAC and MP3 (plan steps 1.8b and 1.8c). A built-in
+ * bench.c - portable core: how fast this machine decodes FLAC and MP3 (plan steps player-8b and player-8c). A built-in
  * sample is decoded again and again, the PCM thrown away: for FLAC bench_flac.c, made from
  * tests/data/bench-l8.flac (0.3 s of the test signal at level 8, the slowest level to decode); for MP3
  * bench_mp3.c, made from tests/data/bench-320.mp3 (the same 0.3 s at 320 kbit/s, the highest rate). The FLAC and

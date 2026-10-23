@@ -1,4 +1,4 @@
-# On each push and pull request (plan step 3.3):
+# On each push and pull request (plan step publish-3):
 # - host: the portable core built natively with AddressSanitizer and UBSan, its unit tests, then the fake server's
 #   scenarios against the host build ("make test" in CONTRIBUTING.md);
 # - amiga: both Amiga executables (with tools/check-saves.py on their assembly) and the release archives in their

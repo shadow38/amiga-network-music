@@ -1,6 +1,6 @@
 ---
 name: release-review
-description: Review a release before its tag (plan step 3.5): runs the review agents in parallel, in fresh contexts, on the range since the previous tag (light review by default, full audit with "full"), verifies every finding and writes the report. Fixes nothing.
+description: Review a release before its tag (plan step publish-5): runs the review agents in parallel, in fresh contexts, on the range since the previous tag (light review by default, full audit with "full"), verifies every finding and writes the report. Fixes nothing.
 argument-hint: <previous tag> [full] [commit, default HEAD] [worktree path]
 ---
 

@@ -163,7 +163,7 @@ Framing: server to client, a 2-byte length then a 4-byte opcode and the data; cl
 other opcode. Not done at all: internet radios' metadata (ICY, planned for 0.9, see the plan), server discovery
 (UDP, 0.9), synchronisation between players, displays and IR.
 
-**Music Assistant** (seen with 2.10.7, plan step 1.7b) speaks the same protocol, with differences. It
+**Music Assistant** (seen with 2.10.7, plan step player-7b) speaks the same protocol, with differences. It
 transcodes everything to the output codec set for the player (`flac` by default, `mp3`, `aac`, `wav`):
 
 - `strm s` without the stream's parameters for FLAC and MP3, autostart 2 or 3, then `codc` (the codec) and `cont`

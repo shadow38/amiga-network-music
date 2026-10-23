@@ -104,7 +104,7 @@ static char msg_line[512];
 static BPTR log_file;
 static const char *log_name;
 
-/* Workbench start (plan step 1.10): libnix's start-up code sets _WBenchMsg (NULL from a Shell). It would open the
+/* Workbench start (plan step player-10): libnix's start-up code sets _WBenchMsg (NULL from a Shell). It would open the
  * console named by __stdiowin before main(); none here: amisqueeze opens its own once it has read its icon's
  * ToolTypes (WINDOW, QUIET). */
 extern struct WBStartup *_WBenchMsg;
@@ -482,7 +482,7 @@ int32_t plat_audio_abort(int i)
     return (int32_t)r->ahir_Std.io_Actual;
 }
 
-/* Commodity (plan step 1.10, decided with the user): amisqueeze shows in Exchange, whose "Remove" stops it, and
+/* Commodity (plan step player-10, decided with the user): amisqueeze shows in Exchange, whose "Remove" stops it, and
  * runs once (NBU_UNIQUE). Started again while it runs: nothing happens to the running one (CXCMD_UNIQUE ignored),
  * the new one quits. Returns 0 if another amisqueeze runs; without commodities.library, 1 and no commodity. */
 static int cx_open(void)

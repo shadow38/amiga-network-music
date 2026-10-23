@@ -1,5 +1,5 @@
 /*
- * audio.c - portable core: the blocks of the audio output (plan step 1.4b)
+ * audio.c - portable core: the blocks of the audio output (plan step player-4b)
  *
  * The platform's audio device (ahi.device on the Amiga, see platform.h) plays the blocks one after the other.
  * Here: which block holds what and in which order, the conversion of the stream's PCM for the device (8, 16, 24 or
@@ -16,7 +16,7 @@
  * blocks with the device and sends again, on resume, what they had not played yet.
  * The volume is applied to the samples here, as a block is sent for the first time; the device always gets full
  * volume: with ahi.device 6.6 and paula.audio, requests sent again after an abort (a resume) with a low ahir_Volume
- * corrupted the free memory list (seen in WinUAE, plan step 1.6).
+ * corrupted the free memory list (seen in WinUAE, plan step player-6).
  */
 #include <stdlib.h>
 #include <string.h>

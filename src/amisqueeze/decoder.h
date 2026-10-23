@@ -1,6 +1,6 @@
 /*
  * decoder.h - portable core: decoders turn the stream of a track (bytes waiting in the ring buffer) into PCM for
- * the output (plan step 1.8).
+ * the output (plan step player-8).
  *
  * The output asks the decoder of the track being decoded for PCM, as much as it can take; the decoder reads what
  * it needs from the ring buffer, never past the track's end (the next track may follow in the buffer). Two kinds

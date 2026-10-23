@@ -2,7 +2,7 @@
 
 Back to the [plan](README.md).
 
-## 3.1 Licence and user documentation 🔶
+## publish-1 Licence and user documentation 🔶
 
 - **Done**: licence chosen, MIT (2026-10-18). Third-party code must be MIT-compatible (no GPL code, e.g. from
   squeezelite or libmad). User guide started: [docs/user-guide.md](../user-guide.md), kept up to date with each
@@ -11,7 +11,7 @@ Back to the [plan](README.md).
   conversion rule if needed; program options).
 - **Criterion**: a user who does not know the project installs and runs amisqueeze using the guide alone.
 
-## 3.2 Aminet archive 🔶
+## publish-2 Aminet archive 🔶
 
 - **Content**: `.lha` archive (executables, icons, AmigaGuide or text documentation), Aminet-format `.readme`,
   version numbers (`$VER:`).
@@ -39,7 +39,7 @@ Back to the [plan](README.md).
   extracted by LhA 2.15 (Aminet `util/arc/lha.run`) in RAM: of a 3.2.3 system that had no LhA (all the files
   `----rwed`, both executables started from there: `Version`, `BENCH`), by `lhasa` 0.4.0 on Linux and by
   Windows' `tar`, each time the twelve files identical to the sources; the executables extracted on the Amiga
-  put in `NM:`, and the WinUAE scenarios (0.10) all OK on them.
+  put in `NM:`, and the WinUAE scenarios (tools-10) all OK on them.
 - **When to try it again on the Amiga** (decided with the user on 2026-10-23): not at every release, whose
   archives `make dist` checks (`lha t`, the files and sizes against the zip's, the readme, the SHA-256) and whose
   executables the scenarios test; only when the making of the archive changes (another image or version of
@@ -48,9 +48,9 @@ Back to the [plan](README.md).
   `Version` and `BENCH` from there, the files compared with the sources, the scenarios on the extracted
   executables.
 - **Criterion**: the archive extracts on a clean system in WinUAE (LhA) and on the host (`lhasa`), and the WinUAE
-  scenarios (0.10) pass on what it holds; at 1.0, the archive is on Aminet.
+  scenarios (tools-10) pass on what it holds; at 1.0, the archive is on Aminet.
 
-## 3.3 Public versions 🔶
+## publish-3 Public versions 🔶
 
 - **Content**: Git version tags, release notes, public repository up to date.
 - **Criterion**: each published version matches a tag and release notes.
@@ -63,8 +63,8 @@ Back to the [plan](README.md).
   amisqueeze 0.6 (2026-10-21): the same, and the zip's SHA-256 in the notes and in a `.sha256` file, computed by
   hand; since 0.7 (2026-10-21) `make dist` writes that file (format of `sha256sum`, checked with `sha256sum -c`)
   and prints the line for the notes: the zip, its `.sha256` and the notes come from the same run.
-- **Scenarios in WinUAE** (decided with the user on 2026-10-23, from step 0.10): before each tag, besides the
-  review (3.5), `python3 tools/winuae/run-scenarios.py` all OK on the build to be tagged, in the JIT profile with
+- **Scenarios in WinUAE** (decided with the user on 2026-10-23, from step tools-10): before each tag, besides the
+  review (publish-5), `python3 tools/winuae/run-scenarios.py` all OK on the build to be tagged, in the JIT profile with
   a 68882 and `compfpu` ([winuae-scenarios.md](winuae-scenarios.md)); first for 0.7.
 - **Continuous integration** (decided 2026-10-19): GitHub Actions, in two parts. First, done before 0.3: on each
   push, `make test` (host build, unit tests, fake server) on GitHub's Linux machine; the badge or the run's page
@@ -80,7 +80,7 @@ Back to the [plan](README.md).
   by commit SHA, the checkout without a token (`persist-credentials: false`, the build's container mounts the
   repository); an attestation of provenance left for 1.0.
 
-## 3.4 Setup guides: server and network (noted 2026-10-19) ⬜
+## publish-4 Setup guides: server and network (noted 2026-10-19) ⬜
 
 - **Why**: amisqueeze is useless without a server, and many Amiga users have never installed LMS; putting the
   Amiga on the network is often the real obstacle. Without these guides few users will get as far as the player,
@@ -95,7 +95,7 @@ Back to the [plan](README.md).
   which machine, and which rule is still needed (e.g. MP3 to PCM); network and ports (3483, the web port, 9090,
   port mapping with Docker).
 - **Content**, two guides in `docs/`, linked from the user guide:
-  - **minimal server**: Lyrion Music Server (then Music Assistant, after 1.7b) on a Raspberry Pi, a NAS or in Docker,
+  - **minimal server**: Lyrion Music Server (then Music Assistant, after player-7b) on a Raspberry Pi, a NAS or in Docker,
     with only what amisqueeze needs: ports (3483, the web port), the conversion rules still needed (e.g. MP3 to PCM
     for an Amiga without FPU, which does not decode MP3 itself), adding music, checking that the Amiga's player shows up;
   - **the Amiga on the network**: a TCP/IP stack (Roadshow, AmiTCP, AmiNetXDuo), the usual hardware (PCMCIA network
@@ -104,7 +104,7 @@ Back to the [plan](README.md).
 - **Criterion**: a user who does not know the project goes, with the guides alone, from a fresh server and a
   networked Amiga without amisqueeze to music playing; checked at least once in WinUAE on a clean installation.
 
-## 3.5 Review before each release (decided 2026-10-20) ✅
+## publish-5 Review before each release (decided 2026-10-20) ✅
 
 - **Why**: an outside review of version 0.4 (a fresh Claude session, reading only) found defects the
   development sessions had not seen: a stack measurement made before dr_flac came in and never redone, a sanitizer
@@ -125,19 +125,19 @@ Back to the [plan](README.md).
   `docs/development/rules.md`. Experiments (planted defects, removed guards) only in throwaway git worktrees next
   to the repository, never committed, deleted afterwards.
 - **Sub-steps**:
-  - **3.5a** the method (`.claude/skills/review-method`), the agents `review-protocol-security`,
+  - **publish-5a** the method (`.claude/skills/review-method`), the agents `review-protocol-security`,
     `review-platform`, `review-tests-docs`, `review-plan-compliance` (`.claude/agents/`) and the entry point
     `/release-review <previous tag>`: pins the commit and the range, runs the four agents in parallel, verifies
     every finding (re-opens each cited line, tries to refute it, separates proven from inferred), writes the
     report, fixes nothing;
-  - **3.5b** acceptance test: the review of `amisqueeze-0.3..amisqueeze-0.4` in a worktree, compared with the
+  - **publish-5b** acceptance test: the review of `amisqueeze-0.3..amisqueeze-0.4` in a worktree, compared with the
     outside review of 0.4; each item missed sharpens a question of the method, and the review is replayed until
     it finds it. Since the development session knows that review's findings, the tooling is also judged on what
     it finds beyond them, on `0.4..0.5` and on HEAD. First run on 2026-10-20
     ([report](reviews/acceptance-0.3-0.4.md)): of the points the outside review lists as done before 0.5, all
     found at 75 or more except a frame count of 0 (seen, scored 50, not run); missed: `gethostbyname()`'s result
     unchecked, the CI workflow's `permissions:`, two false comments; found in part: what `make dist` checks, the
-    malformed-input tests; found beyond it: step 1.2's claim on `cont`, a FLAC rate of 0 stalling a track, gaps in
+    malformed-input tests; found beyond it: step player-2's claim on `cont`, a FLAC rate of 0 stalling a track, gaps in
     `check-saves.py`. The seven method questions (section 10) decided with the user on 2026-10-20 and the method
     and agents changed; a first replay the same day ran the old agent definitions (loaded when the session starts),
     so it tested the method changes only (section 11): the pointer rule and the false-comment rule worked, the
@@ -153,14 +153,14 @@ Back to the [plan](README.md).
     without `SMART`; a direct `printf`); of the outside review's points fixed in 0.5, the guide's messages and the
     plan's statuses found incomplete, the LAME bounds checks partly tested, the rest confirmed; the FLAC rate of 0
     seen but left unrun. Criterion met for `0.4..0.5` (decided with the user, method unchanged; the direct `printf`
-    accepted, the `msg()` rule made explicit). No separate review of HEAD (see 3.5e): the first review in real use,
+    accepted, the `msg()` rule made explicit). No separate review of HEAD (see publish-5e): the first review in real use,
     `0.5..0.6`, is the tooling's last judge;
-  - **3.5c** the rules inventory: every rule, limit and measurement of `CLAUDE.md` and `CONTRIBUTING.md`, how it
+  - **publish-5c** the rules inventory: every rule, limit and measurement of `CLAUDE.md` and `CONTRIBUTING.md`, how it
     is enforced today (script, test, review, nothing), how it should be, and for a measurement its date, commit
     and what it depends on. Done on 2026-10-20 ([rules.md](rules.md)): 88 entries in ten groups, with the findings of
-    the two acceptance reports linked to them; twelve candidates for 3.5d; twelve remarks (stale figures and
+    the two acceptance reports linked to them; twelve candidates for publish-5d; twelve remarks (stale figures and
     names, the scope of the ASCII rule, the `msg()` exception) left for the user to decide;
-  - **3.5d** mechanical checks run by `make test`, proposed one by one (first candidates: version strings, every
+  - **publish-5d** mechanical checks run by `make test`, proposed one by one (first candidates: version strings, every
     message in the user guide, ASCII-only sources, nothing specific to the developer's workstation). Each check:
     proposed, accepted, written, seen failing on planted defects in a throwaway worktree, seen passing on the
     repository. Done: (1) the version strings, `tools/check-version.py` (2026-10-20; `rules.md` V4 to V7, V9):
@@ -168,14 +168,14 @@ Back to the [plan](README.md).
     tags as releases, refused 17 planted defects and HEAD itself with `--release`, also through `make test` and
     `make dist` themselves. Closed there on 2026-10-20 (decided with the user: the step was turning into
     over-quality); the other candidates of `rules.md` stay as ideas, not planned;
-  - **3.5e** the release rule in `CLAUDE.md` (done on 2026-10-20). The agents and the method read
+  - **publish-5e** the release rule in `CLAUDE.md` (done on 2026-10-20). The agents and the method read
     [rules.md](rules.md) and name a rule by its ID (`rules.md C12`). The review of HEAD planned here was dropped
     (decided with the user on 2026-10-20: since 0.5, HEAD changed only documentation and review tooling): the next
     review is the one before the 0.6 tag, `/release-review amisqueeze-0.5`, whose launch prompt adds "no `HEAD`
     in git commands" and "logs in your own worktree" ([decided](reviews/acceptance-0.4-0.5.md#8-decisions)). The
     remarks of `rules.md` stay written, undecided; that review reports those that matter. The findings of the two
     acceptance reports still open are fixed in one batch, listed with the user.
-- **Stop** (decided with the user on 2026-10-20): step 3.5 is over. From now on each release gets its review and
+- **Stop** (decided with the user on 2026-10-20): step publish-5 is over. From now on each release gets its review and
   nothing more; the tooling (method, agents, checks) changes only when a review misses a real defect, never for its
   own sake.
 - **Two levels** (decided with the user on 2026-10-20, after the 0.6 fixes: a full review costs about 10-20 $ and

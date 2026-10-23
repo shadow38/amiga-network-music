@@ -1309,7 +1309,7 @@ static void test_audio_gapless_24bit(void)
     teardown(&p);
 }
 
-/* ---- WAV header (Music Assistant's wav output codec, plan step 1.7b) ---- */
+/* ---- WAV header (Music Assistant's wav output codec, plan step player-7b) ---- */
 
 static uint8_t wav_buf[8192];
 
@@ -1639,7 +1639,7 @@ static void test_audio_volume_pause(void)
     teardown(&p);
 }
 
-/* ---- decoders (plan step 1.8a) ---- */
+/* ---- decoders (plan step player-8a) ---- */
 
 /* "Widening" decoder, for the tests only: each byte of input becomes a 16-bit little-endian sample
  * ((byte - 128) * 256), so the output is twice the input. With raw PCM, input and output have the same size and a
@@ -2273,7 +2273,7 @@ static void test_flush_stop(void)
     teardown(&p);
 }
 
-/* ENV:Sys/ahi.prefs as saved by the AHI 6 preferences in WinUAE (plan step 1.10): the Music unit (255), then units
+/* ENV:Sys/ahi.prefs as saved by the AHI 6 preferences in WinUAE (plan step player-10): the Music unit (255), then units
  * 0 (Paula 14-bit stereo++, 27429 Hz), 1 (Toccata stereo++, 44100 Hz), 2 (Paula 8-bit stereo++) and 3 (Toccata
  * plain stereo) */
 static const uint8_t ahi_prefs[256] = {

@@ -1,5 +1,5 @@
 /*
- * stream.c - portable core: HTTP stream of the current track, ring buffer and virtual output (plan step 1.2)
+ * stream.c - portable core: HTTP stream of the current track, ring buffer and virtual output (plan step player-2)
  *
  * Behaviour expected by the server (as in squeezelite, rewritten from the protocol description):
  *   strm s -> STMf, non-blocking connection, request sent as is, STMc; response headers -> RESP;
@@ -14,7 +14,7 @@
  * The ring buffer holds the stream as received; the decoder of each track (decoder.h; raw PCM is copied as is)
  * turns it into PCM for a sink: the platform's audio output (AHI, blocks managed by audio.c), or the virtual
  * output, which consumes it at the PCM rate like a sound card (host build, NOAUDIO, OUTPUT); with the OUTPUT
- * option, the decoded PCM is also written to a file (plan step 1.3, checked byte by byte). Track boundaries,
+ * option, the decoded PCM is also written to a file (plan step player-3, checked byte by byte). Track boundaries,
  * elapsed time and the end of playback follow the bytes of decoded PCM the sink has played.
  */
 #include <string.h>

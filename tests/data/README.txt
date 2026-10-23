@@ -1,4 +1,4 @@
-FLAC test files (plan step 1.8b), made once from the signals of tests/flac_data.py with flac 1.3.4:
+FLAC test files (plan step player-8b), made once from the signals of tests/flac_data.py with flac 1.3.4:
 
   flac --force-raw-format --endian=little --sign=signed --channels=C --bps=B --sample-rate=R -<level> -o F S.raw
 
@@ -16,7 +16,7 @@ FLAC test files (plan step 1.8b), made once from the signals of tests/flac_data.
 
 FLAC is lossless: decoded, each file gives flac_data.expected(signal) (24 bits: their 16 most significant bits).
 
-MP3 test files (plan step 1.8c), made once from the same signals with lame 3.100:
+MP3 test files (plan step player-8c), made once from the same signals with lame 3.100:
 
   lame -r -s R --bitwidth 16 --signed --little-endian -m M <options> S.raw F
 
@@ -31,7 +31,7 @@ MP3 test files (plan step 1.8c), made once from the same signals with lame 3.100
   cont-b.mp3        cont-b    44.1   j  -b 128 --cbr --id3v2-only --tt Test     (the rest: played after cont-a)
 
 cont-a and cont-b are the parts of flac_data.PARTS (one continuous signal cut off an MP3 frame boundary): played
-back to back, they must give the whole signal again, without a gap (gapless, plan step 1.8d).
+back to back, they must give the whole signal again, without a gap (gapless, plan step player-8d).
 
 MP3 is lossy: the tests compare the decoded audio with the signal by its signal-to-noise ratio (lame's own
 decoder gives the same values). With a LAME header, amisqueeze drops the encoder's and the decoder's delays and

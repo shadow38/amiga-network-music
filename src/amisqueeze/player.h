@@ -114,7 +114,7 @@ struct output {
 
 /* Audio output through the platform (AHI on the Amiga): blocks of converted PCM played one after the other, two at
  * most with the device and one filled in advance. About 0.6 s ahead: enough to ride out a busy moment, short
- * enough for the volume (1.5). */
+ * enough for the volume (player-5). */
 #define AUDIO_BLOCKS     3
 #define AUDIO_BLOCK_SIZE 32768UL        /* about 0.19 s of 44.1 kHz 16-bit stereo; filled with whole frames only
                                            (a 24-bit frame, 3 or 6 bytes, does not divide it) */

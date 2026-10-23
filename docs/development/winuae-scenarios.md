@@ -4,7 +4,7 @@
 an exit code. They replay before a release what `make test` cannot check: the Amiga platform layer (AHI,
 bsdsocket, `Break`), a real server (LMS) and the 68k builds. One command runs them all, `run-scenarios.py`; each
 scenario also runs on its own. The machine, its profiles, its AHI units and the rules of the serial shell are in
-[testing.md](testing.md); the plan's steps behind these tools: 0.7 and 0.10 of
+[testing.md](testing.md); the plan's steps behind these tools: tools-7 and tools-10 of
 [phase-0-tooling.md](phase-0-tooling.md).
 
 Python 3, standard library only. All six scenarios take about 4 minutes (2026-10-23, JIT + FPU profile).
@@ -221,7 +221,7 @@ LMS would start again with the next run of amisqueeze ([The server side](testing
 
 `Avail FLUSH` expunges the libraries and devices no longer open, then gives the free memory; the scenario compares
 the fast memory's `Available` and `Largest` columns before the start and after the stop. A corrupted free memory
-list shows first in `Largest`: it is how step 1.6 found the AHI defect of a low `ahir_Volume` (see
+list shows first in `Largest`: it is how step player-6 found the AHI defect of a low `ahir_Volume` (see
 `lms-commands`). What was seen while setting the tolerance (2026-10-22, JIT + FPU profile):
 
 - **The first AHI run after a boot** keeps about 12 KB that `Avail FLUSH` never gives back (AHI's, not
@@ -236,7 +236,7 @@ list shows first in `Largest`: it is how step 1.6 found the AHI defect of a low 
 
 WinUAE's clock falls behind real time, and LMS's elapsed time is wrong for about 50 s after a start or a seek
 ([The server side](testing.md#the-server-side)). So no scenario compares `time ?` with an absolute value: it
-compares how much the elapsed time grows between two readings with the time between them on the host (0.6 to 1.4
+compares how much the elapsed time grows between two readings with the time between them on the host (0.6 to player-4
 times: the slow profile's clock lost about 23 % in a test), and times whole tracks by the host's clock. What these
 checks catch is an elapsed time that stays still, or one that runs twice too fast or too slow (a wrong sample
 rate). A seek is judged by the playlist index, never by `time ?`.
@@ -269,12 +269,12 @@ set back afterwards to what it was.
 | 6 | `stop` | mode `stop` |
 | 7 | `play` | the last track (index 2) starts: two tracks in a row, 44.1 then 48 kHz; `output: end of playback` between 19 and 30 s after `play`; mode `stop` at the end |
 
-The pause and resume matter beyond LMS's commands: in step 1.6, LMS's fade to 0 before a pause made the requests
+The pause and resume matter beyond LMS's commands: in step player-6, LMS's fade to 0 before a pause made the requests
 AHI got again on resume carry a near-zero `ahir_Volume`, and `paula.audio` then corrupted the free memory list
 (the largest block fell from 5.7 MB to 0.5 MB right after the resume). amisqueeze now always gives AHI full volume
 and scales the samples itself. **This scenario does not catch that defect if it came back**: tried on
 2026-10-23 with `ahir_Volume` following the volume again (0.0 % at the resume, after LMS's fade), `commands-pcm`
-passed, the free memory and its largest block unchanged to the byte (JIT + FPU profile; in step 1.6 the defect
+passed, the free memory and its largest block unchanged to the byte (JIT + FPU profile; in step player-6 the defect
 showed after an hour's run, then in a short sequence on a freshly started WinUAE). What guards against it is the
 constant full volume in `plat_audio_send()` (`amiga.c`) and its comment. The volume 50 checks that LMS's volume
 reaches amisqueeze (`audg`) and that the pause works with scaled samples; the fade comes with any volume.
@@ -296,7 +296,7 @@ the tracks' length + 30 s, then amisqueeze stopped, `bytes written` awaited in t
   compared with it twice in a row by `pcm-compare.py --counter`: no reference file to keep. Audio decoded on the
   Amiga is written in its byte order (big-endian): the scenario turns it round before comparing.
 - **MP3 decoded on the Amiga cannot be compared byte by byte**: its floating point gives a few samples off by one
-  from any other decoder (0.03 % of them against the host build, step 1.8c), and the server's `sox` is another
+  from any other decoder (0.03 % of them against the host build, step player-8c), and the server's `sox` is another
   decoder, which keeps the encoder's delay. So the file must have the exact length of the two tracks (2 x 882,000
   frames: the gapless trim leaves each track its signal's length), and each side of each track must be its tone
   (440 Hz on the left, 660 Hz on the right): the sine that fits it best (amplitude, phase and offset free) must

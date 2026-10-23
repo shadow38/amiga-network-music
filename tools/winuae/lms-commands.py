@@ -60,7 +60,7 @@ def main():
         s.check_playing("1. play")
 
         # 2. Volume 50, then pause and resume: with a low volume given to AHI, the requests sent again after the
-        # abort of a pause corrupted the free memory list (step 1.6); the memory check after the stop catches it
+        # abort of a pause corrupted the free memory list (step player-6); the memory check after the stop catches it
         before = len(volume_lines(s))
         s.query("mixer", "volume", 50)
         v = wait_volume(s, before, lambda pc: pc < 100)

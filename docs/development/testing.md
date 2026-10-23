@@ -4,7 +4,7 @@ How amisqueeze is tested in an emulated Amiga: the machine, its profiles, AHI, h
 server side, the CPU load, and the test sounds. The host build and its tests (`make test`) are in
 [CONTRIBUTING.md](../../CONTRIBUTING.md#host-build-and-tests), with the checks only the Amiga can make
 ([Checks the host tests cannot make](../../CONTRIBUTING.md#checks-the-host-tests-cannot-make)). The plan's steps
-behind this setup: 0.4, 0.5 and 0.7 of [phase-0-tooling.md](phase-0-tooling.md).
+behind this setup: tools-4, tools-5 and tools-7 of [phase-0-tooling.md](phase-0-tooling.md).
 
 ## What you need
 
@@ -66,7 +66,7 @@ the CPU lines on the command line (`-s name=value`):
 | **+ FPU** | `-s fpu_model=68882`, with the JIT also `-s compfpu=true` | `amisqueeze.fpu`; without `compfpu` the JIT interprets the FPU (MP3 at 1.8x real time instead of 74x) |
 
 Not a 68040: it needs its CPU library (`68040.library`) in the system. Speeds measured in WinUAE are not those
-of a real machine: the plan leaves timings to the real machines (step 1.9).
+of a real machine: the plan leaves timings to the real machines (step player-9).
 
 ## AHI
 
@@ -182,7 +182,7 @@ Once with nothing playing and once while amisqueeze plays, in the same session a
 windows, several of them); load = 1 - count while playing / count when idle (on the slow profile, about 8,300
 rounds in 10 s when idle). Start the measuring window a few seconds after playback starts (the buffer fills
 first), and send nothing to the Amiga during a window (the serial shell and amiagent cost CPU too). The results
-so far: steps 1.4c and 1.9 of the [plan](phase-1-amisqueeze.md).
+so far: steps player-4c and player-9 of the [plan](phase-1-amisqueeze.md).
 
 ## Test sounds
 
