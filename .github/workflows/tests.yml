@@ -3,7 +3,9 @@
 #   scenarios against the host build ("make test" in CONTRIBUTING.md);
 # - amiga: both Amiga executables (with tools/check-saves.py on their assembly) and the release archives in their
 #   development form, built through tools/amiga-make.sh, which finds neither the toolchain nor a local script on the
-#   runner and so takes its Docker way, the one documented for a new contributor, with the image pinned there.
+#   runner and so takes its Docker way, the one documented for a new contributor, with the image pinned there;
+#   the archives are kept as the run's artifact for 14 days, so that a development build can be tried without
+#   building it (its version reads <next>-dev, never to be taken for a release).
 name: tests
 
 on:
@@ -31,3 +33,14 @@ jobs:
         run: sh tools/amiga-make.sh all dist DEV=1
       - name: SHA-256 of the executables (to compare with a local build from the same image)
         run: sha256sum out/amisqueeze out/amisqueeze.fpu
+      - name: Development archives as the run's artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: amisqueeze-dev
+          path: |
+            out/amisqueeze-*-dev.zip
+            out/amisqueeze-*-dev.lha
+            out/amisqueeze-*-dev.*.sha256
+            out/amisqueeze-*-dev.readme
+          if-no-files-found: error
+          retention-days: 14

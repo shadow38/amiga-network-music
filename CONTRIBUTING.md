@@ -179,7 +179,9 @@ The Amiga build must still be checked in WinUAE: the platform layers differ.
 GitHub runs `make test` on each push and pull request (`.github/workflows/tests.yml`, GitHub Actions, Ubuntu); the
 badge at the top of the README shows the result of the latest run. A second job builds both Amiga executables and
 the archives in their development form (`sh tools/amiga-make.sh all dist DEV=1`, which takes the Docker way on
-GitHub's machine), then prints the executables' SHA-256: a local build from the same image gives the same.
+GitHub's machine), then prints the executables' SHA-256: a local build from the same image gives the same. Its
+archives are kept for 14 days as the run's artifact `amisqueeze-dev` (on the run's page, for a signed-in GitHub
+user; it comes as a zip holding them): a development build to try without building it, its version `<next>-dev`.
 
 ## Testing in WinUAE
 
