@@ -149,7 +149,9 @@ step 0.2 (without `-r`, with `trim` for seeking).
 
 - **Toolchain**: `m68k-amigaos-gcc` 16.2 (AmigaPorts), NDK 3.2 (v47 headers, including bsdsocket/Roadshow and
   AHI), libnix, `make`, `python3`; reference image `amigadev/crosstools:m68k-amigaos-gcc10` (historical tag that
-  follows GCC 16; prefix `/opt/m68k-amigaos`, with vasm, gdb, vamos). The repository stays **generic**: how the
+  follows GCC 16; prefix `/opt/m68k-amigaos`, with vasm, gdb, vamos), pinned by digest in `tools/amiga-make.sh`
+  (`REFERENCE_IMAGE`, decided 2026-10-23: the tag moves; changing it is a decision for the user, with the checks
+  of `CONTRIBUTING.md`, Requirements). The repository stays **generic**: how the
   toolchain is installed on a given machine is not described here.
 - **Building**: `sh tools/amiga-make.sh [all|clean|sdk|host|test|<prog>]`, which tries in order `$AMIGA_MAKE`,
   the toolchain in the `PATH`, `../amiga-make.local.sh` (outside the repository), then Docker (the CI's way). On
@@ -161,8 +163,8 @@ step 0.2 (without `-r`, with `trim` for seeking).
   core; extend the tests with each step (1.2: stream scenarios in the fake server). The Amiga build is still
   checked in WinUAE (different platform layer). GitHub Actions runs `make test` on each push
   (`.github/workflows/tests.yml`, Ubuntu 24.04, decided 2026-10-19), and since 2026-10-23 the Amiga build and
-  `make dist DEV=1` through the Docker way of `tools/amiga-make.sh` (same `m68k-amigaos-gcc` 16.2.1b as the local
-  build, but the image's tag moves: its digest is in the job's log): after a push, check the run (`gh run list`,
+  `make dist DEV=1` through the Docker way of `tools/amiga-make.sh` (the pinned image; the executables' SHA-256 in
+  the job's log): after a push, check the run (`gh run list`,
   `gh run watch`); the tests use real time (playback pacing, reconnection delays), so a slow runner could make one
   fail: rerun before suspecting the code, and say so.
 - **VS Code**: open each repository on its own (task names are the same everywhere, shortcuts can target them by

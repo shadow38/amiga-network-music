@@ -28,7 +28,10 @@ Two ways to get the toolchain:
 - **native install** (Linux, macOS, WSL on Windows): `m68k-amigaos-gcc` in the `PATH`;
 - **Docker**: the [`amigadev/crosstools`](https://hub.docker.com/r/amigadev/crosstools) image, tag
   `m68k-amigaos-gcc10` (a historical name: it follows the AmigaPorts toolchain, now GCC 16). It also ships gdb,
-  vasm and vamos.
+  vasm and vamos. The tag moves when the image is rebuilt, so `tools/amiga-make.sh` pins it by its digest
+  (`REFERENCE_IMAGE`, the toolchain the releases are built with). To move to a newer image: put its digest there,
+  build, run `make test` and the scenarios in WinUAE, and compare the executables' SHA-256 printed by the CI with a
+  local build.
 
 ### Host-side tests (`make host`, `make test`)
 
@@ -102,7 +105,7 @@ With the toolchain in the `PATH`, `make` is enough (`make all`, `make clean`, `m
 2. **`m68k-amigaos-gcc` in the `PATH`**: plain `make`;
 3. **`../amiga-make.local.sh`** (next to the repository, outside Git), if it exists: same role as `$AMIGA_MAKE`,
    for a setup specific to one machine (container, remote host…);
-4. **Docker**: `docker run` of the `$AMIGA_IMAGE` image (default `amigadev/crosstools:m68k-amigaos-gcc10`), with
+4. **Docker**: `docker run` of the `$AMIGA_IMAGE` image (default: the reference image, pinned by digest), with
    the repository mounted on `/work`. The CI builds this way on each push (see Host build and tests below).
 
 ```sh
@@ -176,7 +179,7 @@ The Amiga build must still be checked in WinUAE: the platform layers differ.
 GitHub runs `make test` on each push and pull request (`.github/workflows/tests.yml`, GitHub Actions, Ubuntu); the
 badge at the top of the README shows the result of the latest run. A second job builds both Amiga executables and
 the archives in their development form (`sh tools/amiga-make.sh all dist DEV=1`, which takes the Docker way on
-GitHub's machine), then prints the image's digest and the compiler's version.
+GitHub's machine), then prints the executables' SHA-256: a local build from the same image gives the same.
 
 ## Testing in WinUAE
 

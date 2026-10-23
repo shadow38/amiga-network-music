@@ -3,7 +3,7 @@
 #   scenarios against the host build ("make test" in CONTRIBUTING.md);
 # - amiga: both Amiga executables (with tools/check-saves.py on their assembly) and the release archives in their
 #   development form, built through tools/amiga-make.sh, which finds neither the toolchain nor a local script on the
-#   runner and so takes its Docker way, the one documented for a new contributor.
+#   runner and so takes its Docker way, the one documented for a new contributor, with the image pinned there.
 name: tests
 
 on:
@@ -29,7 +29,5 @@ jobs:
       - uses: actions/checkout@v5
       - name: Amiga build and release archives (tools/amiga-make.sh, Docker)
         run: sh tools/amiga-make.sh all dist DEV=1
-      - name: Image and compiler used
-        run: |
-          docker image inspect --format '{{index .RepoDigests 0}}' amigadev/crosstools:m68k-amigaos-gcc10
-          docker run --rm amigadev/crosstools:m68k-amigaos-gcc10 m68k-amigaos-gcc --version | head -n 1
+      - name: SHA-256 of the executables (to compare with a local build from the same image)
+        run: sha256sum out/amisqueeze out/amisqueeze.fpu
