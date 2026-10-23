@@ -7,6 +7,8 @@
 # Run by hand (workflow_dispatch), it is a trial: the development archives (make dist DEV=1) in a draft named after
 # them, never to be published; GitHub creates a draft's tag only when it is published, so deleting the draft leaves
 # nothing behind.
+# The actions are pinned by commit SHA (their version in a comment), as the image is by its digest; the checkout
+# keeps no token (persist-credentials: false).
 name: release
 
 on:
@@ -23,7 +25,10 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false   # no git push here: the token stays out of the directory the build's
+                                       # container mounts
       - name: Amiga build and release archives (tools/amiga-make.sh, Docker)
         run: sh tools/amiga-make.sh all dist ${{ github.event_name == 'workflow_dispatch' && 'DEV=1' || '' }}
       - name: The archives' name against the tag

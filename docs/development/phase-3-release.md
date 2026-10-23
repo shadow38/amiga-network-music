@@ -76,7 +76,9 @@ Back to the [plan](README.md).
   archive made by GitHub from a tag (✅ done on 2026-10-23, brought forward to 0.7 by the user: `release.yml`,
   on a tag `amisqueeze-*`, makes a draft pre-release with the archives of `make dist`, their `.sha256` and the
   readme; the user writes the notes, compares the executables' SHA-256 with the build tried in WinUAE and
-  publishes; run by hand, a trial in a draft to delete).
+  publishes; run by hand, a trial in a draft to delete). From an outside reading the same day: the actions pinned
+  by commit SHA, the checkout without a token (`persist-credentials: false`, the build's container mounts the
+  repository); an attestation of provenance left for 1.0.
 
 ## 3.4 Setup guides: server and network (noted 2026-10-19) ⬜
 

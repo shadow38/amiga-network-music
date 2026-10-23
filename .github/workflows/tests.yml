@@ -6,6 +6,8 @@
 #   runner and so takes its Docker way, the one documented for a new contributor, with the image pinned there;
 #   the .lha and the .zip are kept as the run's artifacts for 14 days, so that a development build can be tried without
 #   building it (its version reads <next>-dev, never to be taken for a release).
+# The actions are pinned by commit SHA (their version in a comment), as the image is by its digest; the checkout
+# keeps no token (persist-credentials: false).
 name: tests
 
 on:
@@ -20,7 +22,9 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false   # no git push here
       - name: Host build, unit tests, fake server scenarios
         run: make test
 
@@ -28,7 +32,10 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false   # no git push here: the token stays out of the directory the build's
+                                       # container mounts
       - name: Amiga build and release archives (tools/amiga-make.sh, Docker)
         run: sh tools/amiga-make.sh all dist DEV=1
       - name: SHA-256 of the executables (to compare with a local build from the same image)
@@ -36,14 +43,14 @@ jobs:
       # One artifact per archive, uploaded as it is (archive: false, one file each), so that the .lha is downloaded
       # ready for LhA on the Amiga rather than inside a zip; the artifact takes the file's name.
       - name: Development .lha as the run's artifact
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
         with:
           path: out/amisqueeze-*-dev.lha
           archive: false
           if-no-files-found: error
           retention-days: 14
       - name: Development .zip as the run's artifact
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
         with:
           path: out/amisqueeze-*-dev.zip
           archive: false

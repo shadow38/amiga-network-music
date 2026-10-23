@@ -139,6 +139,10 @@ published).
 `-dev` one, the same in both `$VER:` strings, `Firmware=`, the user guide and the README, with its section at the
 top of the changelog, dated as the `$VER:` strings, and nothing left under "Unreleased".
 
+Both workflows pin their actions by commit SHA, the version in a comment (as `tools/amiga-make.sh` pins the image
+by its digest; to update one, take the commit of its new tag), and their checkout keeps no token
+(`persist-credentials: false`), since the build's container mounts the whole repository.
+
 The published archives are made by GitHub from the tag (`.github/workflows/release.yml`, since 0.7): pushing a tag
 `amisqueeze-<version>` runs `make dist` through the Docker way of `tools/amiga-make.sh` (the pinned image), checks
 that the archives bear the tag's version, and makes a **draft** pre-release with the archives, their `.sha256` and
