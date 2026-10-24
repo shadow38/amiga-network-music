@@ -630,7 +630,7 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   - **Strategy against the crackles** (agreed with the user on 2026-10-24), in this order:
     1. confirm the mechanism, without code: the same `AUDIO:` excerpt while AmiNetXDuo's `iperf` receives at
        several rates; do the crackles follow the rate, and from which rate are they heard?
-    2. another driver: does AmiNetXDuo's own `anxnet.device` take this card (`CheckNetDevice`)?
+    2. the driver: read its code; does AmiNetXDuo's own `anxnet.device` take this card (`CheckNetDevice`)?
     3. less to receive: a lower rate asked of the server (planned for 0.8, see step 4 of the protocol);
     4. AHI 6 with `paula.audio` 4.30 instead of 4.18;
     5. the direct Paula output (player-11): large buffers in chip RAM, read by Paula alone, would not mind a late
@@ -652,6 +652,17 @@ belongs to the task that opened it; packets serialised field by field; buffers a
     8192 leaves about 10 % of the CPU. Why a small window costs 17 points is open: more acknowledgments, or
     amisqueeze receiving in smaller pieces, which amisqueeze itself could fix. Steps 3 and 5 would win the margin
     back; at 88 KB/s (step 3) nothing crackled even without `RXBUFFER`.
+  - **Step 2, the driver read** (2026-10-24, `xircomce2.device` 1.1, GPL, sources on Aminet; the card is a Xircom
+    CE3B-100). The receive work runs in a software interrupt, `RXInt`, at priority 0. It loops until the card
+    holds no frame, so a large burst keeps it busy long, and a software interrupt of the same priority waits. That
+    fits the measures, if `paula.audio` prepares its blocks in such an interrupt (to check in AHI's sources). Each
+    frame is read 2 bytes at a time, each read preceded by a write of the position: a workaround in the driver.
+    A faster path reads CE3 cards through their shared memory, but only when no system memory covers the PCMCIA
+    range $600000-$9FFFFF. On this machine the accelerator's memory does, so the slow path is used. Asking the
+    accelerator's tool to keep that range free did not move its memory: the system then declared the range a
+    second time, as free memory. Never leave a machine like that. Leads in the driver: handle a few frames per
+    pass in `RXInt` and cause it again, so that AHI gets its turn and a larger window becomes possible; then the
+    copy itself. `anxnet.device` remains to be tried.
 - **Protocol** (agreed 2026-10-20), with an LMS server on the local network (ports 3483 and its web port), and
   a computer reaching its CLI to read the elapsed time:
   1. the machine: `Version FULL`, `Avail` (with its `Largest` column), `BENCH`; the CPU left when idle;
