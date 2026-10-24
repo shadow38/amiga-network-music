@@ -624,9 +624,18 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   - **Occasional crackles** remain with AmiNetXDuo. They do not change with amisqueeze at priority 5, with AHI's
     echo and surround off, or with the mode (Fast or not). A 20 s raw PCM excerpt played through `AUDIO:`, without
     amisqueeze, is clean on its own. It crackles the same while amisqueeze receives a stream with `NOAUDIO`. So the
-    network reception disturbs Paula's output, not amisqueeze: probably the card's driver holding interrupts or
-    the bus while it copies. Leads: another driver for the card, a lower rate asked of the server (less to copy),
-    a larger AHI buffer.
+    network reception disturbs Paula's output, not amisqueeze: probably the card's driver delaying the interrupt
+    with which Paula asks for its next block, AHI's Paula buffer being short. The `xircomce2.device` that
+    AmiNetXDuo ships is the same file (1.1, 2024-12-22).
+  - **Strategy against the crackles** (agreed with the user on 2026-10-24), in this order:
+    1. confirm the mechanism, without code: the same `AUDIO:` excerpt while AmiNetXDuo's `iperf` receives at
+       several rates; do the crackles follow the rate, and from which rate are they heard?
+    2. another driver: does AmiNetXDuo's own `anxnet.device` take this card (`CheckNetDevice`)?
+    3. less to receive: a lower rate asked of the server (planned for 0.8, see step 4 of the protocol);
+    4. AHI 6 with `paula.audio` 4.30 instead of 4.18;
+    5. the direct Paula output (player-11): large buffers in chip RAM, read by Paula alone, would not mind a late
+       interrupt, and AHI's mixing would go too.
+    Then the choice between 3 and 5, by what 1 shows.
 - **Protocol** (agreed 2026-10-20), with an LMS server on the local network (ports 3483 and its web port), and
   a computer reaching its CLI to read the elapsed time:
   1. the machine: `Version FULL`, `Avail` (with its `Largest` column), `BENCH`; the CPU left when idle;
@@ -791,7 +800,9 @@ belongs to the task that opened it; packets serialised field by field; buffers a
 
 - **Why**: on the slow profile, playing through AHI and `paula.audio` costs 61-68 % of the CPU, almost all of it in
   AHI (player-4c), and up to 88 % with the volume scaled in the core (player-6). A second audio sink that drives Paula through
-  `audio.device` itself, without AHI, could leave much more room on a 68020 without FPU.
+  `audio.device` itself, without AHI, could leave much more room on a 68020 without FPU. On the real A1200 with
+  a PCMCIA network card (player-9), the network reception also makes AHI's Paula output crackle: large buffers read
+  by Paula alone would not mind it.
   Prior art: MintAMP (Aminet `mus/play`, 68030+) plays internet radio on Paula this way, without AHI; read its
   documentation only, its licence is not checked.
 - **To study first**: the work AHI does that would come back to us: the rate (Paula's maximum is about 28 kHz in

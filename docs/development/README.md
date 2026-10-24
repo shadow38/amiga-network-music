@@ -123,7 +123,7 @@ comes after these releases, or alongside if the user wants it.
 | player-8d MP3 without gaps between tracks | ✅ 2026-10-20 |
 | player-9 Real machine | ⬜ with 0.7, for 0.8 |
 | player-10 Finishing touches | 🔶 the parts of 0.4 and 0.5 done; ICY and server discovery in 0.9 |
-| player-11 Direct Paula output, without AHI | ⬜ idea (CPU load on a slow 68020) |
+| player-11 Direct Paula output, without AHI | ⬜ idea (CPU load on a slow 68020; crackles with a PCMCIA network card, player-9) |
 | remote-0 Study (common interface, Music Assistant feasibility, name) | ⬜ before any amilms code |
 | remote-1 to remote-7 LMS | ⬜ |
 | remote-8 to remote-11 Music Assistant | ⬜ |
