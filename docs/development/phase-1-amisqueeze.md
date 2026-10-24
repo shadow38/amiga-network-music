@@ -600,6 +600,17 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   magnitude only (another driver and card, PCMCIA accesses not cycle-exact, 4 MB of Zorro II memory, some of the
   playback in chip memory): what to watch here, with the memory the stack takes (about 1.3 MB of fast memory in
   WinUAE).
+- **First playback on that machine** (2026-10-24, version 0.7, before the protocol below): Kickstart 3.1, Miami
+  3.2b, `xircomce2.device`, AHI 4.18 with `paula.audio`, LMS on the local network. amisqueeze plays.
+  - **Left and right swapped** in `Paula:14 bit stereo++` at 27,429 Hz: the left tone comes out on the right, the
+    right tone on the left; in place with `SWAP`. Amiga Test Kit's sound test, which drives Paula directly, puts
+    each side in place with the same cables. So `paula.audio` swaps on a real Amiga too, as tools-5 found in
+    WinUAE. What to do about it (`SWAP` by default with `paula.audio`, or a note in the user guide) is for the
+    user to decide.
+  - `Paula:14 bit stereo` without "++" plays one channel of the stream only, as tools-5 found. With `SWAP`, the
+    left tone is silent and the right tone comes out on the right only; without `SWAP`, only the left tone was
+    heard.
+  - Occasional crackles with Paula, no `STMo` in the log: to measure in step 4.
 - **Protocol** (agreed 2026-10-20), with an LMS server on the local network (ports 3483 and its web port), and
   a computer reaching its CLI to read the elapsed time:
   1. the machine: `Version FULL`, `Avail` (with its `Largest` column), `BENCH`; the CPU left when idle;
@@ -609,8 +620,9 @@ belongs to the task that opened it; packets serialised field by field; buffers a
      of CIA-A `$BFE001` at 1, and back on afterwards: seen in WinUAE on 2026-10-23);
   4. load, the key point: LMS's fixed volume, a 44.1 kHz FLAC for 5 minutes with `VERBOSE` and `LOG`, the CPU
      left while playing (an idle-loop counter at the lowest priority, as in player-4c), the `STMo` of the log (the
-     buffer ran empty: a gap) and the gaps heard. If there are some, again with, in this order: Paula's 8-bit mode,
-     a lower AHI frequency (22 kHz: duller treble, to judge by ear). Then the same while the Amiga works: files
+     buffer ran empty: a gap) and the gaps heard. If there are some, again with, in this order: Paula's "Fast"
+     14-bit stereo++ mode (lighter mixing, added with the user on 2026-10-24), Paula's 8-bit mode, a lower AHI
+     frequency (22 kHz: duller treble, to judge by ear). Then the same while the Amiga works: files
      copied on the disk, Workbench windows moved: AHI holds only about 0.6 s of audio, so amisqueeze kept from the
      CPU longer than that by busier tasks would make a gap;
   5. commands (player-5): pause, resume, seek, next track, stop; the elapsed time read through the CLI after a pause;

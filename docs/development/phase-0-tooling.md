@@ -97,8 +97,8 @@ Back to the [plan](README.md).
   - Toccata 16 bit stereo++ at 44.1 kHz: correct;
   - Paula through AHI (14 bit and 8 bit stereo++ at 27,429 Hz, the maximum with a 15 kHz screen mode): correct
     sound, **left and right swapped**; Paula played directly through `audio.device` (channels 0 and 3 left, 1 and
-    2 right) is correct, so the swap comes from `paula.audio`, not from the emulation: to check on a real Amiga
-    (player-9);
+    2 right) is correct, so the swap comes from `paula.audio`, not from the emulation: seen on a real Amiga too
+    (player-9, 2026-10-24);
   - "stereo" modes without "++" put each sound entirely on one side: a stereo stream sent at the centre plays one
     channel only, on one side. amisqueeze needs a **stereo++** mode (player-4).
   - The `filesave.audio` driver ("Filesave" modes) writes what AHI plays to a file (WAV, AIFF…), but only for
