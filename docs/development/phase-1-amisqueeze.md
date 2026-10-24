@@ -663,6 +663,22 @@ belongs to the task that opened it; packets serialised field by field; buffers a
     second time, as free memory. Never leave a machine like that. Leads in the driver: handle a few frames per
     pass in `RXInt` and cause it again, so that AHI gets its turn and a larger window becomes possible; then the
     copy itself. `anxnet.device` remains to be tried.
+  - **Optimization roadmap for this machine** (agreed with the user on 2026-10-24): the most modest machine first,
+    so that the others benefit. Today: clean playback at about 90 % of the CPU (`RXBUFFER=8192`). In this order:
+    1. the cheap measures: why the small TCP window costs 17 points (the size of amisqueeze's reads, AmiNetXDuo's
+       own settings), a lighter system (a trimmed install, MapROM), AHI 6 (step 4 of the strategy); a few points
+       each, estimated;
+    2. less to receive: a lower rate asked of the server (0.8, step 3 of the strategy), half the stream at
+       22 kHz; at 88 KB/s nothing crackled even without `RXBUFFER` (measured); the network's cost might drop from
+       about 47 % to about 25 % (estimated), if LMS resamples for it;
+    3. the driver: a few frames per pass in `RXInt` (step 2 above), so that a larger, cheaper window plays without
+       crackles, back towards 73 % (estimated); a change to a GPL driver, kept apart from this project;
+    4. the direct Paula output (player-11), if the margin is still short after 1 to 3: AHI's mixing gone (a good
+       share of the 25 to 30 points playback costs, estimated), and large buffers that do not mind a late
+       interrupt.
+
+    A 68030 card (twice the CPU, and the PCMCIA range free for the driver's faster path) is the user's own choice,
+    outside this plan. The swapped channels of `paula.audio` (above) remain to decide.
 - **Protocol** (agreed 2026-10-20), with an LMS server on the local network (ports 3483 and its web port), and
   a computer reaching its CLI to read the elapsed time:
   1. the machine: `Version FULL`, `Avail` (with its `Largest` column), `BENCH`; the CPU left when idle;
