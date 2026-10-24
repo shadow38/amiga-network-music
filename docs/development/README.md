@@ -59,6 +59,7 @@ statuses in [Where we are](#where-we-are).
 | 0.9 | internet radios' metadata (ICY), automatic server discovery | player-10 (end) | ⬜ | host for the code; the real machine and network |
 | 1.0 | setup guides, a full audit, the Music Assistant scenario, the upload to Aminet | publish-4, publish-5, tools-10 (Music Assistant), publish-2 (Aminet) | ⬜ | the real machine |
 | none yet | ideas: direct Paula output, source-level debugging | player-11, tools-8 | ⬜ | – |
+| none | reference documents on AmigaOS for contributors, committed when ready, holding back no version (decided with the user on 2026-10-24) | tools-12 | ⬜ | – |
 
 The remote (remote-0 to remote-12) will have versions of its own, its name being chosen by its study (remote-0);
 it comes after these releases, or alongside if the user wants it.
@@ -208,6 +209,7 @@ it comes after these releases, or alongside if the user wants it.
 | tools-9 Test Music Assistant server | 🔶 2026-10-21: players side done (Music Assistant 2.10.7); API token not yet (remote-8) |
 | tools-10 Regression scenarios in WinUAE | 🔶 LMS part done 2026-10-23: `tools/winuae/run-scenarios.py`, six scenarios (a test tone, LMS's commands through AHI with FLAC decoded by the server or on the Amiga, `OUTPUT` of PCM, FLAC and MP3), about 4 minutes; Music Assistant before 1.0 |
 | tools-11 A real TCP/IP stack in WinUAE (AmiNetXDuo, PCMCIA card) | ✅ 2026-10-24: the "real network" profile; raw PCM costs about 40 % of the slow profile in the network, Paula through AHI 92 % in all |
+| tools-12 Amiga reference documents (`docs/amiga/`) | ⬜ agreed on 2026-10-24: tools-12a (AHI, network) first, then stack and memory, signals, Kickstart versions, Workbench start |
 | player-1 Control connection | ✅ 2026-10-18 |
 | player-1b Default options (`ENV:amisqueeze.prefs`) | ✅ 2026-10-18 |
 | player-2 Receiving the stream (virtual output) | ✅ 2026-10-18 |

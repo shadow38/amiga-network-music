@@ -268,3 +268,27 @@ phase 1; the figures below are those of 0.6.
   27,429 Hz): not explained, so these figures compare only within a session. Found on the way: WinUAE's newer syntax for the card
   (`ne2000pcmcia_rom_file=:ENABLED`; `ne2000_pcmcia=` is read only from configurations older than 3.4), the 4 MB
   limit above, and slirp accepting a connection on the host even when nothing listens in the Amiga.
+
+## tools-12 Amiga reference documents ⬜ (outside the versions)
+
+- **Goal**: what AmigaOS does on the points amisqueeze depends on, written once with its source instead of
+  scattered through the steps' findings; for contributors, and for amilms (decided with the user on 2026-10-24).
+- **Where**: `docs/amiga/`, one document per subject and an index (`README.md`). Developer reference: how
+  `ahi.device` or `bsdsocket.library` behave, not how to set them up, which is the user's side (publish-4); the
+  two link to each other without repeating. Nothing moved out of `architecture.md`, `testing.md` or
+  `CONTRIBUTING.md`, which keep amisqueeze's own rules (the review agents read `architecture.md` whole); the
+  reference gives the why, with links both ways.
+- **Sources**: every statement says where it comes from: a reading of a source (AHI 6.0), a measurement in
+  WinUAE (date, profile), the real machine, or a cited third-party document; what was only seen in emulation is
+  said so. Nothing copied from the RKMs, the autodocs or AHI's documentation: paraphrased and cited.
+- **Parts**, one commit each, in this order:
+  - tools-12a: the index, `ahi.md` and `network.md`, the latter with tools-11's measurements (WinUAE), which
+    player-9 completes on the real machine;
+  - tools-12b: stack and memory (chip and fast, the Shell's stack, silent overflow, libnix's `__stack`);
+  - tools-12c: signals and `Wait()` (the main loop, Ctrl-C, the signals of `bsdsocket.library` and AHI);
+  - tools-12d: what differs between Kickstart and AmigaOS versions (2.04 to 3.2) for a program like this one;
+  - tools-12e: the Workbench start and the console (icon, ToolTypes, `CON:` window, commodity).
+- **Criterion** (each part): every rule and finding on its subject in `architecture.md`, `testing.md`,
+  `CONTRIBUTING.md` and the steps' findings has its explanation in `docs/amiga/`, sourced, with the links in
+  place; `CONTRIBUTING.md` (Repository layout), the "Before touching X, read Y" table of `CLAUDE.md` and "Where
+  we are" updated. Not user-visible: no `CHANGELOG.md` line.
