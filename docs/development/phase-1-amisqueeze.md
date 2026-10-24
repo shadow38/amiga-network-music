@@ -663,8 +663,24 @@ belongs to the task that opened it; packets serialised field by field; buffers a
     second time, as free memory. Never leave a machine like that. Leads in the driver: handle a few frames per
     pass in `RXInt` and cause it again, so that AHI gets its turn and a larger window becomes possible; then the
     copy itself. `anxnet.device` remains to be tried.
+  - **The same driver rebuilt** (2026-10-24): `xircomce2.device` 1.1 cross-compiled with GCC 16, sources
+    unchanged, kept apart from this project (GPL). It costs about 12 points less at `RXBUFFER=8192` and plays
+    clean at 10240. Same protocol as the table above (Paula 14 bit stereo++, `SWAP`, LMS volume 100, three
+    10 s windows), both drivers swapped without a reboot; idle count 13,508 to 13,539 before and after:
+
+    | Driver | `RXBUFFER` | Load | Crackles |
+    |---|---|---|---|
+    | Aminet's | 8192 | 92 % | none |
+    | Aminet's | 12288 | 81 % | quite a few |
+    | rebuilt | 8192 | 80 % | none |
+    | rebuilt | 10240 | 79 % | none heard |
+    | rebuilt | 12288 | 79 % | three very small ones |
+
+    No `STMo` in any run. A larger window brings the rebuilt driver almost nothing (80 to 79 %), unlike Aminet's
+    (92 to 81 %).
   - **Optimization roadmap for this machine** (agreed with the user on 2026-10-24): the most modest machine first,
-    so that the others benefit. Today: clean playback at about 90 % of the CPU (`RXBUFFER=8192`). In this order:
+    so that the others benefit. Today: clean playback at about 90 % of the CPU (`RXBUFFER=8192`), about 80 % with
+    the rebuilt driver (above). In this order:
     1. the cheap measures: why the small TCP window costs 17 points (the size of amisqueeze's reads, AmiNetXDuo's
        own settings), a lighter system (a trimmed install, MapROM), AHI 6 (step 4 of the strategy); a few points
        each, estimated;
