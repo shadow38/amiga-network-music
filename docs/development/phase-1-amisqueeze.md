@@ -601,7 +601,8 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   playback in chip memory): what to watch here, with the memory the stack takes (about 1.3 MB of fast memory in
   WinUAE).
 - **First playback on that machine** (2026-10-24, version 0.7, before the protocol below): Kickstart 3.1, Miami
-  3.2b, `xircomce2.device`, AHI 4.18 with `paula.audio`, LMS on the local network. amisqueeze plays.
+  3.2b then AmiNetXDuo 1.0.0-rc2, `xircomce2.device`, AHI 4.18 with `paula.audio`, LMS on the local network.
+  amisqueeze plays.
   - **Left and right swapped** in `Paula:14 bit stereo++` at 27,429 Hz: the left tone comes out on the right, the
     right tone on the left; in place with `SWAP`. Amiga Test Kit's sound test, which drives Paula directly, puts
     each side in place with the same cables. So `paula.audio` swaps on a real Amiga too, as tools-5 found in
@@ -610,7 +611,22 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   - `Paula:14 bit stereo` without "++" plays one channel of the stream only, as tools-5 found. With `SWAP`, the
     left tone is silent and the right tone comes out on the right only; without `SWAP`, only the left tone was
     heard.
-  - Occasional crackles with Paula, no `STMo` in the log: to measure in step 4.
+  - **CPU load**, method of player-4c (`cpucount`, three 10 s windows), `song-44k.flac` sent as raw PCM, LMS
+    volume 100, `SWAP`. Idle, the machine counts about 13,600: 1.6 times the slow WinUAE profile (8,288), so the
+    WinUAE estimates were pessimistic. No `STMo` in any run.
+
+    | Stack | Idle | `NOAUDIO` | Paula Fast 14 bit stereo++ | Paula 14 bit stereo++ |
+    |---|---|---|---|---|
+    | Miami 3.2b | 13,613 | 2,145: 84 % | about 100 %, gaps heard | about 100 %, crackles and gaps heard |
+    | AmiNetXDuo | 13,574 | 7,246: 47 % | 4,155: 69 % | 3,729: 73 % |
+
+    The stack makes the difference: AmiNetXDuo costs about half as much as Miami for the same reception.
+  - **Occasional crackles** remain with AmiNetXDuo. They do not change with amisqueeze at priority 5, with AHI's
+    echo and surround off, or with the mode (Fast or not). A 20 s raw PCM excerpt played through `AUDIO:`, without
+    amisqueeze, is clean on its own. It crackles the same while amisqueeze receives a stream with `NOAUDIO`. So the
+    network reception disturbs Paula's output, not amisqueeze: probably the card's driver holding interrupts or
+    the bus while it copies. Leads: another driver for the card, a lower rate asked of the server (less to copy),
+    a larger AHI buffer.
 - **Protocol** (agreed 2026-10-20), with an LMS server on the local network (ports 3483 and its web port), and
   a computer reaching its CLI to read the elapsed time:
   1. the machine: `Version FULL`, `Avail` (with its `Largest` column), `BENCH`; the CPU left when idle;
