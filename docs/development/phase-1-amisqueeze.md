@@ -636,6 +636,22 @@ belongs to the task that opened it; packets serialised field by field; buffers a
     5. the direct Paula output (player-11): large buffers in chip RAM, read by Paula alone, would not mind a late
        interrupt, and AHI's mixing would go too.
     Then the choice between 3 and 5, by what 1 shows.
+  - **Step 1 done** (2026-10-24): the `AUDIO:` excerpt while the PC sends a steady stream to `nc` on the Amiga
+    stays clean at 44 and 88 KB/s, crackles once at 176 KB/s and all the time at 330 KB/s. So the bursts count,
+    not the mean rate: LMS sends at full speed whenever amisqueeze frees room. A remedy without code: AmiNetXDuo's
+    `RXBUFFER`, set in the interface file, caps the TCP window, so the bursts. With amisqueeze, Paula 14 bit
+    stereo++:
+
+    | `RXBUFFER` | Load | Crackles |
+    |---|---|---|
+    | none | 73 % | occasional |
+    | 8192 | 90 % | none, heard as perfect |
+    | 12288 | 81 % | some |
+    | 16384 | 76 % | all the time |
+
+    8192 leaves about 10 % of the CPU. Why a small window costs 17 points is open: more acknowledgments, or
+    amisqueeze receiving in smaller pieces, which amisqueeze itself could fix. Steps 3 and 5 would win the margin
+    back; at 88 KB/s (step 3) nothing crackled even without `RXBUFFER`.
 - **Protocol** (agreed 2026-10-20), with an LMS server on the local network (ports 3483 and its web port), and
   a computer reaching its CLI to read the elapsed time:
   1. the machine: `Version FULL`, `Avail` (with its `Largest` column), `BENCH`; the CPU left when idle;
