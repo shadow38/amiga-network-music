@@ -61,13 +61,11 @@ reach). So it covers basic control of amisqueeze under Music Assistant, while se
 - **Content**: connect to `<server>:9090`, send `version ?`, read and decode the reply.
 - **Criterion**: `amilms SERVER=<ip>` prints the server version.
 - **Test**: test server; on the host, reply parsing (`%xx` decoding, splitting into pairs).
-- **Documentation** (decided with the user on 2026-10-20, the guide being 500 lines long at 0.6): with the first
-  amilms page, the user guide is split, one page per program, and amisqueeze's reference parts leave its page:
-  `amisqueeze.md` (requirements, server setup, installation, running, Workbench, stopping, known limits),
-  `sound.md` (AHI), `decoding.md` (FLAC, MP3, `BENCH`, `OUTPUT`), `messages.md` (messages, troubleshooting). To
-  adapt with it: `tools/check-version.py` (the state line), `tools/make-dist.py` (the zip), the links and anchors
-  (README, CONTRIBUTING, `CLAUDE.md`, the plan, `rules.md`, `amiga.c`), and the review agent `review-tests-docs`
-  (the user's decision, as for any change of the review tooling).
+- **Documentation** (agreed with the user on 2026-10-24): with the first amilms page, one guide per program;
+  amisqueeze's stays one file in two parts, using it then a reference. To adapt with it: `tools/check-version.py`
+  (the state line), `tools/make-dist.py` (the zip), the links and anchors (README, CONTRIBUTING, `CLAUDE.md`, the
+  plan, `rules.md`, `amiga.c`), and the review agent `review-tests-docs` (the user's decision, as for any change of
+  the review tooling).
 
 ## remote-2 Players and basic commands ⬜
 

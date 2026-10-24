@@ -1,93 +1,115 @@
-# Amiga Network Music - User guide
+# amisqueeze - User guide
 
-This guide is for people who **use** the programs. How it works and which servers it supports are in the
-[README](../README.md#how-it-works); how to build them is in [CONTRIBUTING.md](../CONTRIBUTING.md), and the
-development roadmap in [docs/development](development/README.md).
+This guide tells how to set up and use amisqueeze, then lists every option, message and known limit. What
+amisqueeze is and what the Amiga needs: the [README](../README.md).
 
-**amisqueeze**: [current state](#current-state) | [requirements](#requirements) | [server setup](#server-setup) |
-[installation](#installation) | [running](#running) | [from the Workbench](#from-the-workbench) |
-[stopping](#stopping-amisqueeze) | [decoding on the Amiga](#decoding-on-the-amiga-flac-mp3-bench) |
-[writing to a file](#writing-the-audio-to-a-file-output) | [sound (AHI)](#sound-ahi) |
-[default options](#default-options) | [messages](#messages) | [troubleshooting](#troubleshooting) |
-[known limits](#known-limits). **amilms**: [not available yet](#amilms).
+Version 0.7, a preview: tried in WinUAE only, not yet on a real Amiga (see
+[what has been tried](#what-has-been-tried)).
 
-## amisqueeze
+**Using amisqueeze**: [installing](#installing) | [sound (AHI)](#sound-ahi) | [server setup](#server-setup) |
+[starting](#starting-amisqueeze) | [stopping](#stopping-amisqueeze) | [volume](#volume).
+**Reference**: [options](#options) | [ToolTypes](#tooltypes) | [default options](#default-options) |
+[messages](#messages) | [troubleshooting](#troubleshooting) | [known limits](#known-limits) |
+[what has been tried](#what-has-been-tried) | [removing amisqueeze](#removing-amisqueeze).
 
-amisqueeze turns the Amiga into a network music player for the music servers that speak slimproto, the protocol of
-Logitech's Squeezebox players: [Lyrion Music Server](https://lyrion.org) (LMS) and Music Assistant, both tested
-(see [server setup](#server-setup)). The server (and its web interface or apps) sees and controls it like any other player.
+## Using amisqueeze
 
-### Current state
+In order: install amisqueeze, set up AHI, set up the server, then start amisqueeze.
 
-Version 0.7, a preview: tested in WinUAE only, not yet on a real Amiga.
+### Installing
 
-What amisqueeze does:
+Download the archive from the project's [releases](https://github.com/shadow38/amiga-network-music/releases). It
+comes in two forms holding the same files:
 
-- **connects to the server** and shows up as a player;
-- **plays what LMS plays, through AHI**: in LMS, playback progresses, moves on to the next track, pauses, seeks,
-  stops and changes volume as with any player;
-- **plays raw PCM**, which LMS makes from the files: 8, 16, 24 or 32-bit samples (24-bit "high resolution" FLAC
-  included), mono or stereo, up to 48 kHz, converted to 16 bits for AHI;
-- **decodes FLAC itself** on a fast Amiga, and **MP3** too with an FPU (see
-  [decoding on the Amiga](#decoding-on-the-amiga-flac-mp3-bench)).
+- the `.lha`, to unpack on the Amiga itself with LhA;
+- the zip, to unpack on a PC.
 
-The sound has been checked by ear in WinUAE, with Paula and with a 16-bit sound card (Toccata).
+AmigaOS 3.2 has no LhA. Aminet's `util/arc/lha.run` provides it: run it, and it unpacks itself into the current
+directory. Copy the one for your CPU (`lha_68k`, `lha_68020` or `lha_68040`) to `C:LhA`, then unpack amisqueeze:
 
-### Requirements
+```
+LhA x amisqueeze-<version>.lha RAM:
+```
 
-On the Amiga:
+Each release gives the SHA-256 of both archives, in its notes and in `.sha256` files. To check an archive before
+unpacking it: `sha256sum` on Linux, `Get-FileHash` in PowerShell.
 
-- AmigaOS 3.x, 68020 or better (from a plain 68020 accelerator to a PiStorm). Tested with 3.2.3; also with 3.0
-  and 3.1 (Kickstart 39 and 40) from a Shell, without AHI; it even starts with 2.04 (Kickstart 37), the oldest
-  version it asks for;
-- about 1.1 MB of free memory (1 MB stream buffer, about 6 s of CD-quality audio), a little more for
-  `amisqueeze.fpu` when it decodes MP3 (about 60 KB: its decoder and a larger stack); both set up the stack they
-  need themselves, whatever the Shell's `Stack`;
-- a TCP/IP stack providing `bsdsocket.library`: Roadshow, AmiTCP, AmiNetXDuo, or WinUAE's emulation
-  (`bsdsocket_emu=true`) in an emulator;
-- for the sound: AHI (tested with 6.x; 4.x expected to work, not checked yet) and a driver: Paula's
-  (`paula.audio`, no sound card needed) or your sound card's; see [sound](#sound-ahi).
+The archive holds two executables of the same program. Take the one that suits the Amiga:
 
-On the server:
-
-- Lyrion Music Server (tested with 9.1.1), reachable from the Amiga on TCP ports 3483 (players) and 9000 (audio
-  streams; or whatever its HTTP port is: LMS tells the player which one);
-- for MP3 files, unless `amisqueeze.fpu` decodes them (see
-  [decoding on the Amiga](#decoding-on-the-amiga-flac-mp3-bench)): a conversion rule from MP3 to raw PCM, see
-  [server setup](#server-setup). FLAC, WAV and AIFF are converted by LMS's default rules;
-- files above 48 kHz (88.2, 96, 192 kHz) play only when amisqueeze decodes FLAC itself (LMS then lowers their rate
-  in FLAC); when the Amiga is too slow for that, LMS cannot lower their rate as it makes raw PCM, and reports
-  "Couldn't create command line for flc playback" in its log.
-
-**What has been tried.** Everything so far was run in WinUAE; what the list above names but this table does not is
-expected to work, not checked:
-
-| | Tried | Expected, not tried yet |
+| Executable | For | Decodes itself |
 |---|---|---|
-| Machine | WinUAE 6.0 (an A1200 setup) | any real Amiga |
-| CPU | 68020, at about 28 MHz and with the JIT (the speed of a PiStorm, roughly); with and without a 68882 | 68030, 68040, 68060, a PiStorm with Emu68 |
-| AmigaOS | 3.2.3; 3.0 and 3.1 from a Shell without AHI; 2.04 starts | 3.1.4, 3.5, 3.9 |
-| TCP/IP | WinUAE's emulation (`bsdsocket_emu`) | Roadshow, AmiTCP, AmiNetXDuo |
-| Sound | AHI 6.6 with `paula.audio` and a Toccata card | AHI 4.x, other cards, a PiStorm's own outputs |
-| Server | Lyrion Music Server 9.1.1, Music Assistant 2.10.7 | other versions |
+| `amisqueeze` | any Amiga with a 68020 or better | raw PCM; FLAC when the CPU is fast enough |
+| `amisqueeze.fpu` | an Amiga with an FPU: 68881 or 68882, or a 68040/68060 with its FPU (a PiStorm with Emu68, for instance) | the same, and MP3 when the CPU is fast enough |
+
+Copy it with its icon (`amisqueeze.info` or `amisqueeze.fpu.info`):
+
+- into `C:`, or another directory of the Shell's command path, to run it by name from a Shell;
+- into any drawer, to start it from the Workbench.
+
+`amisqueeze.fpu` may be renamed `amisqueeze`; rename its icon the same way.
+
+### Sound (AHI)
+
+amisqueeze plays through **AHI**, the standard audio system of the Amiga. Programs play through AHI, and an AHI
+driver drives the sound hardware: Paula (the Amiga's own sound chip) or a sound card. AHI is free, on Aminet, but
+**not part of AmigaOS 3.x**: an Amiga that only ever played games and demos usually does not have it.
+
+#### Installing AHI
+
+If there is no `DEVS:ahi.device` and no `SYS:Prefs/AHI`, AHI is not installed. Get it from
+[Aminet](https://aminet.net):
+
+| Archive | What it holds |
+|---|---|
+| `driver/audio/m68k-amigaos-ahiusr.lha` | AHI 6.0 itself (`ahi.device`, the preferences); needs a 68020 or better |
+| `driver/audio/m68k-amigaos-ahidrv.lha` | the drivers, among them `paula.audio` (Paula) |
+| `util/libs/mui38usr.lha` | MUI, which the AHI 6 preferences need (skip it if MUI is installed) |
+
+AHI 6 has no installer: copy its files as its readme (`ahiusr.readme`) describes. A sound card usually comes with
+its own AHI driver: follow its documentation.
+
+#### Setting up the unit
+
+amisqueeze plays on AHI unit 0 (another one with [`UNIT`](#options)). In the AHI preferences (`SYS:Prefs/AHI`),
+choose for that unit:
+
+- **a "stereo++" mode**: `Paula:14 bit stereo++` with Paula (the name may end with "calibrated"), or your card's
+  "16 bit stereo++" mode. In a plain "stereo" mode, the music plays on one side only;
+- **the highest frequency**: 44100 Hz if the driver allows it. Paula's maximum is about 28 kHz with a 15 kHz screen
+  mode (27,429 Hz in PAL); AHI converts the rate;
+- **1 channel**: amisqueeze plays one sound at a time. More channels let other programs play at the same time.
+
+Then save.
+
+![The AHI preferences: unit 0 chosen at the top left, the mode Paula:14 bit stereo++ selected in the list, the
+frequency at 27429 Hz and 1 channel on the right](images/ahi-prefs-unit0.png)
+
+*The AHI preferences (AHI 6, with MUI) set for amisqueeze with Paula: unit 0, `Paula:14 bit stereo++`, the
+highest frequency, 1 channel.*
+
+With Paula, AHI converts and mixes the sound with the CPU. `Paula:8 bit stereo++` takes a little less CPU than the
+14-bit mode, at a lower quality; the "HiFi" modes take more. On a slow Amiga, see [volume](#volume) too.
+
+At start-up, amisqueeze checks the unit's mode and warns about a stereo mode without "++" or a mono mode.
 
 ### Server setup
 
-Lyrion Music Server needs little for amisqueeze:
+amisqueeze plays the music of a Lyrion Music Server (LMS) or of a Music Assistant server. The server runs on
+another computer of the local network; it is set up once.
 
-- **Its address**, given to amisqueeze with `SERVER` (amisqueeze does not find the server by itself yet): the
-  address in the browser's address bar when LMS's web page is open on another computer (`http://<address>:9000`),
-  or the computer's own network settings; a fixed address (set in the router) saves changing it later. A host name
-  works too, if the Amiga's TCP/IP stack can resolve it.
-- **Ports** reachable from the Amiga: 3483/tcp (players) and the web port, 9000/tcp by default, which also carries
-  the audio streams (LMS tells the player which one; set `HTTP_PORT` if you move it, e.g. in Docker). Open both
-  in the server's firewall; in Docker, publish both.
-- **MP3 to PCM conversion**, only when amisqueeze does not decode MP3 itself: with `amisqueeze`, or with
-  `amisqueeze.fpu` on a CPU too slow for it (see [decoding on the Amiga](#decoding-on-the-amiga-flac-mp3-bench)).
-  LMS 9.1 converts FLAC, WAV and AIFF by its default rules, but has **none for MP3** (regular players decode MP3
-  themselves): without one, its `server.log` says "Couldn't create command line for mp3 playback" and the player
-  receives nothing. Add this rule to a
-  `custom-convert.conf` file (in the LMS root directory or at the root of a plugins directory), then restart LMS:
+#### Lyrion Music Server
+
+amisqueeze needs three things from LMS:
+
+- **Its address**, given with `SERVER`. It is the one in the browser's address bar when LMS's web page is open on
+  another computer: `http://<address>:9000`. Give the server a fixed address in the router, so that it does not
+  change. A host name works too, if the Amiga's TCP/IP stack can resolve it.
+- **Two ports** open to the Amiga in the server's firewall: 3483/tcp for the players, and the web port (9000/tcp
+  by default), which also carries the music. LMS tells amisqueeze which web port it uses. In Docker, publish both;
+  the image's `HTTP_PORT` setting moves the web port.
+- **A rule for MP3**, only when amisqueeze leaves MP3 to the server: with `amisqueeze`, or with `amisqueeze.fpu`
+  on a slow Amiga (see [`FLAC`, `MP3` and `BENCH`](#flac-mp3-and-bench)). Add these lines to a file
+  `custom-convert.conf`, in LMS's root directory or at the root of a plugins directory, then restart LMS:
 
   ```
   mp3 pcm * *
@@ -95,111 +117,80 @@ Lyrion Music Server needs little for amisqueeze:
   	[sox] -q -t mp3 $FILE$ -t raw -c 2 -2 -s - $START$
   ```
 
-  It uses the `sox` program shipped with LMS, as its built-in `ogg pcm` rule does, but without `-r`: LMS tells the
-  player the file's own rate (forcing 44100 Hz would play 48 kHz files 9 % too fast). `FT:{START=trim %s}` lets
-  LMS start within a track (seeking).
-- **Music Assistant** (tried with 2.10.7): it drives amisqueeze through its Squeezelite provider. It needs:
-  - **The provider**: in Settings > Player providers, add "Squeezelite". Its "Slimproto port" is 3483 by default.
-  - **Ports** reachable from the Amiga: 3483/tcp (players) and 8097/tcp, Music Assistant's stream server, where
-    players fetch the audio (its "TCP Port" in Settings > System > Streams); open both in the server's firewall.
-    `SERVER` is the address of Music Assistant's computer, as for LMS above.
-  - **The address it gives for the streams**: Music Assistant tells the player where to fetch each track, at the
-    address it detects for itself. If the Amiga cannot reach that address (Music Assistant runs in a container,
-    or the computer has several networks), amisqueeze connects but no track plays: give the address the Amiga
-    reaches the computer on in "Published IP address" (an advanced setting of Settings > System > Streams), an IP
-    address, not a host name.
-  - **The volume**: Music Assistant gives a new player a volume of 20, almost silent: turn it up before judging the
-    sound (with Paula, keep it high, see [volume](#volume)).
+  FLAC, WAV and AIFF need no rule: LMS converts them by default.
 
-  Music Assistant transcodes every track to the player's output codec (in the player's settings), so choose one
-  that amisqueeze plays:
+#### Music Assistant
+
+Music Assistant drives amisqueeze through its Squeezelite provider. It needs:
+
+- **The provider**: in Settings > Player providers, add "Squeezelite". Its "Slimproto port" is 3483 by default.
+- **Its address**, given with `SERVER`: the address of Music Assistant's computer, found as for LMS above.
+- **Two ports** open to the Amiga in the server's firewall: 3483/tcp for the players, and 8097/tcp, where players
+  fetch the music (the "TCP Port" of Settings > System > Streams).
+- **The right address for the streams**, when Music Assistant runs in a container or its computer has several
+  networks. Music Assistant tells the player where to fetch each track, at the address it detects for itself. If
+  the Amiga cannot reach that address, amisqueeze connects but no track plays. Then give the address the Amiga
+  reaches the computer on in "Published IP address", an advanced setting of Settings > System > Streams. It must be
+  an IP address, not a host name.
+- **A codec amisqueeze plays.** Music Assistant converts every track to the player's output codec, set in the
+  player's settings:
 
   | Output codec | With amisqueeze |
   |---|---|
-  | `flac` (the default) | the best choice: lossless, gapless; needs a fast Amiga (see [decoding on the Amiga](#decoding-on-the-amiga-flac-mp3-bench)) |
-  | `wav` | for a slow Amiga (a 68020 without FPU): no decoding, but about 2 Mbit/s on the network (24 bits) |
-  | `mp3` | only with `amisqueeze.fpu`; Music Assistant encodes it on the fly without the information that makes MP3 gapless: the change of track can be heard, and some sounds get small artefacts from the second lossy encoding |
-  | `aac` | not played: amisqueeze refuses the stream, but Music Assistant still shows the track as playing |
+  | `flac` (the default) | the best choice: lossless, without gaps between tracks; needs a fast Amiga (see [`FLAC`, `MP3` and `BENCH`](#flac-mp3-and-bench)) |
+  | `wav` | for a slow Amiga (a 68020 without FPU): no decoding, but about 2 Mbit/s on the network |
+  | `mp3` | only with `amisqueeze.fpu`; not recommended (see [known limits](#known-limits)) |
+  | `aac` | not played |
 
-  With `amisqueeze` (no FPU), `mp3` is refused like `aac`.
+Music Assistant gives a new player a volume of 20, almost silent: turn it up before judging the sound.
 
-### Installation
+### Starting amisqueeze
 
-The archive comes from the project's [releases](https://github.com/shadow38/amiga-network-music/releases), as a
-zip or as an LhA archive (`.lha`, since 0.7) holding the same files: the `.lha` unpacks on the Amiga itself with
-LhA, the zip on a PC. AmigaOS 3.2 has no LhA: Aminet's `util/arc/lha.run` unpacks itself into the current
-directory when run, giving `lha_68k`, `lha_68020` and `lha_68040`; copy the one for your CPU to `C:LhA`, then
-`LhA x amisqueeze-<version>.lha RAM:` unpacks amisqueeze into `RAM:`. Each release gives the
-SHA-256 of both (in its notes and in `.sha256` files), to check an archive before unpacking it, for instance with
-`sha256sum` on Linux or `Get-FileHash` in PowerShell. It holds two executables of the same program; take the one
-that suits the Amiga:
+#### From a Shell
 
-| Executable | For | Decodes itself |
-|---|---|---|
-| `amisqueeze` | any Amiga with a 68020 or better | raw PCM; FLAC when the CPU is fast enough |
-| `amisqueeze.fpu` | an Amiga with an FPU: 68881 or 68882, or a 68040/68060 with its FPU (a PiStorm with Emu68, for instance) | the same, and MP3 when the CPU is fast enough |
-
-`amisqueeze.fpu` refuses to start without an FPU (`amisqueeze.fpu needs an FPU`). Copy the chosen one anywhere,
-with its icon (`amisqueeze.info` or `amisqueeze.fpu.info`) if it is to be started from the Workbench: ideally into
-a directory of the Shell's command path (for instance `C:`) so that it can be run by name, or into a drawer of
-your choice. It may be renamed `amisqueeze` (rename its icon the same way). Both read the same default options
-(below).
-
-**Removing it**: delete the executable and its icon (from `SYS:WBStartup` too, if it was put there), and the
-default options if any: `Delete ENV:amisqueeze.prefs ENVARC:amisqueeze.prefs`. amisqueeze writes nothing else,
-apart from the `LOG` and `OUTPUT` files you named.
-
-### Running
-
-From a Shell:
+Give the address of the server:
 
 ```
 amisqueeze SERVER=192.168.1.10
 ```
 
-Template: `SERVER,PORT/N/K,NAME/K,MAC/K,OUTPUT/K,LOG/K,UNIT/N/K,NOAUDIO/S,SWAP/S,FLAC/K,MP3/K,BENCH/S,VERBOSE/S`
+amisqueeze prints the player's name and the server, then `connected to the server`. A player called "Amiga"
+shows up in the server's web interface: choose it there or in an app, and play. No `Stack` command is needed:
+amisqueeze sets up the stack it needs. If the connection drops or the server restarts, amisqueeze reconnects by
+itself.
 
-| Option | Meaning | Default |
-|---|---|---|
-| `SERVER` | LMS server: IP address or host name (the `SERVER=` keyword may be omitted) | none: required, on the command line or in the default options |
-| `PORT` | slimproto port of the server | `3483` |
-| `NAME` | player name shown in LMS | `Amiga` |
-| `MAC` | player identifier, `xx:xx:xx:xx:xx:xx` | derived from `NAME` |
-| `OUTPUT` | file receiving the audio as it is played, for checking (see [writing the audio to a file](#writing-the-audio-to-a-file-output)); no sound with it | none |
-| `LOG` | file receiving a copy of every message, appended to at each run (see below) | none |
-| `UNIT` | AHI unit to play through (0 to 3, set in the AHI preferences) | `0` |
-| `NOAUDIO` | no sound: the audio is received and consumed at the playing pace, as if played | off |
-| `SWAP` | swaps left and right (for an AHI driver that swaps them, see [sound](#sound-ahi)) | off |
-| `FLAC` | `AUTO`: FLAC decoded on the Amiga if it is fast enough (measured at start-up), otherwise converted by the server; `ON`: always decoded here; `OFF`: always converted by the server (see [decoding on the Amiga](#decoding-on-the-amiga-flac-mp3-bench)) | `AUTO` |
-| `MP3` | the same for MP3, with `amisqueeze.fpu` only (`amisqueeze` leaves MP3 to the server) | `AUTO` |
-| `BENCH` | measures how fast this Amiga decodes FLAC and MP3, prints it and quits (no server needed) | off |
-| `VERBOSE` | print the messages exchanged with the server and the stream events | off |
+amisqueeze keeps the Shell until it stops. To get the Shell back, start it in the background:
 
-`Ctrl-C` stops amisqueeze. To keep the Shell free, run it in the background: `Run >NIL: amisqueeze`, or keep its
-messages in a file, written as they come: `Run amisqueeze >RAM:amisqueeze.log VERBOSE` (the redirection goes
-right after the command name). `Status` then shows its process number, and `Break <number>` stops it; Exchange can
-stop it too (see [stopping amisqueeze](#stopping-amisqueeze)). Only one amisqueeze runs at a time: a second one
-says `amisqueeze is already running` and quits.
+```
+Run >NIL: amisqueeze SERVER=192.168.1.10
+```
 
-**`LOG=<file>`** keeps a copy of every message in a file while they still appear in the window (a redirection
-`>file` sends them to the file only), from the moment the file is open: an error found while the options are read (an unknown keyword, a bad number)
-shows in the window only. Each run is appended to the file, after a line with the date and time, for
-instance `--- amisqueeze 0.5 (...), started 20-Oct-26 14:32:05`; the file is written as the messages come, so it can
-be read while amisqueeze runs (`Type`). It can be set in the default options too: a lasting trace of what
-happened, handy when something goes wrong. A log that cannot be opened (missing directory...) is said, and amisqueeze
-plays without it. The file only grows: without `VERBOSE` a run adds a few lines; avoid leaving `VERBOSE` on with
-`LOG` for good, and delete the file now and then.
+To keep its messages in a file, add [`LOG`](#log).
 
-LMS identifies players by their MAC address. Without `MAC`, amisqueeze derives a stable one from the name: the same
-name always gives the same player in LMS, and two Amigas with different names show up as two players. The player
-can also be renamed from the LMS web interface; amisqueeze takes the new name while it runs.
+#### Keeping the options
 
-If the connection drops or the server restarts, amisqueeze reconnects by itself (it retries every 5 seconds).
+To avoid typing the address every time, save the options in the variable `amisqueeze.prefs`:
 
-### From the Workbench
+```
+Echo "SERVER=192.168.1.10 NAME=Amiga" >ENV:amisqueeze.prefs
+Copy ENV:amisqueeze.prefs ENVARC:
+```
 
-Double-click the icon of `amisqueeze` (or `amisqueeze.fpu`). A window titled "amisqueeze" opens at its first
-message and shows the messages as a Shell would; the player then shows up in LMS.
+The copy in `ENVARC:` keeps them after a reboot. Then just type `amisqueeze`. Options given on the command line
+win over the saved ones: see [default options](#default-options).
+
+#### From the Workbench
+
+Give the server's address in the icon first:
+
+1. Select the icon of `amisqueeze` (or `amisqueeze.fpu`), then *Icons > Information...* (Amiga-I).
+2. In its **ToolTypes**, turn `(SERVER=192.168.1.10)` into your server's address, without the parentheses. A
+   ToolType in parentheses is disabled.
+3. Save.
+
+Then double-click the icon. A window titled "amisqueeze" shows its messages, and the player shows up in the
+server's web interface. The ToolTypes take every [option](#options), one per line; see
+[ToolTypes](#tooltypes) for those of the Workbench only.
 
 ![A Workbench drawer holding the two programs, amisqueeze.fpu and amisqueeze, each with a loudspeaker
 icon](images/workbench-icons.png)
@@ -212,34 +203,19 @@ the server"](images/workbench-window.png)
 *Started from its icon: the message window, here with the options of `ENV:amisqueeze.prefs` (`SERVER=127.0.0.1
 NAME=Amiga`, a test setup). Without `VERBOSE`, nothing more is printed while it plays.*
 
-**Options in the icon.** Select the icon, then *Icons > Information...* (Amiga-I): its **ToolTypes** take the same
-options as the command line (every option of the [table above](#running)), one per line: `SERVER=192.168.1.10`, `NAME=Kitchen`, `UNIT=0`, `LOG=...`, `VERBOSE`... A
-ToolType in parentheses is disabled: the icon comes with examples written that way, such as
-`(SERVER=192.168.1.10)`; remove the parentheses to use one. The ToolTypes win over the default options of
-`ENV:amisqueeze.prefs`, which still apply to what they leave out. Two ToolTypes are for the Workbench only:
+#### With the Amiga
 
-| ToolType | Meaning |
-|---|---|
-| `WINDOW=CON:...` | the message window: position, size, title, e.g. `CON:0/20/640/120/amisqueeze/AUTO/CLOSE/WAIT/SMART` (the default) |
-| `QUIET` | no window: amisqueeze runs silently; add `LOG=<file>` to keep its messages. An error at start-up (in the ToolTypes or the default options, a log that cannot be opened, no TCP/IP stack) still opens the window, which stays until it is closed; an invalid `MAC` or an `OUTPUT` file that cannot be created goes to the log only |
-
-Other ToolTypes, such as the Workbench's own `DONOTWAIT`, are left alone. An error in the ToolTypes (an unknown
-value, a bad number) is shown in the window, which stays open until it is closed.
-
-**Starting with the Amiga.** Copy the program and its icon into `SYS:WBStartup`: the Workbench starts it at every
-boot (the icon carries `DONOTWAIT`, so the Workbench does not wait for it). With `QUIET` and `LOG`, it then plays in
-the background without a window. From a Shell script instead, add to `S:User-Startup`, once the TCP/IP stack is up:
-`Run >NIL: amisqueeze`.
+- **From the Workbench**: copy the program and its icon into `SYS:WBStartup`. The Workbench starts it at every
+  boot. With the ToolTypes `QUIET` and `LOG`, it plays in the background without a window.
+- **From a script**: add `Run >NIL: amisqueeze` to `S:User-Startup`, after the line that starts the TCP/IP stack.
 
 ### Stopping amisqueeze
 
-amisqueeze is a **commodity**: while it runs, it shows in **Exchange** (`SYS:Tools/Commodities/Exchange`; once
-Exchange runs, Ctrl-Alt-Help brings its window back), the system's list of background programs, as "amisqueeze",
-"Squeezebox network music player". To stop it, however it was started:
+amisqueeze shows in **Exchange** (`SYS:Tools/Commodities/Exchange`), the system's list of background programs, as
+"amisqueeze", "Squeezebox network music player". To stop it, however it was started:
 
-- in **Exchange**: select "amisqueeze", then **Remove**; this is the way to stop it when it runs without a window
-  (`QUIET`);
-- in its **window** (started from the Workbench) or its **Shell**: **Ctrl-C**;
+- in **Exchange**: select "amisqueeze", then **Remove**. This is the way when it runs without a window (`QUIET`);
+- in its **window** or its **Shell**: **Ctrl-C**;
 - from another Shell: `Status` gives its process number (when started from a Shell), then `Break <number>`.
 
 ![Exchange: amisqueeze selected in the list of commodities, its description on the right, the Remove button
@@ -247,309 +223,383 @@ below](images/exchange.png)
 
 *Exchange with amisqueeze selected: **Remove** stops it.*
 
-It always stops cleanly: the sound stops, the connection is closed, `stopped` is printed. Its window then stays
-open until it is closed, so that the last messages can be read. Exchange's Active/Inactive switch is shown but does
-not affect the music. Starting it again from its icon while it runs does nothing: the running one goes on, and the
-new one quits at once.
+Once Exchange runs, Ctrl-Alt-Help brings its window back.
 
-### Decoding on the Amiga (`FLAC`, `MP3`, `BENCH`)
+amisqueeze always stops cleanly: the sound stops, the connection is closed, and it prints `stopped`. Its window
+stays open until it is closed, so that the last messages can be read.
 
-When it connects, amisqueeze tells LMS which formats it decodes itself. LMS sends those files as they are, and
-converts the others to raw PCM.
+### Volume
 
-Decoding on the Amiga:
+amisqueeze follows the volume set on the server: slider, apps, mute. A change is heard 0.2 to 0.4 s later; mute
+and unmute fade in about a second. Pause, stop and seek act at once.
+
+**With Paula, or on a slow Amiga, fix the volume at 100 and set it on the amplifier.** Below 100, amisqueeze
+scales the samples itself, which:
+
+- costs CPU time: on a 68020 at about 28 MHz with Paula, about a quarter of the CPU, on top of AHI's two thirds;
+- brings out Paula's own noise: a crackle can be heard at 50, gone at 100.
+
+To fix it in LMS: in the player's settings (*Settings*, the player, then *Audio*), set **Volume Control** to
+**Output level is fixed at 100%**. LMS then greys out or hides the slider, and keeps the choice for the player.
+On the same page, leave **Audio Startup Time** at 0: it is meant for receivers fed by a digital output.
+
+LMS's volume scale is logarithmic: 50 is already quiet (about -25 dB, 6 % of full amplitude), 25 very quiet
+(about -37 dB, 1.4 %).
+
+## Reference
+
+### Options
+
+The command line's template:
+
+```
+SERVER,PORT/N/K,NAME/K,MAC/K,OUTPUT/K,LOG/K,UNIT/N/K,NOAUDIO/S,SWAP/S,FLAC/K,MP3/K,BENCH/S,VERBOSE/S
+```
+
+| Option | Meaning | Default |
+|---|---|---|
+| `SERVER` | the server: IP address or host name; the `SERVER=` keyword may be left out | none: required, on the command line or in the [default options](#default-options) |
+| `PORT` | the server's slimproto port | `3483` |
+| `NAME` | the player's name shown by the server (see [`NAME` and `MAC`](#name-and-mac)) | `Amiga` |
+| `MAC` | the player's identifier, `xx:xx:xx:xx:xx:xx` | derived from `NAME` |
+| `UNIT` | the AHI unit to play through, 0 to 3 (see [setting up the unit](#setting-up-the-unit)) | `0` |
+| `SWAP` | swaps left and right, for an AHI driver that swaps them | off |
+| `FLAC` | `AUTO`, `ON` or `OFF`: where FLAC is decoded (see [`FLAC`, `MP3` and `BENCH`](#flac-mp3-and-bench)) | `AUTO` |
+| `MP3` | the same for MP3, with `amisqueeze.fpu` only | `AUTO` |
+| `BENCH` | measures how fast this Amiga decodes FLAC and MP3, prints it and quits; no server needed | off |
+| `LOG` | a file that keeps a copy of every message (see [`LOG`](#log)) | none |
+| `VERBOSE` | prints the messages exchanged with the server and the stream's events | off |
+| `NOAUDIO` | no sound: the music is received and consumed at the playing pace, as if played | off |
+| `OUTPUT` | a file that receives the audio, for checking; no sound with it (see [`OUTPUT`](#output)) | none |
+
+#### `LOG`
+
+`LOG=<file>` keeps a copy of every message in a file, while they still appear in the window. A redirection
+(`>file`) sends them to the file only.
+
+- Each run is appended to the file, after a line with the date and time, for instance
+  `--- amisqueeze 0.5 (...), started 20-Oct-26 14:32:05`.
+- The file is written as the messages come: `Type` reads it while amisqueeze runs.
+- It starts when the file is open: an error in the options shows in the window only.
+- In the default options, it keeps a lasting trace of what happened, handy when something goes wrong.
+- The file only grows. Without `VERBOSE`, a run adds a few lines; do not leave `VERBOSE` on with `LOG` for good,
+  and delete the file now and then.
+
+To keep the messages of a Shell run in a file without the window, redirect them instead. The redirection goes
+right after the command's name:
+
+```
+Run amisqueeze >RAM:amisqueeze.log VERBOSE
+```
+
+#### `NAME` and `MAC`
+
+The server identifies players by their MAC address. Without `MAC`, amisqueeze derives a stable one from the name:
+
+- the same name always gives the same player on the server;
+- two Amigas with different names show up as two players.
+
+The player can also be renamed from the server's web interface: amisqueeze takes the new name while it runs.
+
+#### `FLAC`, `MP3` and `BENCH`
+
+When it connects, amisqueeze tells the server which formats it decodes itself. The server sends those files as
+they are, and converts the others to raw PCM. Decoding on the Amiga:
 
 - saves network bandwidth: FLAC takes about half of raw PCM, MP3 a fifth or less;
-- plays FLAC files above 48 kHz (LMS lowers their rate in FLAC);
-- plays MP3 with no conversion rule on the server.
+- plays FLAC files above 48 kHz: LMS then lowers their rate in FLAC;
+- plays MP3 without a conversion rule on the server.
 
-But it needs a fast CPU, and MP3 also needs an FPU: only `amisqueeze.fpu` has the MP3 decoder.
+It needs a fast CPU. MP3 also needs an FPU: only `amisqueeze.fpu` decodes it.
 
-**Internet radios**: some MP3 radios mix their metadata (the title playing) into the stream, and amisqueeze
-does not handle it yet. When LMS has the player fetch such a radio itself, as it may for a player that decodes
-MP3 (`amisqueeze.fpu`), that metadata reaches the decoder and the sound may cut regularly; the message
-`cont not handled` is then expected. Not yet checked with a real radio.
-
-**At start-up**, with `FLAC=AUTO` and `MP3=AUTO` (the defaults), amisqueeze decodes a built-in sample of each
-format in its slowest case (FLAC level 8, MP3 at 320 kbit/s), for at most a second each. It takes a format only if
-it decodes it at least twice as fast as real time, and prints the result:
+**`AUTO`**, the default, measures at start-up. amisqueeze decodes a built-in sample of each format in its slowest
+case (FLAC level 8, MP3 at 320 kbit/s), for at most a second each. It takes a format only if it decodes it at
+least twice as fast as real time, and prints the result:
 
 ```
 FLAC: level 8 decoded at 77.0x real time: FLAC decoded here
 MP3: 320 kbit/s decoded at 74.2x real time: MP3 decoded here
 ```
 
-To decide yourself:
+The measure is a little pessimistic on a CPU that compiles code on the fly (WinUAE's JIT, the PiStorm's Emu68):
+its first pass also compiles.
 
-- `FLAC=ON`, `MP3=ON`: always decoded on the Amiga, whatever the measure;
-- `FLAC=OFF`, `MP3=OFF`: always left to the server;
-- `amisqueeze BENCH`: prints the measures and quits, without connecting.
+**`ON`** always decodes the format on the Amiga, whatever the speed. **`OFF`** always leaves it to the server.
+`MP3=ON` given to `amisqueeze` leaves MP3 to the server, with a message.
 
-For instance `amisqueeze BENCH` on a 68020 without FPU:
+**`BENCH`** prints the measures and quits, without connecting. On a 68020 without FPU, with `amisqueeze`:
 
 ```
 FLAC level 8 (the slowest) decoded at 0.2x real time: FLAC=AUTO leaves FLAC to the server (converted to PCM)
 MP3: not decoded by this build (amisqueeze.fpu decodes it, on an Amiga with an FPU)
 ```
 
-and `amisqueeze.fpu BENCH` on a fast Amiga:
+On a fast Amiga, with `amisqueeze.fpu`:
 
 ```
 FLAC level 8 (the slowest) decoded at 77.0x real time: FLAC=AUTO lets this machine decode FLAC
 MP3 at 320 kbit/s (the slowest) decoded at 74.2x real time: MP3=AUTO lets this machine decode MP3
 ```
 
-Measured in WinUAE:
-
-| Emulated CPU | FLAC | MP3 (`amisqueeze.fpu`) | Result |
-|---|---|---|---|
-| 68020 without JIT (about 45 MHz) | 0.2x | - | FLAC left to the server (converted by its default rule, nothing to set up) |
-| 68020 with JIT and 68882 (the order of a PiStorm) | 77x | 74x | both decoded on the Amiga |
-
-Good to know:
-
-- the measure is a little pessimistic on a CPU that compiles code on the fly (WinUAE's JIT, the PiStorm's Emu68):
-  its first pass also compiles;
-- MP3 tracks follow each other without a gap (a live album, a mix): amisqueeze reads the header the encoder
-  writes in the first frame (LAME, and the encoders that copy its format) and drops the silence the encoder adds
-  at the start and the end of each file. MP3 files without such a header keep these few hundredths of a second.
-
-### Writing the audio to a file (`OUTPUT`)
+#### `OUTPUT`
 
 `OUTPUT=<file>` writes the audio to a file as it is played. It is meant for checking playback, not for listening:
 **there is no sound with it**, as with `NOAUDIO`.
 
-What the file holds:
+- The file is created, or replaced, when amisqueeze starts, and closed when it stops.
+- Everything played in between follows, track after track; nothing while paused.
+- Raw PCM is written as the server sent it: from LMS, 16-bit **little-endian** samples (44.1 kHz stereo: about
+  10 MB a minute).
+- FLAC and MP3 decoded on the Amiga are written as 16-bit samples in the Amiga's byte order (big-endian).
 
-- raw PCM exactly as the server sent it: for LMS, 16-bit **little-endian** samples (44.1 kHz stereo: about 10 MB
-  per minute);
-- for FLAC and MP3 decoded on the Amiga: 16-bit samples in the Amiga's byte order (big-endian).
+To check the file, compare it with the expected PCM, for instance with `tools/pcm-compare.py` from the
+repository. In an emulator, write it to a volume shared with the host. Do not put `OUTPUT` in the default
+options: every run would fill the disk.
 
-How it is written:
+### ToolTypes
 
-- created (or replaced) when amisqueeze starts, closed when it stops;
-- everything played in between is appended, the next track right after the previous one; nothing while paused.
+Started from the Workbench, amisqueeze reads its options from the icon's ToolTypes, one per line:
+`SERVER=192.168.1.10`, `NAME=Kitchen`, `UNIT=0`, `LOG=...`, `VERBOSE`...
 
-Why no sound: the file holds exactly what was played, which AHI could not promise (AHI receives the audio about
-0.6 s ahead, and a stop cuts that short).
+- A ToolType in parentheses is disabled. The icon comes with examples written that way, such as
+  `(SERVER=192.168.1.10)`.
+- The ToolTypes win over the [default options](#default-options), which still apply to what they leave out.
+- Other ToolTypes, such as the Workbench's own `DONOTWAIT`, are left alone. The icon carries `DONOTWAIT`, so that
+  the Workbench does not wait for amisqueeze at boot.
 
-To check the file, compare it with the expected PCM, for instance with `tools/pcm-compare.py` from the repository.
-In an emulator, write it to a volume shared with the host.
+Two ToolTypes are for the Workbench only:
 
-Avoid putting `OUTPUT` in the default options: every run would fill the disk.
-
-### Sound (AHI)
-
-amisqueeze plays through **AHI** (Audio Hardware Interface), the standard audio system of the Amiga: programs
-play through AHI, and an AHI driver drives the sound hardware, Paula (the Amiga's own sound chip) or a sound card.
-AHI is free, on Aminet, but **not part of AmigaOS 3.x**: an Amiga that only ever played games and demos usually
-does not have it.
-
-#### Installing AHI
-
-If AHI is not installed yet (no `DEVS:ahi.device`, no `SYS:Prefs/AHI`), from [Aminet](https://aminet.net):
-
-| Archive | What it holds |
+| ToolType | Meaning |
 |---|---|
-| `driver/audio/m68k-amigaos-ahiusr.lha` | AHI 6.0 itself (`ahi.device`, the preferences); needs a 68020 or better |
-| `driver/audio/m68k-amigaos-ahidrv.lha` | the drivers, among them `paula.audio` (Paula) |
-| `util/libs/mui38usr.lha` | MUI, which the AHI 6 preferences need (skip it if MUI is installed) |
-
-AHI 6 has no installer: copy its files as its readme (`ahiusr.readme`) describes. A sound card usually comes with
-its own AHI driver: follow its documentation. amisqueeze was tested with AHI 6 (`ahi.device` 6.6); AHI 4 is
-expected to work, not checked yet.
-
-#### Setting up the unit
-
-amisqueeze plays on the AHI unit given by `UNIT` (0 by default). In the AHI preferences (`SYS:Prefs/AHI`), choose
-for that unit:
-
-- **a "stereo++" mode**, for instance **`Paula:14 bit stereo++`** with Paula (the name may end with "calibrated"),
-  or your card's "16 bit stereo++" mode. In a plain "stereo" mode (without "++"), AHI puts each sound entirely on
-  one side, and the music plays on one side only;
-- **the highest frequency**: 44100 Hz if the driver allows it (the rate LMS sends; otherwise AHI converts the
-  rate). Paula's maximum is about 28 kHz with a 15 kHz screen mode (27,429 Hz in PAL);
-- 1 channel is enough (amisqueeze plays one sound at a time); more lets other programs play at the same time.
-
-Then save. With Paula, `Paula:8 bit stereo++` takes a little less CPU than the 14-bit mode, at a lower quality;
-the "HiFi" modes take more.
-
-At start-up, amisqueeze reads the unit's mode from these preferences and warns if it would not play the music
-right: a stereo mode without "++" (one side only) or a mono mode. With `VERBOSE`, it prints the mode and frequency
-it plays with, for instance `output: AHI unit 0 (Paula:14 bit stereo++ calibrated, 27429 Hz)`.
-
-![The AHI preferences: unit 0 chosen at the top left, the mode Paula:14 bit stereo++ selected in the list, the
-frequency at 27429 Hz and 1 channel on the right](images/ahi-prefs-unit0.png)
-
-*The AHI preferences (AHI 6, with MUI) set for amisqueeze with Paula: unit 0, `Paula:14 bit stereo++`, the
-highest frequency, 1 channel.*
-
-#### How it plays
-
-With Paula, AHI converts and mixes the sound with the CPU: on a 68020 at about 28 MHz (measured in WinUAE),
-playback takes about two thirds of the CPU, 14-bit modes a little more than 8-bit ones; amisqueeze itself takes
-only a few percent at full volume (see [volume](#volume)).
-
-AHI is given about 0.6 s of audio ahead; pause, stop and seek cut the sound at once, and the playing time shown by
-LMS follows what was actually played. If left and right come out swapped (seen in WinUAE with `paula.audio` 4.30,
-in 8 and 14 bits, while Paula itself is right: not checked on a real Amiga yet), add `SWAP`. Occasional
-crackles with `paula.audio` in WinUAE also occur without amisqueeze (AHI's own test tone).
-
-#### Volume
-
-amisqueeze follows the volume set in LMS (slider, apps, mute). It scales the samples itself, since AHI always plays
-them at full volume; a change is heard 0.2 to 0.4 s later.
-
-LMS's volume scale is logarithmic:
-
-| LMS volume | Level |
-|---|---|
-| 100 | full volume: the samples are not touched |
-| 50 | quiet: about -25 dB, 6 % of full amplitude |
-| 25 | very quiet: about -37 dB, 1.4 % |
-
-Mute and unmute fade in about a second.
-
-**Fixed volume.** In LMS, the player's settings (*Settings*, the player, then *Audio*) have a **Volume Control**
-setting: choose **Output level is fixed at 100%**. amisqueeze then plays at full volume whatever the slider
-(which LMS's interfaces grey out or hide), and the volume is set on the amplifier. LMS keeps that choice for the
-player. **Use it on a slow Amiga, or with Paula.** Below 100, scaling the samples:
-
-- costs CPU time: on a 68020 at about 28 MHz with Paula, about a quarter of the CPU on top of AHI's two thirds
-  (measured in WinUAE);
-- brings out Paula's noise: Paula's 14 bits through AHI have their own noise, which a low volume brings forward (a
-  crackle heard at 50 in WinUAE, gone at 100).
-
-The same page also shows an **Audio Startup Time** setting, meant for receivers fed by a digital output: leave it
-at its default (0).
-
-With `VERBOSE`, each change prints `volume: 5.9 % of full amplitude`, or `volume: fixed at 100 % by LMS (samples
-untouched)`.
+| `WINDOW=CON:...` | the message window: position, size, title. The default is `CON:0/20/640/120/amisqueeze/AUTO/CLOSE/WAIT/SMART`; the window opens at the first message |
+| `QUIET` | no window: amisqueeze runs silently; add `LOG=<file>` to keep its messages. An error at start-up still opens the window (see [known limits](#known-limits)) |
 
 ### Default options
 
-To avoid typing the options every time, store them in the global variable **`amisqueeze.prefs`**, with exactly the
-same syntax as the command line. amisqueeze reads it at startup from `ENV:amisqueeze.prefs`; a copy in `ENVARC:`
-makes it survive a reboot (AmigaOS copies `ENVARC:` to `ENV:` when it starts).
+The variable **`amisqueeze.prefs`** holds options with the same syntax as the command line. amisqueeze reads it at
+start-up from `ENV:amisqueeze.prefs`. AmigaOS copies `ENVARC:` to `ENV:` when it starts, so a copy in `ENVARC:`
+survives a reboot. Both executables read it. To create it: [keeping the options](#keeping-the-options).
 
-Create it from a Shell:
-
-```
-Echo "SERVER=192.168.1.10 NAME=Amiga" >ENV:amisqueeze.prefs
-Copy ENV:amisqueeze.prefs ENVARC:
-```
-
-Then simply run:
-
-```
-amisqueeze
-```
-
-Rules:
-
-- **The command line wins**: `amisqueeze NAME=Kitchen` uses the server from the default options and the name
+- **The command line wins**: `amisqueeze NAME=Kitchen` uses the server of the default options and the name
   `Kitchen`.
-- `VERBOSE` set in the default options cannot be turned off from the command line: leave it out of the file and add
-  it on the command line when needed.
-- To change the options, edit the file (`Ed ENVARC:amisqueeze.prefs`, then copy it again to `ENV:`), or recreate it
-  with `Echo` as above. To remove them: `Delete ENV:amisqueeze.prefs ENVARC:amisqueeze.prefs`.
-- If the file contains an unknown option or a syntax error, amisqueeze stops with an error message naming
-  `ENV:amisqueeze.prefs`.
+- **`VERBOSE`** set in the default options cannot be turned off from the command line. Leave it out of the file,
+  and add it on the command line when needed.
+- **To change them**: edit the file (`Ed ENVARC:amisqueeze.prefs`, then copy it again to `ENV:`), or create it
+  again with `Echo`.
+- **To remove them**: `Delete ENV:amisqueeze.prefs ENVARC:amisqueeze.prefs`.
+- An unknown option or a syntax error in the file stops amisqueeze, with a message naming `ENV:amisqueeze.prefs`.
 
 ### Messages
 
+Without `VERBOSE`, amisqueeze prints a few lines at start-up, then only what goes wrong. Error messages start
+with `amisqueeze: `, left out below. `N` stands for a number, `...` for a name or a text.
+
+#### Normal messages
+
 | Message | Meaning |
 |---|---|
-| `player "..." (xx:xx:xx:xx:xx:xx), server ... port ...` | printed at every start: the player's name and MAC address as LMS will see them, and the server it connects to |
-| `connected to the server` | the control connection is up; the player should appear in LMS |
-| `player name: ...` | the player was renamed on the server (LMS web interface): amisqueeze takes the new name |
-| `stopped` | amisqueeze has stopped cleanly (Ctrl-C, `Break`, Remove in Exchange) |
-| `no server: give SERVER=<ip\|name>, or set it in ENV:amisqueeze.prefs` | no server on the command line nor in the default options |
-| `invalid MAC (expected xx:xx:xx:xx:xx:xx)` | the `MAC` option is not six hexadecimal pairs; amisqueeze stops |
-| `FLAC=...: expected AUTO, ON or OFF` (or `MP3=...`) | a wrong value for that option; amisqueeze stops |
-| `amisqueeze: <AmigaDOS error>`, e.g. `bad number` | the command line does not fit the template (a bad number for `PORT` or `UNIT`, an unknown keyword...); the text is AmigaDOS's own; amisqueeze stops |
-| `ENV:amisqueeze.prefs: ...` | the default options cannot be read (unknown option, syntax error); amisqueeze stops |
-| `bsdsocket.library not found (is a TCP/IP stack running?)` | no TCP/IP stack started |
-| `server ... not found` | the host name cannot be resolved |
-| `cannot connect: error N` | the server does not answer on that address and port; amisqueeze retries every 5 s |
-| `retrying in 5 s` | after a failed connection, or a connection lost less than 10 s after it was made: amisqueeze waits 5 s before trying again (after a longer session it reconnects at once) |
-| `socket: error N` | the TCP/IP stack cannot create a connection (out of resources?); amisqueeze retries every 5 s |
-| `send: error N`, `recv: error N` | the connection to the server broke; amisqueeze reconnects |
-| `WaitSelect: error N` | waiting on the network failed (TCP/IP stack error); amisqueeze closes the connection and reconnects |
-| `no news from the server, reconnecting` | the server stayed silent for 35 s; amisqueeze reconnects |
-| `connection closed by the server` | the server closed the connection; amisqueeze reconnects |
-| `not enough memory for the 1024 KB stream buffer` | not enough free memory to start |
-| `stream format X not supported` | LMS sent a format other than raw PCM, FLAC or (`amisqueeze.fpu`) MP3 (no conversion rule for that format): LMS moves on to the next track |
-| `FLAC: level 8 decoded at ...x real time: ...` | the start-up measure (`FLAC=AUTO`): whether FLAC is decoded here or converted by the server |
+| `player "..." (xx:xx:xx:xx:xx:xx), server ... port ...` | at every start: the player's name and MAC address as the server sees them, and the server it connects to |
+| `FLAC: level 8 decoded at ...x real time: FLAC decoded here` (or `converted to PCM by the server`) | the start-up measure of `FLAC=AUTO` |
 | `MP3: 320 kbit/s decoded at ...x real time: ...` | the same for MP3 (`MP3=AUTO`, `amisqueeze.fpu`) |
-| `FLAC level 8 (the slowest) decoded at ...x real time: FLAC=AUTO lets this machine decode FLAC` (or `leaves FLAC to the server`), the same for MP3 | the output of `BENCH` |
-| `MP3: not decoded by this build (...)` | `BENCH` run with `amisqueeze`, which has no MP3 decoder |
-| `amisqueeze.fpu needs an FPU (...): use amisqueeze instead` | `amisqueeze.fpu` started on an Amiga without an FPU |
+| `connected to the server` | the connection is up; the player should show up on the server |
+| `player name: ...` | the player was renamed on the server: amisqueeze takes the new name |
+| `stopped` | amisqueeze has stopped cleanly (Ctrl-C, `Break`, Remove in Exchange) |
+
+#### Warnings at start-up
+
+amisqueeze plays anyway.
+
+| Message | Meaning |
+|---|---|
+| `AHI unit N uses "...", a stereo mode without "++": the music will play on one side only; ...` | choose a "stereo++" mode (see [setting up the unit](#setting-up-the-unit)) |
+| `AHI unit N uses "...", a mono mode: the music will play in mono` | choose a "stereo++" mode for stereo |
 | `MP3=ON: this build does not decode MP3 ...` | `MP3=ON` given to `amisqueeze`: MP3 stays with the server |
-| `flac: ... , track skipped` | a FLAC stream that cannot be decoded (not FLAC, no STREAMINFO, a sample rate of 0, more than 2 channels; after a seek, `cannot start from the middle of this file`: a rare file whose frames leave their format to its header): the next track follows |
-| `mp3: no MP3 frame found, track skipped` | an MP3 stream without a single MP3 frame: the next track follows |
-| `wav: ..., track skipped` | a WAV header that amisqueeze cannot play (`not integer PCM`: floating point or compressed; `number of channels not supported`: other than 1 or 2; `sample size not supported`: other than 8, 16, 24 or 32 bits; `sample rate not supported`: 0 or above 384 kHz; `no format chunk`; a header cut short, too short or longer than 4 KB): the next track follows |
-| `flac: not enough memory`, `mp3: not enough memory`, then `...: cannot decode this track, skipped` | not enough free memory for the decoder of that track: the next track follows |
-| `the FLAC decoding speed cannot be measured` (or MP3) | `BENCH` could not run the measure (not enough memory) |
-| `cannot open ahi.device unit N (is AHI installed? NOAUDIO plays without sound)` | AHI missing, or that unit cannot be opened; amisqueeze stops |
-| `AHI unit N uses "...", a stereo mode without "++": the music will play on one side only; ...` | the unit is set to a plain stereo mode: choose a "stereo++" one in `SYS:Prefs/AHI`; amisqueeze plays anyway |
-| `AHI unit N uses "...", a mono mode: the music will play in mono` | the unit is set to a mono mode; amisqueeze plays anyway |
-| `not enough memory for the audio blocks` (or `for the audio output`) | the 3 audio blocks (96 KB) or the AHI requests cannot be allocated; amisqueeze stops |
-| `timer.device unavailable` | the system timer cannot be opened (should not happen); amisqueeze stops |
-| `strm ... not handled`, `strm too short`, `... not handled (N bytes)`, `packet too short`, `invalid packet size` | the server sent a message amisqueeze does not know or that is malformed: it is ignored (an invalid size closes the connection, and amisqueeze reconnects). Worth reporting, with the server's name and version; `cont not handled` is expected with some internet radios (see [decoding on the Amiga](#decoding-on-the-amiga-flac-mp3-bench)) |
-| `stream: request too long`, `stream: response headers too long` | the audio stream's HTTP request or answer exceeds what amisqueeze handles (1 KB, 2 KB): that track is not played (for a request too long, LMS moves on to the next track) |
-| `cannot create <file>: error N` | the `OUTPUT` file cannot be created (missing directory, write-protected disk); amisqueeze stops. On a volume that is not mounted, AmigaDOS first asks for it to be inserted; this message follows a Cancel |
-| `cannot write to <file>: error N, file closed` | writing the `OUTPUT` file failed (disk full...); playback goes on without the file |
-| `cannot open the log <file>: error N, going on without it` | the `LOG` file cannot be opened (missing directory, write-protected disk); amisqueeze plays without a log |
-| `amisqueeze is already running (Exchange lists it and can stop it)` | started from a Shell while another amisqueeze runs: the new one quits (from the Workbench it quits without a word) |
-| `the icon's ToolTypes: ...` | started from the Workbench, a ToolType cannot be read (unknown value, bad number...); shown in the window, which stays open |
-| `the icon's ToolTypes are too long` | the ToolTypes together exceed what amisqueeze reads (about 500 characters) |
-| `cannot write to the log <file>: error N, log closed` | writing the `LOG` file failed (disk full...); playback goes on without the log |
-| `stream: cannot connect: error N` | the server's audio stream port cannot be reached (HTTP: 9000 by default with LMS, 8097 with Music Assistant) |
-| `stream: connection lost before the response headers`, `stream: send: error N` | the audio stream broke before any music came: that track is not played |
-| `stream: recv: error N` | the audio stream broke during a track: what was received plays, then the next track follows |
-| other `stream: ...` and `output: ...` messages (with `VERBOSE` only) | stream events: parameters, connection, headers received, end of the track data; output: AHI unit or virtual output, track started, buffer empty, end of playback, `OUTPUT` file opened and bytes written to it |
-| `<- strm ...`, `-> STAT ...`, `-> DSCO ...`, `<- audg ...`, `volume: ...`, the version line (with `VERBOSE` only) | the messages exchanged with the server, the volume it sets |
+
+#### amisqueeze does not start
+
+amisqueeze stops at once.
+
+| Message | Meaning |
+|---|---|
+| `no server: give SERVER=<ip\|name>, or set it in ENV:amisqueeze.prefs` | no server on the command line nor in the default options |
+| `amisqueeze: <AmigaDOS error>`, e.g. `amisqueeze: bad number` | the command line does not fit the template: a bad number for `PORT` or `UNIT`, an unknown keyword...; the text is AmigaDOS's own |
+| `ENV:amisqueeze.prefs: ...` | the default options cannot be read: an unknown option, a syntax error |
+| `the icon's ToolTypes: ...` | a ToolType cannot be read: an unknown value, a bad number...; shown in the window, which stays open |
+| `the icon's ToolTypes are too long` | the ToolTypes together exceed what amisqueeze reads, about 500 characters |
+| `invalid MAC (expected xx:xx:xx:xx:xx:xx)` | `MAC` is not six hexadecimal pairs |
+| `FLAC=...: expected AUTO, ON or OFF` (or `MP3=...`) | a wrong value for that option |
+| `amisqueeze.fpu needs an FPU (...): use amisqueeze instead` | `amisqueeze.fpu` started on an Amiga without an FPU |
+| `amisqueeze is already running (Exchange lists it and can stop it)` | started from a Shell while another amisqueeze runs; from the Workbench, the new one quits without a word |
+| `bsdsocket.library not found (is a TCP/IP stack running?)` | no TCP/IP stack started |
+| `server ... not found` | the server's host name cannot be resolved |
+| `not enough memory for the 1024 KB stream buffer` | not enough free memory |
+| `not enough memory for the audio blocks` (or `for the audio output`) | the 3 audio blocks (96 KB) or the AHI requests cannot be allocated |
+| `cannot open ahi.device unit N (is AHI installed? NOAUDIO plays without sound)` | AHI missing, or that unit cannot be opened |
+| `timer.device unavailable` | the system timer cannot be opened; should not happen |
+
+#### Connection
+
+amisqueeze reconnects by itself.
+
+| Message | Meaning |
+|---|---|
+| `cannot connect: error N` | nothing answers at that address and port |
+| `retrying in 5 s` | after a failed connection, or a connection lost less than 10 s after it was made; after a longer session, amisqueeze reconnects at once |
+| `socket: error N` | the TCP/IP stack cannot create a connection (out of resources?) |
+| `send: error N`, `recv: error N` | the connection to the server broke |
+| `WaitSelect: error N` | waiting on the network failed: a TCP/IP stack error |
+| `no news from the server, reconnecting` | the server stayed silent for 35 s |
+| `connection closed by the server` | the server closed the connection |
+
+#### Tracks not played
+
+amisqueeze does not play the track. After a message ending with `skipped`, the next track follows; the other
+rows say what comes next.
+
+| Message | Meaning |
+|---|---|
+| `stream format X not supported` | a format other than raw PCM, FLAC, or MP3 with `amisqueeze.fpu`: the server has no rule to convert that file; LMS moves on to the next track |
+| `stream: cannot connect: error N` | the server's stream port cannot be reached: 9000 by default with LMS, 8097 with Music Assistant |
+| `stream: connection lost before the response headers`, `stream: send: error N` | the stream broke before any music came |
+| `stream: recv: error N` | the stream broke during a track: what was received plays, then the next track follows |
+| `stream: request too long (N bytes)` | the stream's request exceeds 1 KB; LMS moves on to the next track |
+| `stream: response headers too long` | the server's answer exceeds 2 KB |
+| `flac: not a FLAC stream, track skipped` | the stream is not FLAC |
+| `flac: no STREAMINFO block, track skipped`, `flac: cannot open the stream, track skipped` | a damaged FLAC header |
+| `flac: sample rate 0, track skipped` | a FLAC file with a sample rate of 0 |
+| `flac: more than 2 channels, track skipped` | not mono or stereo |
+| `flac: cannot start from the middle of this file, track skipped` | after a seek, in a rare file whose frames leave their format to its header |
+| `mp3: no MP3 frame found, track skipped` | the stream holds no MP3 at all |
+| `wav: not integer PCM, track skipped` | the WAV file holds floating-point or compressed audio |
+| `wav: number of channels not supported, track skipped` | not mono or stereo |
+| `wav: sample size not supported, track skipped` | not 8, 16, 24 or 32 bits |
+| `wav: sample rate not supported, track skipped` | 0, or above 384 kHz |
+| `wav: no format chunk, track skipped`, `wav: format chunk too short, track skipped`, `wav: header too long, track skipped`, `wav: the track ends in its header, track skipped` | a damaged WAV header, or one longer than 4 KB |
+| `flac: not enough memory` (or `mp3: not enough memory`), then `flac: cannot decode this track, skipped` (or `mp3: ...`) | not enough free memory for the decoder |
+
+#### Messages from the server not understood
+
+| Message | Meaning |
+|---|---|
+| `strm X not handled`, `strm too short (N)`, `XXXX not handled (N bytes)`, `packet too short (N)` | the server sent a message amisqueeze does not know, or a malformed one: it is ignored. Worth reporting, with the server's name and version. `cont not handled` is expected with some internet radios (see [known limits](#known-limits)) |
+| `invalid packet size (N)` | the same, but amisqueeze closes the connection and reconnects |
+
+#### Files
+
+| Message | Meaning |
+|---|---|
+| `cannot open the log ...: error N, going on without it` | the `LOG` file cannot be opened: a missing directory, a write-protected disk |
+| `cannot write to the log ...: error N, log closed` | writing the `LOG` file failed (disk full...); playback goes on without it |
+| `cannot create ...: error N` | the `OUTPUT` file cannot be created: a missing directory, a write-protected disk; amisqueeze stops. On a volume that is not mounted, AmigaDOS first asks for it; this message follows a Cancel |
+| `cannot write to ...: error N, file closed` | writing the `OUTPUT` file failed (disk full...); playback goes on without the file |
+
+#### `BENCH`
+
+| Message | Meaning |
+|---|---|
+| `FLAC level 8 (the slowest) decoded at ...x real time: FLAC=AUTO lets this machine decode FLAC` (or `leaves FLAC to the server (converted to PCM)`) | the FLAC measure |
+| `MP3 at 320 kbit/s (the slowest) decoded at ...x real time: MP3=AUTO ...` | the same for MP3 |
+| `MP3: not decoded by this build (...)` | `BENCH` run with `amisqueeze`, which has no MP3 decoder |
+| `the FLAC decoding speed cannot be measured` (or `MP3`) | not enough memory for the measure |
+
+#### With `VERBOSE`
+
+| Message | Meaning |
+|---|---|
+| `amisqueeze 0.7 (...)` | the version, at start-up |
+| `FLAC: decoded here (FLAC=ON)` (or `converted to PCM by the server (FLAC=OFF)`), the same for MP3 | where the format is decoded, as the option sets it |
+| `output: AHI unit N (..., N Hz)` | the AHI mode and frequency played with, for instance `output: AHI unit 0 (Paula:14 bit stereo++ calibrated, 27429 Hz)`; `output: virtual (no sound)` with `NOAUDIO` or `OUTPUT` |
+| `volume: 5.9 % of full amplitude`, `volume: fixed at 100 % by LMS (samples untouched)` | a change of volume |
+| `<- strm ...`, `-> STAT ...`, `-> DSCO ...`, `<- audg ...`, `<- aude ...` | the messages exchanged with the server |
+| other `stream: ...` messages | the stream's events: parameters, connection, headers received, WAV header, end of the track's data |
+| other `output: ...` messages | the output's events: track started, buffer empty, end of playback, `OUTPUT` file opened and bytes written to it |
 
 ### Troubleshooting
 
-- **The player does not show up in LMS.** Look at the messages (start amisqueeze from a Shell, or add `LOG`):
-  `bsdsocket.library not found` means no TCP/IP stack is running; `cannot connect` means nothing answers at that
-  address: check `SERVER` (see [server setup](#server-setup)), that LMS runs, and that the server's firewall lets
-  3483/tcp in. `connected to the server` means the connection is up.
-- **It connects, but a track does not play or is skipped at once.** `stream: cannot connect` means the server's
-  stream port is blocked (LMS: its web port, 9000/tcp; Music Assistant: 8097/tcp, or a wrong "Published IP
-  address", see [server setup](#server-setup)). `stream format X not supported`, or nothing at all, with "Couldn't create command
-  line" in LMS's `server.log`: LMS has no rule to convert that file to raw PCM, typically MP3 with `amisqueeze`
-  (add the rule of the [server setup](#server-setup), or use `amisqueeze.fpu` on an Amiga with an FPU), or a file
-  above 48 kHz when FLAC is not decoded here.
-- **The music plays on one side only.** The AHI unit uses a plain "stereo" mode: choose a "stereo++" one
-  ([setting up the unit](#setting-up-the-unit)); amisqueeze warns about it at start-up. Left and right swapped:
-  add `SWAP`.
-- **The sound stutters or stops now and then.** The Amiga does not keep up: run `amisqueeze BENCH`, and if FLAC or
-  MP3 is decoded here at less than a few times real time, give `FLAC=OFF` or `MP3=OFF` so that the server converts
-  them (see [decoding on the Amiga](#decoding-on-the-amiga-flac-mp3-bench)); with Paula, an 8-bit mode costs less
-  CPU; close other busy programs. Raw PCM needs about 1.4 Mbit/s for CD quality: a slow network can starve it.
-- **Crackles at low volume with Paula.** Paula's noise shows when the samples are scaled down: keep LMS's volume
-  high and turn the amplifier down instead (see [volume](#volume)).
-- **Nothing happens from the Workbench.** With `QUIET`, add `LOG=<file>` to see the messages. If amisqueeze is
-  already running (Exchange lists it), a second start does nothing.
+- **The player does not show up on the server.** Start amisqueeze from a Shell, or add `LOG`, and read the
+  messages:
+  - `bsdsocket.library not found`: no TCP/IP stack is running;
+  - `cannot connect`: nothing answers at that address. Check `SERVER`, that the server runs, and that its
+    firewall lets 3483/tcp in (see [server setup](#server-setup));
+  - `connected to the server`: the connection is up.
+- **It connects, but a track does not play, or is skipped at once.**
+  - `stream: cannot connect`: the server's stream port is blocked (LMS: its web port, 9000/tcp; Music Assistant:
+    8097/tcp), or Music Assistant's "Published IP address" is wrong (see [server setup](#server-setup)).
+  - `stream format X not supported`, or nothing at all, with "Couldn't create command line" in LMS's `server.log`:
+    LMS has no rule to convert that file. Typically MP3 with `amisqueeze`: add the
+    [MP3 rule](#lyrion-music-server), or use `amisqueeze.fpu` on an Amiga with an FPU. Or a file above 48 kHz
+    when FLAC is not decoded on the Amiga (see [known limits](#known-limits)).
+- **The music plays on one side only.** The AHI unit uses a plain "stereo" mode: choose a "stereo++" one (see
+  [setting up the unit](#setting-up-the-unit)).
+- **Left and right are swapped.** Add `SWAP`. Seen in WinUAE with `paula.audio` 4.30, in 8 and 14 bits, while
+  Paula itself is right; not checked on a real Amiga yet.
+- **The sound stutters or stops now and then.** The Amiga does not keep up:
+  - run `amisqueeze BENCH`: if FLAC or MP3 is decoded at less than a few times real time, give `FLAC=OFF` or
+    `MP3=OFF` so that the server converts them;
+  - with Paula, fix the volume at 100 (see [volume](#volume)), and an 8-bit mode costs less CPU;
+  - close other busy programs;
+  - raw PCM needs about 1.4 Mbit/s for CD quality: a slow network can starve it.
+- **Crackles at low volume with Paula.** Fix the volume at 100 and turn the amplifier down instead (see
+  [volume](#volume)).
+- **Nothing happens from the Workbench.** With `QUIET`, add `LOG=<file>` to see the messages. If amisqueeze already
+  runs (Exchange lists it), a second start does nothing.
 - **`amisqueeze.fpu needs an FPU`**: use `amisqueeze`.
 
 ### Known limits
 
-- Tried in WinUAE only, not yet on a real Amiga (see [what has been tried](#requirements)).
+- Tried in WinUAE only, not yet on a real Amiga (see [what has been tried](#what-has-been-tried)).
 - The server's address must be given (`SERVER`): amisqueeze does not find the server by itself yet.
-- MP3 is decoded only by `amisqueeze.fpu`; with `amisqueeze`, the server must convert it (a rule to add, see
-  [server setup](#server-setup)). Other formats play only through LMS's conversion to raw PCM.
-- Files above 48 kHz play only when FLAC is decoded on the Amiga.
-- Internet radios that mix their metadata into the stream may cut regularly with `amisqueeze.fpu` (see
-  [decoding on the Amiga](#decoding-on-the-amiga-flac-mp3-bench)).
-- Synchronising players (LMS's player groups) is not supported, nor tried.
-- With Music Assistant, the `aac` output codec does not play, nor `mp3` with `amisqueeze`; its `mp3` is not
-  gapless (see [server setup](#server-setup)).
-- With `QUIET`, an invalid `MAC` or an `OUTPUT` file that cannot be created is reported in the log only.
+- MP3 is decoded only by `amisqueeze.fpu`. With `amisqueeze`, LMS needs a [rule](#lyrion-music-server) to convert
+  it. Other formats play only through the server's conversion to raw PCM.
+- Files above 48 kHz (88.2, 96, 192 kHz) play only when FLAC is decoded on the Amiga. Otherwise LMS cannot lower
+  their rate as it makes raw PCM: its log says "Couldn't create command line for flc playback".
+- Some internet radios mix their metadata (the title playing) into the MP3 stream. amisqueeze does not remove it
+  yet. When LMS has `amisqueeze.fpu` fetch such a radio itself, the sound may cut regularly, with the message
+  `cont not handled`. Not checked with a real radio yet.
+- MP3 tracks follow each other without a gap only when the file has the header that LAME, and the encoders that
+  copy its format, write in the first frame. Without it, a few hundredths of a second of silence remain between
+  tracks.
+- With Music Assistant:
+  - `aac` does not play: amisqueeze refuses the stream, but Music Assistant still shows the track as playing;
+  - `mp3` plays only with `amisqueeze.fpu`. Music Assistant encodes it on the fly without the LAME header: the
+    change of track can be heard, and some sounds get small artefacts from the second lossy encoding.
+- With `QUIET`, an invalid `MAC` or an `OUTPUT` file that cannot be created is reported in the log only. The
+  other errors at start-up open the window, which stays until it is closed: in the ToolTypes or the default
+  options, a log that cannot be opened, no TCP/IP stack.
+- Synchronised players (LMS's player groups) are not supported, nor tried.
+- Exchange's Active/Inactive switch is shown, but does not affect the music.
+- Occasional crackles with `paula.audio` in WinUAE also occur without amisqueeze, with AHI's own test tone.
 
-## amilms
+### What has been tried
 
-The remote control is not available yet; see [its plan](development/phase-2-amilms.md).
+Everything so far was run in WinUAE. What the README names but this table does not is expected to work, not
+checked.
+
+| | Tried | Expected, not tried yet |
+|---|---|---|
+| Machine | WinUAE 6.0 (an A1200 setup) | any real Amiga |
+| CPU | 68020, at about 28 MHz and with the JIT (the speed of a PiStorm, roughly); with and without a 68882 | 68030, 68040, 68060, a PiStorm with Emu68 |
+| AmigaOS | 3.2.3; 3.0 and 3.1 from a Shell without AHI; 2.04, the oldest version it asks for, starts | 3.1.4, 3.5, 3.9 |
+| Memory | about 1.1 MB free: the 1 MB stream buffer (about 6 s of CD-quality audio), and about 60 KB more for `amisqueeze.fpu` decoding MP3 | - |
+| TCP/IP | WinUAE's emulation (`bsdsocket_emu=true`) | Roadshow, AmiTCP, AmiNetXDuo |
+| Sound | AHI 6.6 with `paula.audio` and a Toccata card, checked by ear | AHI 4.x, other cards, a PiStorm's own outputs |
+| Server | Lyrion Music Server 9.1.1, Music Assistant 2.10.7 | other versions |
+
+Measured in WinUAE:
+
+| Measure | Emulated CPU | Result |
+|---|---|---|
+| `BENCH` | 68020 without JIT (about 45 MHz) | FLAC 0.2x: left to the server, converted by its default rule (nothing to set up) |
+| `BENCH` | 68020 with JIT and 68882 (the order of a PiStorm) | FLAC 77x, MP3 74x (`amisqueeze.fpu`): both decoded on the Amiga |
+| CPU taken by playback with Paula | 68020 at about 28 MHz | about two thirds for AHI, 14-bit modes a little more than 8-bit ones; a few percent for amisqueeze at volume 100, about a quarter more below 100 |
+
+### Removing amisqueeze
+
+Delete the executable and its icon, from `SYS:WBStartup` too if it was put there. Delete the default options, if
+any:
+
+```
+Delete ENV:amisqueeze.prefs ENVARC:amisqueeze.prefs
+```
+
+amisqueeze writes nothing else, apart from the `LOG` and `OUTPUT` files you named.

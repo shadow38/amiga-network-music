@@ -38,7 +38,9 @@ core; only the platform layers convert them.
 Builds of the same sources: `out/amisqueeze` (68020, FLAC), `out/amisqueeze.fpu` (68020 + 68881, `AMISQUEEZE_FPU`
 and `AMISQUEEZE_MP3`: FLAC and MP3), `out-host/amisqueeze` (`posix.c`, with the MP3 decoder, ASan and UBSan).
 LMS 9.1 has no default `mp3 pcm` conversion rule, so a regular user's server cannot turn MP3 into PCM: hence the
-MP3 decoder of `amisqueeze.fpu`. For the build without it, the rule is in the user guide's server setup.
+MP3 decoder of `amisqueeze.fpu`. For the build without it, the rule is in the user guide's server setup. The rule
+has no `-r`: LMS tells the player the file's own rate, and forcing 44100 Hz would play 48 kHz files 9 % too fast.
+`FT:{START=trim %s}` lets LMS start within a track (a seek).
 
 ## Data path
 

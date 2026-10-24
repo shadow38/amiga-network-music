@@ -7,6 +7,12 @@ are previews, tested in WinUAE only, not yet on a real Amiga.
 
 ## [Unreleased]
 
+### Changed
+
+- The user guide rewritten: using amisqueeze first (installing, sound, server, starting, stopping, volume), then
+  a reference (options, ToolTypes, default options, messages by theme, troubleshooting, known limits, what has
+  been tried).
+
 ## [0.7] - 2026-10-23
 
 ### Added

@@ -48,6 +48,7 @@ a fast Amiga; otherwise the server sends raw PCM) and plays it through AHI.
 ### What the Amiga needs
 
 - **AmigaOS 3.x** and a **68020 or better**: from a plain 68020 accelerator to a PiStorm.
+- About **1.1 MB of free memory**.
 - A **TCP/IP stack** providing `bsdsocket.library`: Roadshow, AmiTCP, AmiNetXDuo, or WinUAE's emulation.
 - **AHI**, the standard Amiga audio system, with the driver of Paula or of a sound card. It is free, on Aminet,
   but not part of AmigaOS 3.x.
@@ -110,7 +111,7 @@ C, cross-compiled; tested in WinUAE, not yet on a real Amiga.
 Tested in WinUAE with emulated networking: LMS 9.1.1 (listening, one hour of playback) and Music Assistant 2.10.7
 (listening). On a 28 MHz 68020, sound
 through AHI and Paula takes about two thirds of the CPU. The user guide lists
-[what has been tried](docs/user-guide.md#requirements), the [known limits](docs/user-guide.md#known-limits) and
+[what has been tried](docs/user-guide.md#what-has-been-tried), the [known limits](docs/user-guide.md#known-limits) and
 some [troubleshooting](docs/user-guide.md#troubleshooting).
 
 **amilms**: not started.

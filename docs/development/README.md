@@ -133,7 +133,7 @@ comes after these releases, or alongside if the user wants it.
 | publish-3 Public versions | 🔶 0.1 to 0.7 published; the CI tests, builds and drafts the release from a tag |
 | publish-4 Setup guides: minimal server, the Amiga on the network | ⬜ before 1.0 |
 | publish-5 Review before each release | ✅ 2026-10-20; reviews since: [0.6](reviews/0.6.md), [0.7](reviews/0.7.md) |
-| publish-6 Writing rules for the documentation | ⬜ agreed with the user on 2026-10-24, in 0.8 |
+| publish-6 Writing rules for the documentation | 🔶 2026-10-24: the rules, the plan and the user guide; `docs/development/` next, where the user finds it worth it |
 
 Phase 0 moves forward as needed: a tooling step is done when a step of phase 1 or 2 needs it. Phases 1 and 2 can
 progress in parallel.
