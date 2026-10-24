@@ -194,3 +194,17 @@ Back to the [plan](README.md).
   unless it would lead a reader to a wrong action; `rules.md` is frozen as a reference.
 - **Criterion**: on `0.3..0.4` the review finds what the outside review found at 75 or more (met); on `0.4..0.5`
   it finds defects beyond the outside review (met: six).
+
+## publish-6 Writing rules for the documentation (agreed with the user on 2026-10-24) ⬜
+
+- **Why**: the README reads well, but the other documents are hard to read. Each fact comes with all its
+  exceptions, sentences pile up clauses, and the plan had become a log of past work. The user guide is too long.
+- **Content**:
+  - the rules, in `CONTRIBUTING.md`, [Writing documentation](../../CONTRIBUTING.md#writing-documentation);
+  - the plan ([README.md](README.md)) rewritten to them first, to try them;
+  - then the user guide, in one file with two parts: using amisqueeze (the common case), then a reference
+    (options, ToolTypes, messages, troubleshooting, limits);
+  - then the documents of `docs/development/`, one at a time, only where the user finds it worth it.
+- **Criterion**: the user reads each rewritten document and accepts it. No fact is lost: what leaves a document is
+  already elsewhere (the CHANGELOG, a review report, another document), or is listed in the commit. No script
+  checks the rules.

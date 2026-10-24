@@ -77,7 +77,7 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   - WinUAE: no memory leak (same free memory after three play/stop cycles), and still working with a 2 KB stack;
     Amiga executable: 21,488 bytes.
 - The `BUFFER` option mentioned in Content did not come with player-6: an open point of the
-  [plan](README.md#open-points-review-of-2026-10-19).
+  [plan](README.md#open-points).
 
 ## player-3 Output to a file ✅ (2026-10-18)
 
@@ -187,7 +187,7 @@ belongs to the task that opened it; packets serialised field by field; buffers a
 - **Validated with the user** (2026-10-19): Paula's crackles left to the real machine (player-9); the CPU load accepted
   for now (lighter AHI settings to look at in player-8 if decoding does not fit); `SWAP` stays a manual option until
   the real machine shows whether its channels are swapped too (player-9). Not done then: the start-up warning for a mode
-  that cannot pan (Content above); an open point of the [plan](README.md#open-points-review-of-2026-10-19), done
+  that cannot pan (Content above), done
   in player-10 (version 0.4).
 - **Criterion**: correct test tones (440 Hz at the right pitch, left/right in the right place, no noise); a whole
   track without crackling; CPU load measured with Paula on the slow profile (0.4).
@@ -414,7 +414,7 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   minimp3), tested on the host first; advertised in `HELO` only once validated. (Written before the design
   further down; where they differ, the design and what was done prevail: no `mpega.library` in `amisqueeze`, which
   leaves MP3 to the server; no `CPU` variable in the Makefile, but a second set of flags for `amisqueeze.fpu`; the
-  64-bit `muls.l` check below was not written, see the open points of the [plan](README.md#open-points-review-of-2026-10-19).)
+  64-bit `muls.l` check below was not written, see the open points of the [plan](README.md#open-points).)
   - **Decoder interface** (`decoder.h`): compressed bytes in, 16-bit PCM out; integers and pointers only across
     it, so a decoder can be built with other CPU options than the rest of the program.
   - **FLAC**: one 68020 build for every CPU (integer only, no FPU needed). Watch the 32×32→64 multiply

@@ -13,6 +13,7 @@ Using the programs is covered in the [user guide](docs/user-guide.md); what come
 - A change users can see (an option, a message, a behaviour) is documented in the
   [user guide](docs/user-guide.md) and noted under "Unreleased" in `CHANGELOG.md` (see [Releasing](#releasing)).
 - Code, comments, documentation and program messages are in English; strings shown on the Amiga stay ASCII.
+  Documentation follows [Writing documentation](#writing-documentation).
 - The licence is MIT: no code copied from GPL projects (squeezelite and LMS are references for the protocol's
   behaviour, never a source of code); third-party code only under an MIT-compatible licence (public domain, MIT,
   BSD, zlib...; not GPL: no libmad), in `third_party/` with its origin and licence (see [Code rules](#code-rules)).
@@ -252,11 +253,56 @@ with AHI 6.6; 4.x is expected to work, not checked). How the parts fit together:
 - Both executables set `__stack` (16 KB `amisqueeze`, 32 KB `amisqueeze.fpu`, in `amiga.c`) and link libnix's
   `__stkinit`, which gives them that stack when the Shell's is smaller: dr_flac needs about 5.5 KB (4.6 KB in
   `drflac_open` alone), minimp3 about 17.5 KB (most of it in `mp3dec_decode_frame`).
-- Measured on 2026-10-20 with the probe of [Checks the host tests cannot make](#checks-the-host-tests-cannot-make),
-  from a script with `Stack 4096`: 5.6 KB of 16 KB used by `amisqueeze` playing FLAC with a seek, 17.8 KB of
-  32 KB by `amisqueeze.fpu` with FLAC and MP3. Redo it when `-fstack-usage` shows the deepest path growing by more
+- Measured last on 2026-10-23 on the 0.7 release build, with the probe of
+  [Checks the host tests cannot make](#checks-the-host-tests-cannot-make), from a script with `Stack 4096`: 5600 of
+  16384 bytes used by `amisqueeze` playing FLAC with a seek, 17544 of 32768 by `amisqueeze.fpu` with FLAC and MP3. Redo it when `-fstack-usage` shows the deepest path growing by more
   than 1 KB, or when a new decoder, library or start-up path is linked; a few bytes more do not call for it.
 - Memory: see `Avail` in [Checks the host tests cannot make](#checks-the-host-tests-cannot-make).
+
+## Writing documentation
+
+Each document has one reader and answers one question. Write for that reader; anything else goes where it
+belongs, with a link.
+
+| Document | Reader | Question it answers |
+|---|---|---|
+| `README.md` | someone discovering the project | What is it, what does it need, how do I start? |
+| `docs/user-guide.md` | a user | How do I set it up and use it? Then, for reference: every option, message and limit. |
+| `CHANGELOG.md` | a user upgrading | What changed in this version? |
+| `CONTRIBUTING.md` | a contributor | How do I build, test and change it? Which rules apply? |
+| `docs/development/architecture.md` | a contributor | How does amisqueeze work, and why this way? |
+| `docs/development/README.md` | the maintainer, a contributor | What is left to do, in which order? Where does each step stand? |
+| `docs/development/phase-*.md` | the same | What is each step: its goal, its success criterion, how to check it? |
+| `docs/development/reviews/` | the maintainer | What did a review find, and what became of each finding? |
+| commit messages | anyone reading the history | What was done, how was it checked, and why? |
+
+**Sentences**
+
+- One idea per sentence, ideally under 25 words. More than two items make a list.
+- One level of parentheses at most. No chain of colons and semicolons: split the sentence.
+- Start a section with what the reader needs most: what to do, or the conclusion. Details and reasons come after.
+- In user documents, name things as the user sees them: a menu, a message, an option, not the code behind them.
+
+**Content**
+
+- The common case first. Exceptions and error cases go to their own place; in the user guide: Messages,
+  Troubleshooting or Known limits.
+- Each fact in one place, a link elsewhere. The README sums up and links; it does not repeat the user guide.
+- What was tried (machines, versions, servers) goes in one table, not into the running text.
+- Why something behaves as it does (a protocol detail, a server's quirk) goes in `architecture.md`, unless the
+  user needs it to act.
+- Before adding a paragraph, ask whether the reader needs it. If not, link to where it is, or leave it out.
+
+**History**
+
+- A document describes the present. The past lives in the CHANGELOG, the review reports and the commits.
+- A finished step shrinks in the plan to its status, its date and one line. How it was checked goes in the commit
+  message.
+- A published version is one row of the roadmap, with a link to the CHANGELOG.
+- A decision is written once, briefly, with its date: "(agreed with the user on 2026-10-23)". Not how it was
+  reached.
+
+Text that ships in the archives (the README, the user guide) also follows [Text for the Amiga](#code-rules).
 
 ## Testing in WinUAE
 
