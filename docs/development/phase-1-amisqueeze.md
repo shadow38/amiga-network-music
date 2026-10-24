@@ -655,7 +655,8 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   - **Step 2, the driver read** (2026-10-24, `xircomce2.device` 1.1, GPL, sources on Aminet; the card is a Xircom
     CE3B-100). The receive work runs in a software interrupt, `RXInt`, at priority 0. It loops until the card
     holds no frame, so a large burst keeps it busy long, and a software interrupt of the same priority waits. That
-    fits the measures, if `paula.audio` prepares its blocks in such an interrupt (to check in AHI's sources). Each
+    fits the measures: `paula.audio` fills its next block in a software interrupt at priority 0 (checked on
+    2026-10-25 in 4.23, 4.30 and 4.33). Each
     frame is read 2 bytes at a time, each read preceded by a write of the position: a workaround in the driver.
     A faster path reads CE3 cards through their shared memory, but only when no system memory covers the PCMCIA
     range $600000-$9FFFFF. On this machine the accelerator's memory does, so the slow path is used. Asking the
@@ -678,17 +679,20 @@ belongs to the task that opened it; packets serialised field by field; buffers a
 
     No `STMo` in any run. A larger window brings the rebuilt driver almost nothing (80 to 79 %), unlike Aminet's
     (92 to 81 %).
+  - **The driver fixed** (2026-10-25): `RXInt` handles at most 4 frames per pass, then causes itself again (2
+    gave the same results). Same protocol, one session: clean without `RXBUFFER` at 77 %, and at 16384 at 79 %,
+    where the rebuilt 1.1 driver crackles a lot. File transfers keep their speed. `RXBUFFER` is no longer needed
+    on this machine.
   - **Optimization roadmap for this machine** (agreed with the user on 2026-10-24): the most modest machine first,
-    so that the others benefit. Today: clean playback at about 90 % of the CPU (`RXBUFFER=8192`), about 80 % with
-    the rebuilt driver (above). In this order:
-    1. the cheap measures: why the small TCP window costs 17 points (the size of amisqueeze's reads, AmiNetXDuo's
-       own settings), a lighter system (a trimmed install, MapROM), AHI 6 (step 4 of the strategy); a few points
-       each, estimated;
+    so that the others benefit. Today: clean playback at about 77 % of the CPU, with the fixed driver and no
+    `RXBUFFER` (above). In this order:
+    1. the cheap measures: a lighter system (a trimmed install, MapROM), AHI 6 (step 4 of the strategy); a few
+       points each, estimated. Why a small TCP window costs 17 points no longer matters: the window need not be
+       capped any more;
     2. less to receive: a lower rate asked of the server (0.8, step 3 of the strategy), half the stream at
        22 kHz; at 88 KB/s nothing crackled even without `RXBUFFER` (measured); the network's cost might drop from
        about 47 % to about 25 % (estimated), if LMS resamples for it;
-    3. the driver: a few frames per pass in `RXInt` (step 2 above), so that a larger, cheaper window plays without
-       crackles, back towards 73 % (estimated); a change to a GPL driver, kept apart from this project;
+    3. the driver: a few frames per pass in `RXInt`. Done on 2026-10-25 (above): 77 %, against 73 % estimated;
     4. the direct Paula output (player-11), if the margin is still short after 1 to 3: AHI's mixing gone (a good
        share of the 25 to 30 points playback costs, estimated), and large buffers that do not mind a late
        interrupt.
