@@ -157,7 +157,8 @@ Neither planned nor dropped for good. Each is taken up only by the user's decisi
   32 kHz, 74 % at 22.05 kHz. The sample size too: the server keeps the source's, so a 24-bit FLAC arrives as
   24-bit PCM, 50 % more traffic than 16 bits, and amisqueeze drops the extra 8 bits for AHI (load not measured).
   Before any code:
-  - check that LMS resamples for a lower `MaxSampleRate`;
+  - check that LMS resamples for a lower `MaxSampleRate`, and which rate its `strm` then announces: LMS announces
+    the source file's rate even when its conversion rule resamples (player-4c), which would play too fast;
   - check whether the server can be asked for 16-bit PCM (not looked at);
   - Music Assistant 2.10.7 offers a Squeezelite player 44.1 kHz and up only: below, its list of rates is empty
     (read in its code, not tried). It needs a change upstream, which is the user's decision;
