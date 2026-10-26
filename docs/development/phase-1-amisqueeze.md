@@ -908,8 +908,8 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   - for PCM, LMS's `strm` gives the source file's rate and sample size, whatever the rule sends. A rule that
     sends a WAV works, since amisqueeze plays the format of the WAV header;
   - no capability asks for 16 bits: the rule does it;
-  - Music Assistant offers 44.1 kHz and up only: below, its list of rates is empty and playback fails (read in its
-    code).
+  - Music Assistant offers 44.1 kHz and up only: below, its list of rates is empty and the stream fails with a
+    server error (tried with 2.10.7, `MAXRATE=32000`).
 - **Content** (agreed with the user on 2026-10-26):
   - a `MAXRATE` option, `AHI` or a rate in Hz, also as a ToolType and in the default options. `AHI` takes the AHI
     unit's rate, rounded up to a standard rate (27429 Hz gives 32000, 22050 stays 22050). Without it, 48000 as
@@ -923,3 +923,8 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   the option, `HELO` unchanged. Then `MAXRATE=AHI` on the A1200, load and listening (player-9).
 - **After it**: Music Assistant, an issue and a fix upstream for rates below 44.1 kHz. LMS upstream would need `D`
   on its rules to `pcm` and `strm` giving the resampled rate (agreed with the user on 2026-10-26).
+- **The Music Assistant fix, tried locally** (2026-10-26, 2.10.7): every slimproto rate up to the player's
+  `MaxSampleRate` in its Squeezelite provider, an empty list of rates no longer fatal, and aioslimproto's rate table
+  fixed (11025, 22050, 32000). Then amisqueeze plays every rate from 8000 to 32000 Hz, as `wav` and `flac`. Without
+  the table fix, a WAV at 11025, 22050 or 32000 Hz stops aioslimproto before `codc` and `cont`: amisqueeze plays
+  anyway, a real squeezelite waits forever. Publishing it upstream is the user's decision.

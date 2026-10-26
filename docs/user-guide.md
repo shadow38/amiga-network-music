@@ -387,7 +387,7 @@ lowers the rate of MP3 decoded on the Amiga by encoding it again, which loses a 
 rules above avoid it.
 
 **With Music Assistant, leave `MAXRATE` out.** Music Assistant 2.10 offers no rate below 44.1 kHz to a player that
-asks for less, and the music does not play (read in its code, not tried).
+asks for less, and the music does not play (tried with 2.10.7: the stream fails with a server error).
 
 #### `OUTPUT`
 
