@@ -957,4 +957,7 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   `MaxSampleRate` in its Squeezelite provider, an empty list of rates no longer fatal, and aioslimproto's rate table
   fixed (11025, 22050, 32000). Then amisqueeze plays every rate from 8000 to 32000 Hz, as `wav` and `flac`. Without
   the table fix, a WAV at 11025, 22050 or 32000 Hz stops aioslimproto before `codc` and `cont`: amisqueeze plays
-  anyway, a real squeezelite waits forever. Publishing it upstream is the user's decision.
+  anyway, a real squeezelite waits forever. Publishing it upstream is the user's decision. Once it is in Music
+  Assistant, the user guide can advise the AHI unit at 24000 Hz with `MAXRATE=AHI` for it: it sends the highest
+  offered rate below the source's, 24000 Hz for a 44.1 kHz file, where LMS keeps the file's family (22050 Hz).
+  Not measured on the A1200 (agreed with the user on 2026-10-26).
