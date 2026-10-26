@@ -898,17 +898,28 @@ belongs to the task that opened it; packets serialised field by field; buffers a
 - **Why**: amisqueeze always declares `MaxSampleRate=48000` in `HELO`, so the server keeps the source's rate. On
   the real A1200, the network reception is the largest cost and makes Paula crackle in bursts (player-9). Load
   measured in WinUAE (slow profile, real network stack, 16-bit WAV from a locally patched Music Assistant, Paula
-  14-bit at 27429 Hz): 99 % at 44.1 kHz, 86.5 % at 32 kHz, 74 % at 22.05 kHz. The sample size too: the server
-  keeps the source's, so a 24-bit FLAC arrives as 24-bit PCM, 50 % more traffic than 16 bits, and amisqueeze
-  drops the extra 8 bits for AHI (load not measured).
-- **The idea**: declare the AHI unit's rate, read from its preferences, rounded up to a standard rate (27429 Hz
-  gives 32000, 22050 stays 22050). A `MAXRATE` option would force the value.
-- **First, without code** (agreed with the user on 2026-10-26):
-  - check that LMS resamples for a lower `MaxSampleRate`, and which rate its `strm` then announces: LMS announces
-    the source file's rate even when its conversion rule resamples (player-4c), which would play too fast;
-  - check whether the server can be asked for 16-bit PCM (not looked at);
-  - Music Assistant 2.10.7 offers a Squeezelite player 44.1 kHz and up only: below, its list of rates is empty
-    (read in its code, not tried). It needs a change upstream, which is the user's decision.
-
-  Code only if the checks on LMS are good. Until then, the default stays 48000.
-- **Criterion** (to agree after the checks).
+  14-bit at 27429 Hz): 99 % at 44.1 kHz, 86.5 % at 32 kHz, 74 % at 22.05 kHz. A 24-bit source also arrives as
+  24-bit PCM, 50 % more traffic than 16 bits. With Paula, nothing above about 13.7 kHz comes out: 32 kHz loses
+  nothing audible.
+- **What the servers do** (checked on 2026-10-26, LMS 9.1.1 and Music Assistant 2.10.7):
+  - LMS keeps a `MaxSampleRate` below the source's rate only through a conversion rule with the `D` (resample)
+    capability. None of its rules to `pcm` has it, so it refuses the track of a player that takes PCM only, as
+    the A1200 does. Its rules to `flc` have it: a FLAC-decoding player gets a resampled FLAC;
+  - for PCM, LMS's `strm` gives the source file's rate and sample size, whatever the rule sends. A rule that
+    sends a WAV works, since amisqueeze plays the format of the WAV header;
+  - no capability asks for 16 bits: the rule does it;
+  - Music Assistant offers 44.1 kHz and up only: below, its list of rates is empty and playback fails (read in its
+    code).
+- **Content** (agreed with the user on 2026-10-26):
+  - a `MAXRATE` option, `AHI` or a rate in Hz, also as a ToolType and in the default options. `AHI` takes the AHI
+    unit's rate, rounded up to a standard rate (27429 Hz gives 32000, 22050 stays 22050). Without it, 48000 as
+    before;
+  - the user guide: the option; for LMS, a rule per source format in `custom-convert.conf`, for the player's MAC,
+    with `D` and a WAV output in 16 bits (`flc` and `mp3`, the others on the same model); without the rule LMS
+    refuses the tracks, and Music Assistant fails to play;
+  - tests: the rounding, `HELO` with and without the option, a WAV stream whose header differs from `strm`.
+- **Criterion**: `make test` green; on the test LMS with the rule, the host build with `MAXRATE=22050` then
+  `32000`: the WAV header at that rate in 16 bits, the CLI's elapsed time right at 30 s and after a seek; without
+  the option, `HELO` unchanged. Then `MAXRATE=AHI` on the A1200, load and listening (player-9).
+- **After it**: Music Assistant, an issue and a fix upstream for rates below 44.1 kHz. LMS upstream would need `D`
+  on its rules to `pcm` and `strm` giving the resampled rate (agreed with the user on 2026-10-26).
