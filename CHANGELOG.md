@@ -9,9 +9,9 @@ are previews, tested in WinUAE only, not yet on a real Amiga.
 
 ### Added
 
-- `MAXRATE=AHI` or `MAXRATE=<Hz>`: asks the server for a lower sample rate, to lighten a slow Amiga. `AHI` takes
-  the AHI unit's rate, rounded up to a standard rate (32 kHz for Paula). With LMS it needs conversion rules on the
-  server, given in the user guide; not with Music Assistant.
+- `MAXRATE=AHI`, `MAXRATE=AHISTD` or `MAXRATE=<Hz>`: asks the server for a lower sample rate, to lighten a slow
+  Amiga. `AHI` takes the AHI unit's rate, `AHISTD` the standard rate at or below it (27429 Hz gives 24000). With
+  LMS it needs conversion rules on the server, given in the user guide; not with Music Assistant.
 
 ### Changed
 

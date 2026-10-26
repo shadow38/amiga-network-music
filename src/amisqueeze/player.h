@@ -40,7 +40,7 @@ struct options {
     int         flac;                   /* enum decode_mode: whether FLAC is advertised to the server */
     int         mp3;                    /* enum decode_mode: the same for MP3 (builds with AMISQUEEZE_MP3) */
     int         bench;                  /* BENCH: measure the decoding speed, print it and quit */
-    uint32_t    maxrate;                /* MAXRATE: 0 = not given, MAXRATE_AHI, or a rate in Hz */
+    uint32_t    maxrate;                /* MAXRATE: 0 = not given, MAXRATE_AHI, MAXRATE_AHISTD, or Hz */
 };
 
 /* MAXRATE option: the highest sample rate declared to the server (MaxSampleRate in HELO). Without it, 48000: the
@@ -48,7 +48,8 @@ struct options {
  * refuses the track (plan step player-13). */
 #define MAXRATE_DEFAULT 48000
 #define MAXRATE_MIN     8000
-#define MAXRATE_AHI     1                   /* MAXRATE=AHI: the AHI unit's rate, rounded up to a standard rate */
+#define MAXRATE_AHI     1                   /* MAXRATE=AHI: the AHI unit's rate as it is */
+#define MAXRATE_AHISTD  2                   /* MAXRATE=AHISTD: the standard slimproto rate at or below it */
 
 /* FLAC and MP3 options: AUTO = the format is advertised if this machine decodes it at least twice real time
  * (measured at start-up), ON = always, OFF = never (the server converts it to PCM) */
@@ -195,11 +196,12 @@ int player_bench(void);
 /* Value of the FLAC or MP3 option (AUTO, ON, OFF, any case); -1 if it is none of them */
 int parse_decode_mode(const char *s);
 int parse_mac(const char *s, uint8_t mac[6]);
-/* Value of the MAXRATE option: MAXRATE_AHI for AHI (any case), or a rate in Hz from MAXRATE_MIN to MAXRATE_DEFAULT;
- * 0 if it is neither */
+/* Value of the MAXRATE option: MAXRATE_AHI or MAXRATE_AHISTD (AHI, AHISTD, any case), or a rate in Hz from
+ * MAXRATE_MIN to MAXRATE_DEFAULT; 0 if it is none of them */
 uint32_t parse_maxrate(const char *s);
-/* The standard rate (8000 to 48000 Hz) at or above an AHI unit's rate: 27429 gives 32000, 22050 stays 22050 */
-uint32_t maxrate_round(uint32_t freq);
+/* The rate that MAXRATE_AHI or MAXRATE_AHISTD (which) asks for an AHI unit playing at freq Hz: freq itself, or
+ * the standard slimproto rate at or below it (27429 gives 24000); kept from MAXRATE_MIN to MAXRATE_DEFAULT */
+uint32_t maxrate_from_ahi(uint32_t which, uint32_t freq);
 /* Workbench start: turns an icon's ToolTypes (n strings) into a command line for the template (an AmigaDOS
  * ReadArgs template, "SERVER,PORT/N/K,..."): the ToolTypes whose keyword is in the template, in order; a disabled
  * one "(KEY=...)" and any other keyword (DONOTWAIT, WINDOW, QUIET...) left out; a value with a space quoted (not a

@@ -138,6 +138,8 @@ uint32_t parse_maxrate(const char *s)
 
     if (same_word(s, "AHI"))
         return MAXRATE_AHI;
+    if (same_word(s, "AHISTD"))
+        return MAXRATE_AHISTD;
     if (*s == '\0')
         return 0;
     for (; *s; s++) {
@@ -148,15 +150,23 @@ uint32_t parse_maxrate(const char *s)
     return v >= MAXRATE_MIN && v <= MAXRATE_DEFAULT ? v : 0;
 }
 
-uint32_t maxrate_round(uint32_t freq)
+/* Never above the unit's rate: what it cannot play, AHI's conversion folds back into whistles (plan step
+ * player-13, a sweep on the A1200) */
+uint32_t maxrate_from_ahi(uint32_t which, uint32_t freq)
 {
-    static const uint32_t rates[] = { 8000, 11025, 12000, 16000, 22050, 24000, 32000, 44100 };
+    /* the rates of slimproto's strm up to MAXRATE_DEFAULT: those any server can make */
+    static const uint32_t rates[] = { 8000, 11025, 12000, 16000, 22050, 24000, 32000, 44100, 48000 };
     unsigned i;
 
-    for (i = 0; i < sizeof(rates) / sizeof(rates[0]); i++)
-        if (freq <= rates[i])
-            return rates[i];
-    return MAXRATE_DEFAULT;
+    if (freq < MAXRATE_MIN)
+        return MAXRATE_MIN;
+    if (freq > MAXRATE_DEFAULT)
+        return MAXRATE_DEFAULT;
+    if (which != MAXRATE_AHISTD)
+        return freq;
+    for (i = sizeof(rates) / sizeof(rates[0]) - 1; rates[i] > freq; i--)
+        ;                                   /* rates[0] is MAXRATE_MIN: the loop ends there at the latest */
+    return rates[i];
 }
 
 /* "3.2x real time" */
@@ -351,14 +361,15 @@ int player_main(struct player *p, const struct options *o)
 #endif
     /* The highest rate asked of the server (HELO) */
     p->maxrate = MAXRATE_DEFAULT;
-    if (o->maxrate == MAXRATE_AHI) {
+    if (o->maxrate == MAXRATE_AHI || o->maxrate == MAXRATE_AHISTD) {
         if (mode_known) {
-            p->maxrate = maxrate_round(mode.freq);
+            p->maxrate = maxrate_from_ahi(o->maxrate, mode.freq);
             msg("MAXRATE: at most %lu Hz asked of the server (AHI unit %d at %lu Hz)\n", (unsigned long)p->maxrate,
                 o->unit, (unsigned long)mode.freq);
         } else
-            msg("amisqueeze: MAXRATE=AHI: the AHI unit's rate is not known (NOAUDIO, OUTPUT, or no AHI "
-                "preferences): at most %lu Hz asked of the server\n", (unsigned long)p->maxrate);
+            msg("amisqueeze: MAXRATE=%s: the AHI unit's rate is not known (NOAUDIO, OUTPUT, or no AHI "
+                "preferences): at most %lu Hz asked of the server\n", o->maxrate == MAXRATE_AHI ? "AHI" : "AHISTD",
+                (unsigned long)p->maxrate);
     } else if (o->maxrate) {
         p->maxrate = o->maxrate;
         msg("MAXRATE: at most %lu Hz asked of the server\n", (unsigned long)p->maxrate);

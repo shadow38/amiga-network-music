@@ -277,7 +277,7 @@ SERVER,PORT/N/K,NAME/K,MAC/K,OUTPUT/K,LOG/K,UNIT/N/K,NOAUDIO/S,SWAP/S,FLAC/K,MP3
 | `SWAP` | swaps left and right, for an AHI driver that swaps them | off |
 | `FLAC` | `AUTO`, `ON` or `OFF`: where FLAC is decoded (see [`FLAC`, `MP3` and `BENCH`](#flac-mp3-and-bench)) | `AUTO` |
 | `MP3` | the same for MP3, with `amisqueeze.fpu` only | `AUTO` |
-| `MAXRATE` | `AHI` or a rate in Hz, 8000 to 48000: the highest sample rate asked of the server, to lighten a slow Amiga; LMS then needs a rule (see [`MAXRATE`](#maxrate)) | none: the files' own rates, up to 48 kHz |
+| `MAXRATE` | `AHI`, `AHISTD` or a rate in Hz, 8000 to 48000: the highest sample rate asked of the server, to lighten a slow Amiga; LMS then needs a rule (see [`MAXRATE`](#maxrate)) | none: the files' own rates, up to 48 kHz |
 | `BENCH` | measures how fast this Amiga decodes FLAC and MP3, prints it and quits; no server needed | off |
 | `LOG` | a file that keeps a copy of every message (see [`LOG`](#log)) | none |
 | `VERBOSE` | prints the messages exchanged with the server and the stream's events | off |
@@ -358,15 +358,28 @@ MP3 at 320 kbit/s (the slowest) decoded at 74.2x real time: MP3=AUTO lets this m
 `MAXRATE` asks the server for music at a lower sample rate, to lighten a slow Amiga: less to receive from the
 network, less for AHI to mix. Without it, the server sends each file at its own rate, up to 48 kHz.
 
-- **`MAXRATE=AHI`** takes the rate of the AHI unit, rounded up to a standard rate: Paula at 27429 Hz gives
-  32000 Hz. Paula plays nothing above about 13.7 kHz, so nothing that can be heard is lost.
+- **`MAXRATE=AHI`** asks for the AHI unit's own rate: Paula at 27429 Hz gives 27429 Hz. The music then comes at
+  the rate AHI plays, and nothing Paula can play is lost (up to about 13.7 kHz).
+- **`MAXRATE=AHISTD`** asks for the standard rate at or below the unit's: 27429 Hz gives 24000 Hz. For a server
+  that makes only the standard rates (8000, 11025, 12000, 16000, 22050, 24000, 32000, 44100, 48000 Hz), such
+  as LMS lowering the rate of MP3 for `amisqueeze.fpu` (see below). LMS keeps a file's family of rates: asked
+  for 24000 Hz, it sends a 44.1 kHz file at 22050 Hz.
 - **`MAXRATE=<Hz>`** gives the rate, from 8000 to 48000. `MAXRATE=22050` halves the network traffic of CD-quality
   music, with duller treble.
+
+The sound is cleanest when the music comes at the unit's own rate: AHI then plays it as it is. Otherwise AHI
+converts the rate itself, simply, which adds faint whistles, heard with a sweep: above the unit's rate it folds
+what it cannot play back into the treble, and below it, it adds images of the sound. Hence:
+
+- with Paula at its usual 27429 Hz, `MAXRATE=AHI` and LMS's rules below;
+- with any server, the unit itself set to 22050 Hz in `SYS:Prefs/AHI`, then `MAXRATE=AHI`: `AHI` and `AHISTD`
+  are then the same, most music (44.1 kHz) comes at that rate, and AHI spares the conversion, a few points of CPU
+  too. Not 24000 Hz: LMS would still send 44.1 kHz files at 22050 Hz.
 
 At start-up, amisqueeze says what it asks for:
 
 ```
-MAXRATE: at most 32000 Hz asked of the server (AHI unit 0 at 27429 Hz)
+MAXRATE: at most 27429 Hz asked of the server (AHI unit 0 at 27429 Hz)
 ```
 
 **With LMS, `MAXRATE` needs rules on the server.** LMS cannot lower the rate of raw PCM by itself: without the
@@ -392,8 +405,9 @@ mp3 pcm * 02:41:4d:d4:ca:84
   the rate asked.
 
 With `amisqueeze.fpu` decoding FLAC on the Amiga, LMS lowers the rate of FLAC files itself, without a rule. It
-lowers the rate of MP3 decoded on the Amiga by encoding it again, which loses a little quality: `MP3=OFF` and the
-rules above avoid it.
+lowers the rate of MP3 decoded on the Amiga by encoding it again, which loses a little quality, and only to a
+standard rate (`AHISTD`): asked for another, it sends the MP3 at its own rate. `MP3=OFF` and the rules above
+avoid both.
 
 **With Music Assistant, leave `MAXRATE` out.** Music Assistant 2.10 offers no rate below 44.1 kHz to a player that
 asks for less, and the music does not play (tried with 2.10.7: the stream fails with a server error).
@@ -458,7 +472,7 @@ with `amisqueeze: `, left out below. `N` stands for a number, `...` for a name o
 | `player "..." (xx:xx:xx:xx:xx:xx), server ... port ...` | at every start: the player's name and MAC address as the server sees them, and the server it connects to |
 | `FLAC: level 8 decoded at ...x real time: FLAC decoded here` (or `converted to PCM by the server`) | the start-up measure of `FLAC=AUTO` |
 | `MP3: 320 kbit/s decoded at ...x real time: ...` | the same for MP3 (`MP3=AUTO`, `amisqueeze.fpu`) |
-| `MAXRATE: at most N Hz asked of the server` | the rate [`MAXRATE`](#maxrate) asks for; with `MAXRATE=AHI`, followed by the unit and its rate |
+| `MAXRATE: at most N Hz asked of the server` | the rate [`MAXRATE`](#maxrate) asks for; with `AHI` or `AHISTD`, followed by the unit and its rate |
 | `connected to the server` | the connection is up; the player should show up on the server |
 | `player name: ...` | the player was renamed on the server: amisqueeze takes the new name |
 | `stopped` | amisqueeze has stopped cleanly (Ctrl-C, `Break`, Remove in Exchange) |
@@ -472,7 +486,7 @@ amisqueeze plays anyway.
 | `AHI unit N uses "...", a stereo mode without "++": the music will play on one side only; ...` | choose a "stereo++" mode (see [setting up the unit](#setting-up-the-unit)) |
 | `AHI unit N uses "...", a mono mode: the music will play in mono` | choose a "stereo++" mode for stereo |
 | `MP3=ON: this build does not decode MP3 ...` | `MP3=ON` given to `amisqueeze`: MP3 stays with the server |
-| `MAXRATE=AHI: the AHI unit's rate is not known (...): at most 48000 Hz asked of the server` | with `NOAUDIO` or `OUTPUT`, or when the AHI preferences cannot be read: give the rate in Hz instead |
+| `MAXRATE=AHI: the AHI unit's rate is not known (...): at most 48000 Hz asked of the server` (or `AHISTD`) | with `NOAUDIO` or `OUTPUT`, or when the AHI preferences cannot be read: give the rate in Hz instead |
 
 #### amisqueeze does not start
 
@@ -487,7 +501,7 @@ amisqueeze stops at once.
 | `the icon's ToolTypes are too long` | the ToolTypes together exceed what amisqueeze reads, about 500 characters |
 | `invalid MAC (expected xx:xx:xx:xx:xx:xx)` | `MAC` is not six hexadecimal pairs |
 | `FLAC=...: expected AUTO, ON or OFF` (or `MP3=...`) | a wrong value for that option |
-| `MAXRATE=...: expected AHI, or a rate from 8000 to 48000 Hz` | a wrong value for `MAXRATE` |
+| `MAXRATE=...: expected AHI, AHISTD, or a rate from 8000 to 48000 Hz` | a wrong value for `MAXRATE` |
 | `amisqueeze.fpu needs an FPU (...): use amisqueeze instead` | `amisqueeze.fpu` started on an Amiga without an FPU |
 | `amisqueeze is already running (Exchange lists it and can stop it)` | started from a Shell while another amisqueeze runs; from the Workbench, the new one quits without a word |
 | `bsdsocket.library not found (is a TCP/IP stack running?)` | no TCP/IP stack started |

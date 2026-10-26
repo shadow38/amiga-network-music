@@ -272,12 +272,16 @@ static void test_mac(void)
 static void test_maxrate(void)
 {
     CHECK(parse_maxrate("AHI") == MAXRATE_AHI && parse_maxrate("ahi") == MAXRATE_AHI);
+    CHECK(parse_maxrate("AHISTD") == MAXRATE_AHISTD && parse_maxrate("ahistd") == MAXRATE_AHISTD);
     CHECK(parse_maxrate("22050") == 22050 && parse_maxrate("8000") == 8000 && parse_maxrate("48000") == 48000);
     CHECK(parse_maxrate("7999") == 0 && parse_maxrate("48001") == 0 && parse_maxrate("") == 0);
     CHECK(parse_maxrate("22k") == 0 && parse_maxrate("-22050") == 0 && parse_maxrate("99999999999") == 0);
-    CHECK(maxrate_round(27429) == 32000 && maxrate_round(22050) == 22050 && maxrate_round(22051) == 24000);
-    CHECK(maxrate_round(5000) == 8000 && maxrate_round(44100) == 44100 && maxrate_round(44101) == 48000);
-    CHECK(maxrate_round(96000) == 48000);
+    CHECK(maxrate_from_ahi(MAXRATE_AHI, 27429) == 27429 && maxrate_from_ahi(MAXRATE_AHISTD, 27429) == 24000);
+    CHECK(maxrate_from_ahi(MAXRATE_AHISTD, 22050) == 22050 && maxrate_from_ahi(MAXRATE_AHISTD, 22049) == 16000);
+    CHECK(maxrate_from_ahi(MAXRATE_AHISTD, 44099) == 32000 && maxrate_from_ahi(MAXRATE_AHISTD, 8000) == 8000);
+    CHECK(maxrate_from_ahi(MAXRATE_AHISTD, 48000) == 48000 && maxrate_from_ahi(MAXRATE_AHI, 44100) == 44100);
+    CHECK(maxrate_from_ahi(MAXRATE_AHI, 5000) == 8000 && maxrate_from_ahi(MAXRATE_AHISTD, 5000) == 8000);
+    CHECK(maxrate_from_ahi(MAXRATE_AHI, 96000) == 48000 && maxrate_from_ahi(MAXRATE_AHISTD, 96000) == 48000);
 }
 
 /* The capabilities of the HELO in stub_tx contain s */

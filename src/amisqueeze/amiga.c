@@ -3,7 +3,7 @@
  *
  * Usage: amisqueeze [SERVER=<ip|name>] [PORT=3483] [NAME=<name>] [MAC=xx:xx:xx:xx:xx:xx] [OUTPUT=<file>]
  *                   [LOG=<file>] [UNIT=<n>] [NOAUDIO] [SWAP] [FLAC=AUTO|ON|OFF] [MP3=AUTO|ON|OFF]
- *                   [MAXRATE=AHI|<Hz>] [BENCH] [VERBOSE]
+ *                   [MAXRATE=AHI|AHISTD|<Hz>] [BENCH] [VERBOSE]
  * Ctrl-C to quit. Default options come from ENV:amisqueeze.prefs (same syntax as the command line, which
  * takes precedence); see docs/user-guide.md.
  *
@@ -742,8 +742,8 @@ int main(void)
         goto out_args;
     }
     if (args[ARG_MAXRATE] && (o.maxrate = parse_maxrate((const char *)args[ARG_MAXRATE])) == 0) {
-        msg("amisqueeze: MAXRATE=%s: expected AHI, or a rate from %lu to %lu Hz\n", (const char *)args[ARG_MAXRATE],
-            (unsigned long)MAXRATE_MIN, (unsigned long)MAXRATE_DEFAULT);
+        msg("amisqueeze: MAXRATE=%s: expected AHI, AHISTD, or a rate from %lu to %lu Hz\n",
+            (const char *)args[ARG_MAXRATE], (unsigned long)MAXRATE_MIN, (unsigned long)MAXRATE_DEFAULT);
         goto out_args;
     }
     if (args[ARG_SERVER] == 0 && !o.bench) {

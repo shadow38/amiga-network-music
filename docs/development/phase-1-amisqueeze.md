@@ -693,8 +693,8 @@ belongs to the task that opened it; packets serialised field by field; buffers a
     1. the cheap measures: a lighter system (a trimmed install, MapROM), AHI 6 (step 4 of the strategy); a few
        points each, estimated. Why a small TCP window costs 17 points no longer matters: the window need not be
        capped any more;
-    2. less to receive: a lower rate asked of the server (player-13). Done on 2026-10-26: 62 % with
-       `MAXRATE=AHI` (32 kHz), 50 % at 22.05 kHz (below);
+    2. less to receive: a lower rate asked of the server (player-13). Done on 2026-10-26: 62 % at
+       32 kHz, 50 % at 22.05 kHz (below);
     3. the driver: a few frames per pass in `RXInt`. Done on 2026-10-25 (above): 77 %, against 73 % estimated;
     4. the direct Paula output (player-11), if the margin is still short after 1 to 3: AHI's mixing gone (a good
        share of the 25 to 30 points playback costs, estimated), and large buffers that do not mind a late
@@ -901,13 +901,20 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   | Server | Option | Stream | Load |
   |---|---|---|---|
   | LMS | none | WAV, 16 bits, 44.1 kHz, 176 KB/s | 77 % |
-  | LMS | `MAXRATE=AHI` | WAV, 16 bits, 32 kHz, 128 KB/s | 62 % |
+  | LMS | `MAXRATE=32000` (then `AHI`) | WAV, 16 bits, 32 kHz, 128 KB/s | 62 % |
   | LMS | `MAXRATE=22050` | WAV, 16 bits, 22.05 kHz, 88 KB/s | 50 % |
-  | Music Assistant | `MAXRATE=AHI` | WAV, 24 bits, 32 kHz, 192 KB/s | 77 % |
+  | Music Assistant | `MAXRATE=32000` (then `AHI`) | WAV, 24 bits, 32 kHz, 192 KB/s | 77 % |
   | Music Assistant | `MAXRATE=22050` | WAV, 24 bits, 22.05 kHz, 132 KB/s | 60 % |
 
   No `STMo`, no crackle heard. The load follows the bytes received, whatever the server. The user heard no
-  difference between 22.05 kHz and above with that song; to confirm with others.
+  difference between 22.05 kHz and above with that song; to confirm with others. `MAXRATE=AHI` then rounded the
+  unit's rate up to a standard rate: 32000 here.
+- **A sweep on the A1200** (`music/sweep.flac`, linear, about 1 kHz a second, LMS; when it fades, read on the
+  server's elapsed time, to a second or two): at 22.05 kHz it fades at 10-11 kHz, as the rate allows. Asked for
+  32 kHz, past Paula's 13.7 kHz it falls then rises again before fading at about 15 kHz: AHI's conversion folds
+  what Paula cannot play back into the treble. Asked for the unit's own 27429 Hz, it fades without that. Asked
+  for 24000 Hz, LMS sends a 44.1 kHz file at 22050 Hz (it keeps a file's family of rates), and AHI's conversion
+  up to 27429 Hz adds artefacts. So the stream is cleanest at the unit's own rate.
 - **Music Assistant sent 24 bits** for a 16-bit file: its volume normalization, on by default, works in 32-bit
   floats (so do crossfade and DSP), and the output takes the deepest the player accepts, 24 bits
   (`get_output_format`). Half of `MAXRATE`'s gain is lost, since amisqueeze keeps 16 bits for AHI. With
@@ -932,13 +939,15 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   - Music Assistant offers 44.1 kHz and up only: below, its list of rates is empty and the stream fails with a
     server error (tried with 2.10.7, `MAXRATE=32000`).
 - **Content** (agreed with the user on 2026-10-26):
-  - a `MAXRATE` option, `AHI` or a rate in Hz, also as a ToolType and in the default options. `AHI` takes the AHI
-    unit's rate, rounded up to a standard rate (27429 Hz gives 32000, 22050 stays 22050). Without it, 48000 as
-    before;
+  - a `MAXRATE` option, `AHI`, `AHISTD` or a rate in Hz, also as a ToolType and in the default options. `AHI`
+    takes the AHI unit's rate as it is, `AHISTD` the standard slimproto rate at or below it, for a server that
+    makes only those, as LMS re-encoding MP3 (27429 Hz gives 24000; both agreed with the user on 2026-10-26,
+    after the sweep, instead of rounding up). Without it, 48000 as before. The user guide advises the unit at
+    22050 Hz for any server, or Paula at 27429 Hz with `MAXRATE=AHI` and LMS;
   - the user guide: the option; for LMS, a rule per source format in `custom-convert.conf`, for the player's MAC,
     with `D` and a WAV output in 16 bits (`flc` and `mp3`, the others on the same model); without the rule LMS
     refuses the tracks, and Music Assistant fails to play;
-  - tests: the rounding, `HELO` with and without the option, a WAV stream whose header differs from `strm`.
+  - tests: `AHI` and `AHISTD`, `HELO` with and without the option, a WAV stream whose header differs from `strm`.
 - **Criterion**: `make test` green; on the test LMS with the rule, the host build with `MAXRATE=22050` then
   `32000`: the WAV header at that rate in 16 bits, the CLI's elapsed time right at 30 s and after a seek; without
   the option, `HELO` unchanged. Then `MAXRATE=AHI` on the A1200, load and listening (player-9).

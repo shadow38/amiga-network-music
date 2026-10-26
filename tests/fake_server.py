@@ -950,7 +950,7 @@ def scenario_arguments():
     for value in ["FAST", "96000", "7999", ""]:
         proc = subprocess.run([sys.argv[1], "SERVER=127.0.0.1", "MAXRATE=" + value], stdout=subprocess.PIPE,
                               stderr=subprocess.STDOUT, text=True, timeout=TIMEOUT)
-        check(proc.returncode == 20 and "MAXRATE=%s: expected AHI, or a rate from 8000 to 48000 Hz" % value
+        check(proc.returncode == 20 and "MAXRATE=%s: expected AHI, AHISTD, or a rate from 8000 to 48000 Hz" % value
               in proc.stdout, "MAXRATE=%s: error, exit code 20" % value)
     proc = subprocess.run([sys.argv[1], "BENCH"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
                           timeout=TIMEOUT)
@@ -984,7 +984,9 @@ def scenario_maxrate():
                              (["MAXRATE=22050"], b",MaxSampleRate=22050,pcm",
                               "MAXRATE: at most 22050 Hz asked of the server"),
                              (["MAXRATE=ahi"], b",MaxSampleRate=48000,pcm",
-                              "MAXRATE=AHI: the AHI unit's rate is not known")]:
+                              "MAXRATE=AHI: the AHI unit's rate is not known"),
+                             (["MAXRATE=AHISTD"], b",MaxSampleRate=48000,pcm",
+                              "MAXRATE=AHISTD: the AHI unit's rate is not known")]:
         server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         server.bind(("127.0.0.1", 0))
