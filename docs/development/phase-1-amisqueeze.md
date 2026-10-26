@@ -908,10 +908,13 @@ belongs to the task that opened it; packets serialised field by field; buffers a
 
   No `STMo`, no crackle heard. The load follows the bytes received, whatever the server. The user heard no
   difference between 22.05 kHz and above with that song; to confirm with others.
-- **Music Assistant sends 24 bits** whenever the player takes them, and its Squeezelite provider offers 16 and 24
-  bits to every player: half of `MAXRATE`'s gain is lost, since amisqueeze keeps 16 bits for AHI. Slimproto has no
-  way to ask for 16 bits. A lead, the user's decision (noted on 2026-10-26): Music Assistant honouring the
-  player's own "sample rates" setting for Squeezelite players, as it does for Sonos and Raumfeld.
+- **Music Assistant sent 24 bits** for a 16-bit file: its volume normalization, on by default, works in 32-bit
+  floats (so do crossfade and DSP), and the output takes the deepest the player accepts, 24 bits
+  (`get_output_format`). Half of `MAXRATE`'s gain is lost, since amisqueeze keeps 16 bits for AHI. With
+  normalization disabled for that player's queue, a 16-bit file comes as 16 bits (squeezelite at 32 kHz,
+  2026-10-26; the load not measured on the A1200); the user guide says so. A 24-bit file stays 24 bits, and
+  slimproto has no way to ask for 16. A lead, the user's decision (noted on 2026-10-26): Music Assistant honouring
+  the player's own "sample rates" setting for Squeezelite players, as it does for Sonos and Raumfeld.
 
 - **Why**: amisqueeze always declares `MaxSampleRate=48000` in `HELO`, so the server keeps the source's rate. On
   the real A1200, the network reception is the largest cost and makes Paula crackle in bursts (player-9). Load
