@@ -693,9 +693,8 @@ belongs to the task that opened it; packets serialised field by field; buffers a
     1. the cheap measures: a lighter system (a trimmed install, MapROM), AHI 6 (step 4 of the strategy); a few
        points each, estimated. Why a small TCP window costs 17 points no longer matters: the window need not be
        capped any more;
-    2. less to receive: a lower rate asked of the server (0.8, step 3 of the strategy), half the stream at
-       22 kHz; at 88 KB/s nothing crackled even without `RXBUFFER` (measured); the network's cost might drop from
-       about 47 % to about 25 % (estimated), if LMS resamples for it;
+    2. less to receive: a lower rate asked of the server (player-13). Done on 2026-10-26: 62 % with
+       `MAXRATE=AHI` (32 kHz), 50 % at 22.05 kHz (below);
     3. the driver: a few frames per pass in `RXInt`. Done on 2026-10-25 (above): 77 %, against 73 % estimated;
     4. the direct Paula output (player-11), if the margin is still short after 1 to 3: AHI's mixing gone (a good
        share of the 25 to 30 points playback costs, estimated), and large buffers that do not mind a late
@@ -893,7 +892,19 @@ belongs to the task that opened it; packets serialised field by field; buffers a
 - **Criterion** (to agree when the step starts): each safety net added or mended seen failing on a planted defect,
   then `make test` green.
 
-## player-13 A lower rate asked of the server 🔶 (0.8: `MAXRATE` done on 2026-10-26, the A1200 with player-9)
+## player-13 A lower rate asked of the server ✅ (2026-10-26, version 0.8)
+
+- **On the A1200** (2026-10-26, 0.8-dev, AmiNetXDuo with the fixed `xircomce2.device`, Paula 14 bit stereo++
+  at 27,429 Hz, `SWAP`, LMS volume 100, the guide's rules for its MAC, `song-44k.flac`; method of player-9):
+
+  | Option | Stream | Load |
+  |---|---|---|
+  | none | WAV, 16 bits, 44.1 kHz | 77 % |
+  | `MAXRATE=AHI` | WAV, 16 bits, 32 kHz | 62 % |
+  | `MAXRATE=22050` | WAV, 16 bits, 22.05 kHz | 50 % |
+
+  No `STMo`, no crackle heard. The user heard no difference between 22.05 kHz and above with that song; to
+  confirm with others.
 
 - **Why**: amisqueeze always declares `MaxSampleRate=48000` in `HELO`, so the server keeps the source's rate. On
   the real A1200, the network reception is the largest cost and makes Paula crackle in bursts (player-9). Load
