@@ -149,6 +149,16 @@ Neither planned nor dropped for good. Each is taken up only by the user's decisi
   68060 user reports a problem.
 - **Ctrl-C with a real TCP/IP stack**: `WaitSelect()` may take the signal for itself, depending on the stack's
   break mask. To check on the real machine (player-9): `SBTC_BREAKMASK`, or EINTR taken as a stop.
+- **A lower rate asked of the server** (noted on 2026-10-24; the fallback named in player-9): amisqueeze always
+  declares `MaxSampleRate=48000` in `HELO`, so the server keeps the source's rate. The idea: declare the AHI
+  unit's rate, read from its preferences, rounded up to a standard rate (27429 Hz gives 32000, 22050 stays
+  22050). A `MAXRATE` option would force the value. Load measured in WinUAE (slow profile, real network stack,
+  16-bit WAV from a locally patched Music Assistant, Paula 14-bit at 27429 Hz): 99 % at 44.1 kHz, 86.5 % at
+  32 kHz, 74 % at 22.05 kHz. Before any code:
+  - check that LMS resamples for a lower `MaxSampleRate`;
+  - Music Assistant 2.10.7 offers a Squeezelite player 44.1 kHz and up only: below, its list of rates is empty
+    (read in its code, not tried). It needs a change upstream, which is the user's decision;
+  - until both are settled, the default stays 48000.
 - From the outside review of 2026-10-20, no known failure:
   - the track queue (4 entries) forgets the oldest one when full; a refusal (`STMn`) would be safer;
   - `gethostbyname()`: no check of an empty address list, or of a length other than 4;
