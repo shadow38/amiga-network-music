@@ -683,6 +683,10 @@ belongs to the task that opened it; packets serialised field by field; buffers a
     gave the same results). Same protocol, one session: clean without `RXBUFFER` at 77 %, and at 16384 at 79 %,
     where the rebuilt 1.1 driver crackles a lot. File transfers keep their speed. `RXBUFFER` is no longer needed
     on this machine.
+  - **Roadshow** (2026-10-25): its 1.15 demo, run without installing it, with the fixed driver, same protocol and
+    same day. 86 % while playing, against 77 % with AmiNetXDuo; transfers about a fifth slower in, a quarter
+    slower out. No `STMo`. The demo ships only the 68000 build of its stack; the commercial build, tuned for 68020
+    and better, was not measured. AmiNetXDuo stays the stack for this machine.
   - **Optimization roadmap for this machine** (agreed with the user on 2026-10-24): the most modest machine first,
     so that the others benefit. Today: clean playback at about 77 % of the CPU, with the fixed driver and no
     `RXBUFFER` (above). In this order:
