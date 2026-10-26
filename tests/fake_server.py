@@ -369,6 +369,15 @@ def wav_header(bits=24, rate=44100, channels=2):
     return header
 
 
+def sox_wav_header(rate, bits=16, channels=2):
+    """A WAV header as sox writes it into a pipe, behind an LMS conversion rule (seen on 2026-10-26): a plain PCM
+    format chunk, the sizes 7FFFF000 (data) and 7FFFF024 (RIFF); 44 bytes"""
+    frame = channels * bits // 8
+    fmt = struct.pack("<HHIIHH", 1, channels, rate, rate * frame, frame, bits)
+    return (b"RIFF" + struct.pack("<I", 0x7ffff024) + b"WAVE" + b"fmt " + struct.pack("<I", len(fmt)) + fmt
+            + b"data" + struct.pack("<I", 0x7ffff000))
+
+
 def send_strm_wav(session, http):
     fmt7 = b"3p1321" + bytes([64])      # as Music Assistant: autostart 3, PCM announced as 16 bits 44.1 kHz stereo
     send_packet(session.conn, b"strm", strm("s", port=http.port, ip=0, fmt7=fmt7, request=HTTP_REQUEST))
@@ -404,6 +413,32 @@ def scenario_wav():
           % first_difference(data, pcm1 + pcm2))
     check(out.count("stream: WAV header: 24 bits, 44100 Hz, 2 channel(s), to the end of the stream") == 2,
           "WAV header reported for each track")
+
+
+def scenario_wav_rate():
+    print("-- WAV header at 22050 Hz behind a strm that says 44.1 kHz (LMS with a resampling rule, MAXRATE)")
+    path = os.path.join(tempfile.mkdtemp(), "play.pcm")
+    pcm = random.Random(4).randbytes(22050 * 4 * 3 // 2)        # 1.5 s of 16-bit stereo at 22050 Hz
+    http = HttpServer(data=sox_wav_header(22050) + pcm)
+    http.start()
+    server, proc, s = start_session("WavRate", "OUTPUT=" + path)
+    try:
+        send_strm_s(s, http, threshold_kb=16)
+        t_start, _, _ = s.until("STAT:STMs")
+        t_end, _, _ = s.until("STAT:STMu", timeout=6)
+        check(1.35 <= t_end - t_start <= 1.9, "1.5 s at 22050 Hz played in %.2f s (0.75 s at strm's 44.1 kHz)"
+              % (t_end - t_start))
+        stmt = [(t, b) for t, n, b in s.log if n == "STAT:STMt"]
+        drift = max((abs(stat_elapsed_ms(b) / 1000 - (t - t_start)) for t, b in stmt), default=float("inf"))
+        check(drift < 0.25, "elapsed time follows the clock (max drift %.3f s)" % drift)
+    finally:
+        rc, out = stop(proc)
+        server.close()
+    check(rc == 0, "stopped cleanly (exit code %d)" % rc)
+    data = read_output(path)
+    check(data == pcm, "file identical to the data without the header (first difference at byte %d)"
+          % first_difference(data, pcm))
+    check("stream: WAV header: 16 bits, 22050 Hz, 2 channel(s), 2147479552 bytes" in out, "WAV header reported")
 
 
 def scenario_stall():
@@ -912,6 +947,11 @@ def scenario_arguments():
                           stderr=subprocess.STDOUT, text=True, timeout=TIMEOUT)
     check(proc.returncode == 20 and "MP3=MAYBE: expected AUTO, ON or OFF" in proc.stdout,
           "MP3=MAYBE: error, exit code 20")
+    for value in ["FAST", "96000", "7999", ""]:
+        proc = subprocess.run([sys.argv[1], "SERVER=127.0.0.1", "MAXRATE=" + value], stdout=subprocess.PIPE,
+                              stderr=subprocess.STDOUT, text=True, timeout=TIMEOUT)
+        check(proc.returncode == 20 and "MAXRATE=%s: expected AHI, or a rate from 8000 to 48000 Hz" % value
+              in proc.stdout, "MAXRATE=%s: error, exit code 20" % value)
     proc = subprocess.run([sys.argv[1], "BENCH"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
                           timeout=TIMEOUT)
     check(proc.returncode == 0 and "FLAC level 8 (the slowest) decoded at" in proc.stdout and
@@ -938,6 +978,33 @@ def scenario_flac_off():
             server.close()
 
 
+def scenario_maxrate():
+    print("-- MAXRATE: the MaxSampleRate of HELO, and what is said at start-up")
+    for args, caps, said in [([], b",MaxSampleRate=48000,pcm", None),
+                             (["MAXRATE=22050"], b",MaxSampleRate=22050,pcm",
+                              "MAXRATE: at most 22050 Hz asked of the server"),
+                             (["MAXRATE=ahi"], b",MaxSampleRate=48000,pcm",
+                              "MAXRATE=AHI: the AHI unit's rate is not known")]:
+        server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        server.bind(("127.0.0.1", 0))
+        server.listen(1)
+        proc = start(server.getsockname()[1], "FLAC=OFF", "MP3=OFF", *args)
+        try:
+            conn = accept(server)
+            _, body = read_packet(conn)
+            check(body.endswith(caps), "%s: HELO capabilities end with %s"
+                  % (" ".join(args) or "no MAXRATE", caps.decode()))
+            conn.close()
+        finally:
+            rc, out = stop(proc)
+            server.close()
+        if said:
+            check(rc == 0 and said in out, "%s: said at start-up (%s)" % (" ".join(args), said))
+        else:
+            check(rc == 0 and "MAXRATE" not in out, "no MAXRATE: nothing said")
+
+
 if __name__ == "__main__":
     if len(sys.argv) != 2:
         sys.exit(__doc__)
@@ -947,6 +1014,7 @@ if __name__ == "__main__":
     scenario_stop()
     scenario_output()
     scenario_wav()
+    scenario_wav_rate()
     scenario_stall()
     scenario_cut()
     scenario_control_lost()
@@ -956,6 +1024,7 @@ if __name__ == "__main__":
     scenario_flac_seek_rejected()
     scenario_flac_gapless()
     scenario_flac_off()
+    scenario_maxrate()
     scenario_mp3()
     scenario_mp3_tags()
     scenario_mp3_seek()

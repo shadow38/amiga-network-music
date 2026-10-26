@@ -893,7 +893,7 @@ belongs to the task that opened it; packets serialised field by field; buffers a
 - **Criterion** (to agree when the step starts): each safety net added or mended seen failing on a planted defect,
   then `make test` green.
 
-## player-13 A lower rate asked of the server ⬜ (0.8)
+## player-13 A lower rate asked of the server 🔶 (0.8: `MAXRATE` done on 2026-10-26, the A1200 with player-9)
 
 - **Why**: amisqueeze always declares `MaxSampleRate=48000` in `HELO`, so the server keeps the source's rate. On
   the real A1200, the network reception is the largest cost and makes Paula crackle in bursts (player-9). Load

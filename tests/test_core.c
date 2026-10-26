@@ -269,6 +269,28 @@ static void test_mac(void)
     CHECK(!parse_mac("00-11-22-aa-bb-ff", mac));
 }
 
+static void test_maxrate(void)
+{
+    CHECK(parse_maxrate("AHI") == MAXRATE_AHI && parse_maxrate("ahi") == MAXRATE_AHI);
+    CHECK(parse_maxrate("22050") == 22050 && parse_maxrate("8000") == 8000 && parse_maxrate("48000") == 48000);
+    CHECK(parse_maxrate("7999") == 0 && parse_maxrate("48001") == 0 && parse_maxrate("") == 0);
+    CHECK(parse_maxrate("22k") == 0 && parse_maxrate("-22050") == 0 && parse_maxrate("99999999999") == 0);
+    CHECK(maxrate_round(27429) == 32000 && maxrate_round(22050) == 22050 && maxrate_round(22051) == 24000);
+    CHECK(maxrate_round(5000) == 8000 && maxrate_round(44100) == 44100 && maxrate_round(44101) == 48000);
+    CHECK(maxrate_round(96000) == 48000);
+}
+
+/* The capabilities of the HELO in stub_tx contain s */
+static int helo_caps_have(const char *s)
+{
+    static char caps[sizeof(stub_tx) + 1];
+    int n = stub_tx_len > 44 ? stub_tx_len - 44 : 0;
+
+    memcpy(caps, stub_tx + 44, (size_t)n);
+    caps[n] = '\0';
+    return strstr(caps, s) != NULL;
+}
+
 static void test_helo(void)
 {
     struct player p;
@@ -286,12 +308,16 @@ static void test_helo(void)
     caps = (const char *)stub_tx + 44;
     CHECK(stub_tx_len > 44 && !strncmp(caps, "Model=squeezelite,", 18));
     CHECK(stub_tx_len - 44 >= 4 && !memcmp(stub_tx + stub_tx_len - 4, ",pcm", 4));
+    CHECK(helo_caps_have(",MaxSampleRate=48000,pcm"));  /* without MAXRATE */
     CHECK(strstr(stub_out, "connected to the server") != NULL);
 
     slim_disconnect(&p);
     clear_tx();
+    p.maxrate = 22050;                                  /* MAXRATE */
     CHECK(slim_connect(&p, 1));
     CHECK(be16(stub_tx + 32) == 0x4000);                /* reconnection */
+    CHECK(be32(stub_tx + 4) == (uint32_t)stub_tx_len - 8);
+    CHECK(helo_caps_have(",MaxSampleRate=22050,pcm"));
     teardown(&p);
 }
 
@@ -2524,6 +2550,7 @@ int main(void)
     test_ring_truncate();
     test_http_header_end();
     test_mac();
+    test_maxrate();
     test_helo();
     test_strm_t();
     test_setd();

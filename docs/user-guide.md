@@ -118,6 +118,7 @@ amisqueeze needs three things from LMS:
   ```
 
   FLAC, WAV and AIFF need no rule: LMS converts them by default.
+- **Rules for `MAXRATE`**, only with that option: see [`MAXRATE`](#maxrate).
 
 #### Music Assistant
 
@@ -142,7 +143,8 @@ Music Assistant drives amisqueeze through its Squeezelite provider. It needs:
   | `mp3` | only with `amisqueeze.fpu`; not recommended (see [known limits](#known-limits)) |
   | `aac` | not played |
 
-Music Assistant gives a new player a volume of 20, almost silent: turn it up before judging the sound.
+Music Assistant gives a new player a volume of 20, almost silent: turn it up before judging the sound. Leave
+[`MAXRATE`](#maxrate) out with Music Assistant.
 
 ### Starting amisqueeze
 
@@ -253,7 +255,7 @@ LMS's volume scale is logarithmic: 50 is already quiet (about -25 dB, 6 % of ful
 The command line's template:
 
 ```
-SERVER,PORT/N/K,NAME/K,MAC/K,OUTPUT/K,LOG/K,UNIT/N/K,NOAUDIO/S,SWAP/S,FLAC/K,MP3/K,BENCH/S,VERBOSE/S
+SERVER,PORT/N/K,NAME/K,MAC/K,OUTPUT/K,LOG/K,UNIT/N/K,NOAUDIO/S,SWAP/S,FLAC/K,MP3/K,MAXRATE/K,BENCH/S,VERBOSE/S
 ```
 
 | Option | Meaning | Default |
@@ -266,6 +268,7 @@ SERVER,PORT/N/K,NAME/K,MAC/K,OUTPUT/K,LOG/K,UNIT/N/K,NOAUDIO/S,SWAP/S,FLAC/K,MP3
 | `SWAP` | swaps left and right, for an AHI driver that swaps them | off |
 | `FLAC` | `AUTO`, `ON` or `OFF`: where FLAC is decoded (see [`FLAC`, `MP3` and `BENCH`](#flac-mp3-and-bench)) | `AUTO` |
 | `MP3` | the same for MP3, with `amisqueeze.fpu` only | `AUTO` |
+| `MAXRATE` | `AHI` or a rate in Hz, 8000 to 48000: the highest sample rate asked of the server, to lighten a slow Amiga; LMS then needs a rule (see [`MAXRATE`](#maxrate)) | none: the files' own rates, up to 48 kHz |
 | `BENCH` | measures how fast this Amiga decodes FLAC and MP3, prints it and quits; no server needed | off |
 | `LOG` | a file that keeps a copy of every message (see [`LOG`](#log)) | none |
 | `VERBOSE` | prints the messages exchanged with the server and the stream's events | off |
@@ -341,6 +344,51 @@ FLAC level 8 (the slowest) decoded at 77.0x real time: FLAC=AUTO lets this machi
 MP3 at 320 kbit/s (the slowest) decoded at 74.2x real time: MP3=AUTO lets this machine decode MP3
 ```
 
+#### `MAXRATE`
+
+`MAXRATE` asks the server for music at a lower sample rate, to lighten a slow Amiga: less to receive from the
+network, less for AHI to mix. Without it, the server sends each file at its own rate, up to 48 kHz.
+
+- **`MAXRATE=AHI`** takes the rate of the AHI unit, rounded up to a standard rate: Paula at 27429 Hz gives
+  32000 Hz. Paula plays nothing above about 13.7 kHz, so nothing that can be heard is lost.
+- **`MAXRATE=<Hz>`** gives the rate, from 8000 to 48000. `MAXRATE=22050` halves the network traffic of CD-quality
+  music, with duller treble.
+
+At start-up, amisqueeze says what it asks for:
+
+```
+MAXRATE: at most 32000 Hz asked of the server (AHI unit 0 at 27429 Hz)
+```
+
+**With LMS, `MAXRATE` needs rules on the server.** LMS cannot lower the rate of raw PCM by itself: without the
+rules, it refuses every file above the rate asked. Add these lines to `custom-convert.conf` (see
+[Lyrion Music Server](#lyrion-music-server)), then restart LMS:
+
+```
+flc pcm * 02:41:4d:d4:ca:84
+	# FT:{START=--skip=%t}U:{END=--until=%v}D:{RESAMPLE=-r %d}
+	[flac] -dcs $START$ $END$ --force-raw-format --endian=little --sign=signed -- $FILE$ | [sox] -q -t raw --endian little --encoding signed-integer -b $SAMPLESIZE$ -r $SAMPLERATE$ -c $CHANNELS$ - -t wav $RESAMPLE$ -b 16 -
+
+mp3 pcm * 02:41:4d:d4:ca:84
+	# FT:{START=trim %s}D:{RESAMPLE=-r %d}
+	[sox] -q -t mp3 $FILE$ -t wav $RESAMPLE$ -b 16 -c 2 - $START$
+```
+
+- **Put the player's MAC address**, in lowercase, in place of `02:41:4d:d4:ca:84`, that of the default name
+  `Amiga`. amisqueeze prints it at start-up: `player "Amiga" (02:41:4D:D4:CA:84), ...`.
+- **The rules are for that player only.** They send WAV, whose header tells amisqueeze the rate and sample size;
+  another player would play the header as music.
+- **They send 16-bit samples**, even without `MAXRATE`: a 24-bit file needs a third less traffic.
+- **Other formats** (WAV, AIFF, Ogg...) need a rule of the same kind. Without one, LMS refuses those files above
+  the rate asked.
+
+With `amisqueeze.fpu` decoding FLAC on the Amiga, LMS lowers the rate of FLAC files itself, without a rule. It
+lowers the rate of MP3 decoded on the Amiga by encoding it again, which loses a little quality: `MP3=OFF` and the
+rules above avoid it.
+
+**With Music Assistant, leave `MAXRATE` out.** Music Assistant 2.10 offers no rate below 44.1 kHz to a player that
+asks for less, and the music does not play (read in its code, not tried).
+
 #### `OUTPUT`
 
 `OUTPUT=<file>` writes the audio to a file as it is played. It is meant for checking playback, not for listening:
@@ -401,6 +449,7 @@ with `amisqueeze: `, left out below. `N` stands for a number, `...` for a name o
 | `player "..." (xx:xx:xx:xx:xx:xx), server ... port ...` | at every start: the player's name and MAC address as the server sees them, and the server it connects to |
 | `FLAC: level 8 decoded at ...x real time: FLAC decoded here` (or `converted to PCM by the server`) | the start-up measure of `FLAC=AUTO` |
 | `MP3: 320 kbit/s decoded at ...x real time: ...` | the same for MP3 (`MP3=AUTO`, `amisqueeze.fpu`) |
+| `MAXRATE: at most N Hz asked of the server` | the rate [`MAXRATE`](#maxrate) asks for; with `MAXRATE=AHI`, followed by the unit and its rate |
 | `connected to the server` | the connection is up; the player should show up on the server |
 | `player name: ...` | the player was renamed on the server: amisqueeze takes the new name |
 | `stopped` | amisqueeze has stopped cleanly (Ctrl-C, `Break`, Remove in Exchange) |
@@ -414,6 +463,7 @@ amisqueeze plays anyway.
 | `AHI unit N uses "...", a stereo mode without "++": the music will play on one side only; ...` | choose a "stereo++" mode (see [setting up the unit](#setting-up-the-unit)) |
 | `AHI unit N uses "...", a mono mode: the music will play in mono` | choose a "stereo++" mode for stereo |
 | `MP3=ON: this build does not decode MP3 ...` | `MP3=ON` given to `amisqueeze`: MP3 stays with the server |
+| `MAXRATE=AHI: the AHI unit's rate is not known (...): at most 48000 Hz asked of the server` | with `NOAUDIO` or `OUTPUT`, or when the AHI preferences cannot be read: give the rate in Hz instead |
 
 #### amisqueeze does not start
 
@@ -428,6 +478,7 @@ amisqueeze stops at once.
 | `the icon's ToolTypes are too long` | the ToolTypes together exceed what amisqueeze reads, about 500 characters |
 | `invalid MAC (expected xx:xx:xx:xx:xx:xx)` | `MAC` is not six hexadecimal pairs |
 | `FLAC=...: expected AUTO, ON or OFF` (or `MP3=...`) | a wrong value for that option |
+| `MAXRATE=...: expected AHI, or a rate from 8000 to 48000 Hz` | a wrong value for `MAXRATE` |
 | `amisqueeze.fpu needs an FPU (...): use amisqueeze instead` | `amisqueeze.fpu` started on an Amiga without an FPU |
 | `amisqueeze is already running (Exchange lists it and can stop it)` | started from a Shell while another amisqueeze runs; from the Workbench, the new one quits without a word |
 | `bsdsocket.library not found (is a TCP/IP stack running?)` | no TCP/IP stack started |
@@ -528,7 +579,8 @@ rows say what comes next.
   - `stream format X not supported`, or nothing at all, with "Couldn't create command line" in LMS's `server.log`:
     LMS has no rule to convert that file. Typically MP3 with `amisqueeze`: add the
     [MP3 rule](#lyrion-music-server), or use `amisqueeze.fpu` on an Amiga with an FPU. Or a file above 48 kHz
-    when FLAC is not decoded on the Amiga (see [known limits](#known-limits)).
+    when FLAC is not decoded on the Amiga (see [known limits](#known-limits)). With `MAXRATE`: the rules of
+    [`MAXRATE`](#maxrate) are missing, or carry another player's MAC address.
 - **The music plays on one side only.** The AHI unit uses a plain "stereo" mode: choose a "stereo++" one (see
   [setting up the unit](#setting-up-the-unit)).
 - **Left and right are swapped.** Add `SWAP`. Seen in WinUAE with `paula.audio` 4.30, in 8 and 14 bits, while
@@ -538,7 +590,8 @@ rows say what comes next.
     `MP3=OFF` so that the server converts them;
   - with Paula, fix the volume at 100 (see [volume](#volume)), and an 8-bit mode costs less CPU;
   - close other busy programs;
-  - raw PCM needs about 1.4 Mbit/s for CD quality: a slow network can starve it.
+  - raw PCM needs about 1.4 Mbit/s for CD quality: a slow network can starve it. With LMS,
+    [`MAXRATE`](#maxrate) asks for less.
 - **Crackles at low volume with Paula.** Fix the volume at 100 and turn the amplifier down instead (see
   [volume](#volume)).
 - **Nothing happens from the Workbench.** With `QUIET`, add `LOG=<file>` to see the messages. If amisqueeze already

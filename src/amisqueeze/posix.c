@@ -3,7 +3,8 @@
  * services of platform.h. Same behaviour as the Amiga build; the arguments use the same KEY=value syntax:
  *
  *   amisqueeze [SERVER=]<ip|name> [PORT=3483] [NAME=<name>] [MAC=xx:xx:xx:xx:xx:xx] [OUTPUT=<file>] [LOG=<file>]
- *              [UNIT=<n>] [NOAUDIO] [SWAP] [FLAC=AUTO|ON|OFF] [MP3=AUTO|ON|OFF] [BENCH] [VERBOSE]
+ *              [UNIT=<n>] [NOAUDIO] [SWAP] [FLAC=AUTO|ON|OFF] [MP3=AUTO|ON|OFF] [MAXRATE=AHI|<Hz>] [BENCH]
+ *              [VERBOSE]
  *
  * No audio output: always the virtual output (UNIT, NOAUDIO and SWAP are accepted for the same command lines).
  *
@@ -352,6 +353,12 @@ static int parse_args(int argc, char **argv, struct options *o)
             } else if (k == 3 && !strncasecmp(a, "MP3", 3)) {
                 if ((o->mp3 = parse_decode_mode(v)) < 0) {
                     msg("amisqueeze: MP3=%s: expected AUTO, ON or OFF\n", v);
+                    return 0;
+                }
+            } else if (k == 7 && !strncasecmp(a, "MAXRATE", 7)) {
+                if ((o->maxrate = parse_maxrate(v)) == 0) {
+                    msg("amisqueeze: MAXRATE=%s: expected AHI, or a rate from %lu to %lu Hz\n", v,
+                        (unsigned long)MAXRATE_MIN, (unsigned long)MAXRATE_DEFAULT);
                     return 0;
                 }
             } else {

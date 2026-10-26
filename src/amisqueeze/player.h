@@ -40,7 +40,15 @@ struct options {
     int         flac;                   /* enum decode_mode: whether FLAC is advertised to the server */
     int         mp3;                    /* enum decode_mode: the same for MP3 (builds with AMISQUEEZE_MP3) */
     int         bench;                  /* BENCH: measure the decoding speed, print it and quit */
+    uint32_t    maxrate;                /* MAXRATE: 0 = not given, MAXRATE_AHI, or a rate in Hz */
 };
+
+/* MAXRATE option: the highest sample rate declared to the server (MaxSampleRate in HELO). Without it, 48000: the
+ * server keeps the source's rate. Below the source's rate, LMS needs a conversion rule that can resample, or it
+ * refuses the track (plan step player-13). */
+#define MAXRATE_DEFAULT 48000
+#define MAXRATE_MIN     8000
+#define MAXRATE_AHI     1                   /* MAXRATE=AHI: the AHI unit's rate, rounded up to a standard rate */
 
 /* FLAC and MP3 options: AUTO = the format is advertised if this machine decodes it at least twice real time
  * (measured at start-up), ON = always, OFF = never (the server converts it to PCM) */
@@ -165,6 +173,7 @@ struct player {
     int      verbose;
     int      flac;                      /* FLAC advertised in HELO */
     int      mp3;                       /* MP3 advertised in HELO */
+    uint32_t maxrate;                   /* MaxSampleRate in HELO, Hz; 0 = MAXRATE_DEFAULT */
 
     /* receiving: 2-byte length, then the packet (4-byte opcode + data) */
     uint16_t rx_expect;
@@ -186,6 +195,11 @@ int player_bench(void);
 /* Value of the FLAC or MP3 option (AUTO, ON, OFF, any case); -1 if it is none of them */
 int parse_decode_mode(const char *s);
 int parse_mac(const char *s, uint8_t mac[6]);
+/* Value of the MAXRATE option: MAXRATE_AHI for AHI (any case), or a rate in Hz from MAXRATE_MIN to MAXRATE_DEFAULT;
+ * 0 if it is neither */
+uint32_t parse_maxrate(const char *s);
+/* The standard rate (8000 to 48000 Hz) at or above an AHI unit's rate: 27429 gives 32000, 22050 stays 22050 */
+uint32_t maxrate_round(uint32_t freq);
 /* Workbench start: turns an icon's ToolTypes (n strings) into a command line for the template (an AmigaDOS
  * ReadArgs template, "SERVER,PORT/N/K,..."): the ToolTypes whose keyword is in the template, in order; a disabled
  * one "(KEY=...)" and any other keyword (DONOTWAIT, WINDOW, QUIET...) left out; a value with a space quoted (not a

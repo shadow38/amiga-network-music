@@ -172,9 +172,15 @@ Framing: server to client, a 2-byte length then a 4-byte opcode and the data; cl
 - `HELO`: device id 12 (SqueezePlay), the MAC (derived from the name unless `MAC`), uuid and byte counts at 0,
   `0x4000` in the channel list on a reconnection; capabilities `Model=squeezelite` (so that LMS recognises the
   player), `ModelName=AmiSqueeze`, `Firmware=<version>`, `AccuratePlayPoints=0`, `HasDigitalOut=1` (LMS then offers
-  its fixed volume setting), `MaxSampleRate=48000`, then the formats decoded here: `pcm` always, `flc` and `mp3`
-  as decided at start-up (`FLAC`, `MP3` options; `AUTO` measures the speed). LMS then sends FLAC and MP3 files as
-  they are (formats `f`, `m`), WAV and AIFF as raw PCM (headers stripped), and converts the rest.
+  its fixed volume setting), `MaxSampleRate` (48000, or what `MAXRATE` asks), then the formats decoded here: `pcm`
+  always, `flc` and `mp3` as decided at start-up (`FLAC`, `MP3` options; `AUTO` measures the speed). LMS then sends
+  FLAC and MP3 files as they are (formats `f`, `m`), WAV and AIFF as raw PCM (headers stripped), and converts the
+  rest.
+- A `MaxSampleRate` below a file's rate makes LMS 9.1 look for a conversion rule with the `D` (resample)
+  capability. None of its rules to `pcm` has one, so it refuses the track of a player that takes PCM only. Its
+  rules to `flc` have one. For PCM, `strm s` gives the source file's rate and sample size whatever the rule sends
+  (`pcm_sample_rates`, `pcm_sample_sizes`): the rules of the user guide send WAV, whose header `decoder.c` plays
+  (plan step player-13).
 - `STAT` (the statuses above), `RESP`, `DSCO`, `SETD` (the player name).
 
 **Received and handled**:

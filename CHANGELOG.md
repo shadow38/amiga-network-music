@@ -7,6 +7,12 @@ are previews, tested in WinUAE only, not yet on a real Amiga.
 
 ## [Unreleased]
 
+### Added
+
+- `MAXRATE=AHI` or `MAXRATE=<Hz>`: asks the server for a lower sample rate, to lighten a slow Amiga. `AHI` takes
+  the AHI unit's rate, rounded up to a standard rate (32 kHz for Paula). With LMS it needs conversion rules on the
+  server, given in the user guide; not with Music Assistant.
+
 ### Changed
 
 - The user guide rewritten: using amisqueeze first (installing, sound, server, starting, stopping, volume), then

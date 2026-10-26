@@ -2,8 +2,8 @@
  * amiga.c - amisqueeze on AmigaOS 3.x: entry point and the system services of platform.h
  *
  * Usage: amisqueeze [SERVER=<ip|name>] [PORT=3483] [NAME=<name>] [MAC=xx:xx:xx:xx:xx:xx] [OUTPUT=<file>]
- *                   [LOG=<file>] [UNIT=<n>] [NOAUDIO] [SWAP] [FLAC=AUTO|ON|OFF] [MP3=AUTO|ON|OFF] [BENCH]
- *                   [VERBOSE]
+ *                   [LOG=<file>] [UNIT=<n>] [NOAUDIO] [SWAP] [FLAC=AUTO|ON|OFF] [MP3=AUTO|ON|OFF]
+ *                   [MAXRATE=AHI|<Hz>] [BENCH] [VERBOSE]
  * Ctrl-C to quit. Default options come from ENV:amisqueeze.prefs (same syntax as the command line, which
  * takes precedence); see docs/user-guide.md.
  *
@@ -67,10 +67,10 @@ unsigned long __stack = 16384;
 #endif
 
 /* Used for the command line and for the prefs variable */
-#define TEMPLATE "SERVER,PORT/N/K,NAME/K,MAC/K,OUTPUT/K,LOG/K,UNIT/N/K,NOAUDIO/S,SWAP/S,FLAC/K,MP3/K,BENCH/S," \
-                 "VERBOSE/S"
+#define TEMPLATE "SERVER,PORT/N/K,NAME/K,MAC/K,OUTPUT/K,LOG/K,UNIT/N/K,NOAUDIO/S,SWAP/S,FLAC/K,MP3/K,MAXRATE/K," \
+                 "BENCH/S,VERBOSE/S"
 enum { ARG_SERVER, ARG_PORT, ARG_NAME, ARG_MAC, ARG_OUTPUT, ARG_LOG, ARG_UNIT, ARG_NOAUDIO, ARG_SWAP, ARG_FLAC,
-       ARG_MP3, ARG_BENCH, ARG_VERBOSE, ARG_COUNT };
+       ARG_MP3, ARG_MAXRATE, ARG_BENCH, ARG_VERBOSE, ARG_COUNT };
 
 /* Global variable ENV:amisqueeze.prefs (saved in ENVARC: to survive a reboot) */
 #define PREFS_VAR "amisqueeze.prefs"
@@ -739,6 +739,11 @@ int main(void)
     }
     if (args[ARG_MP3] && (o.mp3 = parse_decode_mode((const char *)args[ARG_MP3])) < 0) {
         msg("amisqueeze: MP3=%s: expected AUTO, ON or OFF\n", (const char *)args[ARG_MP3]);
+        goto out_args;
+    }
+    if (args[ARG_MAXRATE] && (o.maxrate = parse_maxrate((const char *)args[ARG_MAXRATE])) == 0) {
+        msg("amisqueeze: MAXRATE=%s: expected AHI, or a rate from %lu to %lu Hz\n", (const char *)args[ARG_MAXRATE],
+            (unsigned long)MAXRATE_MIN, (unsigned long)MAXRATE_DEFAULT);
         goto out_args;
     }
     if (args[ARG_SERVER] == 0 && !o.bench) {

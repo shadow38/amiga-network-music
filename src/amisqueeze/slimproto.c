@@ -20,9 +20,10 @@
 
 /* Advertised in HELO, followed by the formats played: only those really decoded (pcm always, flc and mp3 when
  * decoded here); the server converts the rest. HasDigitalOut=1: LMS then offers its "Volume Control" setting for
- * this player, whose "Output level is fixed at 100%" sends audg with adjust 0 (plan step player-10, volume modes). */
+ * this player, whose "Output level is fixed at 100%" sends audg with adjust 0 (plan step player-10, volume modes).
+ * MaxSampleRate follows: the MAXRATE option, 48000 without it. */
 #define CAPS "Model=squeezelite,ModelName=AmiSqueeze,Firmware=0.8-dev,AccuratePlayPoints=0,HasDigitalOut=1," \
-             "MaxSampleRate=48000,"
+             "MaxSampleRate="
 
 /* ---- serialisation ---- */
 
@@ -64,12 +65,30 @@ static uint8_t *put_header(uint8_t *b, const char *opcode, uint32_t len)
 
 /* ---- outgoing packets ---- */
 
+/* "48000,": v in decimal and a comma, in s (12 bytes); returns its length */
+static uint32_t rate_field(uint32_t v, char *s)
+{
+    char digits[10];
+    uint32_t n = 0, i;
+
+    do {
+        digits[n++] = (char)('0' + v % 10);
+        v /= 10;
+    } while (v);
+    for (i = 0; i < n; i++)
+        s[i] = digits[n - 1 - i];
+    s[n] = ',';
+    return n + 1;
+}
+
 static int send_helo(struct player *p, int reconnect)
 {
     static const char *const format_lists[4] = { "pcm", "flc,pcm", "pcm,mp3", "flc,pcm,mp3" };
     const char *formats = format_lists[(p->flac ? 1 : 0) | (p->mp3 ? 2 : 0)];
-    uint8_t pkt[8 + 36 + sizeof(CAPS) + 12];
-    uint8_t *b = put_header(pkt, "HELO", 36 + strlen(CAPS) + strlen(formats));
+    char rate[12];
+    uint32_t rate_len = rate_field(p->maxrate ? p->maxrate : MAXRATE_DEFAULT, rate);
+    uint8_t pkt[8 + 36 + sizeof(CAPS) + sizeof(rate) + 12];
+    uint8_t *b = put_header(pkt, "HELO", 36 + strlen(CAPS) + rate_len + strlen(formats));
 
     b = put8(b, DEVICE_ID_SQUEEZEPLAY);
     b = put8(b, 0);                         /* revision */
@@ -80,6 +99,7 @@ static int send_helo(struct player *p, int reconnect)
     b = put32(b, 0);                        /* bytes received (low word) */
     b = putn(b, "  ", 2);                   /* language */
     b = putn(b, CAPS, strlen(CAPS));
+    b = putn(b, rate, rate_len);
     b = putn(b, formats, strlen(formats));
     return send_all(p, pkt, (int)(b - pkt));
 }
