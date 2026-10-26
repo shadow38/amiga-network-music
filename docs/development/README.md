@@ -154,11 +154,14 @@ Neither planned nor dropped for good. Each is taken up only by the user's decisi
   unit's rate, read from its preferences, rounded up to a standard rate (27429 Hz gives 32000, 22050 stays
   22050). A `MAXRATE` option would force the value. Load measured in WinUAE (slow profile, real network stack,
   16-bit WAV from a locally patched Music Assistant, Paula 14-bit at 27429 Hz): 99 % at 44.1 kHz, 86.5 % at
-  32 kHz, 74 % at 22.05 kHz. Before any code:
+  32 kHz, 74 % at 22.05 kHz. The sample size too: the server keeps the source's, so a 24-bit FLAC arrives as
+  24-bit PCM, 50 % more traffic than 16 bits, and amisqueeze drops the extra 8 bits for AHI (load not measured).
+  Before any code:
   - check that LMS resamples for a lower `MaxSampleRate`;
+  - check whether the server can be asked for 16-bit PCM (not looked at);
   - Music Assistant 2.10.7 offers a Squeezelite player 44.1 kHz and up only: below, its list of rates is empty
     (read in its code, not tried). It needs a change upstream, which is the user's decision;
-  - until both are settled, the default stays 48000.
+  - until the two checks on the rate are settled, the default stays 48000.
 - From the outside review of 2026-10-20, no known failure:
   - the track queue (4 entries) forgets the oldest one when full; a refusal (`STMn`) would be safer;
   - `gethostbyname()`: no check of an empty address list, or of a length other than 4;
