@@ -143,10 +143,14 @@ Music Assistant drives amisqueeze through its Squeezelite provider. It needs:
   | `mp3` | only with `amisqueeze.fpu`; not recommended (see [known limits](#known-limits)) |
   | `aac` | not played |
 
-  With `wav` on a slow Amiga, set the player's "Volume normalization (EBU-R128 based)" to "Disabled" (its
-  settings, Audio), and leave crossfade off. Otherwise Music Assistant works on the sound in 32 bits and sends
-  24-bit samples: half as much again as 16 bits, which amisqueeze plays anyway. A 24-bit file still comes as
-  24 bits.
+  With `wav` on a slow Amiga, turn off what makes Music Assistant work on the sound in 32 bits. Otherwise it sends
+  24-bit samples: half as much again as 16 bits, which amisqueeze plays anyway.
+
+  - Settings > System > Player Queues > Audio: "Volume normalization (EBU-R128 based)" to "Disabled";
+  - Settings > System > Player Queues > Crossfade: "Enable crossfade by default" unchecked;
+  - the player's DSP left off (Settings > Player > DSP), as it is by default.
+
+  These queue settings apply to every player. A 24-bit file still comes as 24 bits.
 
 Music Assistant gives a new player a volume of 20, almost silent: turn it up before judging the sound. Leave
 [`MAXRATE`](#maxrate) out with Music Assistant.

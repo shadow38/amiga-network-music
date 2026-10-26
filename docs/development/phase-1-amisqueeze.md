@@ -911,8 +911,8 @@ belongs to the task that opened it; packets serialised field by field; buffers a
 - **Music Assistant sent 24 bits** for a 16-bit file: its volume normalization, on by default, works in 32-bit
   floats (so do crossfade and DSP), and the output takes the deepest the player accepts, 24 bits
   (`get_output_format`). Half of `MAXRATE`'s gain is lost, since amisqueeze keeps 16 bits for AHI. With
-  normalization disabled for that player's queue, a 16-bit file comes as 16 bits (squeezelite at 32 kHz,
-  2026-10-26; the load not measured on the A1200); the user guide says so. A 24-bit file stays 24 bits, and
+  normalization disabled, a 16-bit file comes as 16 bits: on the A1200 with `MAXRATE=AHI`, WAV 16 bits at
+  32 kHz, 62 % as with LMS (2026-10-26); the user guide says so. A 24-bit file stays 24 bits, and
   slimproto has no way to ask for 16. A lead, the user's decision (noted on 2026-10-26): Music Assistant honouring
   the player's own "sample rates" setting for Squeezelite players, as it does for Sonos and Raumfeld.
 
