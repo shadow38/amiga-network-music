@@ -895,16 +895,23 @@ belongs to the task that opened it; packets serialised field by field; buffers a
 ## player-13 A lower rate asked of the server ✅ (2026-10-26, version 0.8)
 
 - **On the A1200** (2026-10-26, 0.8-dev, AmiNetXDuo with the fixed `xircomce2.device`, Paula 14 bit stereo++
-  at 27,429 Hz, `SWAP`, LMS volume 100, the guide's rules for its MAC, `song-44k.flac`; method of player-9):
+  at 27,429 Hz, `SWAP`, volume 100, `song-44k.flac`; method of player-9). LMS with the guide's rules for its MAC;
+  Music Assistant 2.10.7 with the local fix below, output codec `wav`:
 
-  | Option | Stream | Load |
-  |---|---|---|
-  | none | WAV, 16 bits, 44.1 kHz | 77 % |
-  | `MAXRATE=AHI` | WAV, 16 bits, 32 kHz | 62 % |
-  | `MAXRATE=22050` | WAV, 16 bits, 22.05 kHz | 50 % |
+  | Server | Option | Stream | Load |
+  |---|---|---|---|
+  | LMS | none | WAV, 16 bits, 44.1 kHz, 176 KB/s | 77 % |
+  | LMS | `MAXRATE=AHI` | WAV, 16 bits, 32 kHz, 128 KB/s | 62 % |
+  | LMS | `MAXRATE=22050` | WAV, 16 bits, 22.05 kHz, 88 KB/s | 50 % |
+  | Music Assistant | `MAXRATE=AHI` | WAV, 24 bits, 32 kHz, 192 KB/s | 77 % |
+  | Music Assistant | `MAXRATE=22050` | WAV, 24 bits, 22.05 kHz, 132 KB/s | 60 % |
 
-  No `STMo`, no crackle heard. The user heard no difference between 22.05 kHz and above with that song; to
-  confirm with others.
+  No `STMo`, no crackle heard. The load follows the bytes received, whatever the server. The user heard no
+  difference between 22.05 kHz and above with that song; to confirm with others.
+- **Music Assistant sends 24 bits** whenever the player takes them, and its Squeezelite provider offers 16 and 24
+  bits to every player: half of `MAXRATE`'s gain is lost, since amisqueeze keeps 16 bits for AHI. Slimproto has no
+  way to ask for 16 bits. A lead, the user's decision (noted on 2026-10-26): Music Assistant honouring the
+  player's own "sample rates" setting for Squeezelite players, as it does for Sonos and Raumfeld.
 
 - **Why**: amisqueeze always declares `MaxSampleRate=48000` in `HELO`, so the server keeps the source's rate. On
   the real A1200, the network reception is the largest cost and makes Paula crackle in bursts (player-9). Load
