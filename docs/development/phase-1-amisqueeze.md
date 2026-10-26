@@ -884,3 +884,31 @@ belongs to the task that opened it; packets serialised field by field; buffers a
 - **Criterion** (to agree when the step starts): on the slow profile, the same music and the same LMS criteria as
   player-4 to player-6, sides in place without `SWAP`, at a CPU load clearly below AHI's (measured with `cpucount`, as in
   player-4c); then heard on the real 68020 machine (player-9).
+
+## player-12 Hardening ⬜ (0.8)
+
+- **Content**: the 50 list of the [0.7 review](reviews/0.7.md#5-the-50-list), except the items planned for 0.9.
+  What to do with each item is decided with the user when the step starts (agreed with the user on 2026-10-26).
+  The open points it touches (`PORT` and `UNIT` ranges, the track queue) are decided at the same time.
+- **Criterion** (to agree when the step starts): each safety net added or mended seen failing on a planted defect,
+  then `make test` green.
+
+## player-13 A lower rate asked of the server ⬜ (0.8)
+
+- **Why**: amisqueeze always declares `MaxSampleRate=48000` in `HELO`, so the server keeps the source's rate. On
+  the real A1200, the network reception is the largest cost and makes Paula crackle in bursts (player-9). Load
+  measured in WinUAE (slow profile, real network stack, 16-bit WAV from a locally patched Music Assistant, Paula
+  14-bit at 27429 Hz): 99 % at 44.1 kHz, 86.5 % at 32 kHz, 74 % at 22.05 kHz. The sample size too: the server
+  keeps the source's, so a 24-bit FLAC arrives as 24-bit PCM, 50 % more traffic than 16 bits, and amisqueeze
+  drops the extra 8 bits for AHI (load not measured).
+- **The idea**: declare the AHI unit's rate, read from its preferences, rounded up to a standard rate (27429 Hz
+  gives 32000, 22050 stays 22050). A `MAXRATE` option would force the value.
+- **First, without code** (agreed with the user on 2026-10-26):
+  - check that LMS resamples for a lower `MaxSampleRate`, and which rate its `strm` then announces: LMS announces
+    the source file's rate even when its conversion rule resamples (player-4c), which would play too fast;
+  - check whether the server can be asked for 16-bit PCM (not looked at);
+  - Music Assistant 2.10.7 offers a Squeezelite player 44.1 kHz and up only: below, its list of rates is empty
+    (read in its code, not tried). It needs a change upstream, which is the user's decision.
+
+  Code only if the checks on LMS are good. Until then, the default stays 48000.
+- **Criterion** (to agree after the checks).

@@ -50,7 +50,7 @@ agreed with the user.
 | Version | Brings | Steps | Status |
 |---|---|---|---|
 | 0.1 to 0.7 | the player for LMS and Music Assistant: PCM, FLAC, MP3, start from the Workbench, the `.lha`, releases built by the CI | player-1 to player-8d, player-7b, part of player-10, tools-10 (LMS), publish-2 (`.lha`), publish-3 | ✅ 2026-10-19 to 2026-10-23, see the [changelog](../../CHANGELOG.md) |
-| 0.8 | what the real machine shows; the writing rules applied to the documentation | player-9, tools-11, publish-6 | ⬜ |
+| 0.8 | what the real machine shows; a lower rate asked of the server; hardening; the writing rules applied to the documentation | player-9, player-12, player-13, tools-11, publish-6 | ⬜ |
 | 0.9 | internet radios' metadata (ICY), automatic server discovery | player-10 (end) | ⬜ |
 | 1.0 | setup guides, a full audit, the upload to Aminet | publish-4, publish-5, tools-10 (Music Assistant), publish-2 (Aminet) | ⬜ |
 | none yet | ideas: direct Paula output, source-level debugging | player-11, tools-8 | ⬜ |
@@ -61,16 +61,25 @@ comes after these releases, or alongside if the user wants it.
 
 ### 0.8
 
-- **The real machine** (player-9): 0.7 tried with LMS and Music Assistant, following the step's protocol. Only if
-  it shows gaps: more AHI blocks, or a higher task priority.
-- **Paula's LED filter**: the user guide says that `paula.audio` turns it off while playing, once the real machine
-  confirms it (seen in WinUAE on 2026-10-23; agreed with the user on 2026-10-23).
-- **The messages Music Assistant sends and amisqueeze ignores** (`vers`, `grfb`, `grfe`, `codc`, `cont`): they
-  read as errors, and the user guide calls `... not handled` worth reporting (seen on 2026-10-23).
-- **The 50 list of the [0.7 review](reviews/0.7.md#5-the-50-list)**, except the items of 0.9 below: what to do
-  with each item is agreed with the user when 0.8 is planned.
-- **The writing rules** (publish-6): the plan, then the user guide, rewritten to
-  [Writing documentation](../../CONTRIBUTING.md#writing-documentation) (agreed with the user on 2026-10-24).
+Agreed with the user on 2026-10-26.
+
+- **The real machine** (player-9): the step's whole protocol on the A1200, with LMS, then with Music Assistant.
+  Only if it shows gaps: more AHI blocks, or a higher task priority. The same session also checks:
+  - Paula's LED filter (protocol step 3): the user guide says that `paula.audio` turns it off while playing, once
+    the real machine confirms it (seen in WinUAE on 2026-10-23; agreed with the user on 2026-10-23);
+  - Ctrl-C with a real TCP/IP stack (protocol step 6; see [Open points](#open-points));
+  - the `aac` row of the user guide, with Music Assistant;
+  - the free memory the user guide asks for, from `Avail` (protocol step 1).
+- **A lower rate asked of the server** (player-13): its checks first, without code.
+- **Paula's swapped sides**: a note in the user guide for `paula.audio`. No `SWAP` by default before AHI 6's
+  `paula.audio` has been tried on the real machine.
+- **The messages Music Assistant sends and amisqueeze ignores** (`vers`, `grfb`, `grfe`, `codc`, `cont`): shown
+  with `VERBOSE` only, since they read as errors. An unknown message is still shown. `cont` itself is handled in
+  0.9 (ICY).
+- **Hardening** (player-12): the 50 list of the [0.7 review](reviews/0.7.md#5-the-50-list), except the items of
+  0.9 below.
+- **The writing rules** (publish-6): the plan and the user guide done on 2026-10-24; `docs/development/` next,
+  where the user finds it worth it.
 
 ### 0.9
 
@@ -124,6 +133,8 @@ comes after these releases, or alongside if the user wants it.
 | player-9 Real machine | ⬜ with 0.7, for 0.8 |
 | player-10 Finishing touches | 🔶 the parts of 0.4 and 0.5 done; ICY and server discovery in 0.9 |
 | player-11 Direct Paula output, without AHI | ⬜ idea (CPU load on a slow 68020; crackles with a PCMCIA network card, player-9) |
+| player-12 Hardening (the 0.7 review's 50 list) | ⬜ for 0.8 |
+| player-13 A lower rate asked of the server | ⬜ for 0.8 |
 | remote-0 Study (common interface, Music Assistant feasibility, name) | ⬜ before any amilms code |
 | remote-1 to remote-7 LMS | ⬜ |
 | remote-8 to remote-11 Music Assistant | ⬜ |
@@ -149,20 +160,6 @@ Neither planned nor dropped for good. Each is taken up only by the user's decisi
   68060 user reports a problem.
 - **Ctrl-C with a real TCP/IP stack**: `WaitSelect()` may take the signal for itself, depending on the stack's
   break mask. To check on the real machine (player-9): `SBTC_BREAKMASK`, or EINTR taken as a stop.
-- **A lower rate asked of the server** (noted on 2026-10-24; the fallback named in player-9): amisqueeze always
-  declares `MaxSampleRate=48000` in `HELO`, so the server keeps the source's rate. The idea: declare the AHI
-  unit's rate, read from its preferences, rounded up to a standard rate (27429 Hz gives 32000, 22050 stays
-  22050). A `MAXRATE` option would force the value. Load measured in WinUAE (slow profile, real network stack,
-  16-bit WAV from a locally patched Music Assistant, Paula 14-bit at 27429 Hz): 99 % at 44.1 kHz, 86.5 % at
-  32 kHz, 74 % at 22.05 kHz. The sample size too: the server keeps the source's, so a 24-bit FLAC arrives as
-  24-bit PCM, 50 % more traffic than 16 bits, and amisqueeze drops the extra 8 bits for AHI (load not measured).
-  Before any code:
-  - check that LMS resamples for a lower `MaxSampleRate`, and which rate its `strm` then announces: LMS announces
-    the source file's rate even when its conversion rule resamples (player-4c), which would play too fast;
-  - check whether the server can be asked for 16-bit PCM (not looked at);
-  - Music Assistant 2.10.7 offers a Squeezelite player 44.1 kHz and up only: below, its list of rates is empty
-    (read in its code, not tried). It needs a change upstream, which is the user's decision;
-  - until the two checks on the rate are settled, the default stays 48000.
 - From the outside review of 2026-10-20, no known failure:
   - the track queue (4 entries) forgets the oldest one when full; a refusal (`STMn`) would be safer;
   - `gethostbyname()`: no check of an empty address list, or of a length other than 4;
