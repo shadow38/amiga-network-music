@@ -751,7 +751,7 @@ int main(void)
         goto out_args;
     }
     o.server = (const char *)args[ARG_SERVER];
-    o.port = args[ARG_PORT] ? (uint16_t)*(LONG *)args[ARG_PORT] : 0;
+    o.port = args[ARG_PORT] ? *(LONG *)args[ARG_PORT] : SLIMPROTO_PORT;
     o.name = (const char *)args[ARG_NAME];
     o.mac = (const char *)args[ARG_MAC];
     o.output = (const char *)args[ARG_OUTPUT];

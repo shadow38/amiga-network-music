@@ -2702,6 +2702,7 @@ static void test_start_mode(void)
 
     memset(&o, 0, sizeof(o));
     o.server = "127.0.0.1";
+    o.port = SLIMPROTO_PORT;
     o.audio = 1;
     o.unit = 3;
     o.verbose = 1;

@@ -26,6 +26,12 @@ are previews, tested in WinUAE only, not yet on a real Amiga.
 - User guide: with Paula, `SWAP` is now part of setting up the AHI unit, since `paula.audio` swaps left and right,
   on a real A1200 too.
 
+### Fixed
+
+- `PORT` and `UNIT` out of range are refused at start-up (`PORT=...: expected 1 to 65535`, `UNIT=...: expected 0
+  to 3`). `PORT=70000` used to connect to port 4464 without a word, and `UNIT=4` failed later with a misleading
+  message.
+
 ## [0.7] - 2026-10-23
 
 ### Added

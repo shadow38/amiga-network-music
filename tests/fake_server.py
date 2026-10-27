@@ -992,6 +992,15 @@ def scenario_arguments():
                               stderr=subprocess.STDOUT, text=True, timeout=TIMEOUT)
         check(proc.returncode == 20 and "MAXRATE=%s: expected AHI, AHISTD, or a rate from 8000 to 48000 Hz" % value
               in proc.stdout, "MAXRATE=%s: error, exit code 20" % value)
+    for option, said in [("PORT=70000", "PORT=70000: expected 1 to 65535"), ("PORT=0", "PORT=0: expected 1 to 65535"),
+                         ("UNIT=4", "UNIT=4: expected 0 to 3"), ("UNIT=-1", "UNIT=-1: expected 0 to 3")]:
+        try:                            # accepted, the player would try to connect, then retry
+            proc = subprocess.run([sys.argv[1], "SERVER=127.0.0.1", option], stdout=subprocess.PIPE,
+                                  stderr=subprocess.STDOUT, text=True, timeout=TIMEOUT)
+            refused = proc.returncode == 20 and said in proc.stdout
+        except subprocess.TimeoutExpired:
+            refused = False
+        check(refused, "%s: error, exit code 20" % option)
     proc = subprocess.run([sys.argv[1], "BENCH"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
                           timeout=TIMEOUT)
     check(proc.returncode == 0 and "FLAC level 8 (the slowest) decoded at" in proc.stdout and

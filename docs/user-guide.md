@@ -272,7 +272,7 @@ SERVER,PORT/N/K,NAME/K,MAC/K,OUTPUT/K,LOG/K,UNIT/N/K,NOAUDIO/S,SWAP/S,FLAC/K,MP3
 | Option | Meaning | Default |
 |---|---|---|
 | `SERVER` | the server: IP address or host name; the `SERVER=` keyword may be left out | none: required, on the command line or in the [default options](#default-options) |
-| `PORT` | the server's slimproto port | `3483` |
+| `PORT` | the server's slimproto port, 1 to 65535 | `3483` |
 | `NAME` | the player's name shown by the server (see [`NAME` and `MAC`](#name-and-mac)) | `Amiga` |
 | `MAC` | the player's identifier, `xx:xx:xx:xx:xx:xx` | derived from `NAME` |
 | `UNIT` | the AHI unit to play through, 0 to 3 (see [setting up the unit](#setting-up-the-unit)) | `0` |
@@ -517,6 +517,7 @@ amisqueeze stops at once.
 | `invalid MAC (expected xx:xx:xx:xx:xx:xx)` | `MAC` is not six hexadecimal pairs |
 | `FLAC=...: expected AUTO, ON or OFF` (or `MP3=...`) | a wrong value for that option |
 | `MAXRATE=...: expected AHI, AHISTD, or a rate from 8000 to 48000 Hz` | a wrong value for `MAXRATE` |
+| `PORT=...: expected 1 to 65535`, `UNIT=...: expected 0 to 3` | a number out of range for that option |
 | `amisqueeze.fpu needs an FPU (...): use amisqueeze instead` | `amisqueeze.fpu` started on an Amiga without an FPU |
 | `amisqueeze is already running (Exchange lists it and can stop it)` | started from a Shell while another amisqueeze runs; from the Workbench, the new one quits without a word |
 | `bsdsocket.library not found (is a TCP/IP stack running?)` | no TCP/IP stack started |

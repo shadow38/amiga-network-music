@@ -334,7 +334,7 @@ static int parse_args(int argc, char **argv, struct options *o)
             if (k == 6 && !strncasecmp(a, "SERVER", 6))
                 o->server = v;
             else if (k == 4 && !strncasecmp(a, "PORT", 4))
-                o->port = (uint16_t)atoi(v);
+                o->port = atol(v);
             else if (k == 4 && !strncasecmp(a, "NAME", 4))
                 o->name = v;
             else if (k == 3 && !strncasecmp(a, "MAC", 3))
@@ -389,6 +389,7 @@ int main(int argc, char **argv)
     struct sigaction sa;
 
     memset(&o, 0, sizeof(o));
+    o.port = SLIMPROTO_PORT;
     if (!parse_args(argc, argv, &o))
         return PLAYER_FAIL;
     if (log_name != NULL)

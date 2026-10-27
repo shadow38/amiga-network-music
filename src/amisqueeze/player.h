@@ -29,12 +29,12 @@
 /* Options, filled by the entry point of each platform (command line, default options) */
 struct options {
     const char *server;                 /* host name or dotted address (required) */
-    uint16_t    port;                   /* 0 = SLIMPROTO_PORT */
+    long        port;                   /* as given (SLIMPROTO_PORT if not), checked by player_main: 1 to 65535 */
     const char *name;                   /* NULL = "Amiga" */
     const char *mac;                    /* "xx:xx:xx:xx:xx:xx", NULL = derived from the name */
     const char *output;                 /* file receiving the audio played, NULL = none (implies no audio) */
     int         audio;                  /* 1 = play through the platform's audio output (AHI), 0 = virtual */
-    int         unit;                   /* audio unit (AHI unit) */
+    int         unit;                   /* audio unit (AHI unit), checked by player_main: 0 to 3 */
     int         swap;                   /* swap left and right */
     int         verbose;
     int         flac;                   /* enum decode_mode: whether FLAC is advertised to the server */

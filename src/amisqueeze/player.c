@@ -309,7 +309,15 @@ int player_main(struct player *p, const struct options *o)
     p->sock = -1;
     p->verbose = o->verbose;
     p->audio.volume = AUDIO_VOLUME_FULL;    /* until the server's audg (no effect without the audio output) */
-    p->server_port = o->port ? o->port : SLIMPROTO_PORT;
+    if (o->port < 1 || o->port > 65535) {
+        msg("amisqueeze: PORT=%ld: expected 1 to 65535\n", o->port);
+        return PLAYER_FAIL;
+    }
+    if (o->unit < 0 || o->unit > 3) {
+        msg("amisqueeze: UNIT=%d: expected 0 to 3\n", o->unit);
+        return PLAYER_FAIL;
+    }
+    p->server_port = (uint16_t)o->port;
     strncpy(p->name, o->name ? o->name : "Amiga", PLAYER_NAME_LEN);
     p->name[PLAYER_NAME_LEN] = '\0';
     if (o->mac) {
