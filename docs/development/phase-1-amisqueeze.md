@@ -825,6 +825,52 @@ belongs to the task that opened it; packets serialised field by field; buffers a
     server found through a UDP relay on the PC, if the broadcast gets there; on the A1200, step 8 of the
     player-9 protocol. A test server the broadcast does not reach directly (in a container, for instance) needs a
     UDP relay.
+- **Internet radios' metadata** (ICY; designed with the user on 2026-10-27, version 0.9). Coded in a branch,
+  rebased on `main` once 0.8 is out. Read in LMS 9.1.1 and aioslimproto 3.2.3 (Music Assistant 2.10.7):
+  - LMS sends `cont` for a direct stream only, once it has read the `RESP`. It holds the blocks' interval
+    (32 bits), a `loop` byte, a count of GUIDs (16 bits), then the GUIDs. On a 3xx, LMS sends a new `strm s`
+    itself. Outside 200 to 399, the stream fails (`Squeezebox2.pm`, `directHeaders`).
+  - Music Assistant sends autostart 2 or 3 for every track. After each `RESP` it sends `codc`, then `cont` with an
+    interval of 0, even after a status over 300 (`client.py`, `_process_resp`).
+  - LMS learns a direct stream's titles only from the player: `META` messages, from which it reads `StreamTitle`
+    (`Slimproto.pm`, `Protocols/HTTP.pm`, `parseMetadata`).
+
+  The design:
+  - **Autostart 2 and 3 wait for `cont`.** After the response headers, `RESP` is sent and the stream is no longer
+    read. Body bytes that came with the headers wait in the headers' buffer. At `cont`, the body is read:
+    autostart 3 starts at the threshold, 2 sends `STMl` and waits for `strm u`. No time limit.
+  - **The interval comes from `cont` only**: LMS asked for `Icy-MetaData` and read `icy-metaint` itself. An
+    interval of 0 means no blocks. The `loop` byte is ignored, and so is a `cont` with no stream waiting, both
+    said with `VERBOSE`.
+  - **The status line**: its code is the three digits after the first space, whatever the protocol (`ICY 200 OK`
+    is a 200). Outside 2xx, the body never enters the buffer and a message is always shown.
+    - Autostart 0 or 1: the stream closes with `DSCO` 2.
+    - Autostart 2 or 3: `RESP` only, and the server decides. A `DSCO` would count as a second failure, or against
+      the next track. A `cont` that comes anyway (Music Assistant) closes the stream with `DSCO` 2, nothing
+      played.
+    - amisqueeze follows no redirect itself: LMS does.
+  - **The titles**: each non-empty block goes back to the server in `META`, as received. LMS then shows the title
+    in its interfaces and gives it to remotes (amilms). On the console, with `VERBOSE` only, characters outside
+    ASCII as `?`.
+  - **The CPU**: each `recv` stops before the next block, so the sound goes into the ring without a copy. The
+    length byte and the title (4080 bytes at most) go to a buffer in `struct stream`, not on the stack. The
+    threshold and `STAT` count the sound's bytes only.
+  - **The code**: the blocks' state machine and the status line's parser in a new small module, unit-tested. The
+    rest of `stream.c` stays where it is, so that the rebase after 0.8 does not conflict.
+  - **Also in the branch**, one commit each: the 88.2 kHz rate code (`:`); a line in the user guide's Known limits
+    for what `strm s` asks and amisqueeze ignores (polarity, one side only, transitions, replay gain).
+  - **Not done**: LMS's `body` frame for playlist addresses (see the plan's
+    [Open points](README.md#open-points)), HTTPS, `codc`.
+  - **Criterion**:
+    - on the host, unit tests at every cut: a block across two reads, the length byte last in a read, an empty
+      block, the longest one, intervals of 1 and 0;
+    - fake server scenarios: a direct PCM stream with blocks, written byte for byte to `OUTPUT`, its titles in
+      `META`; nothing played before a late `cont`; `ICY 200 OK`; a 404 direct then `strm q`, a 404 then `cont`,
+      a 404 with autostart 1; `cont` with an interval of 0;
+    - in WinUAE (`amisqueeze.fpu`, JIT and FPU), a real `http://` radio played directly with LMS: no cut, its
+      title in LMS's CLI;
+    - with Music Assistant, ordinary playback unchanged (FLAC, MP3, gapless, `strm f` then `strm q`), since each
+      of its tracks now waits for `cont`.
 - **Content**: automatic server discovery (UDP broadcast on port 3483); start from the Workbench with an icon and
   ToolTypes (read with the same template; precedence: built-in defaults, `ENV:amisqueeze.prefs`, ToolTypes,
   command line), with a console window or quiet mode; running in the background (`Run`, or at startup);

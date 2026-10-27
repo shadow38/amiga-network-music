@@ -88,13 +88,14 @@ Agreed with the user on 2026-10-26.
 
 ### 0.9
 
-- **Internet radios' metadata** (ICY, player-10). For a radio played directly by `amisqueeze.fpu`, LMS adds 2 to
-  autostart, asks the radio for `Icy-MetaData: 1`, then sends the blocks' interval in `cont`. amisqueeze does not
-  remove the blocks yet, and minimp3 loses its sync at each one. To do: remove them (the interval from `cont` or
-  the `icy-metaint` header), a fake server scenario, a check with a real radio.
-- **From the 0.7 review's 50 list** (agreed with the user on 2026-10-23):
-  - the HTTP status line is never checked;
-  - the body of a direct stream plays before LMS's `cont`, so a redirect or an error page plays as a track;
+- **Internet radios' metadata** (ICY, player-10), designed with the user on 2026-10-27 (see
+  [player-10](phase-1-amisqueeze.md)). For a radio played directly by `amisqueeze.fpu`, LMS asks the radio for
+  `Icy-MetaData: 1`, then sends the blocks' interval in `cont`. amisqueeze will wait for `cont`, remove the blocks
+  and send their titles back to LMS. Coded in a branch, rebased on `main` once 0.8 is out.
+- **From the 0.7 review's 50 list** (agreed with the user on 2026-10-23), in the same branch:
+  - the HTTP status line is never checked (with ICY);
+  - the body of a direct stream plays before LMS's `cont`, so a redirect or an error page plays as a track (with
+    ICY);
   - the 88.2 kHz rate code is refused as an unsupported format;
   - the polarity and output channel flags, transitions and replay gain are ignored, without a line in the guide.
 
@@ -134,7 +135,7 @@ Agreed with the user on 2026-10-26.
 | player-8 Local decoding (FLAC, then MP3) | ✅ 2026-10-19 |
 | player-8d MP3 without gaps between tracks | ✅ 2026-10-20 |
 | player-9 Real machine | ⬜ with 0.7, for 0.8 |
-| player-10 Finishing touches | 🔶 the parts of 0.4 and 0.5 done; server discovery 2026-10-27 (0.8), the A1200 next; ICY in 0.9 |
+| player-10 Finishing touches | 🔶 the parts of 0.4 and 0.5 done; server discovery 2026-10-27 (0.8), the A1200 next; ICY designed 2026-10-27 (0.9) |
 | player-11 Direct Paula output, without AHI | ⬜ idea (CPU load on a slow 68020; crackles with a PCMCIA network card, player-9) |
 | player-12 Hardening (the 0.7 review's 50 list) | ✅ 2026-10-27 (version 0.8) |
 | player-13 A lower rate asked of the server | ✅ 2026-10-26: `MAXRATE` and the LMS rules; on the A1200, 62 % of the CPU at 32 kHz against 77 %; Music Assistant upstream: the user's decision |
@@ -163,8 +164,11 @@ Neither planned nor dropped for good. Each is taken up only by the user's decisi
   68060 user reports a problem.
 - **Ctrl-C with a real TCP/IP stack**: `WaitSelect()` may take the signal for itself, depending on the stack's
   break mask. To check on the real machine (player-9): `SBTC_BREAKMASK`, or EINTR taken as a stop.
-- From the outside review of 2026-10-20, no known failure: `stream.c` is the first module to split when it grows
-  (for ICY, for instance). Its other points went to player-12 (agreed with the user on 2026-10-27).
+- From the outside review of 2026-10-20, no known failure: `stream.c` is the first module to split when it grows.
+  ICY adds a small module of its own and leaves the rest in place (agreed with the user on 2026-10-27). Its other
+  points went to player-12 (agreed with the user on 2026-10-27).
+- **LMS's `body` frame**: for a playlist address played directly, LMS asks the player to send the body back.
+  amisqueeze shows it as "not handled" (agreed with the user on 2026-10-27).
 
 ## Ideas outside the phases
 
