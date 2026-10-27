@@ -111,6 +111,7 @@ SAVES_BAD := _bad_dbra _bad_fpu _bad_plain _bad_postinc _bad_predec _bad_tst_pos
 test: host out-host/test_core
 	python3 tools/check-version.py
 	python3 tools/make-dist.py --check-readme amisqueeze
+	python3 tools/make-dist.py --check-text amisqueeze
 	python3 tools/check-saves.py tests/check-saves.s | sed -n 's/.* error: \([a-z_]*\) modifies.*/\1/p' | sort | \
 	    tr '\n' ' ' | grep -qx '$(SAVES_BAD) ' && echo "check-saves: self-test passed" || \
 	    { echo "check-saves: self-test failed, expected: $(SAVES_BAD)"; python3 tools/check-saves.py tests/check-saves.s; exit 1; }

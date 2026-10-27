@@ -22,10 +22,15 @@ run.
 Paths inside the zip use forward slashes (the zip standard: Windows PowerShell 5.1's Compress-Archive writes
 backslashes, which other tools misread).
 
+The text files the archives hold, and the sources of the program (its messages), must be ASCII with LF line
+endings: the Amiga reads ISO-8859-1, the sources are UTF-8.
+
 Usage: make-dist.py [--dev] <prog>        (from the repository root, after the Amiga build)
          --dev: a development version is accepted (out/<prog>-<x.y>-dev.*), to try the archives; never published
        make-dist.py --check-readme <prog> (make test) checks the readme made from dist/<prog>.readme only
+       make-dist.py --check-text <prog>   (make test) checks that the text files and the sources are ASCII and LF
 """
+import glob
 import hashlib
 import importlib.util
 import os
@@ -37,6 +42,7 @@ import tempfile
 import zipfile
 
 READMES = "dist"
+TEXTS = ("LICENSE", "README.md", "CHANGELOG.md", "docs/user-guide.md")     # in the archives
 SHORT_MAX = 40          # Aminet: "This description must not be longer than 40 characters."
 LINE_MAX = 78           # Aminet: "Lines should not be longer than 78 characters"
 FIELDS = ("Short", "Uploader", "Author", "Type", "Version", "Replaces", "Architecture", "Requires", "Distribution",
@@ -111,6 +117,22 @@ def readme_problems(text, version):
     return problems
 
 
+def text_problems(prog):
+    """The text files of the archives and the program's sources that are not ASCII with LF line endings, as a
+    list."""
+    problems = []
+    for path in TEXTS + tuple(sorted(glob.glob(f"src/{prog}/*.[ch]"))):
+        with open(path, "rb") as f:
+            lines = f.read().split(b"\n")
+        wrong = [n for n, line in enumerate(lines, 1) if any(c > 127 for c in line)]
+        if wrong:
+            problems.append(f"{path}: not ASCII, line {', '.join(map(str, wrong[:5]))}"
+                            f"{' and more' if len(wrong) > 5 else ''}")
+        if any(line.endswith(b"\r") for line in lines):
+            problems.append(f"{path}: CR in it: LF line endings only")
+    return problems
+
+
 def write_readme(prog, version, path):
     text = aminet_readme(prog, version)
     problems = readme_problems(text, version)
@@ -160,7 +182,7 @@ def make_lha(out, stage, root, expected):
 
 def main():
     args = sys.argv[1:]
-    mode = args.pop(0) if args and args[0] in ("--dev", "--check-readme") else None
+    mode = args.pop(0) if args and args[0] in ("--dev", "--check-readme", "--check-text") else None
     if len(args) != 1:
         sys.exit(__doc__)
     prog = args[0]
@@ -170,6 +192,12 @@ def main():
         if problems:
             sys.exit("\n".join(f"make-dist: {READMES}/{prog}.readme: {p}" for p in problems))
         print(f"make-dist: {READMES}/{prog}.readme follows Aminet's rules")
+        return
+    problems = text_problems(prog)
+    if problems:
+        sys.exit("\n".join(f"make-dist: {p}" for p in problems))
+    if mode == "--check-text":
+        print(f"make-dist: the text files and the sources of {prog} are ASCII, with LF line endings")
         return
     if not shutil.which("lha"):
         sys.exit("make-dist: lha not found: LHa for UNIX (https://github.com/jca02266/lha), which the image "

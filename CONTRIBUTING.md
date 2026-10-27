@@ -91,7 +91,7 @@ tools/make-test-audio.sh makes the test sounds (tones, sides, sweep, gapless MP3
 tools/winuae/         test scenarios run in WinUAE from the host (run-scenarios.py runs them all; serial shell
                       and LMS CLI clients)
 tools/amiga/cpucount.c free CPU meter run on the Amiga for the load measures (make cpucount, not released)
-tools/make-dist.py    builds the release archives and the Aminet readme (make dist)
+tools/make-dist.py    builds the release archives and the Aminet readme (make dist); checks the texts are ASCII
 dist/amisqueeze.readme the Aminet readme, its version filled in by make dist
 tools/check-version.py checks that the version number agrees everywhere (make test, make dist)
 tools/bin2c.py        turns a file into a C array (the built-in FLAC and MP3 samples of the speed measurement)
@@ -144,7 +144,9 @@ date. `make dist DEV=1` accepts a development version, to try the archives (`out
 published).
 `make dist` refuses to build the archive unless `tools/check-version.py --release` accepts the version: not a
 `-dev` one, the same in both `$VER:` strings, `Firmware=`, the user guide and the README, with its section at the
-top of the changelog, dated as the `$VER:` strings, and nothing left under "Unreleased".
+top of the changelog, dated as the `$VER:` strings, and nothing left under "Unreleased". It also refuses a text
+file of the archive (`LICENSE`, the README, the changelog, the user guide) or a source of amisqueeze that is not
+ASCII with LF line endings ([Text for the Amiga](#code-rules)); `make test` checks them too.
 
 Both workflows pin their actions by commit SHA, the version in a comment (as `tools/amiga-make.sh` pins the image
 by its digest; to update one, take the commit of its new tag), and their checkout keeps no token
