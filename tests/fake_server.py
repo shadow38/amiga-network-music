@@ -78,8 +78,11 @@ def start(port, *args):
 
 
 def stop(proc):
+    """Ctrl-C; any exit code but 0 fails here, so that a scenario cannot forget it (a sanitizer's report at exit)"""
     proc.send_signal(signal.SIGINT)
     out, _ = proc.communicate(timeout=TIMEOUT)
+    if proc.returncode != 0:
+        check(False, "exit code %d after Ctrl-C, output:\n%s" % (proc.returncode, out))
     return proc.returncode, out
 
 
