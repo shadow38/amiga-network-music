@@ -19,7 +19,8 @@ How to build and test: [CONTRIBUTING.md](../../CONTRIBUTING.md); testing in WinU
 ## Method
 
 - **One step at a time.** The content and success criterion of a step are agreed **before** writing code. A
-  finished step: criterion checked, documentation up to date, one commit.
+  finished step: criterion checked, documentation up to date, one commit; one per item when a step gathers
+  independent items (agreed with the user on 2026-10-27).
 - **Observable criteria.** "It compiles" is not a criterion. The player shows up in LMS, the progress bar moves,
   the test tone sounds right: these are.
 - **Three test levels**, from the most automated to the most manual:
@@ -133,7 +134,7 @@ Agreed with the user on 2026-10-26.
 | player-9 Real machine | ⬜ with 0.7, for 0.8 |
 | player-10 Finishing touches | 🔶 the parts of 0.4 and 0.5 done; ICY and server discovery in 0.9 |
 | player-11 Direct Paula output, without AHI | ⬜ idea (CPU load on a slow 68020; crackles with a PCMCIA network card, player-9) |
-| player-12 Hardening (the 0.7 review's 50 list) | ⬜ for 0.8 |
+| player-12 Hardening (the 0.7 review's 50 list) | 🔶 for 0.8: content agreed on 2026-10-27, 12b first |
 | player-13 A lower rate asked of the server | ✅ 2026-10-26: `MAXRATE` and the LMS rules; on the A1200, 62 % of the CPU at 32 kHz against 77 %; Music Assistant upstream: the user's decision |
 | remote-0 Study (common interface, Music Assistant feasibility, name) | ⬜ before any amilms code |
 | remote-1 to remote-7 LMS | ⬜ |
@@ -160,13 +161,8 @@ Neither planned nor dropped for good. Each is taken up only by the user's decisi
   68060 user reports a problem.
 - **Ctrl-C with a real TCP/IP stack**: `WaitSelect()` may take the signal for itself, depending on the stack's
   break mask. To check on the real machine (player-9): `SBTC_BREAKMASK`, or EINTR taken as a stop.
-- From the outside review of 2026-10-20, no known failure:
-  - the track queue (4 entries) forgets the oldest one when full; a refusal (`STMn`) would be safer;
-  - `gethostbyname()`: no check of an empty address list, or of a length other than 4;
-  - `PORT` and `UNIT` have no range check (`PORT=70000`, `UNIT=255`);
-  - the default options are read on one line of at most 510 characters; the rest is dropped silently;
-  - malformed server input (cut frames, `strm` fields out of range, headers too long) is not tested yet;
-  - `stream.c` is the first module to split when it grows (for ICY, for instance).
+- From the outside review of 2026-10-20, no known failure: `stream.c` is the first module to split when it grows
+  (for ICY, for instance). Its other points went to player-12 (agreed with the user on 2026-10-27).
 
 ## Ideas outside the phases
 

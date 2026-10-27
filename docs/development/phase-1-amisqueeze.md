@@ -894,13 +894,35 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   player-4 to player-6, sides in place without `SWAP`, at a CPU load clearly below AHI's (measured with `cpucount`, as in
   player-4c); then heard on the real 68020 machine (player-9).
 
-## player-12 Hardening ⬜ (0.8)
+## player-12 Hardening 🔶 (0.8)
 
-- **Content**: the 50 list of the [0.7 review](reviews/0.7.md#5-the-50-list), except the items planned for 0.9.
-  What to do with each item is decided with the user when the step starts (agreed with the user on 2026-10-26).
-  The open points it touches (`PORT` and `UNIT` ranges, the track queue) are decided at the same time.
-- **Criterion** (to agree when the step starts): each safety net added or mended seen failing on a planted defect,
-  then `make test` green.
+The 50 list of the [0.7 review](reviews/0.7.md#5-the-50-list), except the items planned for 0.9 and those of the
+real machine (the `aac` row, the free memory: player-9). Each item agreed with the user on 2026-10-27, with the
+open points below. One commit per item, in the order 12b, 12a, 12c.
+
+- **player-12a, the code**:
+  - a WAV header's rate bounded: above 192 kHz, the format is refused;
+  - `PORT` checked from 1 to 65535, `UNIT` from 0 to 3, or an error at start-up (open point closed);
+  - the player name from `setd` shown with `?` for each byte that is not ASCII;
+  - the stale socket readiness after a `strm s` that reuses the socket number (`player.c`): read again, fixed with
+    a test if real;
+  - `cpucount`'s clock in seconds computed without a signed overflow;
+  - `gethostbyname()` without an address taken as a failure, and an `ENV:AMISQUEEZE` too long for its buffer
+    refused with a message rather than cut (open points closed);
+  - the track queue that forgets the oldest track when full is kept: neither LMS 9.1 nor Music Assistant sends a
+    third track ahead (open point closed).
+- **player-12b, the safety nets**: `fake_server.py` checks every exit code; `check-saves.py` covers fp2-fp7; the
+  ASCII rule checked on the README and the user guide; a check that `___stkinit` is linked and `__stack` set; a
+  test for each server-input check (the lengths of `strm`, `audg`, `setd` and of a packet, the PCM fields,
+  autostart, headers too long); `strm f` and a refused stream in the fake server, the flush with nothing playing
+  in the unit tests; `make test` also compiles the core without MP3; the CI builds `cpucount` and compiles the
+  Python scripts. `release.yml` still does not run the tests: the release is a draft published by hand, and
+  `tests.yml` runs on the tag.
+- **player-12c, the documentation**: the review's notes on `architecture.md`, the user guide, the plan's statuses,
+  the three decisions not marked as agreed, the local names left in the plan, the review levels of
+  `phase-3-release.md`.
+- **Criterion**: each safety net added or mended, and each check added to the code, seen failing on a planted
+  defect, then `make test` green. What the host build does not run (`amiga.c`) is read, and said so in the commit.
 
 ## player-13 A lower rate asked of the server ✅ (2026-10-26, version 0.8)
 
