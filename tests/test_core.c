@@ -2506,6 +2506,42 @@ static void test_flush_stop(void)
     teardown(&p);
 }
 
+/* strm f with the only track loaded, waiting for strm u (autostart 0): a stop, strm u then starts nothing; the next
+ * track plays from its start */
+static void test_flush_loaded(void)
+{
+    struct player p;
+    uint32_t na = 20000, nc = PCM_BPS / 10;
+
+    fill(track_a, sizeof(track_a), 34);
+    fill(track_c, sizeof(track_c), 35);
+    setup_file(&p);
+    open_stream(&p, '0', 1);
+    stub_feed_stream(track_a, (int)na);
+    drain_stream(&p);
+    CHECK(p.out.state == OUTPUT_LOADED);
+    clear_tx();
+    feed_strm('f', NULL, 0, 0, 0, NULL);
+    drain(&p);
+    CHECK(!strcmp(trace(), "STAT:STMf") && !stub_stream_open && p.stream.state == STREAM_IDLE);
+    CHECK(p.out.state == OUTPUT_STOPPED && p.out.queued == 0 && ring_used(&p.ring) == 0);
+    feed_strm('u', NULL, 0, 0, 0, NULL);
+    drain(&p);
+    output_tick(&p, stub_now);
+    CHECK(p.out.state == OUTPUT_STOPPED && count_in_trace("STAT:STMs") == 0);
+
+    stub_reset();
+    open_stream(&p, '1', 1);
+    stub_feed_stream(track_c, (int)nc);
+    drain_stream(&p);
+    stub_stream_end();
+    stream_io(&p, PLAT_READ);
+    play_for(&p, 1000);
+    CHECK(p.out.state == OUTPUT_STOPPED && count_in_trace("STAT:STMs") == 1 && count_in_trace("STAT:STMu") == 1);
+    CHECK(stub_file_len == (int)nc && !memcmp(stub_file, track_c, nc));
+    teardown(&p);
+}
+
 /* ENV:Sys/ahi.prefs as saved by the AHI 6 preferences in WinUAE (plan step player-10): the Music unit (255), then units
  * 0 (Paula 14-bit stereo++, 27429 Hz), 1 (Toccata stereo++, 44100 Hz), 2 (Paula 8-bit stereo++) and 3 (Toccata
  * plain stereo) */
@@ -2777,6 +2813,7 @@ int main(void)
     test_flush_current();
     test_request_too_long_playing();
     test_flush_stop();
+    test_flush_loaded();
     test_ahi_mode();
     test_start_mode();
     test_lame_header();

@@ -317,6 +317,43 @@ def scenario_stop():
         server.close()
 
 
+def scenario_flush_refused():
+    print("-- strm f drops the next track while it streams; a format refused (STMc, STMn); the track after them follows")
+    path = os.path.join(tempfile.mkdtemp(), "play.pcm")
+    http_a, http_c = HttpServer(1.5, seed=11), HttpServer(1.0, seed=13)
+    http_b = HttpServer(5.0, chunk=17640, pause=0.1, seed=12)  # sent in real time: still streaming at strm f
+    for h in (http_a, http_b, http_c):
+        h.start()
+    server, proc, s = start_session("Flush", "OUTPUT=" + path)
+    try:
+        send_strm_s(s, http_a)
+        s.until("STAT:STMd")
+        send_strm_s(s, http_b, threshold_kb=16)
+        s.until("RESP")
+        send_packet(s.conn, b"strm", strm("f"))
+        s.until("STAT:STMf")
+        http_b.join(timeout=TIMEOUT)
+        check(http_b.closed_by_player, "strm f: the next track's stream closed by the player")
+        before = len(s.names())
+        fmt7 = b"1a????" + bytes([64])  # AAC: not decoded
+        send_packet(s.conn, b"strm", strm("s", port=http_c.port, ip=0, fmt7=fmt7, request=HTTP_REQUEST))
+        s.until("STAT:STMn")
+        check(s.names()[before:] == ["STAT:STMf", "STAT:STMc", "STAT:STMn"],
+              "refused format: STMf, STMc, STMn (%s)" % s.names()[before:])
+        send_strm_s(s, http_c)
+        s.until("STAT:STMu", timeout=8)
+        check(s.names().count("STAT:STMs") == 2 and s.names().count("DSCO") == 2,
+              "A then C started (STMs twice), a DSCO for each, none for B")
+    finally:
+        rc, out = stop(proc)
+        server.close()
+    data = read_output(path)
+    want = http_a.data + http_c.data
+    check(data == want, "file: A then C, nothing of B (%d bytes, %d expected, first difference at %d)"
+          % (len(data), len(want), first_difference(data, want)))
+    check("stream format a not supported" in out, "refused format reported")
+
+
 def first_difference(a, b):
     n = min(len(a), len(b))
     return next((i for i in range(n) if a[i] != b[i]), n)
@@ -1017,6 +1054,7 @@ if __name__ == "__main__":
     scenario_stream()
     scenario_pause()
     scenario_stop()
+    scenario_flush_refused()
     scenario_output()
     scenario_wav()
     scenario_wav_rate()
