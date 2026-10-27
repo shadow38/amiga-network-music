@@ -18,6 +18,8 @@ are previews, tested in WinUAE only, not yet on a real Amiga.
 - The user guide rewritten: using amisqueeze first (installing, sound, server, starting, stopping, volume), then
   a reference (options, ToolTypes, default options, messages by theme, troubleshooting, known limits, what has
   been tried).
+- User guide and README: playback tried on a real A1200 (a 68020 at 26 MHz, a PCMCIA network card, Paula through
+  AHI), with the CPU load `MAXRATE` saves there; a known limit with Aminet's driver for Xircom PCMCIA cards.
 
 ## [0.7] - 2026-10-23
 

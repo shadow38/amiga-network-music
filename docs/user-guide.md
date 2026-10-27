@@ -3,8 +3,8 @@
 This guide tells how to set up and use amisqueeze, then lists every option, message and known limit. What
 amisqueeze is and what the Amiga needs: the [README](../README.md).
 
-Version 0.8 in development. The latest release, 0.7, is a preview: tried in WinUAE only, not yet on a real Amiga
-(see [what has been tried](#what-has-been-tried)).
+Version 0.8 in development. Like the latest release, 0.7, it is a preview: playback tried on a real A1200, the
+rest in WinUAE only (see [what has been tried](#what-has-been-tried)).
 
 **Using amisqueeze**: [installing](#installing) | [sound (AHI)](#sound-ahi) | [server setup](#server-setup) |
 [starting](#starting-amisqueeze) | [stopping](#stopping-amisqueeze) | [volume](#volume).
@@ -358,6 +358,18 @@ MP3 at 320 kbit/s (the slowest) decoded at 74.2x real time: MP3=AUTO lets this m
 `MAXRATE` asks the server for music at a lower sample rate, to lighten a slow Amiga: less to receive from the
 network, less for AHI to mix. Without it, the server sends each file at its own rate, up to 48 kHz.
 
+What it saves, measured on an A1200 with a 68EC020 at 26.67 MHz (AmiNetXDuo, `Paula:14 bit stereo++` at
+27429 Hz, volume 100, LMS and its rules below, a CD-quality file sent as 16-bit WAV):
+
+| Rate asked | Stream | CPU taken |
+|---|---|---|
+| none (44.1 kHz) | 176 KB/s | 77 % |
+| 32000 Hz | 128 KB/s | 62 % |
+| 22050 Hz | 88 KB/s | 50 % |
+
+No gap nor crackle in any of them. The load follows what the network brings in: 24-bit samples cost half as
+much again.
+
 - **`MAXRATE=AHI`** asks for the AHI unit's own rate: Paula at 27429 Hz gives 27429 Hz. The music then comes at
   the rate AHI plays, and nothing Paula can play is lost (up to about 13.7 kHz).
 - **`MAXRATE=AHISTD`** asks for the standard rate at or below the unit's: 27429 Hz gives 24000 Hz. For a server
@@ -410,7 +422,8 @@ standard rate (`AHISTD`): asked for another, it sends the MP3 at its own rate. `
 avoid both.
 
 **With Music Assistant, leave `MAXRATE` out.** Music Assistant 2.10 offers no rate below 44.1 kHz to a player that
-asks for less, and the music does not play (tried with 2.10.7: the stream fails with a server error).
+asks for less, and the music does not play (tried with 2.10.7: the stream fails with a server error). Lower rates
+need a change in Music Assistant itself.
 
 #### `OUTPUT`
 
@@ -606,8 +619,8 @@ rows say what comes next.
     [`MAXRATE`](#maxrate) are missing, or carry another player's MAC address.
 - **The music plays on one side only.** The AHI unit uses a plain "stereo" mode: choose a "stereo++" one (see
   [setting up the unit](#setting-up-the-unit)).
-- **Left and right are swapped.** Add `SWAP`. Seen in WinUAE with `paula.audio` 4.30, in 8 and 14 bits, while
-  Paula itself is right; not checked on a real Amiga yet.
+- **Left and right are swapped.** Add `SWAP`. Seen with `paula.audio` 4.30 in WinUAE, in 8 and 14 bits, and
+  with `paula.audio` 4.18 on a real A1200, while Paula itself is right.
 - **The sound stutters or stops now and then.** The Amiga does not keep up:
   - run `amisqueeze BENCH`: if FLAC or MP3 is decoded at less than a few times real time, give `FLAC=OFF` or
     `MP3=OFF` so that the server converts them;
@@ -623,7 +636,8 @@ rows say what comes next.
 
 ### Known limits
 
-- Tried in WinUAE only, not yet on a real Amiga (see [what has been tried](#what-has-been-tried)).
+- Playback tried on a real A1200; the commands, the recovery from network failures and long playback in WinUAE
+  only so far (see [what has been tried](#what-has-been-tried)).
 - The server's address must be given (`SERVER`): amisqueeze does not find the server by itself yet.
 - MP3 is decoded only by `amisqueeze.fpu`. With `amisqueeze`, LMS needs a [rule](#lyrion-music-server) to convert
   it. Other formats play only through the server's conversion to raw PCM.
@@ -645,20 +659,24 @@ rows say what comes next.
 - Synchronised players (LMS's player groups) are not supported, nor tried.
 - Exchange's Active/Inactive switch is shown, but does not affect the music.
 - Occasional crackles with `paula.audio` in WinUAE also occur without amisqueeze, with AHI's own test tone.
+- With a Xircom PCMCIA card and Aminet's `xircomce2.device` 1.1, Paula crackles now and then while the music comes
+  in. AmiNetXDuo's `RXBUFFER=8192` stops it, at about 90 % of the CPU on a 26 MHz 68020. The author of amisqueeze
+  fixed the driver on this point: 77 %, without `RXBUFFER`. The fix is not published yet.
 
 ### What has been tried
 
-Everything so far was run in WinUAE. What the README names but this table does not is expected to work, not
-checked.
+Playback was tried on a real A1200; everything else so far in WinUAE. What the README names but this table does
+not is expected to work, not checked.
 
 | | Tried | Expected, not tried yet |
 |---|---|---|
-| Machine | WinUAE 6.0 (an A1200 setup) | any real Amiga |
+| Machine | WinUAE 6.0 (an A1200 setup); a real A1200, playback only | other real Amigas |
+| Real A1200 | an ACA1221lc accelerator (68EC020 at 26.67 MHz, no FPU), Kickstart 3.1, AmiNetXDuo with a fixed `xircomce2.device` (a Xircom PCMCIA card), Paula through AHI 4.18; LMS 9.1.1, and Music Assistant 2.10.7 with a fix of its own (not published) for the lower rates: playback and its CPU load (see [`MAXRATE`](#maxrate)) | the commands, the recovery from network failures, an hour of playback |
 | CPU | 68020, at about 28 MHz and with the JIT (the speed of a PiStorm, roughly); with and without a 68882 | 68030, 68040, 68060, a PiStorm with Emu68 |
-| AmigaOS | 3.2.3; 3.0 and 3.1 from a Shell without AHI; 2.04, the oldest version it asks for, starts | 3.1.4, 3.5, 3.9 |
+| AmigaOS | 3.2.3; 3.1 with AHI on the A1200; 3.0 and 3.1 from a Shell without AHI in WinUAE; 2.04, the oldest version it asks for, starts | 3.1.4, 3.5, 3.9 |
 | Memory | about 1.1 MB free: the 1 MB stream buffer (about 6 s of CD-quality audio), and about 60 KB more for `amisqueeze.fpu` decoding MP3 | - |
-| TCP/IP | WinUAE's emulation (`bsdsocket_emu=true`) | Roadshow, AmiTCP, AmiNetXDuo |
-| Sound | AHI 6.6 with `paula.audio` and a Toccata card, checked by ear | AHI 4.x, other cards, a PiStorm's own outputs |
+| TCP/IP | WinUAE's emulation (`bsdsocket_emu=true`); AmiNetXDuo, and the demo of Roadshow 1.15, on the A1200; Miami 3.2b there too, too slow on a 26 MHz 68020: gaps | Roadshow's full version, AmiTCP |
+| Sound | AHI 6.6 with `paula.audio` and a Toccata card, checked by ear; AHI 4.18 with `paula.audio` on the A1200 | other cards, a PiStorm's own outputs |
 | Server | Lyrion Music Server 9.1.1, Music Assistant 2.10.7 | other versions |
 
 Measured in WinUAE:
