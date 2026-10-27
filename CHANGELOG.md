@@ -42,6 +42,9 @@ are previews, tested in WinUAE only, not yet on a real Amiga.
   early, its request then lost: the old connection's state was taken for the new one's.
 - Default options in `ENV:amisqueeze.prefs` longer than 509 characters were cut without a word, possibly in the
   middle of a value: they are now refused with `ENV:amisqueeze.prefs is too long`.
+- When the network stopped in the middle of a sample (or of a FLAC or MP3 frame), the sound stopped but the server
+  was not told the buffer had run dry, so LMS did not pause the player while the data was missing. Seen on a real
+  A1200 with the network cable pulled for 10 s.
 
 ## [0.7] - 2026-10-23
 

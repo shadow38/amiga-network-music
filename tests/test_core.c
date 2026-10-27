@@ -1340,15 +1340,16 @@ static int count_in_trace(const char *name)
 }
 
 /* Buffer empty while the stream goes on (slow network): STMo once, when the device has played everything; the
- * data that comes back is played, nothing lost */
-static void test_audio_starved(void)
+ * data that comes back is played, nothing lost. The stream stops after `first` bytes: past a whole frame, the ring
+ * keeps the start of a frame the decoder cannot use yet, and is not empty. */
+static void audio_starved(int first)
 {
     struct player p;
     int guard;
 
     setup_audio(&p, 0);
     open_stream(&p, '1', 1);
-    stub_feed_stream(track_a, 40000);
+    stub_feed_stream(track_a, first);
     drain_stream(&p);
     clear_tx();
     output_tick(&p, stub_now);
@@ -1360,7 +1361,7 @@ static void test_audio_starved(void)
         finish(&p);
     CHECK(count_in_trace("STMo") == 1 && p.out.state == OUTPUT_RUNNING);
 
-    stub_feed_stream(track_a + 40000, 60000);
+    stub_feed_stream(track_a + first, 100000 - first);
     drain_stream(&p);
     output_tick(&p, stub_now);
     CHECK(audio_pending(&p) > 0);
@@ -1373,6 +1374,12 @@ static void test_audio_starved(void)
     CHECK(count_in_trace("STMo") == 1 && count_in_trace("STAT:STMu") == 1);
     CHECK(stub_audio_bad == 0);
     teardown(&p);
+}
+
+static void test_audio_starved(void)
+{
+    audio_starved(40000);
+    audio_starved(40002);                               /* 2 bytes into a frame of 4 */
 }
 
 /* No AHI */

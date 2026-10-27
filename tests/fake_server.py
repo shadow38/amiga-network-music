@@ -482,27 +482,31 @@ def scenario_wav_rate():
 
 
 def scenario_stall():
-    print("-- slow network: the stream stops for 3 s, the buffer runs dry (STMo), then playback resumes")
-    path = os.path.join(tempfile.mkdtemp(), "play.pcm")
-    http = HttpServer(4.0, stall_at=frames(1.5), stall=3.0)
-    http.start()
-    server, proc, s = start_session("Stall", "OUTPUT=" + path)
-    try:
-        send_strm_s(s, http, threshold_kb=16)
-        t_start, _, _ = s.until("STAT:STMs")
-        t_dry, _, _ = s.until("STAT:STMo")
-        t_end, _, _ = s.until("STAT:STMu", timeout=10)
-        check(1.3 <= t_dry - t_start <= 1.8, "buffer empty after the 1.5 s received (%.2f s)" % (t_dry - t_start))
-        check(s.names().count("STAT:STMo") == 1, "STMo once")
-        # 1.5 s played, a wait until the data comes back (3 s after it stopped), then the 2.5 s left
-        check(5.2 <= t_end - t_start <= 6.0, "4 s of audio played in %.2f s, including the wait" % (t_end - t_start))
-    finally:
-        rc, out = stop(proc)
-        server.close()
-    data = read_output(path)
-    check(data == http.data, "nothing lost nor repeated (%d bytes of %d, first difference at byte %d)"
-          % (len(data), len(http.data), first_difference(data, http.data)))
-    check("output: buffer empty, waiting for data" in out, "buffer empty reported")
+    # In the middle of a frame: the ring keeps the start of a frame the decoder cannot use, and is not empty
+    for extra, where in ((0, "after a whole frame"), (2, "in the middle of a frame")):
+        print("-- slow network: the stream stops for 3 s %s, the buffer runs dry (STMo), then playback resumes"
+              % where)
+        path = os.path.join(tempfile.mkdtemp(), "play.pcm")
+        http = HttpServer(4.0, stall_at=frames(1.5) + extra, stall=3.0)
+        http.start()
+        server, proc, s = start_session("Stall", "OUTPUT=" + path)
+        try:
+            send_strm_s(s, http, threshold_kb=16)
+            t_start, _, _ = s.until("STAT:STMs")
+            t_dry, _, _ = s.until("STAT:STMo")
+            t_end, _, _ = s.until("STAT:STMu", timeout=10)
+            check(1.3 <= t_dry - t_start <= 1.8, "buffer empty after the 1.5 s received (%.2f s)" % (t_dry - t_start))
+            check(s.names().count("STAT:STMo") == 1, "STMo once")
+            # 1.5 s played, a wait until the data comes back (3 s after it stopped), then the 2.5 s left
+            check(5.2 <= t_end - t_start <= 6.0, "4 s of audio played in %.2f s, including the wait"
+                  % (t_end - t_start))
+        finally:
+            rc, out = stop(proc)
+            server.close()
+        data = read_output(path)
+        check(data == http.data, "nothing lost nor repeated (%d bytes of %d, first difference at byte %d)"
+              % (len(data), len(http.data), first_difference(data, http.data)))
+        check("output: buffer empty, waiting for data" in out, "buffer empty reported")
 
 
 def scenario_cut():
@@ -597,6 +601,31 @@ def scenario_flac():
               % (name, len(data), len(want), first_difference(data, want)))
         if data != want:
             print(out)
+
+
+def scenario_flac_stall():
+    print("-- FLAC, slow network: the stream stops for 3 s in the middle of a frame, STMo, then playback resumes")
+    data = flac_file("s16-l5.flac")
+    stall_at = data.index(b"\xff\xf8", 60000) + 100     # 100 bytes after a frame's sync code
+    path = os.path.join(tempfile.mkdtemp(), "play.pcm")
+    http = HttpServer(data=data, chunk=3000, pause=0.001, stall_at=stall_at, stall=3.0)
+    http.start()
+    server, proc, s = start_session("FlacStall", "OUTPUT=" + path)
+    try:
+        # The decoder waits for its largest frame (about 15 KB here) after the metadata: below that threshold, the
+        # output would start with nothing to play, and say so (STMo); the servers ask for 200 KB or more
+        send_strm_flac(s, http, threshold_kb=32)
+        t_start, _, _ = s.until("STAT:STMs")
+        s.until("STAT:STMo")
+        t_end, _, _ = s.until("STAT:STMu", timeout=10)
+        check(s.names().count("STAT:STMo") == 1, "STMo once")
+        check(3.0 <= t_end - t_start <= 4.5, "1 s of audio played in %.2f s, including the wait" % (t_end - t_start))
+    finally:
+        rc, out = stop(proc)
+        server.close()
+    data, want = read_output(path), flac_data.expected("s16")
+    check(data == want and rc == 0, "decoded byte for byte (%d bytes, %d expected, first difference at %d)"
+          % (len(data), len(want), first_difference(data, want)))
 
 
 def scenario_flac_rate_0():
@@ -1215,6 +1244,7 @@ if __name__ == "__main__":
     scenario_cut()
     scenario_control_lost()
     scenario_flac()
+    scenario_flac_stall()
     scenario_flac_rate_0()
     scenario_flac_seek()
     scenario_flac_seek_rejected()

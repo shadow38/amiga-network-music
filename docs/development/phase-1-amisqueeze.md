@@ -1054,3 +1054,29 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   Assistant, the user guide can advise the AHI unit at 24000 Hz with `MAXRATE=AHI` for it: it sends the highest
   offered rate below the source's, 24000 Hz for a 44.1 kHz file, where LMS keeps the file's family (22050 Hz).
   Not measured on the A1200 (agreed with the user on 2026-10-26).
+
+## player-14 The buffer running dry in the middle of a frame ✅ (2026-10-27, version 0.8)
+
+- **Found on the A1200** (2026-10-27, player-9 step 6, LMS, PCM): the network cable pulled for 10 s while
+  playing. Each time the sound stopped about 6 s later, when the buffer ran dry. Sometimes amisqueeze sent `STMo`,
+  LMS paused the player (`strm p`), then resumed it once the data came back (`strm u`), as in player-6b.
+  Sometimes no `STMo` came: the sound came back without that pause, or never when the stream's connection was lost
+  meanwhile (the test setup's relay on the development machine dropped it). amisqueeze kept running, sending its
+  `STMt` with an elapsed time that no longer moved.
+- **Cause**: the output sent `STMo` only when the ring was exactly empty. A stream that stops in the middle of a
+  frame (a sample of 4 bytes, or a FLAC or MP3 frame of several KB) leaves the start of that frame in the ring.
+  The decoder cannot use it, so the output has nothing to play, yet the ring is not empty. With `amisqueeze.fpu`
+  decoding FLAC or MP3, a stall almost always falls in the middle of a frame.
+- **Fixed** (agreed with the user on 2026-10-27): when the decoder produces nothing and takes nothing, the output
+  is empty, whatever the ring still holds (`stream.c`, both outputs). A partial frame at the end of a track was
+  already dropped: `STMu` was not affected.
+- **Tests**: the fake server's stall scenario stops the PCM stream after a whole frame, then 2 bytes into one; a
+  new scenario stalls a FLAC stream 100 bytes into a frame; the unit test of the AHI output runs dry after 40000
+  bytes, then after 40002. Each new case fails without the fix (no `STMo`), and passes with it. With the FLAC
+  scenario's first threshold of 16 KB, below its largest frame (about 15 KB after the metadata), the output started
+  with nothing to play and now says so (`STMo` at once); the servers ask for 200 KB or more.
+- **On the A1200** (2026-10-27, LMS, PCM): the cable pulled twice with the fix. Both times `STMo` came when the
+  sound stopped. Put back after 8 s: LMS paused the player, then resumed it about 1 s after the cable was back.
+  Put back after 13 s: the test setup's relay had dropped both connections meanwhile, so the player stayed
+  stopped. Without `STMo`, amisqueeze did not say "no news from the server" either, over more than 3 minutes:
+  why is still open.

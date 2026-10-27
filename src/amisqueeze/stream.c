@@ -474,7 +474,8 @@ static void check_start(struct player *p)
     }
 }
 
-/* Buffer and sink empty: STMo while still streaming (the network is too slow), STMu once everything was played */
+/* Buffer and sink empty, or nothing in the buffer the decoder can use yet (the start of a frame whose rest has not
+ * come): STMo while still streaming (the network is too slow), STMu once everything was played */
 static void output_empty(struct player *p)
 {
     struct output *o = &p->out;
@@ -536,8 +537,8 @@ static void feed_audio(struct player *p, uint32_t now)
         if (n == 0) {
             if (p->ring.total_out != before)
                 continue;                   /* consumed without output: header, or an end not decodable */
-            if (ring_used(&p->ring) == 0 && sink_drained(p))
-                output_empty(p);            /* the decoder waits for data that has not come */
+            if (sink_drained(p))
+                output_empty(p);            /* the decoder waits for data that has not come (or a frame's rest) */
             return;
         }
         o->starved = 0;
@@ -582,8 +583,8 @@ static void feed_virtual(struct player *p, uint32_t now)
                 continue;                   /* consumed without output: header, or an end not decodable */
             if (bytes < (uint32_t)t->out_fmt.channels * t->out_fmt.sample_bytes)
                 o->carry += bytes * 1000;   /* less than a frame due: kept for the next tick */
-            else if (ring_used(&p->ring) == 0)
-                output_empty(p);            /* the decoder waits for data that has not come */
+            else
+                output_empty(p);            /* the decoder waits for data that has not come (or a frame's rest) */
             break;
         }
         o->starved = 0;

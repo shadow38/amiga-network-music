@@ -147,7 +147,9 @@ What the server expects, as squeezelite behaves (written from the protocol, not 
 4. End of the HTTP body -> `DSCO` 0 + `STMd`. The server then sends the next track's `strm s`; its data is appended
    to the ring and `STMs` is sent again when the output reaches it.
 5. Buffer and sink empty: `STMo` while still streaming (the network is too slow), `STMu` once everything has been
-   played. A stream that fails sends `DSCO` with its reason (1 local, 2 remote, 3 unreachable).
+   played. A stream that fails sends `DSCO` with its reason (1 local, 2 remote, 3 unreachable). "Empty" means
+   nothing the decoder can use: a stream that stops in the middle of a frame leaves its start in the ring (fixed
+   in 0.8; until then no `STMo`, and LMS was not told).
 
 **`STMd` is sent at the end of the data received, not at the end of the decoding** (squeezelite sends it when its
 decoder has finished). With a 1 MB ring, the server's next `strm s` therefore comes while up to 1 MB of the
