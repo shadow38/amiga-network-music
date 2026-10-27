@@ -537,8 +537,10 @@ static void feed_audio(struct player *p, uint32_t now)
         if (n == 0) {
             if (p->ring.total_out != before)
                 continue;                   /* consumed without output: header, or an end not decodable */
-            if (sink_drained(p))
-                output_empty(p);            /* the decoder waits for data that has not come (or a frame's rest) */
+            /* The decoder waits for data that has not come, maybe the rest of a frame; a complete track only
+             * ends its decoding (the next track may be in the ring already) */
+            if ((!complete || ring_used(&p->ring) == 0) && sink_drained(p))
+                output_empty(p);
             return;
         }
         o->starved = 0;
@@ -583,8 +585,8 @@ static void feed_virtual(struct player *p, uint32_t now)
                 continue;                   /* consumed without output: header, or an end not decodable */
             if (bytes < (uint32_t)t->out_fmt.channels * t->out_fmt.sample_bytes)
                 o->carry += bytes * 1000;   /* less than a frame due: kept for the next tick */
-            else
-                output_empty(p);            /* the decoder waits for data that has not come (or a frame's rest) */
+            else if (!complete || ring_used(&p->ring) == 0)
+                output_empty(p);            /* the decoder waits for data that has not come (as above) */
             break;
         }
         o->starved = 0;
