@@ -107,7 +107,7 @@ out-host/test_core: obj-host/tests/test_core.o obj-host/tests/stub_platform.o \
 # with --release: no -dev version, the CHANGELOG section and its date); make-dist.py --check-readme: the Aminet
 # readme made from dist/amisqueeze.readme follows Aminet's rules (make dist checks it again); tests/check-saves.s:
 # the assembly safeguard must name each _bad_ function there, and no _good_ one
-SAVES_BAD := _bad_dbra _bad_plain _bad_postinc _bad_predec _bad_tst_postinc
+SAVES_BAD := _bad_dbra _bad_fpu _bad_plain _bad_postinc _bad_predec _bad_tst_postinc
 test: host out-host/test_core
 	python3 tools/check-version.py
 	python3 tools/make-dist.py --check-readme amisqueeze

@@ -25,6 +25,24 @@ _bad_dbra:
 _bad_plain:
 	moveq #0,d2
 	rts
+	.globl	_bad_fpu
+_bad_fpu:
+	fmove.d 4(sp),fp0
+	fmove.x fp0,fp2
+	fadd.x fp2,fp0
+	rts
+	.globl	_good_fpu
+_good_fpu:
+	fmovem #28,-(sp)
+	fmove.x fp2,-(sp)
+	fmove.d 40(sp),fp2
+	fmul.x fp2,fp3
+	fmove.x fp3,fp4
+	fcmp.x fp5,fp0
+	ftst.x fp6
+	fmove.x (sp)+,fp2
+	fmovem (sp)+,#56
+	rts
 	.globl	_good_saved
 _good_saved:
 	movem.l d3/a2-a3,-(sp)
