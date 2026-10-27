@@ -244,8 +244,8 @@ belongs to the task that opened it; packets serialised field by field; buffers a
     goes on with the next track;
   - LMS restarted during playback: playback stops, the player reconnects, LMS keeps its playlist but stays
     stopped (its choice), a new playback works. **Found**: while LMS was down, amisqueeze connected 121 times in
-    4 s: the Incus proxy (as any relay) accepts the connection and closes it at once, and amisqueeze reconnected
-    without waiting. **Fixed**: a connection lost less than 10 s after it was made is no real session: wait 5 s
+    4 s: the relay in front of the test server (as any relay) accepts the connection and closes it at once, and
+    amisqueeze reconnected without waiting. **Fixed**: a connection lost less than 10 s after it was made is no real session: wait 5 s
     before the next attempt, as after a refused connection ("retrying in 5 s"); after a real session, reconnect at
     once (fake server: 5.0 s, then 0.0 s).
 - **player-6c** (2026-10-19, WinUAE): `Break` while waiting to reconnect, connected and idle, waiting for the stream's
@@ -783,8 +783,8 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   `time ?` is wrong for a while after a seek or a new start: 156 s (the track's length) 3 s after a seek to 146 s,
   about 20 s instead of 5 s just after a new start; the same with `8ecb2cf` (player-4c), with AHI and `NOAUDIO`, with
   an MP3 and a FLAC. Not amisqueeze's: its elapsed time is right (a throwaway build printing every `STAT`: 0 at
-  the new `STMs`, 1,009 ms a second later, the next track's `STMs` 10.15 s after the seek), and the host build
-  (HostTest) gets the right times from the same LMS. The emulated Amiga's clock falls behind real time (about 28 s
+  the new `STMs`, 1,009 ms a second later, the next track's `STMs` 10.15 s after the seek), and the host build gets
+  the right times from the same LMS. The emulated Amiga's clock falls behind real time (about 28 s
   lost during a two-minute run, where exactly not known), and LMS adds to the last elapsed time
   the delay since that `STAT`, measured with the player's clock, following a clock that falls behind only after
   about 50 messages (`trackJiffiesEpoch` in `Slim/Player/Player.pm`). Intervals stay right (+30.03 s in 30.02 s).
