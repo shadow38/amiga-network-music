@@ -707,9 +707,12 @@ belongs to the task that opened it; packets serialised field by field; buffers a
     should cover the PCMCIA range (the driver's slower path, if the card is still seen), or 4 MB, which leaves it
     free (its shared-memory path, the driver's issue #2). In each position: the memory list and `card.resource`,
     the idle count, 2 MB transfers both ways, then amisqueeze with LMS and its rules, the AHI unit at 22050 Hz and
-    `MAXRATE=AHI`, lower if needed (16000, 11025, Paula's 8-bit mode): load, `STMo`, crackles. Estimated from the
-    measures above, not measured: about twice the load at 14 MHz, less the gain of the shared-memory path, so 60 to
-    85 % at 22.05 kHz; the direct Paula output (player-11) would matter most there.
+    `MAXRATE=AHI`, lower if needed (16000, 11025, Paula's 8-bit mode): load, `STMo`, crackles. Then how responsive
+    the Amiga stays while it plays (added with the user on 2026-10-27: it may play, yet be too slow to use): the
+    time of a known Shell command (`List` of a drawer), a Workbench window opened, a window moved; with amisqueeze
+    at its usual priority, then a higher one. Estimated from the measures above, not measured: about twice the
+    load at 14 MHz, less the gain of the shared-memory path, so 60 to 85 % at 22.05 kHz; the direct Paula output
+    (player-11) would matter most there.
 - **Protocol** (agreed 2026-10-20), with an LMS server on the local network (ports 3483 and its web port), and
   a computer reaching its CLI to read the elapsed time:
   1. the machine: `Version FULL`, `Avail` (with its `Largest` column), `BENCH`; the CPU left when idle;
