@@ -66,7 +66,7 @@ One line each; the pointer says where it is explained.
 | `decoder.c`, `flac.c`, `mp3.c`, `third_party/` | `architecture.md`, Decoders; `CONTRIBUTING.md`, Code rules and Stack and memory |
 | `audio.c`, the AHI calls of `amiga.c` | `architecture.md`, AHI |
 | the start-up of `amiga.c`, `__stack`, libnix | `CONTRIBUTING.md`, Stack and memory and Pitfalls |
-| `Makefile`, `tools/check-saves.py`, `tools/amiga-make.sh` | `CONTRIBUTING.md`, Requirements and Building |
+| `Makefile`, `tools/check-saves.py`, `tools/check-stack.py`, `tools/amiga-make.sh` | `CONTRIBUTING.md`, Requirements, Building, and Stack and memory |
 | `tests/`, `.github/workflows/` | `CONTRIBUTING.md`, Host build and tests |
 | the version number, `CHANGELOG.md`, `make dist`, a release | `CONTRIBUTING.md`, Releasing |
 | anything tried in WinUAE | `CONTRIBUTING.md`, Testing in WinUAE; `docs/development/testing.md`, `winuae-scenarios.md` |

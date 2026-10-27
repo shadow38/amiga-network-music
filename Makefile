@@ -31,9 +31,11 @@ PROGS   := $(notdir $(wildcard src/*))
 # amisqueeze (slimproto player): targets 68020+ (WinUAE, PiStorm), without FPU.
 # -Wno-pointer-sign: dos.library prototypes expect UBYTE * strings. -Werror=format: msg() format checks.
 # The Shell's stack (4 KB by default) is too small for the decoders (dr_flac about 5 KB, minimp3 about 17 KB):
-# libnix's start-up code enlarges it (__stkinit, linked in here; size in __stack, amiga.c).
+# libnix's start-up code enlarges it (__stkinit, linked in here; size in __stack, amiga.c). tools/check-stack.py
+# reads the linker map of each program of STACK_PROGS: __stkinit linked, __stack defined in its amiga.o.
 amisqueeze_CFLAGS  := -m68020 -Wno-pointer-sign -Werror=format -Ithird_party/dr_flac -Ithird_party/minimp3
 amisqueeze_LDFLAGS := -Wl,-u,___stkinit
+STACK_PROGS        := amisqueeze
 
 # amisqueeze.fpu: the same sources built for a 68881/68882 FPU (or a 68040/68060 with FPU): floating point in
 # hardware, so it holds the MP3 decoder (AMISQUEEZE_MP3). Objects in obj/amisqueeze-fpu/.
@@ -72,7 +74,8 @@ all: $(PROGS)
 define PROG_template
 $(1): out/$(1)
 out/$(1): $(patsubst src/%.c,obj/%.o,$(call amiga_srcs,$(1))) | out
-	$$(CC) $$(LDFLAGS) $$($(1)_LDFLAGS) $$($(1)_CFLAGS) -o $$@ $$^
+	$$(CC) $$(LDFLAGS) $$($(1)_LDFLAGS) $$($(1)_CFLAGS) -Wl,-Map,obj/$(1).map -o $$@ $$^
+	$(if $(filter $(1),$(STACK_PROGS)),python3 tools/check-stack.py obj/$(1).map obj/$(1)/amiga.o)
 obj/$(1)/%.o: CFLAGS += $$($(1)_CFLAGS)
 endef
 $(foreach p,$(PROGS),$(eval $(call PROG_template,$(p))))
@@ -82,7 +85,8 @@ amisqueeze: out/amisqueeze.fpu out/amisqueeze.info out/amisqueeze.fpu.info
 out/%.info: tools/make-icon.py | out
 	python3 tools/make-icon.py $@
 out/amisqueeze.fpu: $(patsubst src/amisqueeze/%.c,obj/amisqueeze-fpu/%.o,$(call amiga_srcs,amisqueeze)) | out
-	$(CC) $(LDFLAGS) $(amisqueeze_fpu_LDFLAGS) $(amisqueeze_fpu_CFLAGS) -o $@ $^
+	$(CC) $(LDFLAGS) $(amisqueeze_fpu_LDFLAGS) $(amisqueeze_fpu_CFLAGS) -Wl,-Map,obj/amisqueeze-fpu.map -o $@ $^
+	python3 tools/check-stack.py obj/amisqueeze-fpu.map obj/amisqueeze-fpu/amiga.o
 obj/amisqueeze-fpu/%.o: src/amisqueeze/%.c
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) $(amisqueeze_fpu_CFLAGS) -MMD -MP -save-temps=obj -c -o $@ $<
