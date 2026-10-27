@@ -28,6 +28,7 @@ are previews, tested in WinUAE only, not yet on a real Amiga.
   AHI), with the CPU load `MAXRATE` saves there; a known limit with Aminet's driver for Xircom PCMCIA cards.
 - User guide: with Paula, `SWAP` is now part of setting up the AHI unit, since `paula.audio` swaps left and right,
   on a real A1200 too.
+- User guide: which internet radios may cut with LMS, and its "Proxied Streaming" setting, which should avoid it.
 
 ### Fixed
 

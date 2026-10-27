@@ -652,6 +652,11 @@ rows say what comes next.
   - close other busy programs;
   - raw PCM needs about 1.4 Mbit/s for CD quality: a slow network can starve it. With LMS,
     [`MAXRATE`](#maxrate) asks for less.
+- **An internet radio cuts several times a second, with LMS and `amisqueeze.fpu`.** The radio mixes its titles
+  into the sound, and LMS lets amisqueeze fetch it itself (see [known limits](#known-limits)). `VERBOSE` shows
+  `<- cont ignored`. In the player's settings in LMS (*Settings*, the player, then *Audio*), set **Streaming
+  Method** to **Proxied Streaming**. LMS then fetches the radio and removes the titles from the sound. Expected
+  from LMS's code, not tried with amisqueeze yet.
 - **Crackles at low volume with Paula.** Fix the volume at 100 and turn the amplifier down instead (see
   [volume](#volume)).
 - **Nothing happens from the Workbench.** With `QUIET`, add `LOG=<file>` to see the messages. If amisqueeze already
@@ -669,8 +674,10 @@ rows say what comes next.
 - Files above 48 kHz (88.2, 96, 192 kHz) play only when FLAC is decoded on the Amiga. Otherwise LMS cannot lower
   their rate as it makes raw PCM: its log says "Couldn't create command line for flc playback".
 - Some internet radios mix their metadata (the title playing) into the MP3 stream. amisqueeze does not remove it
-  yet. When LMS has `amisqueeze.fpu` fetch such a radio itself, the sound may cut regularly; `VERBOSE` then
-  shows `<- cont ignored`. Not checked with a real radio yet.
+  yet. Music Assistant always fetches the radio itself and removes it, and so does LMS in most cases. The
+  exception: LMS lets `amisqueeze.fpu` fetch an MP3 radio at an `http://` address itself. The sound may then cut
+  several times a second: see [troubleshooting](#troubleshooting) for the LMS setting that avoids it. Not
+  checked with a real radio yet.
 - MP3 tracks follow each other without a gap only when the file has the header that LAME, and the encoders that
   copy its format, write in the first frame. Without it, a few hundredths of a second of silence remain between
   tracks.

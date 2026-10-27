@@ -210,6 +210,17 @@ Framing: server to client, a 2-byte length then a 4-byte opcode and the data; cl
 all: internet radios' metadata (ICY, planned for 0.9, see the plan), synchronisation between players, displays
 and IR.
 
+**Internet radios** (read in LMS 9.1.1's and Music Assistant 2.10.7's code): ICY blocks reach amisqueeze only
+on a direct stream, where the player fetches the radio itself.
+
+- LMS streams directly when the player decodes the format (MP3 with `amisqueeze.fpu`), the address is `http://`
+  (amisqueeze does not announce `CanHTTPS`) and the player is not synchronised. Neither the player's "Streaming
+  Method" nor the server's `useEnhancedHTTP` ("Streaming mode for HTTP(S)") may ask for a proxy
+  (`canDirectStream` in `Slim/Player/Protocols/HTTP.pm` and `HTTPS.pm`).
+- Otherwise LMS fetches the radio, asks for `Icy-MetaData` and removes the blocks itself (`readMetaData`).
+- Music Assistant always fetches the radio, removes the blocks and keeps the title
+  (`controllers/streams/audio.py`).
+
 **Server discovery** (without `SERVER`): a UDP request broadcast to 255.255.255.255 on `PORT`, `e` then the
 field `NAME` with no value (a 4-byte tag, a 1-byte length). LMS (`Slim/Networking/Discovery.pm`) and Music
 Assistant (aioslimproto's `discovery.py`) both answer on their slimproto port, with `E` and the fields asked for.
