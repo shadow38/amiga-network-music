@@ -10,30 +10,32 @@
 
 static volatile unsigned long spin;
 
-static long ticks(void)
+/* Ticks of the Amiga's clock since 1978, modulo 2^32 (unsigned: it wraps every 994 days, a difference stays right) */
+static unsigned long ticks(void)
 {
     struct DateStamp ds;
     DateStamp(&ds);
-    return (ds.ds_Days * 1440L + ds.ds_Minute) * 60L * TICKS_PER_SECOND + ds.ds_Tick;
+    return ((unsigned long)ds.ds_Days * 1440UL + (unsigned long)ds.ds_Minute) * 60UL * TICKS_PER_SECOND
+           + (unsigned long)ds.ds_Tick;
 }
 
 int main(int argc, char **argv)
 {
-    long secs = 10, end, start;
+    long secs = 10;
+    unsigned long start;
     unsigned long rounds = 0;
     int i;
 
     if (argc > 1) {
         secs = 0;
-        for (i = 0; argv[1][i] >= '0' && argv[1][i] <= '9'; i++)
+        for (i = 0; argv[1][i] >= '0' && argv[1][i] <= '9' && secs < 86400; i++)   /* a day at most */
             secs = secs * 10 + (argv[1][i] - '0');
         if (secs <= 0)
             secs = 10;
     }
     SetTaskPri(FindTask(NULL), -128);
     start = ticks();
-    end = start + secs * TICKS_PER_SECOND;
-    while (ticks() < end) {
+    while (ticks() - start < (unsigned long)secs * TICKS_PER_SECOND) {
         for (i = 0; i < 1000; i++)
             spin++;
         rounds++;
