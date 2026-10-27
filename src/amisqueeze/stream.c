@@ -45,6 +45,7 @@ static void stream_close(struct player *p)
     if (p->stream.sock >= 0) {
         plat_close(p->stream.sock);
         p->stream.sock = -1;
+        p->stream.closes++;             /* the next socket may take the same number */
     }
 }
 

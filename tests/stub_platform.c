@@ -22,6 +22,8 @@ int      stub_file_len;
 int      stub_file_open;
 int      stub_file_fails;
 int      stub_file_limit;
+int      stub_wait[8][2];
+int      stub_waits;
 
 struct stub_audio_req stub_audio[8];
 int      stub_audio_fails;
@@ -55,6 +57,7 @@ void stub_reset(void)
     srx.len = srx.pos = 0;
     stream_ended = 0;
     stub_stream_open = 0;
+    stub_waits = 0;
 }
 
 static void put(struct queue *q, const void *data, int len)
@@ -343,8 +346,14 @@ void plat_file_close(int file)
 
 int plat_wait(struct plat_fd *fds, int n, uint32_t timeout_ms)
 {
-    (void)fds;
-    (void)n;
+    int i;
+
     (void)timeout_ms;
-    return -1;
+    if (stub_waits == 0)
+        return -1;                      /* as a Ctrl-C */
+    for (i = 0; i < n; i++)
+        fds[i].ready = i < 2 ? stub_wait[0][i] & fds[i].events : 0;
+    stub_waits--;
+    memmove(stub_wait[0], stub_wait[1], sizeof(stub_wait) - sizeof(stub_wait[0]));
+    return n;
 }

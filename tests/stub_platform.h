@@ -30,6 +30,10 @@ extern int      stub_file_len;
 extern int      stub_file_open;         /* 1 while the file is open */
 extern int      stub_file_fails;        /* 1: plat_file_create() fails */
 extern int      stub_file_limit;        /* writes stop at this file size, like a full disk (0 = no limit) */
+/* The next stub_waits calls of plat_wait() say ready what stub_wait[i] gives, for the control connection then the
+ * stream one (PLAT_READ, PLAT_WRITE, within what is waited for); afterwards plat_wait() returns -1, as on a Ctrl-C */
+extern int      stub_wait[8][2];
+extern int      stub_waits;
 
 struct stub_audio_req {
     const uint8_t *data;

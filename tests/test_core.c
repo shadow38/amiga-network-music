@@ -2754,6 +2754,36 @@ static void test_start_mode(void)
     CHECK(strstr(stub_out, "output: AHI unit 3\n") && !strstr(stub_out, "uses \""));
 }
 
+/* The main loop (run(), through player_main()) when a strm s replaces a stream still connecting, in the turn where
+ * the old socket is reported writable: the new socket takes the same number (as on every system that reuses the
+ * lowest free one), but that readiness belongs to the old one, so the new stream must not be taken as connected
+ * (its HTTP request not sent) before a wait reports it */
+static void test_run_stale_ready(void)
+{
+    struct player p;
+    struct options o;
+    char fmt[7] = { '1', 'p', '1', '3', '2', '1', 1 };
+    static const int turns[][2] = {
+        { PLAT_READ, 0 },               /* strm s of A: its length */
+        { PLAT_READ, 0 },               /* its body: A connecting */
+        { PLAT_READ, 0 },               /* strm s of B: its length */
+        { PLAT_READ, PLAT_WRITE },      /* its body: A closed, B connecting; A's socket was writable */
+    };
+
+    memset(&o, 0, sizeof(o));
+    o.server = "127.0.0.1";
+    o.port = SLIMPROTO_PORT;
+    o.flac = o.mp3 = DECODE_OFF;
+    stub_reset();
+    feed_strm('s', fmt, 0, 9000, 0, "GET /a HTTP/1.0\r\n\r\n");
+    feed_strm('s', fmt, 0, 9000, 0, "GET /b HTTP/1.0\r\n\r\n");
+    memcpy(stub_wait, turns, sizeof(turns));
+    stub_waits = 4;
+    memset(&p, 0, sizeof(p));
+    CHECK(player_main(&p, &o) == PLAYER_OK);
+    CHECK(stub_waits == 0 && stub_stream_tx_len == 0);  /* neither request sent: no wait said B connected */
+}
+
 /* Workbench start: an icon's ToolTypes turned into a command line for the template */
 static void test_tooltypes(void)
 {
@@ -2837,6 +2867,7 @@ int main(void)
     test_flush_loaded();
     test_ahi_mode();
     test_start_mode();
+    test_run_stale_ready();
     test_lame_header();
     test_tooltypes();
     printf("test_core: %d checks, %d failed\n", checks, failures);

@@ -260,6 +260,7 @@ static void run(struct player *p)
     for (;;) {
         struct plat_fd fds[2];
         int n = 0, r, events;
+        uint32_t closes = p->stream.closes;
 
         if (p->sock < 0) {
             if (!slim_connect(p, reconnect)) {
@@ -289,8 +290,9 @@ static void run(struct player *p)
                 return;
             continue;
         }
-        /* The control packet may have closed or replaced the stream: only use a ready state that is still valid */
-        if (n > 1 && fds[1].ready && fds[1].sock == p->stream.sock)
+        /* The control packet may have closed or replaced the stream: only use a ready state that is still valid. A
+         * new socket may take the old one's number, so the closes are counted rather than the numbers compared. */
+        if (n > 1 && fds[1].ready && p->stream.closes == closes)
             stream_io(p, fds[1].ready);
         output_tick(p, plat_now_ms());
         if ((uint32_t)(plat_now_ms() - p->last_rx) > RX_TIMEOUT_MS) {

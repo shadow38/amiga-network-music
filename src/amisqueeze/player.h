@@ -67,6 +67,7 @@ enum stream_state {
 
 struct stream {
     int      sock;
+    uint32_t closes;                    /* sockets closed so far: a readiness seen before a close is not this one's */
     int      state;                     /* enum stream_state */
     uint32_t ip;
     uint16_t port;

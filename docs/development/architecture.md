@@ -32,7 +32,8 @@ POSIX header. Whatever touches the system (sockets, clock, files, the audio devi
 One task, one loop (`run()` in `player.c`): `plat_wait()` on the control socket and, while there is one, the
 stream socket (writable while connecting, readable once the ring has room enough), with a timeout of 100 ms while
 something streams or plays and 1 s otherwise. On the Amiga, the end of an AHI request also wakes it up. Each turn:
-the control packet, then the stream socket, then `output_tick()`. Addresses and ports are in host byte order in the
+the control packet, then the stream socket, then `output_tick()`. The stream socket's readiness is used only if
+the control packet closed no stream socket (`stream.closes`): a new socket may take the old one's number. Addresses and ports are in host byte order in the
 core; only the platform layers convert them.
 
 Builds of the same sources: `out/amisqueeze` (68020, FLAC), `out/amisqueeze.fpu` (68020 + 68881, `AMISQUEEZE_FPU`
