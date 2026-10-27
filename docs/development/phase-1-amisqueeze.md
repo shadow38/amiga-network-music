@@ -729,7 +729,10 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   6. robustness (player-6): the Ethernet cable pulled for 10 s and LMS restarted while playing; Ctrl-C at the
      connection, while playing, in pause; one hour of playback with `Avail` before and after;
   7. the Workbench: the icon, `QUIET` with `LOG` (no window), a wrong ToolType (the window opens), Exchange's
-     Remove, `SYS:WBStartup`.
+     Remove, `SYS:WBStartup`;
+  8. server discovery (player-10, added with the user on 2026-10-27): without `SERVER`, LMS found, then Music
+     Assistant, then no server (the message, Ctrl-C while it waits); with each TCP/IP stack at hand, since their
+     support of broadcasts varies.
 
   Steps 1 and 4 (and the hour of step 6) are scripted in AmigaDOS: versions, memory before, while playing and
   after the stop, `BENCH`, the CPU left when idle and while playing, amisqueeze started from a 4 KB stack with its
@@ -795,10 +798,28 @@ belongs to the task that opened it; packets serialised field by field; buffers a
 
 - **Split** (decided 2026-10-20, see the [plan](README.md)): **0.4** the volume modes (`LMS` and `FIXED`, done
   as LMS's own setting, see below; `MIXER` left for later) and the AHI mode warning; **0.5** `LOG=<file>` and
-  the start from the Workbench; **0.9** (moved from 0.6 on 2026-10-20, 0.6 being the review fixes, then from 0.7
-  on 2026-10-21, 0.7 being Music Assistant and 0.8 the real machine) the automatic server discovery, after the
-  real machine (player-9), since the test setup cannot check a UDP broadcast. The `BUFFER` option only if player-9 shows a
-  need. Each part is designed with the user when it starts.
+  the start from the Workbench; **0.8** the automatic server discovery (agreed with the user on 2026-10-27: its
+  last check needs the real machine, in the same session as player-9); **0.9** the internet radios' metadata.
+  The `BUFFER` option only if player-9 shows a need. Each part is designed with the user when it starts.
+- **Automatic server discovery** (designed with the user on 2026-10-27, version 0.8):
+  - Only when no `SERVER` is given: not on the command line, in `ENV:amisqueeze.prefs` or in the ToolTypes. No
+    new option.
+  - A discovery request is broadcast on UDP: `e`, then the field `NAME` with no value, to 255.255.255.255 on
+    `PORT` (3483 by default). The same `PORT` then serves the TCP connection. Both servers answer this request on
+    their slimproto port: LMS (`Slim/Networking/Discovery.pm`) and Music Assistant (aioslimproto's
+    `discovery.py`).
+  - Every reply that starts with `E` within 2 s counts. The server's address is the reply's source address,
+    since neither server sends its slimproto port. `NAME` is read within the packet's bounds and shown in ASCII:
+    Music Assistant counts its length in characters, then encodes the packet in UTF-8. Each server found is
+    shown with its name; amisqueeze connects to the first. To choose another, give `SERVER`.
+  - No reply: a message once, then a new request every 5 s, Ctrl-C at any time.
+  - A lost connection is retried at the same address first. If that connection fails, the discovery starts
+    again, the server's address may have changed. Never with `SERVER`.
+  - **Criterion**: on the host, the reply's parser in unit tests (malformed and truncated replies, Music
+    Assistant's lengths), and fake server scenarios (one server, two, none, a malformed reply); in WinUAE, a
+    server found through a UDP relay on the PC, if the broadcast gets there; on the A1200, step 8 of the
+    player-9 protocol. A test server the broadcast does not reach directly (in a container, for instance) needs a
+    UDP relay.
 - **Content**: automatic server discovery (UDP broadcast on port 3483); start from the Workbench with an icon and
   ToolTypes (read with the same template; precedence: built-in defaults, `ENV:amisqueeze.prefs`, ToolTypes,
   command line), with a console window or quiet mode; running in the background (`Run`, or at startup);

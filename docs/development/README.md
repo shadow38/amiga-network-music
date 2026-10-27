@@ -51,8 +51,8 @@ agreed with the user.
 | Version | Brings | Steps | Status |
 |---|---|---|---|
 | 0.1 to 0.7 | the player for LMS and Music Assistant: PCM, FLAC, MP3, start from the Workbench, the `.lha`, releases built by the CI | player-1 to player-8d, player-7b, part of player-10, tools-10 (LMS), publish-2 (`.lha`), publish-3 | ✅ 2026-10-19 to 2026-10-23, see the [changelog](../../CHANGELOG.md) |
-| 0.8 | what the real machine shows; a lower rate asked of the server; hardening; the writing rules applied to the documentation | player-9, player-12, player-13, tools-11, publish-6 | ⬜ |
-| 0.9 | internet radios' metadata (ICY), automatic server discovery | player-10 (end) | ⬜ |
+| 0.8 | what the real machine shows; a lower rate asked of the server; automatic server discovery; hardening; the writing rules applied to the documentation | player-9, player-10 (discovery), player-12, player-13, tools-11, publish-6 | ⬜ |
+| 0.9 | internet radios' metadata (ICY) | player-10 (end) | ⬜ |
 | 1.0 | setup guides, a full audit, the upload to Aminet | publish-4, publish-5, tools-10 (Music Assistant), publish-2 (Aminet) | ⬜ |
 | none yet | ideas: direct Paula output, source-level debugging | player-11, tools-8 | ⬜ |
 | none | reference documents on AmigaOS for contributors, committed when ready (agreed with the user on 2026-10-24) | tools-12 | ⬜ |
@@ -70,8 +70,11 @@ Agreed with the user on 2026-10-26.
     the real machine confirms it (seen in WinUAE on 2026-10-23; agreed with the user on 2026-10-23);
   - Ctrl-C with a real TCP/IP stack (protocol step 6; see [Open points](#open-points));
   - the `aac` row of the user guide, with Music Assistant;
-  - the free memory the user guide asks for, from `Avail` (protocol step 1).
+  - the free memory the user guide asks for, from `Avail` (protocol step 1);
+  - the automatic server discovery, with LMS, Music Assistant and no server (protocol step 8).
 - **A lower rate asked of the server** (player-13): a `MAXRATE` option, with a conversion rule on LMS.
+- **Automatic server discovery** (player-10): moved from 0.9, since its last check needs the same session on the
+  real machine (agreed with the user on 2026-10-27). Designed and tested on the host and in WinUAE first.
 - **Paula's swapped sides**: a note in the user guide for `paula.audio`, done on 2026-10-27. No `SWAP` by
   default: the sides are left to the direct Paula output (player-11).
 - **The messages Music Assistant sends and amisqueeze ignores** (`vers`, `grfb`, `grfe`, `codc`, `cont`): shown
@@ -88,8 +91,6 @@ Agreed with the user on 2026-10-26.
   autostart, asks the radio for `Icy-MetaData: 1`, then sends the blocks' interval in `cont`. amisqueeze does not
   remove the blocks yet, and minimp3 loses its sync at each one. To do: remove them (the interval from `cont` or
   the `icy-metaint` header), a fake server scenario, a check with a real radio.
-- **Automatic server discovery** (player-10), after the real network: the test LMS runs in a container that the
-  emulated Amiga's UDP broadcast does not reach.
 - **From the 0.7 review's 50 list** (agreed with the user on 2026-10-23):
   - the HTTP status line is never checked;
   - the body of a direct stream plays before LMS's `cont`, so a redirect or an error page plays as a track;
@@ -132,7 +133,7 @@ Agreed with the user on 2026-10-26.
 | player-8 Local decoding (FLAC, then MP3) | ✅ 2026-10-19 |
 | player-8d MP3 without gaps between tracks | ✅ 2026-10-20 |
 | player-9 Real machine | ⬜ with 0.7, for 0.8 |
-| player-10 Finishing touches | 🔶 the parts of 0.4 and 0.5 done; ICY and server discovery in 0.9 |
+| player-10 Finishing touches | 🔶 the parts of 0.4 and 0.5 done; server discovery in 0.8, ICY in 0.9 |
 | player-11 Direct Paula output, without AHI | ⬜ idea (CPU load on a slow 68020; crackles with a PCMCIA network card, player-9) |
 | player-12 Hardening (the 0.7 review's 50 list) | ✅ 2026-10-27 (version 0.8) |
 | player-13 A lower rate asked of the server | ✅ 2026-10-26: `MAXRATE` and the LMS rules; on the A1200, 62 % of the CPU at 32 kHz against 77 %; Music Assistant upstream: the user's decision |
