@@ -896,34 +896,22 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   player-4 to player-6, sides in place without `SWAP`, at a CPU load clearly below AHI's (measured with `cpucount`, as in
   player-4c); then heard on the real 68020 machine (player-9).
 
-## player-12 Hardening 🔶 (0.8)
+## player-12 Hardening ✅ (2026-10-27, version 0.8)
 
-The 50 list of the [0.7 review](reviews/0.7.md#5-the-50-list), except the items planned for 0.9 and those of the
-real machine (the `aac` row, the free memory: player-9). Each item agreed with the user on 2026-10-27, with the
-open points below. One commit per item, in the order 12b, 12a, 12c.
-
-- **player-12a, the code** (done on 2026-10-27; the WAV rate's bound of the list came in 0.7):
-  - `PORT` checked from 1 to 65535, `UNIT` from 0 to 3, or an error at start-up (open point closed);
-  - the player name from `setd` shown with `?` for each byte that is not ASCII;
-  - the stale socket readiness after a `strm s` that reuses the socket number (`player.c`): real, fixed with a
-    test;
-  - `cpucount`'s clock in seconds computed without a signed overflow;
-  - `gethostbyname()` without an address taken as a failure, and an `ENV:amisqueeze.prefs` too long for its buffer
-    refused with a message rather than cut (open points closed);
-  - the track queue that forgets the oldest track when full is kept: neither LMS 9.1 nor Music Assistant sends a
-    third track ahead (open point closed).
-- **player-12b, the safety nets** (done on 2026-10-27): `fake_server.py` checks every exit code;
-  `check-saves.py` covers fp2-fp7; the ASCII rule checked on the texts of the archive and the sources; a check
-  that `___stkinit` is linked and `__stack` set; a test for each server-input check (the lengths of `strm`,
-  `audg`, `setd` and of a packet, the PCM fields, autostart, headers too long); `strm f` and a refused stream in
-  the fake server, the flush with nothing playing in the unit tests; `make test` also builds and runs amisqueeze
-  without MP3, and checks the scripts' syntax; the CI builds `cpucount`. `release.yml` still does not run the
-  tests: the release is a draft published by hand, and `tests.yml` runs on the tag.
-- **player-12c, the documentation**: the review's notes on `architecture.md`, the user guide, the plan's statuses,
-  the three decisions not marked as agreed, the local names left in the plan, the review levels of
-  `phase-3-release.md`.
-- **Criterion**: each safety net added or mended, and each check added to the code, seen failing on a planted
-  defect, then `make test` green. What the host build does not run (`amiga.c`) is read, and said so in the commit.
+- **Done**: the 50 list of the [0.7 review](reviews/0.7.md#5-the-50-list), but the items of 0.9 and those of the
+  real machine (the `aac` row, the free memory: player-9), each item agreed with the user on 2026-10-27, one
+  commit each. Safety nets: every exit code in `fake_server.py`, fp2-fp7 in `check-saves.py`, the texts and
+  sources ASCII, `check-stack.py`, a test for each check of the server's input, `strm f` and a refused stream,
+  the build without MP3, the scripts' syntax, `cpucount` in the CI. Code: `PORT` and `UNIT` ranges, the `setd`
+  name shown in ASCII, the stream's readiness after a new socket, `cpucount`'s clock, `gethostbyname()` without
+  an address, an `ENV:amisqueeze.prefs` too long. The plan's statuses and decisions brought up to date.
+- **Kept as they are** (agreed with the user on 2026-10-27): the track queue that forgets the oldest track when
+  full (neither LMS 9.1 nor Music Assistant sends a third track ahead); `release.yml` without the tests (the
+  release is a draft published by hand, and `tests.yml` runs on the tag); the advice on `NODE_EXTRA_CA_CERTS` in
+  `CONTRIBUTING.md` (generic, no machine named).
+- **Left**: the `stop_decoder()` of `strm f` once the decoding has reached the next track is caught by a state
+  check only; the sound would show it only between two tracks of the same decoder (FLAC, MP3) on the audio
+  output, which the host tests do not have.
 
 ## player-13 A lower rate asked of the server ✅ (2026-10-26, version 0.8)
 

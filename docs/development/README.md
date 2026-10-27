@@ -78,7 +78,7 @@ Agreed with the user on 2026-10-26.
   with `VERBOSE` only, since they read as errors. An unknown message is still shown. Done on 2026-10-27. `cont`
   itself is handled in 0.9 (ICY).
 - **Hardening** (player-12): the 50 list of the [0.7 review](reviews/0.7.md#5-the-50-list), except the items of
-  0.9 below.
+  0.9 below. Done on 2026-10-27.
 - **The writing rules** (publish-6): the plan and the user guide done on 2026-10-24; `docs/development/` next,
   where the user finds it worth it.
 
@@ -134,7 +134,7 @@ Agreed with the user on 2026-10-26.
 | player-9 Real machine | ⬜ with 0.7, for 0.8 |
 | player-10 Finishing touches | 🔶 the parts of 0.4 and 0.5 done; ICY and server discovery in 0.9 |
 | player-11 Direct Paula output, without AHI | ⬜ idea (CPU load on a slow 68020; crackles with a PCMCIA network card, player-9) |
-| player-12 Hardening (the 0.7 review's 50 list) | 🔶 for 0.8: content agreed on 2026-10-27; 12b and 12a done on 2026-10-27, 12c next |
+| player-12 Hardening (the 0.7 review's 50 list) | ✅ 2026-10-27 (version 0.8) |
 | player-13 A lower rate asked of the server | ✅ 2026-10-26: `MAXRATE` and the LMS rules; on the A1200, 62 % of the CPU at 32 kHz against 77 %; Music Assistant upstream: the user's decision |
 | remote-0 Study (common interface, Music Assistant feasibility, name) | ⬜ before any amilms code |
 | remote-1 to remote-7 LMS | ⬜ |
