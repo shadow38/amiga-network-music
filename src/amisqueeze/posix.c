@@ -4,9 +4,10 @@
  *
  *   amisqueeze [[SERVER=]<ip|name>] [PORT=3483] [NAME=<name>] [MAC=xx:xx:xx:xx:xx:xx] [OUTPUT=<file>] [LOG=<file>]
  *              [UNIT=<n>] [NOAUDIO] [SWAP] [FLAC=AUTO|ON|OFF] [MP3=AUTO|ON|OFF]
- *              [MAXRATE=AHI|AHISTD|<Hz>] [BENCH] [VERBOSE]
+ *              [MAXRATE=AHI|AHISTD|<Hz>] [PRI=<n>] [BENCH] [VERBOSE]
  *
  * No audio output: always the virtual output (UNIT, NOAUDIO and SWAP are accepted for the same command lines).
+ * PRI is checked but leaves the process's priority as it is.
  *
  * Ctrl-C (SIGINT) or SIGTERM stops it, like Ctrl-C on the Amiga. No default options file.
  */
@@ -114,6 +115,11 @@ uint32_t plat_now_ms(void)
 
     clock_gettime(CLOCK_MONOTONIC, &ts);
     return (uint32_t)((uint64_t)ts.tv_sec * 1000 + (uint64_t)ts.tv_nsec / 1000000);
+}
+
+void plat_set_priority(int pri)
+{
+    (void)pri;                              /* PRI is checked by the core, not applied on the host */
 }
 
 int plat_resolve(const char *host, uint32_t *ip)
@@ -389,6 +395,10 @@ static int parse_args(int argc, char **argv, struct options *o)
                 log_name = v;
             else if (k == 4 && !strncasecmp(a, "UNIT", 4))
                 o->unit = atoi(v);
+            else if (k == 3 && !strncasecmp(a, "PRI", 3)) {
+                o->pri = atoi(v);
+                o->pri_given = 1;
+            }
             else if (k == 4 && !strncasecmp(a, "FLAC", 4)) {
                 if ((o->flac = parse_decode_mode(v)) < 0) {
                     msg("amisqueeze: FLAC=%s: expected AUTO, ON or OFF\n", v);

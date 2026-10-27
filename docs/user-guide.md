@@ -278,7 +278,7 @@ LMS's volume scale is logarithmic: 50 is already quiet (about -25 dB, 6 % of ful
 The command line's template:
 
 ```
-SERVER,PORT/N/K,NAME/K,MAC/K,OUTPUT/K,LOG/K,UNIT/N/K,NOAUDIO/S,SWAP/S,FLAC/K,MP3/K,MAXRATE/K,BENCH/S,VERBOSE/S
+SERVER,PORT/N/K,NAME/K,MAC/K,OUTPUT/K,LOG/K,UNIT/N/K,NOAUDIO/S,SWAP/S,FLAC/K,MP3/K,MAXRATE/K,PRI/N/K,BENCH/S,VERBOSE/S
 ```
 
 | Option | Meaning | Default |
@@ -292,6 +292,7 @@ SERVER,PORT/N/K,NAME/K,MAC/K,OUTPUT/K,LOG/K,UNIT/N/K,NOAUDIO/S,SWAP/S,FLAC/K,MP3
 | `FLAC` | `AUTO`, `ON` or `OFF`: where FLAC is decoded (see [`FLAC`, `MP3` and `BENCH`](#flac-mp3-and-bench)) | `AUTO` |
 | `MP3` | the same for MP3, with `amisqueeze.fpu` only | `AUTO` |
 | `MAXRATE` | `AHI`, `AHISTD` or a rate in Hz, 8000 to 48000: the highest sample rate asked of the server, to lighten a slow Amiga; LMS then needs a rule (see [`MAXRATE`](#maxrate)) | none: the files' own rates, up to 48 kHz |
+| `PRI` | amisqueeze's task priority, -10 to 10; `PRI=1` keeps the sound going while the Amiga works, the Workbench then slower (see [troubleshooting](#troubleshooting)) | `0`, as for any program: left as it is |
 | `BENCH` | measures how fast this Amiga decodes FLAC and MP3, prints it and quits; no server needed | off |
 | `LOG` | a file that keeps a copy of every message (see [`LOG`](#log)) | none |
 | `VERBOSE` | prints the messages exchanged with the server and the stream's events | off |
@@ -532,7 +533,7 @@ amisqueeze stops at once.
 | `invalid MAC (expected xx:xx:xx:xx:xx:xx)` | `MAC` is not six hexadecimal pairs |
 | `FLAC=...: expected AUTO, ON or OFF` (or `MP3=...`) | a wrong value for that option |
 | `MAXRATE=...: expected AHI, AHISTD, or a rate from 8000 to 48000 Hz` | a wrong value for `MAXRATE` |
-| `PORT=...: expected 1 to 65535`, `UNIT=...: expected 0 to 3` | a number out of range for that option |
+| `PORT=...: expected 1 to 65535`, `UNIT=...: expected 0 to 3`, `PRI=...: expected -10 to 10` | a number out of range for that option |
 | `amisqueeze.fpu needs an FPU (...): use amisqueeze instead` | `amisqueeze.fpu` started on an Amiga without an FPU |
 | `amisqueeze is already running (Exchange lists it and can stop it)` | started from a Shell while another amisqueeze runs; from the Workbench, the new one quits without a word |
 | `bsdsocket.library not found (is a TCP/IP stack running?)` | no TCP/IP stack started |
@@ -652,6 +653,11 @@ rows say what comes next.
   - close other busy programs;
   - raw PCM needs about 1.4 Mbit/s for CD quality: a slow network can starve it. With LMS,
     [`MAXRATE`](#maxrate) asks for less.
+- **The sound has gaps while the Amiga works** (files copied, windows moved), and plays well otherwise. On a slow
+  Amiga, amisqueeze needs most of the CPU and shares it with the other programs. Give it `PRI=1`: the sound then
+  goes first, and the Workbench gets slower. Tried on an A1200 at 26 MHz: gaps at the default priority 0, clean at
+  1, the Workbench slow but usable; at 5, very slow. With [`MAXRATE`](#maxrate), the Workbench keeps more of the
+  CPU.
 - **An internet radio cuts several times a second, with LMS and `amisqueeze.fpu`.** The radio mixes its titles
   into the sound, and LMS lets amisqueeze fetch it itself (see [known limits](#known-limits)). `VERBOSE` shows
   `<- cont ignored`. In the player's settings in LMS (*Settings*, the player, then *Audio*), set **Streaming

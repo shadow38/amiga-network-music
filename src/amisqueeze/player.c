@@ -345,6 +345,13 @@ int player_main(struct player *p, const struct options *o)
         msg("amisqueeze: UNIT=%d: expected 0 to 3\n", o->unit);
         return PLAYER_FAIL;
     }
+    if (o->pri_given) {
+        if (o->pri < -10 || o->pri > 10) {
+            msg("amisqueeze: PRI=%d: expected -10 to 10\n", o->pri);
+            return PLAYER_FAIL;
+        }
+        plat_set_priority(o->pri);
+    }
     p->server_port = (uint16_t)o->port;
     strncpy(p->name, o->name ? o->name : "Amiga", PLAYER_NAME_LEN);
     p->name[PLAYER_NAME_LEN] = '\0';

@@ -28,6 +28,7 @@ int      stub_waits;
 struct stub_audio_req stub_audio[8];
 int      stub_audio_fails;
 int      stub_audio_unit;
+int      stub_priority;
 int      stub_audio_mode_known;
 struct audio_mode stub_audio_mode;
 int      stub_audio_open;
@@ -58,6 +59,7 @@ void stub_reset(void)
     stream_ended = 0;
     stub_stream_open = 0;
     stub_waits = 0;
+    stub_priority = STUB_PRI_NONE;
 }
 
 static void put(struct queue *q, const void *data, int len)
@@ -126,6 +128,11 @@ void msg_raw(const void *buf, int len)
 uint32_t plat_now_ms(void)
 {
     return stub_now;
+}
+
+void plat_set_priority(int pri)
+{
+    stub_priority = pri;
 }
 
 int plat_resolve(const char *host, uint32_t *ip)

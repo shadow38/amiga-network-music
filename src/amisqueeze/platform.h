@@ -13,6 +13,9 @@
 /* Monotonic clock in milliseconds (wraps around) */
 uint32_t plat_now_ms(void);
 
+/* The program's task priority (PRI), set back as it was when the program ends; nothing on the host */
+void plat_set_priority(int pri);
+
 /* Standard printf format, written and flushed at once: output redirected to a file is readable while the
  * program runs. */
 void msg(const char *fmt, ...) __attribute__((format(printf, 1, 2)));

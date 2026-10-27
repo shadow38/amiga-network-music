@@ -2718,6 +2718,39 @@ static void test_lame_header(void)
     CHECK(!mp3_lame_header(f, size, &lead, &left) && lead == 0);
 }
 
+/* PRI: the priority set only when given, -10 to 10; out of range, refused before anything else */
+static void test_priority(void)
+{
+    static const int ok[] = { -10, 0, 10 };
+    struct player p;
+    struct options o;
+    unsigned i;
+
+    memset(&o, 0, sizeof(o));
+    o.server = "127.0.0.1";
+    o.port = SLIMPROTO_PORT;
+    o.flac = o.mp3 = DECODE_OFF;
+    stub_reset();
+    memset(&p, 0, sizeof(p));
+    CHECK(player_main(&p, &o) == PLAYER_OK && stub_priority == STUB_PRI_NONE);     /* not given: left as it is */
+    o.pri_given = 1;
+    for (i = 0; i < sizeof(ok) / sizeof(ok[0]); i++) {
+        o.pri = ok[i];
+        stub_reset();
+        memset(&p, 0, sizeof(p));
+        CHECK(player_main(&p, &o) == PLAYER_OK && stub_priority == ok[i]);
+    }
+    o.pri = 11;
+    stub_reset();
+    memset(&p, 0, sizeof(p));
+    CHECK(player_main(&p, &o) == PLAYER_FAIL && stub_priority == STUB_PRI_NONE &&
+          strstr(stub_out, "amisqueeze: PRI=11: expected -10 to 10\n") != NULL);
+    o.pri = -11;
+    stub_reset();
+    memset(&p, 0, sizeof(p));
+    CHECK(player_main(&p, &o) == PLAYER_FAIL && stub_priority == STUB_PRI_NONE);
+}
+
 /* The player's start-up with the audio output: the unit's mode printed with VERBOSE, the warning for a mode that
  * cannot play stereo right; nothing but the unit when the platform cannot tell the mode (plat_wait() of the stub
  * returns at once, as for a Ctrl-C) */
@@ -2906,6 +2939,7 @@ int main(void)
     test_flush_loaded();
     test_ahi_mode();
     test_start_mode();
+    test_priority();
     test_run_stale_ready();
     test_lame_header();
     test_tooltypes();

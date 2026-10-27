@@ -3,7 +3,7 @@
  *
  * Usage: amisqueeze [SERVER=<ip|name>] [PORT=3483] [NAME=<name>] [MAC=xx:xx:xx:xx:xx:xx] [OUTPUT=<file>]
  *                   [LOG=<file>] [UNIT=<n>] [NOAUDIO] [SWAP] [FLAC=AUTO|ON|OFF] [MP3=AUTO|ON|OFF]
- *                   [MAXRATE=AHI|AHISTD|<Hz>] [BENCH] [VERBOSE]
+ *                   [MAXRATE=AHI|AHISTD|<Hz>] [PRI=<n>] [BENCH] [VERBOSE]
  * Ctrl-C to quit. Default options come from ENV:amisqueeze.prefs (same syntax as the command line, which
  * takes precedence); see docs/user-guide.md.
  *
@@ -68,9 +68,9 @@ unsigned long __stack = 16384;
 
 /* Used for the command line and for the prefs variable */
 #define TEMPLATE "SERVER,PORT/N/K,NAME/K,MAC/K,OUTPUT/K,LOG/K,UNIT/N/K,NOAUDIO/S,SWAP/S,FLAC/K,MP3/K,MAXRATE/K," \
-                 "BENCH/S,VERBOSE/S"
+                 "PRI/N/K,BENCH/S,VERBOSE/S"
 enum { ARG_SERVER, ARG_PORT, ARG_NAME, ARG_MAC, ARG_OUTPUT, ARG_LOG, ARG_UNIT, ARG_NOAUDIO, ARG_SWAP, ARG_FLAC,
-       ARG_MP3, ARG_MAXRATE, ARG_BENCH, ARG_VERBOSE, ARG_COUNT };
+       ARG_MP3, ARG_MAXRATE, ARG_PRI, ARG_BENCH, ARG_VERBOSE, ARG_COUNT };
 
 /* Global variable ENV:amisqueeze.prefs (saved in ENVARC: to survive a reboot) */
 #define PREFS_VAR "amisqueeze.prefs"
@@ -232,6 +232,19 @@ uint32_t plat_now_ms(void)
     ULONG freq = ReadEClock(&ev);
 
     return (uint32_t)((((unsigned long long)ev.ev_hi << 32 | ev.ev_lo) * 1000) / freq);
+}
+
+/* PRI: the priority the task had before, set back by main() at the end */
+static BYTE pri_saved;
+static int pri_set;
+
+void plat_set_priority(int pri)
+{
+    BYTE old = SetTaskPri(FindTask(NULL), pri);
+
+    if (!pri_set)
+        pri_saved = old;
+    pri_set = 1;
 }
 
 int plat_resolve(const char *host, uint32_t *ip)
@@ -805,6 +818,8 @@ int main(void)
     o.audio = args[ARG_NOAUDIO] == 0;
     o.unit = args[ARG_UNIT] ? (int)*(LONG *)args[ARG_UNIT] : 0;
     o.swap = args[ARG_SWAP] != 0;
+    o.pri_given = args[ARG_PRI] != 0;
+    o.pri = args[ARG_PRI] ? (int)*(LONG *)args[ARG_PRI] : 0;
     o.verbose = args[ARG_VERBOSE] != 0;
 
     if (OpenDevice(TIMERNAME, UNIT_MICROHZ, (struct IORequest *)&timer_io, 0) != 0) {
@@ -829,6 +844,8 @@ int main(void)
 
     rc = player_main(&player, &o);
 
+    if (pri_set)                            /* started from a Shell, this is the Shell's own process */
+        SetTaskPri(FindTask(NULL), pri_saved);
     CloseLibrary(SocketBase);
 out_timer:
     CloseDevice((struct IORequest *)&timer_io);

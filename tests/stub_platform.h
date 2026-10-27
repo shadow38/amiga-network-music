@@ -43,6 +43,8 @@ struct stub_audio_req {
 extern struct stub_audio_req stub_audio[8];
 extern int      stub_audio_fails;       /* 1: plat_audio_open() fails */
 extern int      stub_audio_unit;        /* unit given to plat_audio_open() */
+extern int      stub_priority;          /* given to plat_set_priority(); STUB_PRI_NONE after stub_reset() */
+#define STUB_PRI_NONE 1000
 extern int      stub_audio_mode_known;  /* 1: plat_audio_mode() returns stub_audio_mode */
 extern struct audio_mode stub_audio_mode;
 extern int      stub_audio_open;

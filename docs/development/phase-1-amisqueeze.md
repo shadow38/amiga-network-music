@@ -1082,3 +1082,30 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   Put back after 13 s: the test setup's relay had dropped both connections meanwhile, so the player stayed
   stopped. Without `STMo`, amisqueeze did not say "no news from the server" either, over more than 3 minutes:
   why is still open.
+
+## player-15 The task priority 🔶 (2026-10-28, version 0.8: the A1200 next)
+
+- **Found on the A1200** (2026-10-27, player-9 step 4, LMS, raw PCM at 44.1 kHz, about 77 % of the CPU): the
+  sound has gaps as soon as the Amiga works, at amisqueeze's priority 0, without any `STMo` (the buffer never runs
+  dry: AHI is not fed in time). Raised with `ChangeTaskPri`:
+
+  | Priority | Copy only | Windows moved only | Both | Workbench | Copying 2.6 MB |
+  |---|---|---|---|---|---|
+  | 0 | gaps | gaps | gaps | smooth | 8 s |
+  | 0, `MAXRATE=32000` | | | gaps | smooth | 8 to 14 s |
+  | 1 | | | clean | slow but usable | 65 s |
+  | 5 | clean | clean | | very slow | 17 s |
+  | 5, `MAXRATE=32000` | | | clean | slow but usable | 11 to 27 s |
+
+  More AHI blocks would only help with short bursts: a long copy at the same priority leaves amisqueeze about
+  half of the CPU, when it needs three quarters.
+- **Agreed with the user on 2026-10-28**: a `PRI` option (command line, ToolTypes, `ENV:amisqueeze.prefs`),
+  -10 to 10, 0 by default: on a fast Amiga amisqueeze takes little CPU, and a higher default would slow the
+  Workbench of a slow one without an obvious reason, where a gap is plain to hear. The user guide's
+  troubleshooting says when to give `PRI=1`.
+- **Done**: `PRI` checked by `player_main` (refused out of range), the priority set only when the option is
+  given (`plat_set_priority`), and set back at the end on the Amiga: started from a Shell, amisqueeze runs in the
+  Shell's own process. Tests: `test_priority` (not given, -10, 0, 10, then 11 and -11 refused), the fake server's
+  arguments scenario (`PRI=11`, `PRI=-11`).
+- **On the A1200**: to check, `PRI=1` with a copy and windows moved: clean; without `PRI`: as before; the Shell's
+  priority unchanged after amisqueeze ends.

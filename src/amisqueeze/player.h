@@ -36,6 +36,8 @@ struct options {
     int         audio;                  /* 1 = play through the platform's audio output (AHI), 0 = virtual */
     int         unit;                   /* audio unit (AHI unit), checked by player_main: 0 to 3 */
     int         swap;                   /* swap left and right */
+    int         pri;                    /* PRI: the task priority, checked by player_main: -10 to 10 */
+    int         pri_given;              /* 0: the priority is left as it was */
     int         verbose;
     int         flac;                   /* enum decode_mode: whether FLAC is advertised to the server */
     int         mp3;                    /* enum decode_mode: the same for MP3 (builds with AMISQUEEZE_MP3) */

@@ -15,6 +15,8 @@ are previews, tested in WinUAE only, not yet on a real Amiga.
 - `MAXRATE=AHI`, `MAXRATE=AHISTD` or `MAXRATE=<Hz>`: asks the server for a lower sample rate, to lighten a slow
   Amiga. `AHI` takes the AHI unit's rate, `AHISTD` the standard rate at or below it (27429 Hz gives 24000). With
   LMS it needs conversion rules on the server, given in the user guide; not with Music Assistant.
+- `PRI=<n>`, -10 to 10: amisqueeze's task priority. On a slow Amiga, `PRI=1` keeps the sound going while files
+  are copied or windows moved; the Workbench is then slower. Without it, the priority is left as it is (0).
 
 ### Changed
 

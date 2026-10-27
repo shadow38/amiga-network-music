@@ -1138,7 +1138,8 @@ def scenario_arguments():
         check(proc.returncode == 20 and "MAXRATE=%s: expected AHI, AHISTD, or a rate from 8000 to 48000 Hz" % value
               in proc.stdout, "MAXRATE=%s: error, exit code 20" % value)
     for option, said in [("PORT=70000", "PORT=70000: expected 1 to 65535"), ("PORT=0", "PORT=0: expected 1 to 65535"),
-                         ("UNIT=4", "UNIT=4: expected 0 to 3"), ("UNIT=-1", "UNIT=-1: expected 0 to 3")]:
+                         ("UNIT=4", "UNIT=4: expected 0 to 3"), ("UNIT=-1", "UNIT=-1: expected 0 to 3"),
+                         ("PRI=11", "PRI=11: expected -10 to 10"), ("PRI=-11", "PRI=-11: expected -10 to 10")]:
         try:                            # accepted, the player would try to connect, then retry
             proc = subprocess.run([sys.argv[1], "SERVER=127.0.0.1", option], stdout=subprocess.PIPE,
                                   stderr=subprocess.STDOUT, text=True, timeout=TIMEOUT)
