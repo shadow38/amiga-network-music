@@ -244,8 +244,8 @@ int plat_resolve(const char *host, uint32_t *ip)
         return 1;
     }
     he = gethostbyname((STRPTR)host);
-    if (he == NULL || he->h_addrtype != AF_INET)
-        return 0;
+    if (he == NULL || he->h_addrtype != AF_INET || he->h_length != 4 || he->h_addr_list[0] == NULL)
+        return 0;                           /* an answer without an IPv4 address: not found */
     memcpy(&a, he->h_addr_list[0], 4);
     *ip = ntohl(a);
     return 1;
@@ -631,6 +631,11 @@ static struct RDArgs *read_prefs(LONG args[], BOOL *error)
     len = GetVar(PREFS_VAR, prefs_line, sizeof(prefs_line) - 1, GVF_GLOBAL_ONLY);
     if (len < 0)
         return NULL;
+    if (len >= (LONG)sizeof(prefs_line) - 2) {  /* the buffer full: GetVar() cut the rest off */
+        msg("amisqueeze: ENV:" PREFS_VAR " is too long: at most %d characters\n", (int)sizeof(prefs_line) - 3);
+        *error = TRUE;
+        return NULL;
+    }
     prefs_line[len++] = '\n';               /* ReadArgs parses a line */
     prefs_line[len] = '\0';
     rda = parse_line(prefs_line, args, "ENV:" PREFS_VAR);

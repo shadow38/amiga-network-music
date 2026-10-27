@@ -33,6 +33,8 @@ are previews, tested in WinUAE only, not yet on a real Amiga.
   message.
 - A player name given on the server with accents showed as garbled characters in `player name: ...`: each
   character outside plain ASCII now shows as `?`. The name the server keeps is unchanged.
+- Default options in `ENV:amisqueeze.prefs` longer than 509 characters were cut without a word, possibly in the
+  middle of a value: they are now refused with `ENV:amisqueeze.prefs is too long`.
 
 ## [0.7] - 2026-10-23
 

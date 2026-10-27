@@ -511,7 +511,8 @@ amisqueeze stops at once.
 |---|---|
 | `no server: give SERVER=<ip\|name>, or set it in ENV:amisqueeze.prefs` | no server on the command line nor in the default options |
 | `amisqueeze: <AmigaDOS error>`, e.g. `amisqueeze: bad number` | the command line does not fit the template: a bad number for `PORT` or `UNIT`, an unknown keyword...; the text is AmigaDOS's own |
-| `ENV:amisqueeze.prefs: ...` | the default options cannot be read: an unknown option, a syntax error || `the icon's ToolTypes: ...` | a ToolType cannot be read: an unknown value, a bad number...; shown in the window, which stays open |
+| `ENV:amisqueeze.prefs: ...` | the default options cannot be read: an unknown option, a syntax error |
+| `ENV:amisqueeze.prefs is too long: at most 509 characters` | the default options do not fit what amisqueeze reads || `the icon's ToolTypes: ...` | a ToolType cannot be read: an unknown value, a bad number...; shown in the window, which stays open |
 | `the icon's ToolTypes are too long` | the ToolTypes together exceed what amisqueeze reads, about 500 characters |
 | `invalid MAC (expected xx:xx:xx:xx:xx:xx)` | `MAC` is not six hexadecimal pairs |
 | `FLAC=...: expected AUTO, ON or OFF` (or `MP3=...`) | a wrong value for that option |
