@@ -606,8 +606,7 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   - **Left and right swapped** in `Paula:14 bit stereo++` at 27,429 Hz: the left tone comes out on the right, the
     right tone on the left; in place with `SWAP`. Amiga Test Kit's sound test, which drives Paula directly, puts
     each side in place with the same cables. So `paula.audio` swaps on a real Amiga too, as tools-5 found in
-    WinUAE. What to do about it (`SWAP` by default with `paula.audio`, or a note in the user guide) is for the
-    user to decide.
+    WinUAE. What became of it: player-11, Sides.
   - `Paula:14 bit stereo` without "++" plays one channel of the stream only, as tools-5 found. With `SWAP`, the
     left tone is silent and the right tone comes out on the right only; without `SWAP`, only the left tone was
     heard.
@@ -701,7 +700,7 @@ belongs to the task that opened it; packets serialised field by field; buffers a
        interrupt.
 
     A 68030 card (twice the CPU, and the PCMCIA range free for the driver's faster path) is the user's own choice,
-    outside this plan. The swapped channels of `paula.audio` (above) remain to decide.
+    outside this plan.
   - **Later: a stock A1200** (68EC020 at 14 MHz) with the user's trapdoor fast memory card instead of the
     accelerator (noted with the user on 2026-10-26, when is the user's decision). Its jumper gives 8 MB, which
     should cover the PCMCIA range (the driver's slower path, if the card is still seen), or 4 MB, which leaves it
@@ -883,8 +882,11 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   a PAL or NTSC screen mode, so 44.1 and 48 kHz must be lowered: a cheap integer step, or a simple filter), 8 bits per
   channel (or 14 bits with two channels per side and a calibration table: twice the DMA and more CPU), blocks in
   chip RAM, double buffering with `BeginIO` (never `DoIO`: it clears `io_Flags`, `ADIOF_PERVOL` is lost, volume 0,
-  see tools-5). Volume: Paula's own (0 to 64 per channel) costs no CPU, which also fits the volume modes of player-10. Sides:
-  channels 0 and 3 left, 1 and 2 right (`WT:paula-lr`, correct in WinUAE, unlike Paula through AHI, see tools-5).
+  see tools-5). Volume: Paula's own (0 to 64 per channel) costs no CPU, which also fits the volume modes of player-10.
+- **Sides**: channels 0 and 3 left, 1 and 2 right (`WT:paula-lr`, correct in WinUAE, unlike Paula through AHI, see
+  tools-5). `paula.audio` swaps them, on the real A1200 too (player-9). Until this step, the user guide has Paula
+  users add `SWAP`; the sides are handled here, and a `SWAP` by default for `paula.audio` is to weigh only if AHI
+  stays Paula's output (agreed with the user on 2026-10-27).
 - **Shape**: an option such as `AUDIO=AHI|PAULA`, behind the same sink interface as `audio.c` (blocks, played
   bytes, pause), the Amiga calls in `amiga.c`; the conversion and the lower rate in the portable core, tested on the
   host bit for bit like the rest.

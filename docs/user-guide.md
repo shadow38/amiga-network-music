@@ -90,6 +90,8 @@ highest frequency, 1 channel.*
 With Paula, AHI converts and mixes the sound with the CPU. `Paula:8 bit stereo++` takes a little less CPU than the
 14-bit mode, at a lower quality; the "HiFi" modes take more. On a slow Amiga, see [volume](#volume) too.
 
+With Paula, `paula.audio` swaps left and right: add [`SWAP`](#options) to amisqueeze's options.
+
 At start-up, amisqueeze checks the unit's mode and warns about a stereo mode without "++" or a mono mode.
 
 ### Server setup

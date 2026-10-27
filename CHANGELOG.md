@@ -20,6 +20,8 @@ are previews, tested in WinUAE only, not yet on a real Amiga.
   been tried).
 - User guide and README: playback tried on a real A1200 (a 68020 at 26 MHz, a PCMCIA network card, Paula through
   AHI), with the CPU load `MAXRATE` saves there; a known limit with Aminet's driver for Xircom PCMCIA cards.
+- User guide: with Paula, `SWAP` is now part of setting up the AHI unit, since `paula.audio` swaps left and right,
+  on a real A1200 too.
 
 ## [0.7] - 2026-10-23
 

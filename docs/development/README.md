@@ -71,8 +71,8 @@ Agreed with the user on 2026-10-26.
   - the `aac` row of the user guide, with Music Assistant;
   - the free memory the user guide asks for, from `Avail` (protocol step 1).
 - **A lower rate asked of the server** (player-13): a `MAXRATE` option, with a conversion rule on LMS.
-- **Paula's swapped sides**: a note in the user guide for `paula.audio`. No `SWAP` by default before AHI 6's
-  `paula.audio` has been tried on the real machine.
+- **Paula's swapped sides**: a note in the user guide for `paula.audio`, done on 2026-10-27. No `SWAP` by
+  default: the sides are left to the direct Paula output (player-11).
 - **The messages Music Assistant sends and amisqueeze ignores** (`vers`, `grfb`, `grfe`, `codc`, `cont`): shown
   with `VERBOSE` only, since they read as errors. An unknown message is still shown. `cont` itself is handled in
   0.9 (ICY).
