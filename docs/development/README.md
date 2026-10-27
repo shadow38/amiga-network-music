@@ -134,7 +134,7 @@ Agreed with the user on 2026-10-26.
 | player-9 Real machine | ⬜ with 0.7, for 0.8 |
 | player-10 Finishing touches | 🔶 the parts of 0.4 and 0.5 done; ICY and server discovery in 0.9 |
 | player-11 Direct Paula output, without AHI | ⬜ idea (CPU load on a slow 68020; crackles with a PCMCIA network card, player-9) |
-| player-12 Hardening (the 0.7 review's 50 list) | 🔶 for 0.8: content agreed on 2026-10-27, 12b first |
+| player-12 Hardening (the 0.7 review's 50 list) | 🔶 for 0.8: content agreed on 2026-10-27; 12b done on 2026-10-27, 12a next |
 | player-13 A lower rate asked of the server | ✅ 2026-10-26: `MAXRATE` and the LMS rules; on the A1200, 62 % of the CPU at 32 kHz against 77 %; Music Assistant upstream: the user's decision |
 | remote-0 Study (common interface, Music Assistant feasibility, name) | ⬜ before any amilms code |
 | remote-1 to remote-7 LMS | ⬜ |

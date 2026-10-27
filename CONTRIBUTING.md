@@ -191,16 +191,17 @@ and the README must be the newest section of `CHANGELOG.md`; the commodity's tit
 disconnection and reconnection, Ctrl-C, argument errors; streams played, paused, stopped, flushed, refused, held,
 cut; the `OUTPUT` file compared with what was sent; FLAC and MP3 test files decoded from `tests/data/`, whole or
 from the middle as after a seek, back to back with raw PCM). It also builds amisqueeze without the MP3 decoder
-(`out-host/amisqueeze-nomp3`), as `out/amisqueeze` is, and checks what that build advertises and refuses.
+(`out-host/amisqueeze-nomp3`), as `out/amisqueeze` is, and checks what that build advertises and refuses. The
+syntax of every Python and shell script of `tools/` and `tests/` is checked too, those run only by hand included.
 The Amiga build must still be checked in WinUAE: the platform layers differ.
 
 GitHub runs `make test` on each push and pull request (`.github/workflows/tests.yml`, GitHub Actions, Ubuntu); the
-badge at the top of the README shows the result of the latest run. A second job builds both Amiga executables and
-the archives in their development form (`sh tools/amiga-make.sh all dist DEV=1`, which takes the Docker way on
-GitHub's machine), then prints the executables' SHA-256: a local build from the same image gives the same. Its
-`.lha` and `.zip` are kept for 14 days as the run's artifacts, each under its own name and not wrapped in another
-zip (on the run's page, for a signed-in GitHub user): a development build to try without building it, its version
-`<next>-dev` (on a release commit, the release's own number). With the GitHub CLI, not `gh run download`, which
+badge at the top of the README shows the result of the latest run. A second job builds both Amiga executables,
+`cpucount` and the archives in their development form (`sh tools/amiga-make.sh all cpucount dist DEV=1`, which
+takes the Docker way on GitHub's machine), then prints the executables' SHA-256: a local build from the same image
+gives the same. Its `.lha` and `.zip` are kept for 14 days as the run's artifacts, each under its own name and not
+wrapped in another zip (on the run's page, for a signed-in GitHub user): a development build to try without
+building it, its version `<next>-dev` (on a release commit, the release's own number). With the GitHub CLI, not `gh run download`, which
 takes every artifact for a zip to unpack (it fails on the `.lha`, gh 2.102), but
 `gh api repos/shadow38/amiga-network-music/actions/artifacts/<id>/zip > <file>`,
 the ids given by `gh api repos/shadow38/amiga-network-music/actions/runs/<run id>/artifacts`.

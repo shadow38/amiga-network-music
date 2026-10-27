@@ -125,6 +125,9 @@ test: host out-host/test_core out-host/amisqueeze-nomp3
 	python3 tools/check-version.py
 	python3 tools/make-dist.py --check-readme amisqueeze
 	python3 tools/make-dist.py --check-text amisqueeze
+	python3 -c 'import ast, sys; [ast.parse(open(f, encoding="utf-8").read(), f) for f in sys.argv[1:]]' \
+	    tools/*.py tools/winuae/*.py tests/*.py
+	for f in tools/*.sh; do sh -n $$f || exit 1; done; echo "scripts: syntax checked"
 	python3 tools/check-saves.py tests/check-saves.s | sed -n 's/.* error: \([a-z_]*\) modifies.*/\1/p' | sort | \
 	    tr '\n' ' ' | grep -qx '$(SAVES_BAD) ' && echo "check-saves: self-test passed" || \
 	    { echo "check-saves: self-test failed, expected: $(SAVES_BAD)"; python3 tools/check-saves.py tests/check-saves.s; exit 1; }
