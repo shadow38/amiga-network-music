@@ -74,8 +74,8 @@ Agreed with the user on 2026-10-26.
 - **Paula's swapped sides**: a note in the user guide for `paula.audio`, done on 2026-10-27. No `SWAP` by
   default: the sides are left to the direct Paula output (player-11).
 - **The messages Music Assistant sends and amisqueeze ignores** (`vers`, `grfb`, `grfe`, `codc`, `cont`): shown
-  with `VERBOSE` only, since they read as errors. An unknown message is still shown. `cont` itself is handled in
-  0.9 (ICY).
+  with `VERBOSE` only, since they read as errors. An unknown message is still shown. Done on 2026-10-27. `cont`
+  itself is handled in 0.9 (ICY).
 - **Hardening** (player-12): the 50 list of the [0.7 review](reviews/0.7.md#5-the-50-list), except the items of
   0.9 below.
 - **The writing rules** (publish-6): the plan and the user guide done on 2026-10-24; `docs/development/` next,

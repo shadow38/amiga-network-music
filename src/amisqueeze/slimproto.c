@@ -331,6 +331,19 @@ static void process_setd(struct player *p, const uint8_t *pkt, int len)
     send_setd_name(p);                      /* answer to the query, or confirmation */
 }
 
+/* Opcodes known and ignored, sent by Music Assistant (cont: radio metadata, planned for 0.9); they read as errors,
+ * so they are shown with VERBOSE only, unlike an unknown opcode */
+static int ignored_opcode(const uint8_t *pkt)
+{
+    static const char ignored[] = "versgrfbgrfecodccont";
+    unsigned i;
+
+    for (i = 0; i < sizeof(ignored) - 1; i += 4)
+        if (!memcmp(pkt, ignored + i, 4))
+            return 1;
+    return 0;
+}
+
 static void process(struct player *p, const uint8_t *pkt, int len)
 {
     if (len < 4) {
@@ -346,6 +359,9 @@ static void process(struct player *p, const uint8_t *pkt, int len)
     else if (!memcmp(pkt, "aude", 4)) {
         if (p->verbose && len >= 6)
             msg("<- aude spdif %d dac %d\n", pkt[4], pkt[5]);
+    } else if (ignored_opcode(pkt)) {
+        if (p->verbose)
+            msg("<- %.4s ignored (%d bytes)\n", (const char *)pkt, len);
     } else
         msg("amisqueeze: %.4s not handled (%d bytes)\n", (const char *)pkt, len);
 }

@@ -15,6 +15,9 @@ are previews, tested in WinUAE only, not yet on a real Amiga.
 
 ### Changed
 
+- The messages Music Assistant sends and amisqueeze does not need (`vers`, `grfb`, `grfe`, `codc`, `cont`) no
+  longer read as errors: they are shown with `VERBOSE` only, as `<- vers ignored (N bytes)`. Any other message
+  amisqueeze does not know is still shown.
 - The user guide rewritten: using amisqueeze first (installing, sound, server, starting, stopping, volume), then
   a reference (options, ToolTypes, default options, messages by theme, troubleshooting, known limits, what has
   been tried).

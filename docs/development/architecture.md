@@ -199,13 +199,15 @@ Framing: server to client, a 2-byte length then a 4-byte opcode and the data; cl
 **Received and ignored on purpose**:
 
 - `aude` (S/PDIF and DAC on or off): printed with `VERBOSE` only;
+- `vers`, `grfb`, `grfe`, `codc`, `cont`, which Music Assistant sends (`cont` also comes with LMS's internet
+  radios): `<- ... ignored` with `VERBOSE` only, since they read as errors;
 - `strm a` (skip ahead) and `strm p` with an interval: for synchronised players; `strm u` resumes at once, whatever
   time it gives;
 - autostart 2 and 3 (wait for `cont`, for radio metadata): played as 0 and 1.
 
-**Not handled** (message "not handled", nothing done): `cont`, `codc`, `vers`, `grfb`, `grfe`, `serv`, and any
-other opcode. Not done at all: internet radios' metadata (ICY, planned for 0.9, see the plan), server discovery
-(UDP, 0.9), synchronisation between players, displays and IR.
+**Not handled** (message "not handled", always shown, nothing done): `serv`, and any other opcode. Not done at
+all: internet radios' metadata (ICY, planned for 0.9, see the plan), server discovery (UDP, 0.9), synchronisation
+between players, displays and IR.
 
 **Music Assistant** (seen with 2.10.7, plan step player-7b) speaks the same protocol, with differences. It
 transcodes everything to the output codec set for the player (`flac` by default, `mp3`, `aac`, `wav`; its

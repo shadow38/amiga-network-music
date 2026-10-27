@@ -383,6 +383,39 @@ static void test_quiet_packets(void)
     teardown(&p);
 }
 
+/* What Music Assistant sends and amisqueeze ignores: printed with VERBOSE only; an unknown opcode always */
+static void test_ignored_packets(void)
+{
+    static const char *const ignored[] = { "vers", "grfb", "grfe", "codc", "cont" };
+    struct player p;
+    char line[40];
+    int i;
+
+    for (i = 0; i < 5; i++) {
+        setup(&p, "Amiga");
+        CHECK(slim_connect(&p, 0));
+        clear_tx();
+        stub_feed_packet(ignored[i], "0123", 4);
+        drain(&p);
+        CHECK(stub_out[0] == '\0');
+        p.verbose = 1;
+        stub_feed_packet(ignored[i], "0123", 4);
+        drain(&p);
+        snprintf(line, sizeof(line), "<- %s ignored (8 bytes)\n", ignored[i]);
+        CHECK(!strcmp(stub_out, line));
+        CHECK(stub_tx_len == 0);                        /* nothing to answer */
+        teardown(&p);
+    }
+
+    setup(&p, "Amiga");
+    CHECK(slim_connect(&p, 0));
+    clear_tx();
+    stub_feed_packet("serv", "0123", 4);
+    drain(&p);
+    CHECK(!strcmp(stub_out, "amisqueeze: serv not handled (8 bytes)\n"));
+    teardown(&p);
+}
+
 /* Packets split across reads, one byte at a time */
 static void test_fragmented(void)
 {
@@ -2559,6 +2592,7 @@ int main(void)
     test_strm_t();
     test_setd();
     test_quiet_packets();
+    test_ignored_packets();
     test_fragmented();
     test_bad_length();
     test_stream_sequence();

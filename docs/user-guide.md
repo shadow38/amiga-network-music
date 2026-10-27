@@ -570,7 +570,7 @@ rows say what comes next.
 
 | Message | Meaning |
 |---|---|
-| `strm X not handled`, `strm too short (N)`, `XXXX not handled (N bytes)`, `packet too short (N)` | the server sent a message amisqueeze does not know, or a malformed one: it is ignored. Worth reporting, with the server's name and version. `cont not handled` is expected with some internet radios (see [known limits](#known-limits)) |
+| `strm X not handled`, `strm too short (N)`, `XXXX not handled (N bytes)`, `packet too short (N)` | the server sent a message amisqueeze does not know, or a malformed one: it is ignored. Worth reporting, with the server's name and version |
 | `invalid packet size (N)` | the same, but amisqueeze closes the connection and reconnects |
 
 #### Files
@@ -600,6 +600,7 @@ rows say what comes next.
 | `output: AHI unit N (..., N Hz)` | the AHI mode and frequency played with, for instance `output: AHI unit 0 (Paula:14 bit stereo++ calibrated, 27429 Hz)`; `output: virtual (no sound)` with `NOAUDIO` or `OUTPUT` |
 | `volume: 5.9 % of full amplitude`, `volume: fixed at 100 % by LMS (samples untouched)` | a change of volume |
 | `<- strm ...`, `-> STAT ...`, `-> DSCO ...`, `<- audg ...`, `<- aude ...` | the messages exchanged with the server |
+| `<- vers ignored (N bytes)`, the same for `grfb`, `grfe`, `codc`, `cont` | messages amisqueeze does not need: Music Assistant sends them; `cont` also comes with some internet radios (see [known limits](#known-limits)) |
 | other `stream: ...` messages | the stream's events: parameters, connection, headers received, WAV header, end of the track's data |
 | other `output: ...` messages | the output's events: track started, buffer empty, end of playback, `OUTPUT` file opened and bytes written to it |
 
@@ -646,8 +647,8 @@ rows say what comes next.
 - Files above 48 kHz (88.2, 96, 192 kHz) play only when FLAC is decoded on the Amiga. Otherwise LMS cannot lower
   their rate as it makes raw PCM: its log says "Couldn't create command line for flc playback".
 - Some internet radios mix their metadata (the title playing) into the MP3 stream. amisqueeze does not remove it
-  yet. When LMS has `amisqueeze.fpu` fetch such a radio itself, the sound may cut regularly, with the message
-  `cont not handled`. Not checked with a real radio yet.
+  yet. When LMS has `amisqueeze.fpu` fetch such a radio itself, the sound may cut regularly; `VERBOSE` then
+  shows `<- cont ignored`. Not checked with a real radio yet.
 - MP3 tracks follow each other without a gap only when the file has the header that LAME, and the encoders that
   copy its format, write in the first frame. Without it, a few hundredths of a second of silence remain between
   tracks.
