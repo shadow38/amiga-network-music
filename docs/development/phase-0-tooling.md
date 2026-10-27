@@ -56,7 +56,7 @@ Back to the [plan](README.md).
     (done on 2026-10-22, see "Template, versioned" below).
 - **Slow profile, local** (2026-10-19, for step player-4c): the provisional configuration started with the CPU
   settings overridden (`-s cpu_compatible=true -s cpu_speed=real -s cpu_multiplier=4`, a 68020 at about
-  28 MHz, as a typical A1200 accelerator); no versioned template yet.
+  28 MHz, as a typical A1200 accelerator); an override of the versioned template since 2026-10-22.
 - **Fast profile, local** (2026-10-19, for steps player-8b and player-8c): not a 68040 (its CPU library is missing from the
   test installation) but a 68020 with WinUAE's JIT compiler, 32-bit addressing
   and no cycle-exact emulation (`cpu_24bit_addressing=false`, `cachesize=16384`, `cycle_exact=false`,
