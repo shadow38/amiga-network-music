@@ -121,11 +121,11 @@ Back to the [plan](README.md).
   proof that can be opened (file:line, test, scenario, dated measurement); a measurement expires when what it
   measures changes; a safety net is only real once seen failing on a planted defect; a rule a script can check
   becomes a script; everything a server sends is untrusted; "not supported yet" has consequences for users.
-- **When** (decided with the user on 2026-10-20; the full review at every tag replaced the same day by the two
-  levels below): before **every** release tag, a full review of the range since the previous tag; findings
-  scored 75 or more are fixed, or accepted by the user with the reason written in the report. Releases follow the plan's milestones, not single steps, so that reviews stay few. Exception: an urgent
-  fix may ship after a review of its own diff only; the next release then gets a full review from the last fully
-  reviewed tag.
+- **When** (decided with the user on 2026-10-20): before **every** release tag, a review of the range since the
+  previous tag, light or full as "Two levels" says below; findings scored 75 or more are fixed, or accepted by
+  the user with the reason written in the report. Releases follow the plan's milestones, not single steps, so
+  that reviews stay few. Exception: an urgent fix may ship after a review of its own diff only; the next
+  release's review then starts from the last reviewed tag.
 - **Where**: the tooling in the repository (`.claude/`: one method skill, four review agents, the
   `release-review` entry point), the reports in `docs/development/reviews/`, the rules inventory in
   `docs/development/rules.md`. Experiments (planted defects, removed guards) only in throwaway git worktrees next
