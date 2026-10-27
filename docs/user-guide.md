@@ -489,7 +489,7 @@ with `amisqueeze: `, left out below. `N` stands for a number, `...` for a name o
 | `MP3: 320 kbit/s decoded at ...x real time: ...` | the same for MP3 (`MP3=AUTO`, `amisqueeze.fpu`) |
 | `MAXRATE: at most N Hz asked of the server` | the rate [`MAXRATE`](#maxrate) asks for; with `AHI` or `AHISTD`, followed by the unit and its rate |
 | `connected to the server` | the connection is up; the player should show up on the server |
-| `player name: ...` | the player was renamed on the server: amisqueeze takes the new name; a character outside plain ASCII (an accent) shows as `?`, while the server keeps the name as typed |
+| `player name: ...` | the player was renamed on the server: amisqueeze takes the new name; each byte outside plain ASCII shows as `?`, so an accented letter shows as `??`, while the server keeps the name as typed |
 | `stopped` | amisqueeze has stopped cleanly (Ctrl-C, `Break`, Remove in Exchange) |
 
 #### Warnings at start-up

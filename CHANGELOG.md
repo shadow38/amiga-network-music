@@ -31,8 +31,9 @@ are previews, tested in WinUAE only, not yet on a real Amiga.
 - `PORT` and `UNIT` out of range are refused at start-up (`PORT=...: expected 1 to 65535`, `UNIT=...: expected 0
   to 3`). `PORT=70000` used to connect to port 4464 without a word, and `UNIT=4` failed later with a misleading
   message.
-- A player name given on the server with accents showed as garbled characters in `player name: ...`: each
-  character outside plain ASCII now shows as `?`. The name the server keeps is unchanged.
+- A player name given on the server with accents showed as garbled characters in `player name: ...`: each byte
+  outside plain ASCII now shows as `?`, so an accented letter shows as `??`. The name the server keeps is
+  unchanged.
 - A track started by the server while the previous one was still connecting could be taken as connected too
   early, its request then lost: the old connection's state was taken for the new one's.
 - Default options in `ENV:amisqueeze.prefs` longer than 509 characters were cut without a word, possibly in the
