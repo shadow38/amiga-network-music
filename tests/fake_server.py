@@ -2,7 +2,7 @@
 """Scenarios against the host build of amisqueeze: a fake slimproto server on localhost drives the real program
 and checks what it sends (see "make test").
 
-Usage: fake_server.py <path to the host build of amisqueeze>
+Usage: fake_server.py <path to the host build of amisqueeze> [<path to its build without MP3>]
 """
 import math
 import os
@@ -72,8 +72,8 @@ def accept(server):
     return conn
 
 
-def start(port, *args):
-    return subprocess.Popen([sys.argv[1], "SERVER=127.0.0.1", "PORT=%d" % port] + list(args),
+def start(port, *args, program=None):
+    return subprocess.Popen([program or sys.argv[1], "SERVER=127.0.0.1", "PORT=%d" % port] + list(args),
                             stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
 
 
@@ -1018,6 +1018,34 @@ def scenario_flac_off():
             server.close()
 
 
+def scenario_no_mp3(program):
+    print("-- the build without MP3 (as amisqueeze, no FPU): not advertised, MP3=ON said, an MP3 stream refused")
+    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    server.bind(("127.0.0.1", 0))
+    server.listen(1)
+    proc = start(server.getsockname()[1], "MP3=ON", program=program)
+    try:
+        conn = accept(server)
+        _, body = read_packet(conn)
+        check(body.endswith(b",MaxSampleRate=48000,flc,pcm"), "HELO capabilities end with flc,pcm, no mp3")
+        s = Session(conn)
+        fmt7 = b"1m????" + bytes([64])  # MP3; refused before any connection, so no HTTP server
+        send_packet(conn, b"strm", strm("s", port=9, ip=0, fmt7=fmt7, request=HTTP_REQUEST))
+        try:
+            s.until("STAT:STMn")
+        except TimeoutError:
+            pass
+        check(s.names() == ["STAT:STMf", "STAT:STMc", "STAT:STMn"], "MP3 stream refused: STMf, STMc, STMn (%s)"
+              % s.names())
+        conn.close()
+    finally:
+        rc, out = stop(proc)
+        server.close()
+    check("MP3=ON: this build does not decode MP3" in out and "stream format m not supported" in out,
+          "MP3=ON and the refused stream reported")
+
+
 def scenario_maxrate():
     print("-- MAXRATE: the MaxSampleRate of HELO, and what is said at start-up")
     for args, caps, said in [([], b",MaxSampleRate=48000,pcm", None),
@@ -1048,7 +1076,7 @@ def scenario_maxrate():
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 2:
+    if len(sys.argv) not in (2, 3):
         sys.exit(__doc__)
     scenario_session()
     scenario_stream()
@@ -1078,5 +1106,7 @@ if __name__ == "__main__":
     scenario_log()
     scenario_no_server()
     scenario_arguments()
+    if len(sys.argv) == 3:
+        scenario_no_mp3(sys.argv[2])
     print("fake_server: %d failed" % failures)
     sys.exit(1 if failures else 0)
