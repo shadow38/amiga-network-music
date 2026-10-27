@@ -489,7 +489,7 @@ with `amisqueeze: `, left out below. `N` stands for a number, `...` for a name o
 | `MP3: 320 kbit/s decoded at ...x real time: ...` | the same for MP3 (`MP3=AUTO`, `amisqueeze.fpu`) |
 | `MAXRATE: at most N Hz asked of the server` | the rate [`MAXRATE`](#maxrate) asks for; with `AHI` or `AHISTD`, followed by the unit and its rate |
 | `connected to the server` | the connection is up; the player should show up on the server |
-| `player name: ...` | the player was renamed on the server: amisqueeze takes the new name |
+| `player name: ...` | the player was renamed on the server: amisqueeze takes the new name; a character outside plain ASCII (an accent) shows as `?`, while the server keeps the name as typed |
 | `stopped` | amisqueeze has stopped cleanly (Ctrl-C, `Break`, Remove in Exchange) |
 
 #### Warnings at start-up
@@ -511,8 +511,7 @@ amisqueeze stops at once.
 |---|---|
 | `no server: give SERVER=<ip\|name>, or set it in ENV:amisqueeze.prefs` | no server on the command line nor in the default options |
 | `amisqueeze: <AmigaDOS error>`, e.g. `amisqueeze: bad number` | the command line does not fit the template: a bad number for `PORT` or `UNIT`, an unknown keyword...; the text is AmigaDOS's own |
-| `ENV:amisqueeze.prefs: ...` | the default options cannot be read: an unknown option, a syntax error |
-| `the icon's ToolTypes: ...` | a ToolType cannot be read: an unknown value, a bad number...; shown in the window, which stays open |
+| `ENV:amisqueeze.prefs: ...` | the default options cannot be read: an unknown option, a syntax error || `the icon's ToolTypes: ...` | a ToolType cannot be read: an unknown value, a bad number...; shown in the window, which stays open |
 | `the icon's ToolTypes are too long` | the ToolTypes together exceed what amisqueeze reads, about 500 characters |
 | `invalid MAC (expected xx:xx:xx:xx:xx:xx)` | `MAC` is not six hexadecimal pairs |
 | `FLAC=...: expected AUTO, ON or OFF` (or `MP3=...`) | a wrong value for that option |

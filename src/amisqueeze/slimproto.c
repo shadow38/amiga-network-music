@@ -318,6 +318,9 @@ static void process_audg(struct player *p, const uint8_t *pkt, int len)
 
 static void process_setd(struct player *p, const uint8_t *pkt, int len)
 {
+    char shown[PLAYER_NAME_LEN + 1];
+    int i;
+
     if (len < 5 || pkt[4] != 0)
         return;
     if (len > 5) {                          /* new name chosen on the server */
@@ -326,7 +329,12 @@ static void process_setd(struct player *p, const uint8_t *pkt, int len)
             n = PLAYER_NAME_LEN;
         memcpy(p->name, pkt + 5, n);
         p->name[n] = '\0';
-        msg("player name: %s\n", p->name);
+        /* Shown in ASCII: the server sends UTF-8, the Amiga's console reads ISO-8859-1 (and a control byte could
+         * act on the console); the name itself is kept as sent, since SETD sends it back */
+        for (i = 0; p->name[i]; i++)
+            shown[i] = p->name[i] >= ' ' && p->name[i] <= '~' ? p->name[i] : '?';
+        shown[i] = '\0';
+        msg("player name: %s\n", shown);
     }
     send_setd_name(p);                      /* answer to the query, or confirmation */
 }

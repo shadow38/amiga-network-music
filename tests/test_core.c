@@ -524,6 +524,25 @@ static void test_setd_long_name(void)
     teardown(&p);
 }
 
+/* A name the server sends in UTF-8 ("Sejour" with an e acute), or with a control byte: shown with '?' for each byte that is not
+ * printable ASCII, kept and sent back as received (the server would rename the player otherwise) */
+static void test_setd_not_ascii(void)
+{
+    struct player p;
+    static const char name[] = "\0S\xc3\xa9jour\x1b[2J";
+
+    setup(&p, "Amiga");
+    CHECK(slim_connect(&p, 0));
+    clear_tx();
+    stub_feed_packet("setd", name, sizeof(name) - 1);
+    drain(&p);
+    CHECK(!strcmp(stub_out, "player name: S??jour?[2J\n"));
+    CHECK(!strcmp(p.name, name + 1));
+    CHECK(!memcmp(stub_tx, "SETD", 4) && be32(stub_tx + 4) == sizeof(name));
+    CHECK(!memcmp(stub_tx + 8, name, sizeof(name)));
+    teardown(&p);
+}
+
 /* Raw PCM fields out of range in a strm s (size, rate, channels): refused as a track it cannot play */
 static void test_strm_pcm_fields(void)
 {
@@ -2767,6 +2786,7 @@ int main(void)
     test_bad_length();
     test_short_packets();
     test_setd_long_name();
+    test_setd_not_ascii();
     test_strm_pcm_fields();
     test_strm_autostart();
     test_headers_too_long();
