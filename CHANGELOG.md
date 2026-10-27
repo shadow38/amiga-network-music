@@ -7,6 +7,11 @@ are previews, until 1.0.
 
 ## [Unreleased]
 
+### Changed
+
+- User guide: a known limit for LMS's player settings amisqueeze ignores (fade-in, crossfade, output channel mode,
+  replay gain).
+
 ### Fixed
 
 - Raw PCM at 88.2 kHz was refused as `stream format p not supported`: it is now played, as 96 kHz already was.

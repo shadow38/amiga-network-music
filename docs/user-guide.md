@@ -740,6 +740,14 @@ rows say what comes next.
   - `mp3` plays only with `amisqueeze.fpu`. Music Assistant encodes it on the fly without the LAME header: the
     change of track can be heard, and some sounds get small artefacts from the second lossy encoding.
 - Synchronised players (LMS's player groups) are not supported, nor tried.
+- Four of LMS's settings for the player (*Settings*, the player, then *Audio*) have no effect. LMS sends them
+  with each track, and amisqueeze plays the track as it comes:
+  - **Play or Resume fade-in duration**: the music starts at full volume;
+  - **Crossfade**: tracks follow each other without a fade;
+  - **Output Channel Mode**: both channels stay as they are, even with mono chosen;
+  - **Volume Adjustment/Replay Gain**: each track plays at its own level.
+
+  An inverted polarity, which LMS does not offer for this player, would be ignored too.
 - Exchange's Active/Inactive switch is shown, but does not affect the music.
 - With a Xircom PCMCIA card and Aminet's `xircomce2.device` 1.1, Paula crackles now and then while the music comes
   in. AmiNetXDuo's `RXBUFFER=8192`, in its interface file, stops it, at about 90 % of the CPU on a 26 MHz 68020.
