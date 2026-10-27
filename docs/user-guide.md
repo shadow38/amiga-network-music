@@ -92,6 +92,10 @@ With Paula, AHI converts and mixes the sound with the CPU. `Paula:8 bit stereo++
 
 With Paula, `paula.audio` swaps left and right: add [`SWAP`](#options) to amisqueeze's options.
 
+With Paula, the power LED dims as long as amisqueeze runs, even when nothing plays: `paula.audio` turns Paula's
+low-pass filter off, whose state the LED shows, while the AHI unit is open, and back on when amisqueeze quits.
+Seen on a real A1200.
+
 At start-up, amisqueeze checks the unit's mode and warns about a stereo mode without "++" or a mono mode.
 
 ### Server setup

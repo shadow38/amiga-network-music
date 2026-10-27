@@ -31,6 +31,8 @@ are previews, tested in WinUAE only, not yet on a real Amiga.
 - User guide: with Paula, `SWAP` is now part of setting up the AHI unit, since `paula.audio` swaps left and right,
   on a real A1200 too.
 - User guide: which internet radios may cut with LMS, and its "Proxied Streaming" setting, which should avoid it.
+- User guide: with Paula, the power LED dims as long as amisqueeze runs, since `paula.audio` turns Paula's filter
+  off; seen on a real A1200.
 
 ### Fixed
 

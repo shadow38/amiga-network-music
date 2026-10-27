@@ -66,8 +66,10 @@ Agreed with the user on 2026-10-26.
 
 - **The real machine** (player-9): the step's whole protocol on the A1200, with LMS, then with Music Assistant.
   Only if it shows gaps: more AHI blocks, or a higher task priority. The same session also checks:
-  - Paula's LED filter (protocol step 3): the user guide says that `paula.audio` turns it off while playing, once
-    the real machine confirms it (seen in WinUAE on 2026-10-23; agreed with the user on 2026-10-23);
+  - Paula's LED filter (protocol step 3): the user guide says that `paula.audio` turns it off, once the real
+    machine confirms it (seen in WinUAE on 2026-10-23; agreed with the user on 2026-10-23). Done on 2026-10-28:
+    on the A1200 it stays off as long as amisqueeze runs, not only while playing (agreed with the user on
+    2026-10-28);
   - Ctrl-C with a real TCP/IP stack (protocol step 6; see [Open points](#open-points));
   - the `aac` row of the user guide, with Music Assistant;
   - the free memory the user guide asks for, from `Avail` (protocol step 1);
