@@ -103,12 +103,16 @@ another computer of the local network; it is set up once.
 
 amisqueeze needs three things from LMS:
 
-- **Its address**, given with `SERVER`. It is the one in the browser's address bar when LMS's web page is open on
-  another computer: `http://<address>:9000`. Give the server a fixed address in the router, so that it does not
-  change. A host name works too, if the Amiga's TCP/IP stack can resolve it.
-- **Two ports** open to the Amiga in the server's firewall: 3483/tcp for the players, and the web port (9000/tcp
-  by default), which also carries the music. LMS tells amisqueeze which web port it uses. In Docker, publish both;
-  the image's `HTTP_PORT` setting moves the web port.
+- **Its ports** open to the Amiga in the server's firewall:
+  - 3483/tcp for the players;
+  - 3483/udp, where amisqueeze asks for a server on the local network when it is given none;
+  - the web port (9000/tcp by default), which also carries the music. LMS tells amisqueeze which web port it uses.
+
+  In Docker, publish them all; the image's `HTTP_PORT` setting moves the web port.
+- **Its address**, only if amisqueeze does not find LMS by itself (see [starting](#starting-amisqueeze)): give it
+  with `SERVER`. It is the one in the browser's address bar when LMS's web page is open on another computer:
+  `http://<address>:9000`. Give the server a fixed address in the router, so that it does not change. A host name
+  works too, if the Amiga's TCP/IP stack can resolve it.
 - **A rule for MP3**, only when amisqueeze leaves MP3 to the server: with `amisqueeze`, or with `amisqueeze.fpu`
   on a slow Amiga (see [`FLAC`, `MP3` and `BENCH`](#flac-mp3-and-bench)). Add these lines to a file
   `custom-convert.conf`, in LMS's root directory or at the root of a plugins directory, then restart LMS:
@@ -126,10 +130,12 @@ amisqueeze needs three things from LMS:
 
 Music Assistant drives amisqueeze through its Squeezelite provider. It needs:
 
-- **The provider**: in Settings > Player providers, add "Squeezelite". Its "Slimproto port" is 3483 by default.
-- **Its address**, given with `SERVER`: the address of Music Assistant's computer, found as for LMS above.
-- **Two ports** open to the Amiga in the server's firewall: 3483/tcp for the players, and 8097/tcp, where players
-  fetch the music (the "TCP Port" of Settings > System > Streams).
+- **The provider**: in Settings > Player providers, add "Squeezelite". Its "Slimproto port" is 3483 by default;
+  give amisqueeze another one with `PORT`.
+- **Its ports** open to the Amiga in the server's firewall: 3483/tcp for the players, 3483/udp for amisqueeze to
+  find the server, and 8097/tcp, where players fetch the music (the "TCP Port" of Settings > System > Streams).
+- **Its address**, only if amisqueeze does not find Music Assistant by itself: give it with `SERVER`. It is the
+  address of Music Assistant's computer, found as for LMS above.
 - **The right address for the streams**, when Music Assistant runs in a container or its computer has several
   networks. Music Assistant tells the player where to fetch each track, at the address it detects for itself. If
   the Amiga cannot reach that address, amisqueeze connects but no track plays. Then give the address the Amiga
@@ -161,28 +167,32 @@ Music Assistant gives a new player a volume of 20, almost silent: turn it up bef
 
 #### From a Shell
 
-Give the address of the server:
+```
+amisqueeze
+```
+
+amisqueeze looks for a server on the local network. It prints the player's name, `server "..." found at
+<address>`, then `connected to the server`. A player called "Amiga" shows up in the server's web interface: choose
+it there or in an app, and play. No `Stack` command is needed: amisqueeze sets up the stack it needs. If the
+connection drops or the server restarts, amisqueeze reconnects by itself.
+
+Give the server's address with `SERVER` when amisqueeze does not find it, or to choose one when several answer:
 
 ```
 amisqueeze SERVER=192.168.1.10
 ```
 
-amisqueeze prints the player's name and the server, then `connected to the server`. A player called "Amiga"
-shows up in the server's web interface: choose it there or in an app, and play. No `Stack` command is needed:
-amisqueeze sets up the stack it needs. If the connection drops or the server restarts, amisqueeze reconnects by
-itself.
-
 amisqueeze keeps the Shell until it stops. To get the Shell back, start it in the background:
 
 ```
-Run >NIL: amisqueeze SERVER=192.168.1.10
+Run >NIL: amisqueeze
 ```
 
 To keep its messages in a file, add [`LOG`](#log).
 
 #### Keeping the options
 
-To avoid typing the address every time, save the options in the variable `amisqueeze.prefs`:
+To avoid typing the options every time, save them in the variable `amisqueeze.prefs`:
 
 ```
 Echo "SERVER=192.168.1.10 NAME=Amiga" >ENV:amisqueeze.prefs
@@ -194,16 +204,18 @@ win over the saved ones: see [default options](#default-options).
 
 #### From the Workbench
 
-Give the server's address in the icon first:
+Double-click the icon of `amisqueeze` (or `amisqueeze.fpu`). A window titled "amisqueeze" shows its messages,
+amisqueeze finds the server, and the player shows up in the server's web interface.
 
-1. Select the icon of `amisqueeze` (or `amisqueeze.fpu`), then *Icons > Information...* (Amiga-I).
+To give the server's address, as with `SERVER` from a Shell:
+
+1. Select the icon, then *Icons > Information...* (Amiga-I).
 2. In its **ToolTypes**, turn `(SERVER=192.168.1.10)` into your server's address, without the parentheses. A
    ToolType in parentheses is disabled.
 3. Save.
 
-Then double-click the icon. A window titled "amisqueeze" shows its messages, and the player shows up in the
-server's web interface. The ToolTypes take every [option](#options), one per line; see
-[ToolTypes](#tooltypes) for those of the Workbench only.
+The ToolTypes take every [option](#options), one per line; see [ToolTypes](#tooltypes) for those of the
+Workbench only.
 
 ![A Workbench drawer holding the two programs, amisqueeze.fpu and amisqueeze, each with a loudspeaker
 icon](images/workbench-icons.png)
@@ -271,8 +283,8 @@ SERVER,PORT/N/K,NAME/K,MAC/K,OUTPUT/K,LOG/K,UNIT/N/K,NOAUDIO/S,SWAP/S,FLAC/K,MP3
 
 | Option | Meaning | Default |
 |---|---|---|
-| `SERVER` | the server: IP address or host name; the `SERVER=` keyword may be left out | none: required, on the command line or in the [default options](#default-options) |
-| `PORT` | the server's slimproto port, 1 to 65535 | `3483` |
+| `SERVER` | the server: IP address or host name; the `SERVER=` keyword may be left out | none: the first server that answers on the local network (see [starting](#starting-amisqueeze)) |
+| `PORT` | the server's slimproto port, 1 to 65535; without `SERVER`, the server is looked for on that UDP port too | `3483` |
 | `NAME` | the player's name shown by the server (see [`NAME` and `MAC`](#name-and-mac)) | `Amiga` |
 | `MAC` | the player's identifier, `xx:xx:xx:xx:xx:xx` | derived from `NAME` |
 | `UNIT` | the AHI unit to play through, 0 to 3 (see [setting up the unit](#setting-up-the-unit)) | `0` |
@@ -484,7 +496,10 @@ with `amisqueeze: `, left out below. `N` stands for a number, `...` for a name o
 
 | Message | Meaning |
 |---|---|
-| `player "..." (xx:xx:xx:xx:xx:xx), server ... port ...` | at every start: the player's name and MAC address as the server sees them, and the server it connects to |
+| `player "..." (xx:xx:xx:xx:xx:xx), server ... port ...` | at every start: the player's name and MAC address as the server sees them, and the server it connects to; without `SERVER`, `looking for a server on the local network, port ...` instead |
+| `server "..." found at ...` | a server answered, with its name and address; each byte of the name outside plain ASCII shows as `?` |
+| `N servers answered: connecting to the first, SERVER=<address> chooses another` | several servers answered: give the address of the one to play from |
+| `no server answered on port N: still looking (Ctrl-C stops)` | no server answered: amisqueeze asks again every few seconds (see [troubleshooting](#troubleshooting)) |
 | `FLAC: level 8 decoded at ...x real time: FLAC decoded here` (or `converted to PCM by the server`) | the start-up measure of `FLAC=AUTO` |
 | `MP3: 320 kbit/s decoded at ...x real time: ...` | the same for MP3 (`MP3=AUTO`, `amisqueeze.fpu`) |
 | `MAXRATE: at most N Hz asked of the server` | the rate [`MAXRATE`](#maxrate) asks for; with `AHI` or `AHISTD`, followed by the unit and its rate |
@@ -509,10 +524,10 @@ amisqueeze stops at once.
 
 | Message | Meaning |
 |---|---|
-| `no server: give SERVER=<ip\|name>, or set it in ENV:amisqueeze.prefs` | no server on the command line nor in the default options |
 | `amisqueeze: <AmigaDOS error>`, e.g. `amisqueeze: bad number` | the command line does not fit the template: a bad number for `PORT` or `UNIT`, an unknown keyword...; the text is AmigaDOS's own |
 | `ENV:amisqueeze.prefs: ...` | the default options cannot be read: an unknown option, a syntax error |
-| `ENV:amisqueeze.prefs is too long: at most 509 characters` | the default options do not fit what amisqueeze reads || `the icon's ToolTypes: ...` | a ToolType cannot be read: an unknown value, a bad number...; shown in the window, which stays open |
+| `ENV:amisqueeze.prefs is too long: at most 509 characters` | the default options do not fit what amisqueeze reads |
+| `the icon's ToolTypes: ...` | a ToolType cannot be read: an unknown value, a bad number...; shown in the window, which stays open |
 | `the icon's ToolTypes are too long` | the ToolTypes together exceed what amisqueeze reads, about 500 characters |
 | `invalid MAC (expected xx:xx:xx:xx:xx:xx)` | `MAC` is not six hexadecimal pairs |
 | `FLAC=...: expected AUTO, ON or OFF` (or `MP3=...`) | a wrong value for that option |
@@ -534,7 +549,8 @@ amisqueeze reconnects by itself.
 | Message | Meaning |
 |---|---|
 | `cannot connect: error N` | nothing answers at that address and port |
-| `retrying in 5 s` | after a failed connection, or a connection lost less than 10 s after it was made; after a longer session, amisqueeze reconnects at once |
+| `retrying in 5 s` | after a failed connection, or a connection lost less than 10 s after it was made; after a longer session, amisqueeze reconnects at once. Without `SERVER`, a failed connection makes amisqueeze look for the server again: its address may have changed |
+| `discovery: socket: error N`, `discovery: cannot broadcast: error N`, `discovery: recv: error N` | looking for a server failed: a TCP/IP stack error, or no network yet; amisqueeze tries again |
 | `socket: error N` | the TCP/IP stack cannot create a connection (out of resources?) |
 | `send: error N`, `recv: error N` | the connection to the server broke |
 | `WaitSelect: error N` | waiting on the network failed: a TCP/IP stack error |
@@ -601,6 +617,7 @@ rows say what comes next.
 | `output: AHI unit N (..., N Hz)` | the AHI mode and frequency played with, for instance `output: AHI unit 0 (Paula:14 bit stereo++ calibrated, 27429 Hz)`; `output: virtual (no sound)` with `NOAUDIO` or `OUTPUT` |
 | `volume: 5.9 % of full amplitude`, `volume: fixed at 100 % by LMS (samples untouched)` | a change of volume |
 | `<- strm ...`, `-> STAT ...`, `-> DSCO ...`, `<- audg ...`, `<- aude ...` | the messages exchanged with the server |
+| `discovery: a packet that is no reply ignored (N bytes)` | while looking for a server, something else than a server's answer came in |
 | `<- vers ignored (N bytes)`, the same for `grfb`, `grfe`, `codc`, `cont` | messages amisqueeze does not need: Music Assistant sends them; `cont` also comes with some internet radios (see [known limits](#known-limits)) |
 | other `stream: ...` messages | the stream's events: parameters, connection, headers received, WAV header, end of the track's data |
 | other `output: ...` messages | the output's events: track started, buffer empty, end of playback, `OUTPUT` file opened and bytes written to it |
@@ -610,6 +627,9 @@ rows say what comes next.
 - **The player does not show up on the server.** Start amisqueeze from a Shell, or add `LOG`, and read the
   messages:
   - `bsdsocket.library not found`: no TCP/IP stack is running;
+  - `no server answered`: check that the server runs, that its firewall lets 3483/udp in, and that it is on the
+    same local network (see [server setup](#server-setup)). A router does not pass the question on to another
+    network. With Music Assistant on another slimproto port, give it with `PORT`. Or give `SERVER`;
   - `cannot connect`: nothing answers at that address. Check `SERVER`, that the server runs, and that its
     firewall lets 3483/tcp in (see [server setup](#server-setup));
   - `connected to the server`: the connection is up.
@@ -642,7 +662,8 @@ rows say what comes next.
 
 - Playback tried on a real A1200; the commands, the recovery from network failures and long playback in WinUAE
   only so far (see [what has been tried](#what-has-been-tried)).
-- The server's address must be given (`SERVER`): amisqueeze does not find the server by itself yet.
+- amisqueeze finds a server on its own local network only, and in WinUAE only so far. With several servers, it
+  takes the first that answers.
 - MP3 is decoded only by `amisqueeze.fpu`. With `amisqueeze`, LMS needs a [rule](#lyrion-music-server) to convert
   it. Other formats play only through the server's conversion to raw PCM.
 - Files above 48 kHz (88.2, 96, 192 kHz) play only when FLAC is decoded on the Amiga. Otherwise LMS cannot lower

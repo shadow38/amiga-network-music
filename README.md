@@ -64,17 +64,14 @@ a fast Amiga; otherwise the server sends raw PCM) and plays it through AHI.
 3. **On the Amiga**: a TCP/IP stack running, and AHI installed, with unit 0 set to a "stereo++" mode in
    `SYS:Prefs/AHI` (with Paula: `Paula:14 bit stereo++`); without "++", the music plays on one side only. Where to
    get AHI and how to set it up: [sound](docs/user-guide.md#sound-ahi).
-4. **Start it**, with the address of the server:
-   - from the **Workbench**: select the icon, *Icons > Information...*, and in its ToolTypes turn
-     `(SERVER=192.168.1.10)` into your server's address (without the parentheses); then double-click the icon.
-     A window shows its messages. Copied into `SYS:WBStartup`, it starts with the Amiga;
-   - from a **Shell**:
+4. **Start it**: it finds the server on the local network.
+   - from the **Workbench**: double-click the icon. A window shows its messages. Copied into `SYS:WBStartup`, it
+     starts with the Amiga;
+   - from a **Shell**: `amisqueeze`.
 
-     ```
-     amisqueeze SERVER=192.168.1.10
-     ```
-
-   A player called "Amiga" shows up in the server's web interface: choose it there or in an app, and play.
+   A player called "Amiga" shows up in the server's web interface: choose it there or in an app, and play. If
+   amisqueeze finds no server, or finds several, give the server's address: `amisqueeze SERVER=192.168.1.10`, or
+   the ToolType `SERVER=192.168.1.10` (see [starting](docs/user-guide.md#starting-amisqueeze)).
 5. **To stop it**: Exchange, the system's list of background programs, lists it ("Remove"); or Ctrl-C in its
    window or Shell. To keep the Shell options for the next times, then just type `amisqueeze`:
 
@@ -83,9 +80,9 @@ a fast Amiga; otherwise the server sends raw PCM) and plays it through AHI.
    Copy ENV:amisqueeze.prefs ENVARC:
    ```
 
-On the server side: the server reachable from the Amiga (ports 3483 and 9000 for LMS, 3483 and 8097 for Music
-Assistant); with LMS, for MP3 files on an Amiga that does not decode them, a conversion rule; with Music
-Assistant, the player's output codec set to `flac` (`wav` on a slow Amiga): see
+On the server side: the server reachable from the Amiga (ports 3483 tcp and udp, and 9000 for LMS; 3483 tcp and
+udp, and 8097 for Music Assistant); with LMS, for MP3 files on an Amiga that does not decode them, a conversion
+rule; with Music Assistant, the player's output codec set to `flac` (`wav` on a slow Amiga): see
 [server setup](docs/user-guide.md#server-setup).
 
 Everything else (all the options, sound settings, volume, messages) is in the **[user guide](docs/user-guide.md)**.

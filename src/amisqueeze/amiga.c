@@ -321,6 +321,52 @@ int plat_recv(int sock, void *buf, int len)
     return n;
 }
 
+int plat_udp_open(void)
+{
+    LONG one = 1;
+    LONG s = socket(AF_INET, SOCK_DGRAM, 0);
+
+    if (s < 0) {
+        last_error = Errno();
+        return -1;
+    }
+    if (setsockopt(s, SOL_SOCKET, SO_BROADCAST, &one, sizeof(one)) < 0) {
+        last_error = Errno();
+        CloseSocket(s);
+        return -1;
+    }
+    return s;
+}
+
+int plat_udp_broadcast(int sock, uint16_t port, const void *buf, int len)
+{
+    struct sockaddr_in sa;
+
+    memset(&sa, 0, sizeof(sa));
+    sa.sin_len = sizeof(sa);
+    sa.sin_family = AF_INET;
+    sa.sin_port = htons(port);
+    sa.sin_addr.s_addr = htonl(INADDR_BROADCAST);
+    if (sendto(sock, (APTR)buf, len, 0, (struct sockaddr *)&sa, sizeof(sa)) != len) {
+        last_error = Errno();
+        return 0;
+    }
+    return 1;
+}
+
+int plat_udp_recv(int sock, void *buf, int len, uint32_t *ip)
+{
+    struct sockaddr_in sa;
+    LONG salen = sizeof(sa);
+    LONG n = recvfrom(sock, buf, len, 0, (struct sockaddr *)&sa, &salen);
+
+    if (n < 0)
+        last_error = Errno();
+    else
+        *ip = ntohl(sa.sin_addr.s_addr);
+    return n;
+}
+
 void plat_close(int sock)
 {
     CloseSocket(sock);
@@ -749,10 +795,6 @@ int main(void)
     if (args[ARG_MAXRATE] && (o.maxrate = parse_maxrate((const char *)args[ARG_MAXRATE])) == 0) {
         msg("amisqueeze: MAXRATE=%s: expected AHI, AHISTD, or a rate from %lu to %lu Hz\n",
             (const char *)args[ARG_MAXRATE], (unsigned long)MAXRATE_MIN, (unsigned long)MAXRATE_DEFAULT);
-        goto out_args;
-    }
-    if (args[ARG_SERVER] == 0 && !o.bench) {
-        msg("amisqueeze: no server: give SERVER=<ip|name>, or set it in ENV:" PREFS_VAR "\n");
         goto out_args;
     }
     o.server = (const char *)args[ARG_SERVER];

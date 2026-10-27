@@ -4,7 +4,8 @@
  * One loop around plat_wait(): the control socket and the stream socket, interruption by the user (Ctrl-C), and
  * a timeout that also serves as a timer (100 ms while streaming or playing, for the virtual output and STMt;
  * one second otherwise). Reconnects every RECONNECT_DELAY_S seconds while the server is unreachable, or while it
- * closes the connection at once.
+ * closes the connection at once. Without SERVER, the server is found by discovery first, and again whenever a
+ * connection to it fails.
  */
 #include <string.h>
 
@@ -252,6 +253,27 @@ static int connection_lost(struct player *p, uint32_t since)
     return wait_seconds(RECONNECT_DELAY_S);
 }
 
+/* No SERVER: asks the local network until a server answers. 0 if interrupted. */
+static int find_server(struct player *p)
+{
+    int said = 0;
+
+    for (;;) {
+        int r = slim_discover(p);
+
+        if (r == 1)
+            return 1;
+        if (r == -1)
+            return 0;
+        if (r == 0 && !said) {
+            msg("no server answered on port %u: still looking (Ctrl-C stops)\n", (unsigned)p->server_port);
+            said = 1;
+        }
+        if (!wait_seconds(RECONNECT_DELAY_S))
+            return 0;
+    }
+}
+
 static void run(struct player *p)
 {
     int reconnect = 0;
@@ -263,7 +285,11 @@ static void run(struct player *p)
         uint32_t closes = p->stream.closes;
 
         if (p->sock < 0) {
+            if (p->server_ip == 0 && !find_server(p))
+                return;
             if (!slim_connect(p, reconnect)) {
+                if (p->discover)
+                    p->server_ip = 0;       /* found by discovery: look again, its address may have changed */
                 msg("retrying in %d s\n", RECONNECT_DELAY_S);
                 if (!wait_seconds(RECONNECT_DELAY_S))
                     return;
@@ -330,7 +356,9 @@ int player_main(struct player *p, const struct options *o)
     } else
         mac_from_name(p->name, p->mac);
 
-    if (!plat_resolve(o->server, &p->server_ip)) {
+    p->discover = o->server == NULL;
+    p->server_ip = 0;
+    if (!p->discover && !plat_resolve(o->server, &p->server_ip)) {
         msg("amisqueeze: server %s not found\n", o->server);
         return PLAYER_FAIL;
     }
@@ -384,9 +412,12 @@ int player_main(struct player *p, const struct options *o)
         p->maxrate = o->maxrate;
         msg("MAXRATE: at most %lu Hz asked of the server\n", (unsigned long)p->maxrate);
     }
-    msg("player \"%s\" (%02X:%02X:%02X:%02X:%02X:%02X), server %s port %u\n",
-        p->name, p->mac[0], p->mac[1], p->mac[2], p->mac[3], p->mac[4], p->mac[5],
-        o->server, (unsigned)p->server_port);
+    msg("player \"%s\" (%02X:%02X:%02X:%02X:%02X:%02X), ", p->name, p->mac[0], p->mac[1], p->mac[2], p->mac[3],
+        p->mac[4], p->mac[5]);
+    if (p->discover)
+        msg("looking for a server on the local network, port %u\n", (unsigned)p->server_port);
+    else
+        msg("server %s port %u\n", o->server, (unsigned)p->server_port);
 
     run(p);
     slim_disconnect(p);

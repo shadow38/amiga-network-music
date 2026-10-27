@@ -9,7 +9,8 @@
  *
  * HELO (with the formats decoded here: pcm, flc and mp3 as decided at start-up), STAT, player name (setd),
  * streams (strm s: raw PCM, FLAC, MP3, handled by stream.c and the decoders), stop, flush, pause and unpause,
- * volume (audg); RESP (stream response headers) and DSCO (stream disconnection).
+ * volume (audg); RESP (stream response headers) and DSCO (stream disconnection). Without SERVER, the server is found
+ * by a discovery request broadcast on UDP (LMS's Slim/Networking/Discovery.pm).
  */
 #include <string.h>
 
@@ -448,4 +449,106 @@ lost:
     else
         msg("amisqueeze: recv: error %d\n", plat_error());
     return 0;
+}
+
+/* ---- server discovery (UDP) ---- */
+
+/* The request: 'e', then the field NAME without a value (the server's name in the reply). LMS and Music Assistant
+ * answer it on their slimproto port, from the address to connect to: neither sends its slimproto port. */
+static const uint8_t discovery_request[] = { 'e', 'N', 'A', 'M', 'E', 0 };
+
+#define DISCOVERY_MAX_SERVERS 8
+
+int discovery_reply(const uint8_t *buf, int len, char *name, int size)
+{
+    int pos = 1;
+
+    if (len < 1 || buf[0] != 'E')
+        return 0;
+    name[0] = '\0';
+    /* Music Assistant counts a length in characters, then encodes the packet in UTF-8: a field may run past the
+     * packet's end, or be followed by bytes that read as nothing */
+    while (pos + 5 <= len) {
+        int n = buf[pos + 4], start = pos + 5, i;
+
+        if (!memcmp(buf + pos, "NAME", 4)) {
+            if (n > len - start)
+                n = len - start;
+            if (n > size - 1)
+                n = size - 1;
+            for (i = 0; i < n; i++)         /* in ASCII, as the player name from setd */
+                name[i] = buf[start + i] >= ' ' && buf[start + i] <= '~' ? (char)buf[start + i] : '?';
+            name[n] = '\0';
+            break;
+        }
+        pos = start + n;
+    }
+    return 1;
+}
+
+static void show_server(const char *name, uint32_t ip)
+{
+    msg("server %s%s%sfound at %lu.%lu.%lu.%lu\n", name[0] ? "\"" : "", name, name[0] ? "\" " : "",
+        (unsigned long)(ip >> 24), (unsigned long)(ip >> 16 & 255), (unsigned long)(ip >> 8 & 255),
+        (unsigned long)(ip & 255));
+}
+
+int slim_discover(struct player *p)
+{
+    static uint8_t buf[1500];               /* one Ethernet frame */
+    uint32_t found[DISCOVERY_MAX_SERVERS], start;
+    int s, n, i, count = 0, r = 0;
+
+    s = plat_udp_open();
+    if (s < 0) {
+        msg("amisqueeze: discovery: socket: error %d\n", plat_error());
+        return -2;
+    }
+    if (!plat_udp_broadcast(s, p->server_port, discovery_request, sizeof(discovery_request))) {
+        msg("amisqueeze: discovery: cannot broadcast: error %d\n", plat_error());
+        plat_close(s);
+        return -2;
+    }
+    start = plat_now_ms();
+    for (;;) {
+        struct plat_fd fd;
+        uint32_t spent = plat_now_ms() - start, ip;
+        char name[PLAYER_NAME_LEN + 1];
+
+        if (spent >= DISCOVERY_WAIT_MS)
+            break;
+        fd.sock = s;
+        fd.events = PLAT_READ;
+        r = plat_wait(&fd, 1, DISCOVERY_WAIT_MS - spent);
+        if (r < 0)
+            break;                          /* interrupted, or an error already said */
+        if (r == 0 || !(fd.ready & PLAT_READ))
+            continue;
+        n = plat_udp_recv(s, buf, sizeof(buf), &ip);
+        if (n < 0) {
+            msg("amisqueeze: discovery: recv: error %d\n", plat_error());
+            r = -2;
+            break;
+        }
+        if (!discovery_reply(buf, n, name, sizeof(name))) {
+            if (p->verbose)
+                msg("discovery: a packet that is no reply ignored (%d bytes)\n", n);
+            continue;
+        }
+        for (i = 0; i < count && found[i] != ip; i++)
+            ;
+        if (i < count || count == DISCOVERY_MAX_SERVERS)
+            continue;                       /* the same server again, or too many */
+        found[count++] = ip;
+        show_server(name, ip);
+    }
+    plat_close(s);
+    if (r < 0)
+        return r;
+    if (count == 0)
+        return 0;
+    if (count > 1)
+        msg("%d servers answered: connecting to the first, SERVER=<address> chooses another\n", count);
+    p->server_ip = found[0];
+    return 1;
 }

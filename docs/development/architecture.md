@@ -207,8 +207,20 @@ Framing: server to client, a 2-byte length then a 4-byte opcode and the data; cl
 - autostart 2 and 3 (wait for `cont`, for radio metadata): played as 0 and 1.
 
 **Not handled** (message "not handled", always shown, nothing done): `serv`, and any other opcode. Not done at
-all: internet radios' metadata (ICY, planned for 0.9, see the plan), server discovery (UDP, 0.8), synchronisation
-between players, displays and IR.
+all: internet radios' metadata (ICY, planned for 0.9, see the plan), synchronisation between players, displays
+and IR.
+
+**Server discovery** (without `SERVER`): a UDP request broadcast to 255.255.255.255 on `PORT`, `e` then the
+field `NAME` with no value (a 4-byte tag, a 1-byte length). LMS (`Slim/Networking/Discovery.pm`) and Music
+Assistant (aioslimproto's `discovery.py`) both answer on their slimproto port, with `E` and the fields asked for.
+Neither sends its slimproto port, so the reply's source address is the server's, and `PORT` serves both the
+request and the connection. Every reply starting with `E` within 2 s counts; the first one is connected to.
+`NAME` is only shown, read within the packet's bounds: Music Assistant writes its length in characters, then
+encodes the whole packet in UTF-8, so a name outside ASCII gives a wrong length (from 128 characters, the length
+byte itself takes two). The older request `d` (the Squeezebox's) is not used: its reply carries only the host
+name, 17 bytes. A discovered server is looked for again when a connection to it fails, not after a lost
+connection: the same address is tried first. A router does not pass a broadcast on, and some NATs (an Incus
+bridge, for instance) rewrite a broadcast's source, so that the replies are lost.
 
 **Music Assistant** (seen with 2.10.7, plan step player-7b) speaks the same protocol, with differences. It
 transcodes everything to the output codec set for the player (`flac` by default, `mp3`, `aac`, `wav`; its

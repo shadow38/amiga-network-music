@@ -2,7 +2,7 @@
  * posix.c - amisqueeze on Linux (or another POSIX system), for host-side tests: entry point and the system
  * services of platform.h. Same behaviour as the Amiga build; the arguments use the same KEY=value syntax:
  *
- *   amisqueeze [SERVER=]<ip|name> [PORT=3483] [NAME=<name>] [MAC=xx:xx:xx:xx:xx:xx] [OUTPUT=<file>] [LOG=<file>]
+ *   amisqueeze [[SERVER=]<ip|name>] [PORT=3483] [NAME=<name>] [MAC=xx:xx:xx:xx:xx:xx] [OUTPUT=<file>] [LOG=<file>]
  *              [UNIT=<n>] [NOAUDIO] [SWAP] [FLAC=AUTO|ON|OFF] [MP3=AUTO|ON|OFF]
  *              [MAXRATE=AHI|AHISTD|<Hz>] [BENCH] [VERBOSE]
  *
@@ -197,6 +197,50 @@ int plat_recv(int sock, void *buf, int len)
 
     if (n < 0)
         last_error = errno;
+    return (int)n;
+}
+
+int plat_udp_open(void)
+{
+    int one = 1, s = socket(AF_INET, SOCK_DGRAM, 0);
+
+    if (s < 0) {
+        last_error = errno;
+        return -1;
+    }
+    if (setsockopt(s, SOL_SOCKET, SO_BROADCAST, &one, sizeof(one)) < 0) {
+        last_error = errno;
+        close(s);
+        return -1;
+    }
+    return s;
+}
+
+int plat_udp_broadcast(int sock, uint16_t port, const void *buf, int len)
+{
+    struct sockaddr_in sa;
+
+    memset(&sa, 0, sizeof(sa));
+    sa.sin_family = AF_INET;
+    sa.sin_port = htons(port);
+    sa.sin_addr.s_addr = htonl(INADDR_BROADCAST);
+    if (sendto(sock, buf, (size_t)len, 0, (struct sockaddr *)&sa, sizeof(sa)) != len) {
+        last_error = errno;
+        return 0;
+    }
+    return 1;
+}
+
+int plat_udp_recv(int sock, void *buf, int len, uint32_t *ip)
+{
+    struct sockaddr_in sa;
+    socklen_t salen = sizeof(sa);
+    ssize_t n = recvfrom(sock, buf, (size_t)len, 0, (struct sockaddr *)&sa, &salen);
+
+    if (n < 0)
+        last_error = errno;
+    else
+        *ip = ntohl(sa.sin_addr.s_addr);
     return (int)n;
 }
 
@@ -396,10 +440,6 @@ int main(int argc, char **argv)
         log_open();
     if (o.bench)
         return player_bench();
-    if (o.server == NULL) {
-        msg("amisqueeze: no server: give SERVER=<ip|name>\n");
-        return PLAYER_FAIL;
-    }
 
     /* No SA_RESTART: select() returns on the signal, like WaitSelect() on Ctrl-C */
     memset(&sa, 0, sizeof(sa));

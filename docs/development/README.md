@@ -74,7 +74,8 @@ Agreed with the user on 2026-10-26.
   - the automatic server discovery, with LMS, Music Assistant and no server (protocol step 8).
 - **A lower rate asked of the server** (player-13): a `MAXRATE` option, with a conversion rule on LMS.
 - **Automatic server discovery** (player-10): moved from 0.9, since its last check needs the same session on the
-  real machine (agreed with the user on 2026-10-27). Designed and tested on the host and in WinUAE first.
+  real machine (agreed with the user on 2026-10-27). Done on 2026-10-27, checked on the host and in WinUAE; the
+  A1200 next.
 - **Paula's swapped sides**: a note in the user guide for `paula.audio`, done on 2026-10-27. No `SWAP` by
   default: the sides are left to the direct Paula output (player-11).
 - **The messages Music Assistant sends and amisqueeze ignores** (`vers`, `grfb`, `grfe`, `codc`, `cont`): shown
@@ -133,7 +134,7 @@ Agreed with the user on 2026-10-26.
 | player-8 Local decoding (FLAC, then MP3) | ✅ 2026-10-19 |
 | player-8d MP3 without gaps between tracks | ✅ 2026-10-20 |
 | player-9 Real machine | ⬜ with 0.7, for 0.8 |
-| player-10 Finishing touches | 🔶 the parts of 0.4 and 0.5 done; server discovery in 0.8, ICY in 0.9 |
+| player-10 Finishing touches | 🔶 the parts of 0.4 and 0.5 done; server discovery 2026-10-27 (0.8), the A1200 next; ICY in 0.9 |
 | player-11 Direct Paula output, without AHI | ⬜ idea (CPU load on a slow 68020; crackles with a PCMCIA network card, player-9) |
 | player-12 Hardening (the 0.7 review's 50 list) | ✅ 2026-10-27 (version 0.8) |
 | player-13 A lower rate asked of the server | ✅ 2026-10-26: `MAXRATE` and the LMS rules; on the A1200, 62 % of the CPU at 32 kHz against 77 %; Music Assistant upstream: the user's decision |

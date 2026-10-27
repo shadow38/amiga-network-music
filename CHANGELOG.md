@@ -9,6 +9,9 @@ are previews, tested in WinUAE only, not yet on a real Amiga.
 
 ### Added
 
+- Without `SERVER`, amisqueeze finds the server on the local network by itself: it asks on UDP port 3483 (or
+  `PORT`), shows each server that answers, and connects to the first. LMS and Music Assistant both answer. The
+  server's firewall must let 3483/udp in. `SERVER` is no longer required.
 - `MAXRATE=AHI`, `MAXRATE=AHISTD` or `MAXRATE=<Hz>`: asks the server for a lower sample rate, to lighten a slow
   Amiga. `AHI` takes the AHI unit's rate, `AHISTD` the standard rate at or below it (27429 Hz gives 24000). With
   LMS it needs conversion rules on the server, given in the user guide; not with Music Assistant.

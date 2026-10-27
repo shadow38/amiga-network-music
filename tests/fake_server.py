@@ -968,11 +968,127 @@ def scenario_no_server():
     check(rc == 0 and time.time() - t0 < 2, "Ctrl-C during the retry delay stops at once")
 
 
+class Responder(threading.Thread):
+    """Answers discovery requests on UDP: for each one, the packets of replies, each sent from its socket"""
+
+    def __init__(self, sock, replies):
+        super().__init__(daemon=True)
+        self.sock = sock
+        self.replies = replies
+        self.requests = []
+
+    def run(self):
+        while True:
+            try:
+                data, addr = self.sock.recvfrom(1500)
+            except OSError:
+                return                  # closed
+            self.requests.append(data)
+            for sock, packet in self.replies:
+                sock.sendto(packet, addr)
+
+
+def discovery_ports():
+    """A TCP listener on every address (the reply to a broadcast comes from this machine's network address, where
+    the player then connects) and a UDP socket on the same port number"""
+    while True:
+        server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        server.bind(("0.0.0.0", 0))
+        port = server.getsockname()[1]
+        udp = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        try:
+            udp.bind(("0.0.0.0", port))
+        except OSError:
+            server.close()
+            udp.close()
+            continue
+        server.listen(1)
+        return server, udp, port
+
+
+def start_discovery(port, *args):
+    return subprocess.Popen([sys.argv[1], "PORT=%d" % port] + list(args), stdout=subprocess.PIPE,
+                            stderr=subprocess.STDOUT, text=True)
+
+
+def scenario_discovery():
+    print("-- discovery: no SERVER, one server found, found again after a failed connection")
+    server, udp, port = discovery_ports()
+    responder = Responder(udp, [(udp, b"ENAME\x07FakeLMS")])
+    responder.start()
+    proc = start_discovery(port, "NAME=Test")
+    try:
+        conn = accept(server)
+        opcode, _ = read_packet(conn)
+        check(opcode == b"HELO", "HELO to the server found")
+        check(responder.requests == [b"eNAME\0"], "one request: 'e' then NAME without a value")
+        server.close()                  # the next connection fails: the player looks for its server again
+        conn.close()
+        server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        server.bind(("0.0.0.0", port))
+        deadline = time.time() + 3 * TIMEOUT
+        while len(responder.requests) < 2 and time.time() < deadline:
+            time.sleep(0.1)
+        check(len(responder.requests) == 2, "a failed connection to the server found: a new request")
+        server.listen(1)
+        conn = accept(server)
+        opcode, body = read_packet(conn)
+        check(opcode == b"HELO" and struct.unpack(">H", body[24:26])[0] == 0x4000,
+              "connected again, with the reconnection flag")
+        conn.close()
+    finally:
+        rc, out = stop(proc)
+        server.close()
+        udp.close()
+    check("looking for a server on the local network, port %d" % port in out, "the search announced")
+    check(out.count('server "FakeLMS" found at') == 2, "the server shown with its name, at each search")
+    check("cannot connect" in out and "retrying in 5 s" in out, "the failed connection reported")
+
+    print("-- discovery: two servers, a malformed reply, a duplicate, a packet that is no reply")
+    server, udp, port = discovery_ports()
+    second = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    second.bind(("127.0.0.2", 0))
+    responder = Responder(udp, [(udp, b"Dnot a reply"), (udp, b"ENAME\x20ab"), (udp, b"ENAME\x04Same"),
+                                (second, b"ENAME\x06Second")])
+    responder.start()
+    proc = start_discovery(port, "NAME=Test", "VERBOSE")
+    try:
+        conn = accept(server)
+        opcode, _ = read_packet(conn)
+        check(opcode == b"HELO", "HELO to the first server that answered")
+        conn.close()
+    finally:
+        rc, out = stop(proc)
+        server.close()
+        udp.close()
+        second.close()
+    check('server "ab" found at' in out, "a NAME past the packet's end: read up to the end")
+    check('server "Second" found at 127.0.0.2' in out, "the second server shown")
+    check("Same" not in out, "the same server's second reply ignored")
+    check("2 servers answered: connecting to the first" in out, "the choice said")
+    check("a packet that is no reply ignored (12 bytes)" in out, "a packet that is no reply ignored (VERBOSE)")
+
+    print("-- discovery: no server answers, Ctrl-C while waiting for replies and between requests")
+    tcp, udp, port = discovery_ports()
+    tcp.close()
+    udp.close()                         # nothing answers on this port
+    proc = start_discovery(port)
+    time.sleep(1)
+    t0 = time.time()
+    rc, out = stop(proc)
+    check(rc == 0 and time.time() - t0 < 1 and "stopped" in out, "Ctrl-C while waiting for replies stops at once")
+    proc = start_discovery(port)
+    time.sleep(3)
+    t0 = time.time()
+    rc, out = stop(proc)
+    check("no server answered on port %d: still looking" % port in out, "no reply: said")
+    check(rc == 0 and time.time() - t0 < 1, "Ctrl-C between requests stops at once")
+
+
 def scenario_arguments():
     print("-- arguments")
-    proc = subprocess.run([sys.argv[1]], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
-                          timeout=TIMEOUT)
-    check(proc.returncode == 20 and "no server" in proc.stdout, "no server: error, exit code 20")
     proc = subprocess.run([sys.argv[1], "SERVER=127.0.0.1", "MAC=00:11"], stdout=subprocess.PIPE,
                           stderr=subprocess.STDOUT, text=True, timeout=TIMEOUT)
     check(proc.returncode == 20 and "invalid MAC" in proc.stdout, "invalid MAC: error, exit code 20")
@@ -1114,6 +1230,7 @@ if __name__ == "__main__":
     scenario_mp3_garbage()
     scenario_log()
     scenario_no_server()
+    scenario_discovery()
     scenario_arguments()
     if len(sys.argv) == 3:
         scenario_no_mp3(sys.argv[2])

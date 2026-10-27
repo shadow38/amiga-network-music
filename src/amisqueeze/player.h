@@ -28,7 +28,7 @@
 
 /* Options, filled by the entry point of each platform (command line, default options) */
 struct options {
-    const char *server;                 /* host name or dotted address (required) */
+    const char *server;                 /* host name or dotted address, NULL = found by discovery */
     long        port;                   /* as given (SLIMPROTO_PORT if not), checked by player_main: 1 to 65535 */
     const char *name;                   /* NULL = "Amiga" */
     const char *mac;                    /* "xx:xx:xx:xx:xx:xx", NULL = derived from the name */
@@ -167,8 +167,9 @@ struct audio {
 
 struct player {
     int      sock;                      /* control connection, -1 when closed */
-    uint32_t server_ip;                 /* host byte order */
+    uint32_t server_ip;                 /* host byte order; 0 = to be found by discovery */
     uint16_t server_port;
+    int      discover;                  /* no SERVER: the server is found on the local network */
     uint8_t  mac[6];
     char     name[PLAYER_NAME_LEN + 1];
     uint32_t last_rx;                   /* ms of the last packet received from the server */
@@ -229,6 +230,15 @@ void slim_send_stat(struct player *p, const char *event, uint32_t server_ts);
 void slim_send_refusal(struct player *p);
 void slim_send_resp(struct player *p, const char *headers, int len);
 void slim_send_dsco(struct player *p, int reason);
+/* Server discovery: broadcasts a request on UDP port p->server_port, then takes replies for DISCOVERY_WAIT_MS.
+ * Returns 1 with p->server_ip set to the first server that answered, 0 if none did, -1 if interrupted, -2 on a
+ * network error (said). */
+int slim_discover(struct player *p);
+#define DISCOVERY_WAIT_MS 2000
+/* A discovery reply ('E', then fields: a 4-byte tag, a 1-byte length, the value): 1 if buf is one, with the value
+ * of NAME in name, in ASCII (any other byte as '?'), cut at the packet's end and to size - 1 bytes; empty without
+ * NAME. 0 if buf is no reply. */
+int discovery_reply(const uint8_t *buf, int len, char *name, int size);
 
 /* stream.c */
 /* Initial state (and buffer allocation); 0 if there is not enough memory */

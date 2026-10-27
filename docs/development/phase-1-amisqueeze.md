@@ -801,7 +801,8 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   the start from the Workbench; **0.8** the automatic server discovery (agreed with the user on 2026-10-27: its
   last check needs the real machine, in the same session as player-9); **0.9** the internet radios' metadata.
   The `BUFFER` option only if player-9 shows a need. Each part is designed with the user when it starts.
-- **Automatic server discovery** (designed with the user on 2026-10-27, version 0.8):
+- **Automatic server discovery** (designed with the user on 2026-10-27, version 0.8). Done on 2026-10-27, checked
+  on the host and in WinUAE (LMS and Music Assistant found); the A1200 next, step 8 of the player-9 protocol:
   - Only when no `SERVER` is given: not on the command line, in `ENV:amisqueeze.prefs` or in the ToolTypes. No
     new option.
   - A discovery request is broadcast on UDP: `e`, then the field `NAME` with no value, to 255.255.255.255 on

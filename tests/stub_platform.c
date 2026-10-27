@@ -184,6 +184,24 @@ int plat_recv(int sock, void *buf, int len)
     return n;                           /* 0 when nothing is left = connection closed */
 }
 
+/* Server discovery is tried against the fake server (tests/fake_server.py), not here */
+int plat_udp_open(void)
+{
+    return -1;
+}
+
+int plat_udp_broadcast(int sock, uint16_t port, const void *buf, int len)
+{
+    (void)sock; (void)port; (void)buf; (void)len;
+    return 0;
+}
+
+int plat_udp_recv(int sock, void *buf, int len, uint32_t *ip)
+{
+    (void)sock; (void)buf; (void)len; (void)ip;
+    return -1;
+}
+
 void plat_close(int sock)
 {
     if (sock == STUB_STREAM)

@@ -2800,6 +2800,38 @@ static void test_tooltypes(void)
     CHECK(tooltypes_line(template, tt, 0, line, sizeof(line)) && !strcmp(line, "\n"));
 }
 
+/* Server discovery: the replies of LMS and Music Assistant, and malformed ones */
+static int reply(const char *pkt, int len, char *name, int size)
+{
+    memset(name, 'x', (size_t)size);
+    return discovery_reply((const uint8_t *)pkt, len, name, size);
+}
+
+static void test_discovery_reply(void)
+{
+    char name[PLAYER_NAME_LEN + 1], small[4], ma[5 + 2 + 130];
+
+    CHECK(reply("ENAME\005myLMS", 11, name, sizeof(name)) && !strcmp(name, "myLMS"));
+    CHECK(reply("EIPAD\00310.NAME\003lms", 17, name, sizeof(name)) && !strcmp(name, "lms"));  /* after a field */
+    CHECK(reply("EVERS\0059.1.1", 11, name, sizeof(name)) && !strcmp(name, ""));             /* no NAME */
+    CHECK(reply("E", 1, name, sizeof(name)) && !strcmp(name, ""));
+    CHECK(reply("ENAM", 4, name, sizeof(name)) && !strcmp(name, ""));                         /* cut in a tag */
+    CHECK(reply("ENAME\020abc", 9, name, sizeof(name)) && !strcmp(name, "abc"));             /* past the end */
+    CHECK(reply("EIPAD\377NAME\003lms", 14, name, sizeof(name)) && !strcmp(name, ""));        /* skipped past it */
+    CHECK(reply("ENAME\004\033[2J", 10, name, sizeof(name)) && !strcmp(name, "?[2J"));         /* a control byte */
+    CHECK(reply("ENAME\006abcdef", 12, small, sizeof(small)) && !strcmp(small, "abc"));       /* cut to size */
+    /* Music Assistant: the length in characters ("Muesic", 5), the packet in UTF-8 (6 bytes) */
+    CHECK(reply("ENAME\005M\303\274sic", 12, name, sizeof(name)) && !strcmp(name, "M??si"));
+    /* ... and a length of 128 or more is itself 2 bytes in UTF-8: chr(130) is C2 82 */
+    memcpy(ma, "ENAME\302\202", 7);
+    memset(ma + 7, 'a', 130);
+    CHECK(reply(ma, (int)sizeof(ma), name, sizeof(name)) && strlen(name) == PLAYER_NAME_LEN && name[0] == '?' &&
+          name[1] == 'a');
+    CHECK(!reply("eNAME\0", 6, name, sizeof(name)));    /* a request, not a reply */
+    CHECK(!reply("D", 1, name, sizeof(name)));          /* the old discovery's reply */
+    CHECK(!reply("", 0, name, sizeof(name)));
+}
+
 int main(void)
 {
     test_ring();
@@ -2870,6 +2902,7 @@ int main(void)
     test_run_stale_ready();
     test_lame_header();
     test_tooltypes();
+    test_discovery_reply();
     printf("test_core: %d checks, %d failed\n", checks, failures);
     return failures ? 1 : 0;
 }
