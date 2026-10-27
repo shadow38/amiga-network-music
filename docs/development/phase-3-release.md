@@ -84,7 +84,7 @@ Back to the [plan](README.md).
   readme; the user writes the notes, compares the executables' SHA-256 with the build tried in WinUAE and
   publishes; run by hand, a trial in a draft to delete). From an outside reading the same day: the actions pinned
   by commit SHA, the checkout without a token (`persist-credentials: false`, the build's container mounts the
-  repository); an attestation of provenance left for 1.0.
+  repository), agreed with the user on 2026-10-27; an attestation of provenance left for 1.0.
 
 ## publish-4 Setup guides: server and network (noted 2026-10-19) ⬜
 

@@ -395,7 +395,8 @@ belongs to the task that opened it; packets serialised field by field; buffers a
     error event of `STMn`, so its web UI shows the track playing, the time running then back to 0, until the user
     stops it. LMS, by contrast, moves on to the next track on `STMn` (`playerStreamingFailed`), but only after
     `STMc`: it drops any status between a `strm s` and `STMc`, and amisqueeze sent `STMn` before it, so LMS
-    ignored it too (found later the same day in LMS's sources; fixed in 0.7: `STMc`, then `STMn`). Not changed
+    ignored it too (found later the same day in LMS's sources; fixed in 0.7: `STMc`, then `STMn`, agreed with the
+    user on 2026-10-27). Not changed
     (decided with the user on 2026-10-21, when LMS was thought to move on already): sending `STMu` after `STMn`
     would make MA move on, but LMS could then skip twice; an idea for later, per server at best. `amisqueeze` (no
     FPU) gets MA's `mp3` the same way (format `m` refused).
@@ -739,7 +740,8 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   to try first in step 4: slow profile (68020, about 28 MHz, no FPU, as the ACA1221lc), LMS 9.1.1, a 156 s song
   resampled to a 44.1 kHz 16-bit FLAC, sent as raw PCM by the server (`FLAC=AUTO` leaves FLAC to it on this
   profile: `stream: format p, size 1, rate 3`), `amisqueeze` with `SWAP` and `VERBOSE`, LMS volume 100. Method of
-  player-4c: free CPU counted by `cpucount` at priority -128, load = 1 - count while playing / count when idle, three
+  player-4c: free CPU counted by `cpucount` (in the repository since 2026-10-22, `make cpucount`, never released;
+  agreed with the user on 2026-10-27) at priority -128, load = 1 - count while playing / count when idle, three
   10 s windows per setting, the first 15 s after `play`; idle measured before and after the series (8,258 to
   8,334, mean 8,288). Mode and frequency as read from `ENV:Sys/ahi.prefs` and printed by `VERBOSE`
   (`output: AHI unit ...`); the 22 kHz rows coming out lower confirm AHI used them. No `STMo` in any run.
