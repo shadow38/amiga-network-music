@@ -456,6 +456,139 @@ static void test_bad_length(void)
     teardown(&p);
 }
 
+/* Packets too short for what their opcode carries: ignored or said, never read past their end. Past it lie the
+ * previous packet's bytes (the receive buffer is reused), so each short packet follows one that would make a read
+ * past its end visible. */
+static void test_short_packets(void)
+{
+    struct player p;
+    static const uint8_t str[5] = { 0, 3, 's', 't', 'r' };
+    uint8_t audg[18], b[20];
+    uint32_t volume;
+
+    setup(&p, "Amiga");
+    CHECK(slim_connect(&p, 0));
+    p.verbose = 1;
+    feed_strm('t', NULL, 0x11223344, 0, 0, NULL);       /* leaves "strm" in the receive buffer */
+    drain(&p);
+    clear_tx();
+    stub_feed(str, 5);                                  /* 3 bytes: not even an opcode */
+    drain(&p);
+    CHECK(stub_tx_len == 0 && !strcmp(stub_out, "amisqueeze: packet too short (3)\n"));
+
+    clear_tx();
+    memset(b, 0, sizeof(b));
+    b[0] = 't';
+    stub_feed_packet("strm", b, sizeof(b));             /* 24 bytes of the 28 a strm has */
+    drain(&p);
+    CHECK(stub_tx_len == 0 && !strcmp(stub_out, "amisqueeze: strm too short (24)\n"));
+
+    memset(audg, 0, sizeof(audg));                      /* old gains, adjust, preamp, new left and right gains */
+    audg[8] = 1;                                        /* adjust: the volume follows the gains */
+    audg[9] = 255;
+    set32(audg + 10, 0x4000);                           /* 25 % */
+    set32(audg + 14, 0x4000);
+    stub_feed_packet("audg", audg, sizeof(audg));
+    drain(&p);
+    volume = p.audio.volume;
+    clear_tx();
+    set32(audg + 10, 0x8000);
+    stub_feed_packet("audg", audg, 17);                 /* 21 bytes of the 22 an audg has */
+    drain(&p);
+    CHECK(stub_out[0] == '\0' && p.audio.volume == volume);
+
+    stub_feed_packet("setd", "\0", 1);                  /* leaves id 0 (the name) in the receive buffer */
+    drain(&p);
+    clear_tx();
+    stub_feed_packet("setd", "", 0);                    /* no id */
+    drain(&p);
+    CHECK(stub_tx_len == 0 && stub_out[0] == '\0');
+    teardown(&p);
+}
+
+/* A name longer than the player keeps (PLAYER_NAME_LEN): cut, and the cut name confirmed to the server */
+static void test_setd_long_name(void)
+{
+    struct player p;
+    char b[1 + PLAYER_NAME_LEN + 10];
+
+    setup(&p, "Amiga");
+    CHECK(slim_connect(&p, 0));
+    clear_tx();
+    b[0] = 0;
+    memset(b + 1, 'N', sizeof(b) - 1);
+    stub_feed_packet("setd", b, sizeof(b));
+    drain(&p);
+    CHECK(strlen(p.name) == PLAYER_NAME_LEN && p.name[0] == 'N');
+    CHECK(!memcmp(stub_tx, "SETD", 4) && be32(stub_tx + 4) == 1 + PLAYER_NAME_LEN + 1);
+    teardown(&p);
+}
+
+/* Raw PCM fields out of range in a strm s (size, rate, channels): refused as a track it cannot play */
+static void test_strm_pcm_fields(void)
+{
+    static const char bad[][7] = {
+        { '1', 'p', '4', '3', '2', '1', 10 },          /* size '4': 5 bytes */
+        { '1', 'p', '/', '3', '2', '1', 10 },          /* size '/': 0 bytes */
+        { '1', 'p', '1', ':', '2', '1', 10 },          /* rate ':': past the table (88.2 kHz, refused: plan 0.9) */
+        { '1', 'p', '1', '/', '2', '1', 10 },          /* rate '/': before it */
+        { '1', 'p', '1', '3', '0', '1', 10 },          /* no channel */
+        { '1', 'p', '1', '3', '3', '1', 10 },          /* 3 channels */
+    };
+    struct player p;
+    unsigned i;
+
+    for (i = 0; i < sizeof(bad) / sizeof(bad[0]); i++) {
+        setup(&p, "Amiga");
+        CHECK(slim_connect(&p, 0));
+        clear_tx();
+        feed_strm('s', bad[i], 0, 9000, 0, request);
+        drain(&p);
+        CHECK(!strcmp(trace(), "STAT:STMf STAT:STMc STAT:STMn"));
+        CHECK(strstr(stub_out, "stream format p not supported") != NULL);
+        CHECK(p.stream.state == STREAM_IDLE && !stub_stream_open);
+        teardown(&p);
+    }
+}
+
+/* An autostart out of range ('0' to '3'): taken as 1, without the message of a direct stream (2 or 3) */
+static void test_strm_autostart(void)
+{
+    static const char autostart[] = { '7', '/' };
+    struct player p;
+    unsigned i;
+
+    for (i = 0; i < sizeof(autostart); i++) {
+        setup(&p, "Amiga");
+        CHECK(slim_connect(&p, 0));
+        p.verbose = 1;
+        clear_tx();
+        strm_pcm(&p, autostart[i], 1);
+        CHECK(p.stream.autostart == 1 && strstr(stub_out, "handled as") == NULL);
+        teardown(&p);
+    }
+}
+
+/* Response headers that fill their buffer without ending: the stream given up (DSCO 1), not read further */
+static void test_headers_too_long(void)
+{
+    struct player p;
+    static char headers[2100];
+
+    setup(&p, "Amiga");
+    CHECK(slim_connect(&p, 0));
+    strm_pcm(&p, '1', 1);
+    stream_io(&p, PLAT_WRITE);
+    clear_tx();
+    memset(headers, 'x', sizeof(headers));
+    stub_feed_stream(headers, sizeof(headers));
+    drain_stream(&p);
+    CHECK(strstr(stub_out, "amisqueeze: stream: response headers too long") != NULL);
+    CHECK(!strcmp(trace(), "DSCO:1"));
+    CHECK(p.stream.state == STREAM_IDLE && !stub_stream_open);
+    teardown(&p);
+}
+
 /* A whole track: strm s, connection, headers, body, end of data, end of playback */
 static void test_stream_sequence(void)
 {
@@ -2595,6 +2728,11 @@ int main(void)
     test_ignored_packets();
     test_fragmented();
     test_bad_length();
+    test_short_packets();
+    test_setd_long_name();
+    test_strm_pcm_fields();
+    test_strm_autostart();
+    test_headers_too_long();
     test_stream_sequence();
     test_read_min_space();
     test_gapless();
