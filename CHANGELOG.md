@@ -7,6 +7,10 @@ are previews, until 1.0.
 
 ## [Unreleased]
 
+### Fixed
+
+- Raw PCM at 88.2 kHz was refused as `stream format p not supported`: it is now played, as 96 kHz already was.
+
 ## [0.8] - 2026-10-29
 
 ### Added

@@ -211,8 +211,10 @@ static void show_ascii(const uint8_t *b, int len)
         msg_raw(out, n);
 }
 
-/* PCM sample rates by strm code '0'..'9' (squeezelite pcm.c) */
-static const uint32_t pcm_rates[10] = { 11025, 22050, 32000, 44100, 48000, 8000, 12000, 16000, 24000, 96000 };
+/* PCM sample rates by strm code '0'..':' (LMS Squeezebox2.pm pcm_sample_rates; the codes after ':', 176.4 kHz and
+ * up, are above any MaxSampleRate amisqueeze sends) */
+static const uint32_t pcm_rates[11] = { 11025, 22050, 32000, 44100, 48000, 8000, 12000, 16000, 24000, 96000,
+                                        88200 };
 
 /* Format and decoder of a strm s; NULL if the format is not supported. Raw PCM ('p') comes with its parameters;
  * FLAC ('f') carries them in its own header (the decoder reads them there). */
@@ -236,7 +238,7 @@ static const struct decoder_ops *parse_format(const uint8_t *pkt, struct pcm_for
 #endif
         return &decoder_flac;
     }
-    if (pkt[6] != 'p' || size < 1 || size > 4 || rate < 0 || rate > 9 || channels < 1 || channels > 2)
+    if (pkt[6] != 'p' || size < 1 || size > 4 || rate < 0 || rate > 10 || channels < 1 || channels > 2)
         return NULL;
     f->rate = pcm_rates[rate];
     f->channels = (uint8_t)channels;

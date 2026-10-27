@@ -559,7 +559,7 @@ static void test_strm_pcm_fields(void)
     static const char bad[][7] = {
         { '1', 'p', '4', '3', '2', '1', 10 },          /* size '4': 5 bytes */
         { '1', 'p', '/', '3', '2', '1', 10 },          /* size '/': 0 bytes */
-        { '1', 'p', '1', ':', '2', '1', 10 },          /* rate ':': past the table (88.2 kHz, refused: plan 0.9) */
+        { '1', 'p', '1', ';', '2', '1', 10 },          /* rate ';': past the table (176.4 kHz) */
         { '1', 'p', '1', '/', '2', '1', 10 },          /* rate '/': before it */
         { '1', 'p', '1', '3', '0', '1', 10 },          /* no channel */
         { '1', 'p', '1', '3', '3', '1', 10 },          /* 3 channels */
@@ -576,6 +576,28 @@ static void test_strm_pcm_fields(void)
         CHECK(!strcmp(trace(), "STAT:STMf STAT:STMc STAT:STMn"));
         CHECK(strstr(stub_out, "stream format p not supported") != NULL);
         CHECK(p.stream.state == STREAM_IDLE && !stub_stream_open);
+        teardown(&p);
+    }
+}
+
+/* Every rate code of raw PCM, '0' to ':' (LMS's and aioslimproto's tables) */
+static void test_strm_pcm_rates(void)
+{
+    static const uint32_t rates[] = { 11025, 22050, 32000, 44100, 48000, 8000, 12000, 16000, 24000, 96000, 88200 };
+    struct player p;
+    unsigned i;
+
+    for (i = 0; i < sizeof(rates) / sizeof(rates[0]); i++) {
+        char fmt[7] = { '1', 'p', '1', '3', '2', '1', 10 };
+
+        fmt[3] = (char)('0' + i);
+        setup(&p, "Amiga");
+        CHECK(slim_connect(&p, 0));
+        clear_tx();
+        feed_strm('s', fmt, 0, 9000, 0, request);
+        drain(&p);
+        CHECK(!strcmp(trace(), "STAT:STMf") && p.stream.state == STREAM_CONNECTING);
+        CHECK(p.out.queued == 1 && p.out.queue[0].fmt.rate == rates[i]);
         teardown(&p);
     }
 }
@@ -3380,6 +3402,7 @@ int main(void)
     test_setd_long_name();
     test_setd_not_ascii();
     test_strm_pcm_fields();
+    test_strm_pcm_rates();
     test_strm_autostart();
     test_headers_too_long();
     test_strm_request_shown();
