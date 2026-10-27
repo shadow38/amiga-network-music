@@ -285,7 +285,7 @@ static void run(struct player *p)
         uint32_t closes = p->stream.closes;
 
         if (p->sock < 0) {
-            if (p->server_ip == 0 && !find_server(p))
+            if (p->discover && p->server_ip == 0 && !find_server(p))
                 return;
             if (!slim_connect(p, reconnect)) {
                 if (p->discover)
