@@ -735,8 +735,10 @@ belongs to the task that opened it; packets serialised field by field; buffers a
      Remove, `SYS:WBStartup`;
   8. server discovery (player-10, added with the user on 2026-10-27): without `SERVER`, LMS found, then Music
      Assistant, then no server (the message, Ctrl-C while it waits); with each TCP/IP stack at hand, since their
-     support of broadcasts varies; and a start from the icon as shipped (its `SERVER` disabled), without
-     `ENV:amisqueeze.prefs` giving one: the server found, its messages in the window.
+     support of broadcasts varies, each followed by about 30 s of playback through that stack (agreed with the
+     user on 2026-10-27; a lower `MAXRATE` where the stack leaves too little CPU); and a start from the icon as
+     shipped (its `SERVER` disabled), without `ENV:amisqueeze.prefs` giving one: the server found, its messages in
+     the window.
 
   Steps 1 and 4 (and the hour of step 6) are scripted in AmigaDOS: versions, memory before, while playing and
   after the stop, `BENCH`, the CPU left when idle and while playing, amisqueeze started from a 4 KB stack with its
