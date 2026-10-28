@@ -45,6 +45,9 @@ Copy it with its icon (`amisqueeze.info` or `amisqueeze.fpu.info`):
 
 `amisqueeze.fpu` may be renamed `amisqueeze`; rename its icon the same way.
 
+amisqueeze needs about 1.7 MB of free memory to play through AHI, 0.2 MB less once AHI is loaded; about 60 KB
+more for `amisqueeze.fpu` decoding MP3.
+
 To check an archive before unpacking it, compare its SHA-256 with the one given in the release's notes and its
 `.sha256` file: `sha256sum` on Linux, `Get-FileHash` in PowerShell.
 
@@ -677,27 +680,31 @@ rows say what comes next.
 
 ### What has been tried
 
-amisqueeze was tried in WinUAE and on a real A1200. What the README names but this table does not is expected to
-work, not checked.
+amisqueeze was tried in WinUAE and on a real A1200. What the README names but this section does not is expected
+to work, not checked.
+
+**On a real A1200**: an ACA1221lc accelerator (68EC020 at 26.67 MHz, no FPU), Kickstart 3.1, Paula through
+AHI 4.18, a Xircom CE3-10/100 PCMCIA card with a fixed `xircomce2.device`.
+
+- With LMS 9.1.1: playback and its CPU load (see [`MAXRATE`](#maxrate)), the commands, a server restart, a short
+  network cut, an hour of playback, the Workbench.
+- The server discovery, with LMS and Music Assistant 2.10.7, through AmiNetXDuo, Miami 3.2b and the demo of
+  Roadshow 1.15.
+- Not yet: a network cut of several seconds with AmiNetXDuo, since the fix of this version.
+
+**Everywhere**:
 
 | | Tried | Expected, not tried yet |
 |---|---|---|
-| Machine | WinUAE 6.0 (an A1200 setup); a real A1200 | other real Amigas |
-| Real A1200 | an ACA1221lc accelerator (68EC020 at 26.67 MHz, no FPU), Kickstart 3.1, AmiNetXDuo with a fixed `xircomce2.device` (a Xircom CE3-10/100 PCMCIA card), Paula through AHI 4.18. With LMS 9.1.1: playback and its CPU load (see [`MAXRATE`](#maxrate)), the commands, a server restart, a short network cut, an hour of playback, the Workbench. The server discovery with LMS and Music Assistant 2.10.7 (with a fix of its own, not published, for the lower rates), through AmiNetXDuo, Miami 3.2b and the demo of Roadshow 1.15 | a network cut of several seconds with AmiNetXDuo, since the fix of this version |
+| Machine | WinUAE 6.0 (an A1200 setup); the A1200 above | other real Amigas |
 | CPU | 68020, at about 28 MHz and with the JIT (the speed of a PiStorm, roughly); with and without a 68882 | 68030, 68040, 68060, a PiStorm with Emu68 |
 | AmigaOS | 3.2.3; 3.1 with AHI on the A1200; 3.0 and 3.1 from a Shell without AHI in WinUAE; 2.04, the oldest version it asks for, starts | 3.1.4, 3.5, 3.9 |
-| Memory | about 1.7 MB free to play through AHI: 1.3 MB for amisqueeze and its network connections, its 1 MB stream buffer (about 6 s of CD-quality audio) included; 0.25 MB for AHI's output; 0.2 MB more when AHI is not loaded yet. About 60 KB more for `amisqueeze.fpu` decoding MP3 | - |
 | TCP/IP | WinUAE's emulation (`bsdsocket_emu=true`); AmiNetXDuo, and the demo of Roadshow 1.15, on the A1200; Miami 3.2b there too, too slow on a 26 MHz 68020: gaps | Roadshow's full version, AmiTCP |
 | Sound | AHI 6.6 with `paula.audio` and a Toccata card, checked by ear; AHI 4.18 with `paula.audio` on the A1200 | other cards, a PiStorm's own outputs |
 | Server | Lyrion Music Server 9.1.1, Music Assistant 2.10.7 | other versions |
 
-Measured in WinUAE:
-
-| Measure | Emulated CPU | Result |
-|---|---|---|
-| `BENCH` | 68020 without JIT (about 45 MHz) | FLAC 0.2x: left to the server, converted by its default rule (nothing to set up) |
-| `BENCH` | 68020 with JIT and 68882 (the order of a PiStorm) | FLAC 77x, MP3 74x (`amisqueeze.fpu`): both decoded on the Amiga |
-| CPU taken by playback with Paula | 68020 at about 28 MHz | about two thirds for AHI, 14-bit modes a little more than 8-bit ones; a few percent for amisqueeze at volume 100, about a quarter more below 100 |
+`BENCH` in WinUAE: FLAC 0.2x on a 68020 without JIT (left to the server, converted by its default rule); FLAC
+77x and MP3 74x with the JIT and a 68882 (`amisqueeze.fpu`: both decoded on the Amiga).
 
 ### Removing amisqueeze
 
