@@ -680,31 +680,30 @@ rows say what comes next.
 
 ### What has been tried
 
-amisqueeze was tried in WinUAE and on a real A1200. What the README names but this section does not is expected
-to work, not checked.
+What the README names but this section does not is expected to work, not checked.
 
 **On a real A1200**: an ACA1221lc accelerator (68EC020 at 26.67 MHz, no FPU), Kickstart 3.1, Paula through
-AHI 4.18, a Xircom CE3-10/100 PCMCIA card with a fixed `xircomce2.device`.
+AHI 4.18, a Xircom CE3-10/100 PCMCIA card with a fixed `xircomce2.device`:
 
-- With LMS 9.1.1: playback and its CPU load (see [`MAXRATE`](#maxrate)), the commands, a server restart, a short
-  network cut, an hour of playback, the Workbench.
-- The server discovery, with LMS and Music Assistant 2.10.7, through AmiNetXDuo, Miami 3.2b and the demo of
-  Roadshow 1.15.
-- Not yet: a network cut of several seconds with AmiNetXDuo, since the fix of this version.
+- with LMS 9.1.1: playback and its CPU load (see [`MAXRATE`](#maxrate)), the commands, a server restart, a short
+  network cut, an hour of playback, the Workbench;
+- the server discovery, with LMS and Music Assistant 2.10.7, through AmiNetXDuo, Miami 3.2b and the demo of
+  Roadshow 1.15. Miami takes much more CPU: gaps at CD quality;
+- not yet: a network cut of several seconds with AmiNetXDuo, since the fix of this version.
 
-**Everywhere**:
+**In WinUAE** (6.0, an A1200 setup):
 
-| | Tried | Expected, not tried yet |
-|---|---|---|
-| Machine | WinUAE 6.0 (an A1200 setup); the A1200 above | other real Amigas |
-| CPU | 68020, at about 28 MHz and with the JIT (the speed of a PiStorm, roughly); with and without a 68882 | 68030, 68040, 68060, a PiStorm with Emu68 |
-| AmigaOS | 3.2.3; 3.1 with AHI on the A1200; 3.0 and 3.1 from a Shell without AHI in WinUAE; 2.04, the oldest version it asks for, starts | 3.1.4, 3.5, 3.9 |
-| TCP/IP | WinUAE's emulation (`bsdsocket_emu=true`); AmiNetXDuo, and the demo of Roadshow 1.15, on the A1200; Miami 3.2b there too, too slow on a 26 MHz 68020: gaps | Roadshow's full version, AmiTCP |
-| Sound | AHI 6.6 with `paula.audio` and a Toccata card, checked by ear; AHI 4.18 with `paula.audio` on the A1200 | other cards, a PiStorm's own outputs |
-| Server | Lyrion Music Server 9.1.1, Music Assistant 2.10.7 | other versions |
+- CPU: a 68020 at about 28 MHz, and with the JIT (the speed of a PiStorm, roughly); with and without a 68882;
+- AmigaOS 3.2.3; 3.0 and 3.1 from a Shell, without AHI; 2.04, the oldest version it asks for, starts;
+- TCP/IP: WinUAE's emulation (`bsdsocket_emu=true`), and AmiNetXDuo on WinUAE's emulated network card;
+- sound: AHI 6.6 with `paula.audio` and a Toccata card, checked by ear;
+- with LMS 9.1.1: everything amisqueeze does, an hour of playback included; with Music Assistant 2.10.7:
+  playback, the commands, its codecs, a server restart;
+- `BENCH`: FLAC 0.2x on a 68020 without JIT (left to the server); FLAC 77x and MP3 74x with the JIT and a 68882
+  (`amisqueeze.fpu`: both decoded on the Amiga).
 
-`BENCH` in WinUAE: FLAC 0.2x on a 68020 without JIT (left to the server, converted by its default rule); FLAC
-77x and MP3 74x with the JIT and a 68882 (`amisqueeze.fpu`: both decoded on the Amiga).
+**Not tried yet**: other real Amigas; 68030, 68040, 68060, a PiStorm with Emu68; AmigaOS 3.1.4, 3.5, 3.9;
+Roadshow's full version, AmiTCP; other sound cards, a PiStorm's own outputs; other versions of the servers.
 
 ### Removing amisqueeze
 
