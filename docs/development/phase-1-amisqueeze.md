@@ -772,7 +772,7 @@ belongs to the task that opened it; packets serialised field by field; buffers a
 
   Left: `SYS:WBStartup`; `PRI=1` (player-15); the whole protocol with Music Assistant, with the `aac` row of the
   user guide; the user guide's free memory (about 1.1 MB) against the 1.7 MB of fast memory playing takes here,
-  AHI and the stack included. Open: Ctrl-C with AmiNetXDuo, and the missing "no news from the server".
+  AHI and the stack included. Ctrl-C with AmiNetXDuo, and the missing "no news from the server": player-16.
 - **Load of the lighter AHI settings, measured in WinUAE** (2026-10-22, 0.7-dev at `60a14fa`), to know which one
   to try first in step 4: slow profile (68020, about 28 MHz, no FPU, as the ACA1221lc), LMS 9.1.1, a 156 s song
   resampled to a 44.1 kHz 16-bit FLAC, sent as raw PCM by the server (`FLAC=AUTO` leaves FLAC to it on this
@@ -1109,7 +1109,7 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   sound stopped. Put back after 8 s: LMS paused the player, then resumed it about 1 s after the cable was back.
   Put back after 13 s: the test setup's relay had dropped both connections meanwhile, so the player stayed
   stopped. Without `STMo`, amisqueeze did not say "no news from the server" either, over more than 3 minutes:
-  why is still open.
+  see player-16.
 
 ## player-15 The task priority 🔶 (2026-10-28, version 0.8: the A1200 next)
 
@@ -1137,3 +1137,39 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   arguments scenario (`PRI=11`, `PRI=-11`).
 - **On the A1200**: to check, `PRI=1` with a copy and windows moved: clean; without `PRI`: as before; the Shell's
   priority unchanged after amisqueeze ends.
+
+## player-16 A receive that never blocks ⬜ (version 0.8)
+
+- **Found on the A1200** (2026-10-27, player-9 step 6, AmiNetXDuo 1.0.0-rc2): the cable pulled for 13 s left
+  half-open connections. amisqueeze never said "no news from the server", over more than 3 minutes. Ctrl-C then
+  showed "recv: error 4" (EINTR) and "cannot connect: error 4", then a retry, before "stopped".
+- **Cause** (read in AmiNetXDuo's source, 2026-10-28): amisqueeze was blocked in a `recv()` on the control
+  connection, which `WaitSelect()` had reported readable.
+  - AmiNetXDuo reports a TCP socket readable as soon as its receive queue holds a segment, out-of-order ones
+    included. `recv()` returns none of them until the gap is filled.
+  - So a blocking `recv()` waits for the missing segment, forever when the peer is gone. The "no news" check
+    comes after it in the main loop.
+  - Ctrl-C interrupts the call with EINTR and leaves the signal set: hence the messages.
+
+  The most likely cause, not proven: the `VERBOSE` line below will tell.
+- **Content** (agreed with the user on 2026-10-28):
+  1. both sockets non-blocking once connected. Today the control one is blocking, and the stream one goes back to
+     blocking once connected. A receive with nothing to read means "nothing yet", not an error: a portable code
+     in `platform.h`, mapped in `amiga.c` and `posix.c`;
+  2. a socket reported readable with nothing to read is left out of the next wait, which lasts 100 ms at most.
+     No busy loop, and "no news" comes at 35 s. A `VERBOSE` line says so, once per connection;
+  3. EINTR taken as a stop request, without a message: the control connection's `connect()` is the one blocking
+     call left. The EINTR itself counts, not the signal, which another stack may have cleared.
+
+  A send whose buffer is full fails, and amisqueeze reconnects. That happens only when the server has been gone
+  for long, after "no news" as a rule.
+- **Criterion**:
+  - `make test` green, with three new cases: a receive with nothing to read; an EINTR with a stop ("stopped"
+    alone); the fake server's control going silent without closing, while playing after `STMo` ("no news" at
+    35 s);
+  - in WinUAE with AmiNetXDuo (tools-11): Ctrl-C while connecting to an address that does not answer, idle,
+    playing and in pause: "stopped" alone. The load the same before and after the change;
+  - on the A1200: the cable pulled for 13 s with the test setup's relay. "no news" at about 35 s, then a
+    reconnection; Ctrl-C and Exchange's Remove: "stopped" alone; the Workbench usable meanwhile. The load as in
+    player-9 (77 %).
+- **Upstream**: AmiNetXDuo's readiness is not ours to fix. Reporting it is the user's decision.

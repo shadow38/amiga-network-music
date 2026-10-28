@@ -51,7 +51,7 @@ agreed with the user.
 | Version | Brings | Steps | Status |
 |---|---|---|---|
 | 0.1 to 0.7 | the player for LMS and Music Assistant: PCM, FLAC, MP3, start from the Workbench, the `.lha`, releases built by the CI | player-1 to player-8d, player-7b, part of player-10, tools-10 (LMS), publish-2 (`.lha`), publish-3 | ✅ 2026-10-19 to 2026-10-23, see the [changelog](../../CHANGELOG.md) |
-| 0.8 | what the real machine shows; a lower rate asked of the server; automatic server discovery; hardening; the writing rules applied to the documentation | player-9, player-10 (discovery), player-12, player-13, player-14, player-15, tools-11, publish-6 | ⬜ |
+| 0.8 | what the real machine shows; a lower rate asked of the server; automatic server discovery; hardening; the writing rules applied to the documentation | player-9, player-10 (discovery), player-12, player-13, player-14, player-15, player-16, tools-11, publish-6 | ⬜ |
 | 0.9 | internet radios' metadata (ICY) | player-10 (end) | ⬜ |
 | 1.0 | setup guides, a full audit, the upload to Aminet | publish-4, publish-5, tools-10 (Music Assistant), publish-2 (Aminet) | ⬜ |
 | none yet | ideas: direct Paula output, source-level debugging | player-11, tools-8 | ⬜ |
@@ -70,7 +70,7 @@ Agreed with the user on 2026-10-26.
     machine confirms it (seen in WinUAE on 2026-10-23; agreed with the user on 2026-10-23). Done on 2026-10-28:
     on the A1200 it stays off as long as amisqueeze runs, not only while playing (agreed with the user on
     2026-10-28);
-  - Ctrl-C with a real TCP/IP stack (protocol step 6; see [Open points](#open-points));
+  - Ctrl-C with a real TCP/IP stack (protocol step 6): player-16;
   - the `aac` row of the user guide, with Music Assistant;
   - the free memory the user guide asks for, from `Avail` (protocol step 1);
   - the automatic server discovery, with LMS, Music Assistant and no server (protocol step 8). Done on
@@ -91,6 +91,9 @@ Agreed with the user on 2026-10-26.
 - **The task priority** (player-15): a `PRI` option, 0 by default, and a line in the user guide's
   troubleshooting, since the A1200 plays with gaps while it works at priority 0 (agreed with the user on
   2026-10-28). Coded and tested on the host on 2026-10-28; the A1200 next.
+- **A receive that never blocks** (player-16): non-blocking sockets, and Ctrl-C's EINTR taken as a stop. With
+  AmiNetXDuo, a blocking receive could wait forever, so neither "no news from the server" nor a clean Ctrl-C
+  came (agreed with the user on 2026-10-28).
 - **The writing rules** (publish-6): the plan and the user guide done on 2026-10-24; `docs/development/` next,
   where the user finds it worth it.
 
@@ -149,6 +152,7 @@ Agreed with the user on 2026-10-26.
 | player-13 A lower rate asked of the server | ✅ 2026-10-26: `MAXRATE` and the LMS rules; on the A1200, 62 % of the CPU at 32 kHz against 77 %; Music Assistant upstream: the user's decision |
 | player-14 The buffer running dry in the middle of a frame | ✅ 2026-10-27: on the host and the A1200 |
 | player-15 The task priority (`PRI`) | 🔶 2026-10-28: coded, tested on the host; the A1200 next |
+| player-16 A receive that never blocks | ⬜ agreed with the user on 2026-10-28 |
 | remote-0 Study (common interface, Music Assistant feasibility, name) | ⬜ before any amilms code |
 | remote-1 to remote-7 LMS | ⬜ |
 | remote-8 to remote-11 Music Assistant | ⬜ |
@@ -172,10 +176,6 @@ Neither planned nor dropped for good. Each is taken up only by the user's decisi
 - **64-bit multiplies in dr_flac**: slow on a 68060, whose CPU library emulates them. Dropped (agreed with the user
   on 2026-10-19): no 68060 among the target machines, and `FLAC=AUTO` measures the speed. To look at again if a
   68060 user reports a problem.
-- **Ctrl-C with a real TCP/IP stack**: `WaitSelect()` may take the signal for itself, depending on the stack's
-  break mask. On the A1200 (player-9, 2026-10-27), "stopped" alone with Miami and Roadshow, and with AmiNetXDuo
-  but once: with half-open connections, "recv: error 4" (EINTR) and a retry came before "stopped". Leads:
-  `SBTC_BREAKMASK`, or EINTR taken as a stop.
 - From the outside review of 2026-10-20, no known failure: `stream.c` is the first module to split when it grows.
   ICY adds a small module of its own and leaves the rest in place (agreed with the user on 2026-10-27). Its other
   points went to player-12 (agreed with the user on 2026-10-27).
