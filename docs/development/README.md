@@ -73,11 +73,12 @@ Agreed with the user on 2026-10-26.
   - Ctrl-C with a real TCP/IP stack (protocol step 6; see [Open points](#open-points));
   - the `aac` row of the user guide, with Music Assistant;
   - the free memory the user guide asks for, from `Avail` (protocol step 1);
-  - the automatic server discovery, with LMS, Music Assistant and no server (protocol step 8).
+  - the automatic server discovery, with LMS, Music Assistant and no server (protocol step 8). Done on
+    2026-10-27.
 - **A lower rate asked of the server** (player-13): a `MAXRATE` option, with a conversion rule on LMS.
 - **Automatic server discovery** (player-10): moved from 0.9, since its last check needs the same session on the
-  real machine (agreed with the user on 2026-10-27). Done on 2026-10-27, checked on the host and in WinUAE; the
-  A1200 next.
+  real machine (agreed with the user on 2026-10-27). Done on 2026-10-27, checked on the host, in WinUAE and on the
+  A1200 with AmiNetXDuo, Miami and Roadshow.
 - **Paula's swapped sides**: a note in the user guide for `paula.audio`, done on 2026-10-27. No `SWAP` by
   default: the sides are left to the direct Paula output (player-11).
 - **The messages Music Assistant sends and amisqueeze ignores** (`vers`, `grfb`, `grfe`, `codc`, `cont`): shown
@@ -141,8 +142,8 @@ Agreed with the user on 2026-10-26.
 | player-7b Music Assistant | ✅ 2026-10-23 |
 | player-8 Local decoding (FLAC, then MP3) | ✅ 2026-10-19 |
 | player-8d MP3 without gaps between tracks | ✅ 2026-10-20 |
-| player-9 Real machine | ⬜ with 0.7, for 0.8 |
-| player-10 Finishing touches | 🔶 the parts of 0.4 and 0.5 done; server discovery 2026-10-27 (0.8), the A1200 next; ICY designed 2026-10-27 (0.9) |
+| player-9 Real machine | 🔶 2026-10-27: the protocol with LMS on the A1200, but `SYS:WBStartup`; Music Assistant next |
+| player-10 Finishing touches | 🔶 the parts of 0.4 and 0.5 done; server discovery 2026-10-27 (0.8), on the A1200 with three stacks; ICY designed 2026-10-27 (0.9) |
 | player-11 Direct Paula output, without AHI | ⬜ idea (CPU load on a slow 68020; crackles with a PCMCIA network card, player-9) |
 | player-12 Hardening (the 0.7 review's 50 list) | ✅ 2026-10-27 (version 0.8) |
 | player-13 A lower rate asked of the server | ✅ 2026-10-26: `MAXRATE` and the LMS rules; on the A1200, 62 % of the CPU at 32 kHz against 77 %; Music Assistant upstream: the user's decision |
@@ -172,7 +173,9 @@ Neither planned nor dropped for good. Each is taken up only by the user's decisi
   on 2026-10-19): no 68060 among the target machines, and `FLAC=AUTO` measures the speed. To look at again if a
   68060 user reports a problem.
 - **Ctrl-C with a real TCP/IP stack**: `WaitSelect()` may take the signal for itself, depending on the stack's
-  break mask. To check on the real machine (player-9): `SBTC_BREAKMASK`, or EINTR taken as a stop.
+  break mask. On the A1200 (player-9, 2026-10-27), "stopped" alone with Miami and Roadshow, and with AmiNetXDuo
+  but once: with half-open connections, "recv: error 4" (EINTR) and a retry came before "stopped". Leads:
+  `SBTC_BREAKMASK`, or EINTR taken as a stop.
 - From the outside review of 2026-10-20, no known failure: `stream.c` is the first module to split when it grows.
   ICY adds a small module of its own and leaves the rest in place (agreed with the user on 2026-10-27). Its other
   points went to player-12 (agreed with the user on 2026-10-27).

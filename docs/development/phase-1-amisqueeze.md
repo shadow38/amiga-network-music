@@ -583,7 +583,7 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   by the user in WinUAE (68020 + 68882, JIT, Toccata): a 12 s glide cut into three MP3s, with mini gaps from 0.3
   (12.9 s) and seamless now (12.3 s).
 
-## player-9 Real machine ⬜ (tried with version 0.7, release 0.8)
+## player-9 Real machine 🔶 (2026-10-27, release 0.8: Music Assistant next)
 
 - **Content**: both kinds of target with a TCP/IP stack (AmiNetXDuo or Roadshow) and an LMS server reachable
   from the local network, then a Music Assistant server (decided 2026-10-21: one session for both servers): a PiStorm with Emu68, sound through its own AHI outputs (I2S DAC of the PiStorm32-lite
@@ -745,6 +745,34 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   log, then the `STMo` lines and the clean stop; the logs on a disk, not in `RAM:`. The rest is by hand. If the
   load does not fit: in 0.8, a lower rate asked of the server (`MaxSampleRate` in `HELO`, if LMS resamples for
   it: to check), or the direct Paula output (player-11).
+- **The protocol on the A1200, with LMS** (2026-10-27, 0.8-dev at `860eda6`): AmiNetXDuo with the fixed
+  `xircomce2.device`, AHI 4.18 with `paula.audio` 4.23, Paula 14 bit stereo++ at 27,429 Hz with `SWAP`. Every
+  step is done but `SYS:WBStartup` (step 7). Two defects found there are fixed: the missing `STMo` (player-14) and
+  the gaps while the Amiga works (player-15, to check here).
+
+  | Step | Result |
+  |---|---|
+  | 1 machine | Kickstart 40.68, Workbench 47.2. Free with the stack up: chip 1,974,000, fast 7,781,872 (largest 4,672,784). `BENCH`: FLAC 8 at 0.2x, so `FLAC=AUTO` leaves FLAC to the server. Idle count 13,521 with the corrected `cpucount`, 13,528 with the old one. Out-of-range `PORT` and `UNIT`, and an `ENV:amisqueeze.prefs` of 510 characters, refused with their messages |
+  | 2 connection | the player shows up, renamed from LMS; after a server restart, it reconnects by itself |
+  | 3 sound | the left and right tones in place with `SWAP`. The LED filter stays off as long as amisqueeze runs, playing or not, and comes back on when it ends |
+  | 4 load | raw PCM at 44.1 kHz for 5 minutes, volume 100: 77 % of the CPU (counts 3,087 to 3,119), no `STMo`, clean. Free while playing: fast 6,091,032 (largest 2,810,472). While the Amiga works: gaps at priority 0 without `STMo`, clean at 1 (player-15) |
+  | 5 commands | pause (time frozen), resume, seek to 100 s (102.26 s three seconds later), next track, stop: right, no `STMo`. At volume 50: about 100 % of the CPU, crackles and gaps, as the user guide says |
+  | 6 robustness | the cable pulled: player-14. Then the test setup's relay dropped both connections, and amisqueeze never said "no news from the server" (open). LMS restarted: reconnected by itself. Ctrl-C connected, playing, in pause and while retrying: "stopped" alone, in under 2 s. In the half-open state, AmiNetXDuo first shows "recv: error 4" and a retry (see Open points, Ctrl-C) |
+  | 6 one hour | 24 tracks, no `STMo`; `Avail` the same to the byte before and after. LMS's time: +60.00 s a minute; -0.48 s over 59 minutes (-0.014 %, within the rounding of the tracks' lengths), against -0.44 % in WinUAE |
+  | 7 Workbench | the icon as shipped; `QUIET` with `LOG` (no window, all in the log); `UNIT=9` (the window says why); Exchange's Remove (sound stopped, "stopped"). The icon as shipped takes unit 0, Paula Fast 8 bit mono here: amisqueeze warns it plays in mono |
+  | 8 discovery | LMS, Music Assistant (its own `PORT`) and no server, with each stack below. Ctrl-C while looking: "stopped" alone. AmiNetXDuo also from the icon as shipped |
+
+  About 30 s of playback through each stack, the same day:
+
+  | Stack | Rate | Load | Sound |
+  |---|---|---|---|
+  | AmiNetXDuo 1.0.0-rc2 | 44.1 kHz | 77 % | clean |
+  | Miami 3.2b | 22.05 kHz | 71 % (AmiNetXDuo: 50 %) | many crackles; probably Aminet's driver, without the fix (not checked) |
+  | Roadshow 1.15 demo | 44.1 kHz | about 95 % (one early window; 86 % on 2026-10-25) | clean |
+
+  Left: `SYS:WBStartup`; `PRI=1` (player-15); the whole protocol with Music Assistant, with the `aac` row of the
+  user guide; the user guide's free memory (about 1.1 MB) against the 1.7 MB of fast memory playing takes here,
+  AHI and the stack included. Open: Ctrl-C with AmiNetXDuo, and the missing "no news from the server".
 - **Load of the lighter AHI settings, measured in WinUAE** (2026-10-22, 0.7-dev at `60a14fa`), to know which one
   to try first in step 4: slow profile (68020, about 28 MHz, no FPU, as the ACA1221lc), LMS 9.1.1, a 156 s song
   resampled to a 44.1 kHz 16-bit FLAC, sent as raw PCM by the server (`FLAC=AUTO` leaves FLAC to it on this
