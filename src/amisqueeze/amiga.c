@@ -662,7 +662,10 @@ int plat_wait(struct plat_fd *fds, int n, uint32_t timeout_ms)
     if (r >= 0 && (sigs & audio_sig))       /* an audio block ended */
         r++;
     if (r < 0) {
-        msg("amisqueeze: WaitSelect: error %ld\n", (long)Errno());
+        /* A Ctrl-C already pending when WaitSelect() starts: EINTR, without the signal in sigs (AmiNetXDuo) */
+        if (sock_error() == EINTR)
+            return -1;
+        msg("amisqueeze: WaitSelect: error %ld\n", (long)last_error);
         return -2;
     }
     for (i = 0; i < n; i++) {

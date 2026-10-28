@@ -42,7 +42,8 @@ the missing segment, forever if the server is gone, and the 35 s "no news" check
 finds nothing (`PLAT_AGAIN`) is no error: that socket is left out of the waits for 100 ms (`AGAIN_WAIT_MS`), so the
 loop does not spin while the stack keeps reporting it. The control connection's `connect()` is the one blocking
 call left. Ctrl-C interrupts it with EINTR, which counts as the stop request itself (`plat_interrupted()`): a stack
-may have cleared the signal.
+may have cleared the signal. The same for `WaitSelect()`: AmiNetXDuo returns EINTR for a Ctrl-C pressed before the
+wait started, without the signal in the mask it gives back.
 
 Builds of the same sources: `out/amisqueeze` (68020, FLAC), `out/amisqueeze.fpu` (68020 + 68881, `AMISQUEEZE_FPU`
 and `AMISQUEEZE_MP3`: FLAC and MP3), `out-host/amisqueeze` (`posix.c`, with the MP3 decoder, ASan and UBSan).

@@ -1174,6 +1174,7 @@ belongs to the task that opened it; packets serialised field by field; buffers a
     player-9 (77 %).
 - **Upstream**: AmiNetXDuo's readiness is not ours to fix. Reporting it is the user's decision.
 - **Done** (2026-10-28): `PLAT_AGAIN` and `plat_interrupted()` in `platform.h`; the sockets non-blocking once
-  connected in `amiga.c` and `posix.c`, EINTR recorded as the stop request; `AGAIN_WAIT_MS` in `run()` for the
+  connected in `amiga.c` and `posix.c`, EINTR recorded as the stop request (`WaitSelect()`'s too: AmiNetXDuo
+  returns it for a Ctrl-C pressed before the wait, without the signal); `AGAIN_WAIT_MS` in `run()` for the
   control connection and in `stream_events()` for the stream. Tests: `test_run_again`, `test_run_interrupted`,
   `test_stream_again`, the fake server's `silent_server` scenario.
