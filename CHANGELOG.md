@@ -3,7 +3,7 @@
 What changed in each release of amisqueeze, the newest first. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions are those of the
 [releases](https://github.com/shadow38/amiga-network-music/releases) (tags `amisqueeze-<version>`). All of them
-are previews, tested in WinUAE only, not yet on a real Amiga.
+are previews, until 1.0.
 
 ## [Unreleased]
 

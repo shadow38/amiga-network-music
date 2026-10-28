@@ -3,8 +3,8 @@
 This guide tells how to set up and use amisqueeze, then lists every option, message and known limit. What
 amisqueeze is and what the Amiga needs: the [README](../README.md).
 
-Version 0.8 in development. The latest release, 0.7, is a preview, like this version: playback tried on a real
-A1200, the rest in WinUAE only (see [what has been tried](#what-has-been-tried)).
+Version 0.8 in development. The latest release, 0.7, is a preview, like this version (see
+[what has been tried](#what-has-been-tried)).
 
 **Using amisqueeze**: [installing](#installing) | [sound (AHI)](#sound-ahi) | [server setup](#server-setup) |
 [starting](#starting-amisqueeze) | [stopping](#stopping-amisqueeze) | [volume](#volume).
