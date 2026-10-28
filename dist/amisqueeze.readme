@@ -28,7 +28,7 @@ types), as a commodity.
 
 What it needs:
 
-  - AmigaOS 3.x and a 68020 or better; about 1.1 MB of free memory;
+  - AmigaOS 3.x and a 68020 or better; about 1.7 MB of free memory;
   - a TCP/IP stack providing bsdsocket.library (Roadshow, AmiTCP...);
   - AHI (driver/audio/m68k-amigaos-ahiusr.lha and the driver of your sound
     output, driver/audio/m68k-amigaos-ahidrv.lha for Paula);

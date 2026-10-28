@@ -771,15 +771,21 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   | Roadshow 1.15 demo | 44.1 kHz | about 95 % (one early window; 86 % on 2026-10-25) | clean |
 
   Left, split with the user on 2026-10-28 while the A1200 is away:
-  - in WinUAE, not checked again on the A1200, since the result does not depend on the machine:
-    - `SYS:WBStartup`, with AmiNetXDuo started before the Workbench, as on the A1200;
-    - the whole protocol with Music Assistant, with the `aac` row of the user guide;
-    - the memory amisqueeze itself takes, against the user guide's free memory (about 1.1 MB). Playing takes
-      1.7 MB of fast memory here, AHI and the stack included;
-  - on the A1200:
-    - `PRI=1` against the gaps (player-15);
-    - the cable pulled, Ctrl-C with AmiNetXDuo and the missing "no news from the server" (player-16);
-    - the load with Music Assistant, only if it sends another format than LMS's raw PCM.
+  - in WinUAE, not checked again on the A1200, since the result does not depend on the machine. Done on
+    2026-10-28 (below);
+  - on the A1200: `PRI=1` against the gaps (player-15); the cable pulled, Ctrl-C with AmiNetXDuo and the missing
+    "no news from the server" (player-16). The load with Music Assistant only if it sent another format than
+    LMS's raw PCM: it does not (below).
+- **The rest in WinUAE** (2026-10-28, `main` at `1b2d040`, Music Assistant 2.10.7 without the local fix, volume
+  normalization off, codec `wav`):
+
+  | Check | Result |
+  |---|---|
+  | Music Assistant | a 16-bit 44.1 kHz WAV, the rate of LMS's raw PCM. Play, pause (time frozen), resume, seek to 100 s (103.0 s three seconds later), next track, stop: right, no `STMo`. Server restarted: reconnected by itself. Ctrl-C playing, in pause, idle: "stopped" alone. A rename stays on Music Assistant's side: it sends nothing to the player |
+  | `aac` | "stream format a not supported", then `STMc` and `STMn`; Music Assistant shows the track playing at 0 s, as the user guide says |
+  | Load, Music Assistant against LMS | slow profile with AmiNetXDuo, the same session. Through Paula: about 99 % with both, saturated. With `NOAUDIO`: 42.6 % with LMS, 44.0 % with Music Assistant. So about 78 to 79 % expected on the A1200 instead of 77 % |
+  | Memory | same profile, fast memory taken while playing through AHI: 1.72 MB at the first start, AHI loaded with it (1.69 MB on the A1200); 1.52 MB at the second; 1.27 MB with `NOAUDIO`. AHI keeps about 0.2 MB once loaded; nothing else stays. The user guide said 1.1 MB: now about 1.7 MB |
+  | `SYS:WBStartup` | slow profile, AmiNetXDuo started from `S:User-Startup`, an icon with `SERVER` and `DONOTWAIT`: connected at the first try, plays, "stopped" on Ctrl-C |
 - **Load of the lighter AHI settings, measured in WinUAE** (2026-10-22, 0.7-dev at `60a14fa`), to know which one
   to try first in step 4: slow profile (68020, about 28 MHz, no FPU, as the ACA1221lc), LMS 9.1.1, a 156 s song
   resampled to a 44.1 kHz 16-bit FLAC, sent as raw PCM by the server (`FLAC=AUTO` leaves FLAC to it on this
@@ -1144,7 +1150,9 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   arguments scenario (`PRI=11`, `PRI=-11`).
 - **In WinUAE**, not checked again on the A1200 (agreed with the user on 2026-10-28): `PRI` read from the
   command line, the ToolTypes and `ENV:amisqueeze.prefs`; the priority unchanged without it; the Shell's priority
-  back after amisqueeze ends.
+  back after amisqueeze ends. Done on 2026-10-28: 5 from the command line and from a ToolType, -3 from
+  `ENV:amisqueeze.prefs`; a Shell at 2 stays at 2 without `PRI` and comes back to 2 after; `PRI=11` refused from
+  `ENV:` and from a ToolType, with its message.
 - **On the A1200**: `PRI=1` with a copy and windows moved: clean. Without `PRI`: gaps, as before.
 
 ## player-16 A receive that never blocks 🔶 (2026-10-28, version 0.8: the A1200 next)

@@ -48,7 +48,7 @@ a fast Amiga; otherwise the server sends raw PCM) and plays it through AHI.
 ### What the Amiga needs
 
 - **AmigaOS 3.x** and a **68020 or better**: from a plain 68020 accelerator to a PiStorm.
-- About **1.1 MB of free memory**.
+- About **1.7 MB of free memory**.
 - A **TCP/IP stack** providing `bsdsocket.library`: Roadshow, AmiTCP, AmiNetXDuo, or WinUAE's emulation.
 - **AHI**, the standard Amiga audio system, with the driver of Paula or of a sound card. It is free, on Aminet,
   but not part of AmigaOS 3.x.

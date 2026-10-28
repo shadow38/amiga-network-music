@@ -33,6 +33,8 @@ are previews, tested in WinUAE only, not yet on a real Amiga.
 - User guide: which internet radios may cut with LMS, and its "Proxied Streaming" setting, which should avoid it.
 - User guide: with Paula, the power LED dims as long as amisqueeze runs, since `paula.audio` turns Paula's filter
   off; seen on a real A1200.
+- User guide and README: the free memory amisqueeze needs, now measured: about 1.7 MB to play through AHI, not
+  1.1 MB.
 
 ### Fixed
 

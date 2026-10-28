@@ -717,7 +717,7 @@ not is expected to work, not checked.
 | Real A1200 | an ACA1221lc accelerator (68EC020 at 26.67 MHz, no FPU), Kickstart 3.1, AmiNetXDuo with a fixed `xircomce2.device` (a Xircom PCMCIA card), Paula through AHI 4.18; LMS 9.1.1, and Music Assistant 2.10.7 with a fix of its own (not published) for the lower rates: playback and its CPU load (see [`MAXRATE`](#maxrate)) | the commands, the recovery from network failures, an hour of playback |
 | CPU | 68020, at about 28 MHz and with the JIT (the speed of a PiStorm, roughly); with and without a 68882 | 68030, 68040, 68060, a PiStorm with Emu68 |
 | AmigaOS | 3.2.3; 3.1 with AHI on the A1200; 3.0 and 3.1 from a Shell without AHI in WinUAE; 2.04, the oldest version it asks for, starts | 3.1.4, 3.5, 3.9 |
-| Memory | about 1.1 MB free: the 1 MB stream buffer (about 6 s of CD-quality audio), and about 60 KB more for `amisqueeze.fpu` decoding MP3 | - |
+| Memory | about 1.7 MB free to play through AHI: 1.3 MB for amisqueeze and its network connections, its 1 MB stream buffer (about 6 s of CD-quality audio) included; 0.25 MB for AHI's output; 0.2 MB more when AHI is not loaded yet. About 60 KB more for `amisqueeze.fpu` decoding MP3 | - |
 | TCP/IP | WinUAE's emulation (`bsdsocket_emu=true`); AmiNetXDuo, and the demo of Roadshow 1.15, on the A1200; Miami 3.2b there too, too slow on a 26 MHz 68020: gaps | Roadshow's full version, AmiTCP |
 | Sound | AHI 6.6 with `paula.audio` and a Toccata card, checked by ear; AHI 4.18 with `paula.audio` on the A1200 | other cards, a PiStorm's own outputs |
 | Server | Lyrion Music Server 9.1.1, Music Assistant 2.10.7 | other versions |
