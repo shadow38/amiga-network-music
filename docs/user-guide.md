@@ -104,7 +104,7 @@ another computer of the local network; it is set up once.
 
 #### Lyrion Music Server
 
-amisqueeze needs three things from LMS:
+amisqueeze needs from LMS:
 
 - **Its ports** open to the Amiga in the server's firewall:
   - 3483/tcp for the players;
@@ -135,8 +135,10 @@ Music Assistant drives amisqueeze through its Squeezelite provider. It needs:
 
 - **The provider**: in Settings > Player providers, add "Squeezelite". Its "Slimproto port" is 3483 by default;
   give amisqueeze another one with `PORT`.
-- **Its ports** open to the Amiga in the server's firewall: 3483/tcp for the players, 3483/udp for amisqueeze to
-  find the server, and 8097/tcp, where players fetch the music (the "TCP Port" of Settings > System > Streams).
+- **Its ports** open to the Amiga in the server's firewall:
+  - 3483/tcp for the players (the provider's "Slimproto port");
+  - 3483/udp, where amisqueeze asks for a server on the local network when it is given none;
+  - 8097/tcp, which carries the music (the "TCP Port" of Settings > System > Streams).
 - **Its address**, only if amisqueeze does not find Music Assistant by itself: give it with `SERVER`. It is the
   address of Music Assistant's computer, found as for LMS above.
 - **The right address for the streams**, when Music Assistant runs in a container or its computer has several
