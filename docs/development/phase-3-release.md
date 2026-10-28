@@ -72,7 +72,9 @@ Back to the [plan](README.md).
 - **Branches** (agreed with the user on 2026-10-28): `main` holds the last published version, so that the
   repository's page, its README and the user guide describe what can be downloaded. The work goes on in `dev`. At
   a release, `main` moves forward to the tagged commit. From the 0.8 release on: until then, `main` keeps the 0.8
-  work done before 2026-10-28, without rewriting its history.
+  work done before 2026-10-28, without rewriting its history. A GitHub ruleset on `main` (agreed with the user on
+  2026-10-28): no deletion, no force push, and the CI's `host` and `amiga` jobs passed on a commit before it can
+  enter `main`.
 - **Scenarios in WinUAE** (decided with the user on 2026-10-23, from step tools-10): before each tag, besides the
   review (publish-5), `python3 tools/winuae/run-scenarios.py` all OK on the build to be tagged, in the JIT profile with
   a 68882 and `compfpu` ([winuae-scenarios.md](winuae-scenarios.md)); first for 0.7.

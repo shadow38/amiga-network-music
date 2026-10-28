@@ -408,7 +408,9 @@ publish, to delete afterwards (a draft's tag is created only when it is publishe
 
 **Branches**: the tag is made on `dev`. Once the release is published, `main` moves forward to it, without a merge
 commit: `git push origin amisqueeze-<version>^{commit}:main`. So `main`, the repository's page and its README
-always describe the version that can be downloaded. A fix to a published version starts from its tag, in a branch
+always describe the version that can be downloaded. A ruleset of the repository refuses on `main` a force push, a
+deletion, and a commit whose CI (the `host` and `amiga` jobs) has not passed: wait for the tag's CI first. A job
+renamed in `tests.yml` must be renamed in the ruleset too (Settings, Rules). A fix to a published version starts from its tag, in a branch
 of its own; once released, it is merged into `dev` too.
 
 **Aminet** (from 1.0): the files are renamed without the version (Aminet's rule), and the readme's `Uploader:`
