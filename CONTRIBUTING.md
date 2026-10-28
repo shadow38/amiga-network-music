@@ -208,7 +208,9 @@ takes every artifact for a zip to unpack (it fails on the `.lha`, gh 2.102), but
 the ids given by `gh api repos/shadow38/amiga-network-music/actions/runs/<run id>/artifacts`.
 
 The tests use real time (playback pacing, reconnection delays), so a slow runner can make one fail: rerun it
-before suspecting the code.
+before suspecting the code. The reverse happens too: a race can pass on a fast machine and fail on the runner. After
+changing when the output starts, ends or runs dry (the statuses at a track's end, `STMo`, `STMu`), run the
+scenarios concerned several times, not once.
 
 ## Code rules
 
