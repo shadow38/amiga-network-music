@@ -565,6 +565,32 @@ def scenario_control_lost():
     check(rc == 0 and reported, "loss reported, clean exit (exit code %s)" % rc)
 
 
+def scenario_silent_server():
+    # Plan step player-16: on the A1200 the player sat in a blocking receive and never said it (AmiNetXDuo); here
+    # the core's side: the 35 s timeout runs while the output waits for data
+    print("-- server silent without closing, while playing after STMo: \"no news\" after 35 s, then a reconnection")
+    http = HttpServer(4.0, stall_at=frames(1.5), stall=40.0)
+    http.start()
+    server, proc, s = start_session("Silent")
+    try:
+        send_strm_s(s, http, threshold_kb=16)
+        t_last = time.time()            # the server's last packet; it reads nothing more (the STAT pile up)
+        s.until("STAT:STMs")
+        s.until("STAT:STMo")
+        server.settimeout(45)
+        conn, _ = server.accept()
+        waited = time.time() - t_last
+        opcode, body = read_packet(conn)
+        check(opcode == b"HELO" and struct.unpack(">H", body[24:26])[0] == 0x4000,
+              "reconnection with the reconnection flag")
+        check(34.5 <= waited <= 37.5, "35 s after the server's last packet (%.1f s)" % waited)
+        conn.close()
+    finally:
+        rc, out = stop(proc)
+        server.close()
+    check(rc == 0 and "no news from the server, reconnecting" in out, "silence reported, clean exit")
+
+
 FLAC_FILES = [                          # file of tests/data, signal of flac_data.py
     ("s16-l0.flac", "s16"), ("s16-l5.flac", "s16"), ("s16-l8.flac", "s16"), ("m16-l5.flac", "m16"),
     ("s24-l5.flac", "s24"), ("s16-48k-l5.flac", "s16-48k"), ("s16-l5-pad.flac", "s16"),
@@ -1244,6 +1270,7 @@ if __name__ == "__main__":
     scenario_stall()
     scenario_cut()
     scenario_control_lost()
+    scenario_silent_server()
     scenario_flac()
     scenario_flac_stall()
     scenario_flac_rate_0()

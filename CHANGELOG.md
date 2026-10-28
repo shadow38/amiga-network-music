@@ -36,6 +36,9 @@ are previews, tested in WinUAE only, not yet on a real Amiga.
 
 ### Fixed
 
+- With AmiNetXDuo, a network cut could leave amisqueeze stuck: it never said `no news from the server` nor
+  reconnected, and Ctrl-C showed `recv: error 4` and a retry before `stopped`. amisqueeze no longer waits in a
+  receive the TCP/IP stack cannot complete, and Ctrl-C while connecting stops it without an error message.
 - `PORT` and `UNIT` out of range are refused at start-up (`PORT=...: expected 1 to 65535`, `UNIT=...: expected 0
   to 3`). `PORT=70000` used to connect to port 4464 without a word, and `UNIT=4` failed later with a misleading
   message.

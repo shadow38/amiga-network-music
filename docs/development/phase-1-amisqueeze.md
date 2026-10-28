@@ -1138,7 +1138,7 @@ belongs to the task that opened it; packets serialised field by field; buffers a
 - **On the A1200**: to check, `PRI=1` with a copy and windows moved: clean; without `PRI`: as before; the Shell's
   priority unchanged after amisqueeze ends.
 
-## player-16 A receive that never blocks ⬜ (version 0.8)
+## player-16 A receive that never blocks 🔶 (2026-10-28, version 0.8: WinUAE and the A1200 next)
 
 - **Found on the A1200** (2026-10-27, player-9 step 6, AmiNetXDuo 1.0.0-rc2): the cable pulled for 13 s left
   half-open connections. amisqueeze never said "no news from the server", over more than 3 minutes. Ctrl-C then
@@ -1173,3 +1173,7 @@ belongs to the task that opened it; packets serialised field by field; buffers a
     reconnection; Ctrl-C and Exchange's Remove: "stopped" alone; the Workbench usable meanwhile. The load as in
     player-9 (77 %).
 - **Upstream**: AmiNetXDuo's readiness is not ours to fix. Reporting it is the user's decision.
+- **Done** (2026-10-28): `PLAT_AGAIN` and `plat_interrupted()` in `platform.h`; the sockets non-blocking once
+  connected in `amiga.c` and `posix.c`, EINTR recorded as the stop request; `AGAIN_WAIT_MS` in `run()` for the
+  control connection and in `stream_events()` for the stream. Tests: `test_run_again`, `test_run_interrupted`,
+  `test_stream_again`, the fake server's `silent_server` scenario.

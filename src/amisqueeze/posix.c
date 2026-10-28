@@ -136,7 +136,8 @@ int plat_resolve(const char *host, uint32_t *ip)
     return 1;
 }
 
-/* Socket and connection; non-blocking: the connection may still be in progress on return */
+/* Socket and connection, non-blocking once connected; nonblocking: from the start, the connection may still be in
+ * progress on return */
 static int connect_socket(uint32_t ip, uint16_t port, int nonblocking)
 {
     struct sockaddr_in sa;
@@ -159,6 +160,8 @@ static int connect_socket(uint32_t ip, uint16_t port, int nonblocking)
             return -2;
         }
     }
+    if (!nonblocking)
+        fcntl(s, F_SETFL, fcntl(s, F_GETFL) | O_NONBLOCK);
     return s;
 }
 
@@ -183,8 +186,13 @@ int plat_connect_finish(int sock)
         last_error = err;
         return 0;
     }
-    fcntl(sock, F_SETFL, fcntl(sock, F_GETFL) & ~O_NONBLOCK);
     return 1;
+}
+
+/* Ctrl-C (SIGINT, SIGTERM) interrupts a blocking connect() with EINTR, and sets the flag itself */
+int plat_interrupted(void)
+{
+    return interrupted;
 }
 
 int plat_send(int sock, const void *buf, int len)
@@ -201,8 +209,10 @@ int plat_recv(int sock, void *buf, int len)
 {
     ssize_t n = recv(sock, buf, (size_t)len, 0);
 
-    if (n < 0)
+    if (n < 0) {
         last_error = errno;
+        return errno == EAGAIN || errno == EWOULDBLOCK ? PLAT_AGAIN : -1;
+    }
     return (int)n;
 }
 

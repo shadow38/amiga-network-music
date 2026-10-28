@@ -132,6 +132,8 @@ void stream_start(struct player *p, uint32_t ip, uint16_t port, const uint8_t *r
     s->bytes = 0;
     s->threshold = threshold;
     s->autostart = autostart;
+    s->again = 0;
+    s->again_said = 0;
 
     if (o->queued == MAX_TRACKS) {      /* should not happen: forget the oldest */
         memmove(o->queue, o->queue + 1, (MAX_TRACKS - 1) * sizeof(o->queue[0]));
@@ -159,6 +161,8 @@ int stream_events(const struct player *p)
     const struct stream *s = &p->stream;
 
     if (s->sock < 0)
+        return 0;
+    if (s->again && (int32_t)(plat_now_ms() - s->again_until) < 0)
         return 0;
     switch (s->state) {
     case STREAM_CONNECTING:
@@ -687,6 +691,18 @@ static void store(struct player *p, const uint8_t *data, uint32_t len)
     }
 }
 
+/* Reported readable, nothing to read (plan step player-16): left out of the waits for a while */
+static void read_again(struct player *p)
+{
+    struct stream *s = &p->stream;
+
+    if (p->verbose && !s->again_said)
+        msg("stream: reported readable, nothing to read yet\n");
+    s->again_said = 1;
+    s->again = 1;
+    s->again_until = plat_now_ms() + AGAIN_WAIT_MS;
+}
+
 static void read_headers(struct player *p)
 {
     struct stream *s = &p->stream;
@@ -699,6 +715,11 @@ static void read_headers(struct player *p)
         return;
     }
     n = plat_recv(s->sock, s->headers + s->headers_len, room);
+    if (n == PLAT_AGAIN) {
+        read_again(p);
+        return;
+    }
+    s->again = 0;
     if (n <= 0) {
         msg("amisqueeze: stream: connection lost before the response headers\n");
         stream_fail(p, DSCO_REMOTE);
@@ -732,6 +753,11 @@ static void read_body(struct player *p)
     if (room == 0)
         return;
     n = plat_recv(s->sock, w, room > 65536 ? 65536 : (int)room);
+    if (n == PLAT_AGAIN) {
+        read_again(p);
+        return;
+    }
+    s->again = 0;
     if (n > 0) {
         ring_commit(&p->ring, (uint32_t)n);
         s->bytes += (uint32_t)n;

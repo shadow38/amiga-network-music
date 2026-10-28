@@ -36,6 +36,14 @@ the control packet, then the stream socket, then `output_tick()`. The stream soc
 the control packet closed no stream socket (`stream.closes`): a new socket may take the old one's number. Addresses and ports are in host byte order in the
 core; only the platform layers convert them.
 
+Connected sockets are non-blocking. A TCP/IP stack may report a socket readable while nothing can be read yet:
+AmiNetXDuo counts the segments that arrived out of order, after a lost one. A blocking receive would then wait for
+the missing segment, forever if the server is gone, and the 35 s "no news" check would never come. A read that
+finds nothing (`PLAT_AGAIN`) is no error: that socket is left out of the waits for 100 ms (`AGAIN_WAIT_MS`), so the
+loop does not spin while the stack keeps reporting it. The control connection's `connect()` is the one blocking
+call left. Ctrl-C interrupts it with EINTR, which counts as the stop request itself (`plat_interrupted()`): a stack
+may have cleared the signal.
+
 Builds of the same sources: `out/amisqueeze` (68020, FLAC), `out/amisqueeze.fpu` (68020 + 68881, `AMISQUEEZE_FPU`
 and `AMISQUEEZE_MP3`: FLAC and MP3), `out-host/amisqueeze` (`posix.c`, with the MP3 decoder, ASan and UBSan).
 LMS 9.1 has no default `mp3 pcm` conversion rule, so a regular user's server cannot turn MP3 into PCM: hence the

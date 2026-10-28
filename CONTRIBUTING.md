@@ -188,7 +188,7 @@ Before the tests, `make test` runs `tools/check-version.py`: the version number 
 and the README must be the newest section of `CHANGELOG.md`; the commodity's title must fit 39 characters.
 `make test` needs no LMS server: the unit tests run the core on a fake platform (`tests/stub_platform.c`), and
 `tests/fake_server.py` plays a slimproto server and its HTTP streams on localhost (handshake, renaming,
-disconnection and reconnection, Ctrl-C, argument errors; server discovery: one server, two, none, malformed
+disconnection and reconnection, a server silent for 35 s, Ctrl-C, argument errors; server discovery: one server, two, none, malformed
 replies, found again after a failed connection; streams played, paused, stopped, flushed, refused, held,
 cut; the `OUTPUT` file compared with what was sent; FLAC and MP3 test files decoded from `tests/data/`, whole or
 from the middle as after a seek, back to back with raw PCM). It also builds amisqueeze without the MP3 decoder

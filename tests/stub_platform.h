@@ -34,6 +34,10 @@ extern int      stub_file_limit;        /* writes stop at this file size, like a
  * stream one (PLAT_READ, PLAT_WRITE, within what is waited for); afterwards plat_wait() returns -1, as on a Ctrl-C */
 extern int      stub_wait[8][2];
 extern int      stub_waits;
+extern int      stub_wait_advances;     /* 1: each plat_wait() moves stub_now on by its timeout */
+extern int      stub_waits_without_control;  /* plat_wait() calls that left the control connection out */
+extern int      stub_again;             /* the next stub_again plat_recv() on the control connection: PLAT_AGAIN */
+extern int      stub_connect_interrupted;    /* 1: plat_connect() fails as interrupted by a Ctrl-C (EINTR) */
 
 struct stub_audio_req {
     const uint8_t *data;
@@ -70,8 +74,8 @@ void stub_feed_packet(const char *opcode, const void *body, int len);
 void stub_feed(const void *data, int len);
 /* Bytes still to be received on the control connection */
 int stub_pending(void);
-/* Bytes to be received on the stream connection; once they are read, plat_recv() returns 0 (closed) only after
- * stub_stream_end() */
+/* Bytes to be received on the stream connection; once they are read, plat_recv() returns PLAT_AGAIN, and 0
+ * (closed) after stub_stream_end() */
 void stub_feed_stream(const void *data, int len);
 void stub_stream_end(void);
 int stub_stream_pending(void);

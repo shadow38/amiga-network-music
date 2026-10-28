@@ -2824,6 +2824,87 @@ static void test_run_stale_ready(void)
     CHECK(stub_waits == 0 && stub_stream_tx_len == 0);  /* neither request sent: no wait said B connected */
 }
 
+/* The control connection reported readable with nothing to read (plan step player-16: AmiNetXDuo counts segments
+ * that arrived out of order): neither an error nor read again at once, but left out of the waits for
+ * AGAIN_WAIT_MS, said once with VERBOSE; then read as usual */
+static void test_run_again(void)
+{
+    static const char said[] = "control: reported readable, nothing to read yet\n";
+    struct player p;
+    struct options o;
+    const char *m;
+    static const int turns[][2] = {
+        { PLAT_READ, 0 },               /* readable, nothing to read */
+        { PLAT_READ, 0 },               /* the control connection left out of this wait (100 ms) */
+        { PLAT_READ, 0 },               /* readable, nothing to read again */
+        { PLAT_READ, 0 },               /* left out again */
+        { PLAT_READ, 0 },               /* strm t: its length */
+        { PLAT_READ, 0 },               /* its body: STMt */
+    };
+
+    memset(&o, 0, sizeof(o));
+    o.server = "127.0.0.1";
+    o.port = SLIMPROTO_PORT;
+    o.verbose = 1;
+    o.flac = o.mp3 = DECODE_OFF;
+    stub_reset();
+    feed_strm('t', NULL, 0, 0, 0, NULL);
+    memcpy(stub_wait, turns, sizeof(turns));
+    stub_waits = 6;
+    stub_wait_advances = 1;
+    stub_again = 2;
+    memset(&p, 0, sizeof(p));
+    CHECK(player_main(&p, &o) == PLAYER_OK);
+    CHECK(stub_waits == 0 && stub_waits_without_control == 2 && stub_again == 0);
+    CHECK(strstr(trace(), "STAT:STMt") != NULL);
+    CHECK((m = strstr(stub_out, said)) != NULL && strstr(m + 1, said) == NULL);
+    CHECK(!strstr(stub_out, "recv: error") && !strstr(stub_out, "connection closed") && !strstr(stub_out, "retrying"));
+}
+
+/* Ctrl-C while connecting, the call interrupted (EINTR, plan step player-16): the player stops at once, without a
+ * failure reported nor a retry */
+static void test_run_interrupted(void)
+{
+    struct player p;
+    struct options o;
+
+    memset(&o, 0, sizeof(o));
+    o.server = "127.0.0.1";
+    o.port = SLIMPROTO_PORT;
+    o.flac = o.mp3 = DECODE_OFF;
+    stub_reset();
+    stub_connect_interrupted = 1;
+    memset(&p, 0, sizeof(p));
+    CHECK(player_main(&p, &o) == PLAYER_OK);
+    CHECK(strstr(stub_out, "stopped\n") != NULL);
+    CHECK(!strstr(stub_out, "cannot connect") && !strstr(stub_out, "retrying"));
+}
+
+/* The stream reported readable with nothing to read (plan step player-16): no error, no DSCO, left out of the waits
+ * for AGAIN_WAIT_MS, said once with VERBOSE; then read as usual */
+static void test_stream_again(void)
+{
+    struct player p;
+
+    setup(&p, "Amiga");
+    CHECK(slim_connect(&p, 0));
+    open_stream(&p, '1', 1);
+    CHECK(p.stream.state == STREAM_BODY && stream_events(&p) == PLAT_READ);
+    clear_tx();
+    p.verbose = 1;
+    stream_io(&p, PLAT_READ);                           /* nothing to read */
+    CHECK(p.stream.state == STREAM_BODY && stub_tx_len == 0 && stream_events(&p) == 0);
+    CHECK(!strcmp(stub_out, "stream: reported readable, nothing to read yet\n"));
+    stub_now += AGAIN_WAIT_MS - 1;
+    CHECK(stream_events(&p) == 0);
+    stub_now++;
+    CHECK(stream_events(&p) == PLAT_READ);
+    stub_feed_stream(pcm, 1000);
+    drain_stream(&p);
+    CHECK(p.stream.bytes == 1000 && p.stream.state == STREAM_BODY && stream_events(&p) == PLAT_READ);
+    teardown(&p);
+}
+
 /* Workbench start: an icon's ToolTypes turned into a command line for the template */
 static void test_tooltypes(void)
 {
@@ -2941,6 +3022,9 @@ int main(void)
     test_start_mode();
     test_priority();
     test_run_stale_ready();
+    test_run_again();
+    test_run_interrupted();
+    test_stream_again();
     test_lame_header();
     test_tooltypes();
     test_discovery_reply();

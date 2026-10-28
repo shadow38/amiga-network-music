@@ -80,7 +80,14 @@ struct stream {
     uint64_t bytes;                     /* body bytes received */
     uint32_t threshold;                 /* bytes to receive before the output may start */
     int      autostart;                 /* 1 = start by itself, 0 = wait for strm u */
+    int      again;                     /* reported readable with nothing to read: left out of the wait until */
+    uint32_t again_until;               /* this time (ms) */
+    int      again_said;                /* said once for this stream (VERBOSE) */
 };
+
+/* A socket reported readable with nothing to read is left out of the waits for this long (plan step player-16):
+ * no busy loop if the TCP/IP stack keeps reporting it */
+#define AGAIN_WAIT_MS 100
 
 /* Output: the buffer's bytes go to a sink, the virtual output (consumed at the PCM rate, as a sound card would;
  * with the OUTPUT option also written to a file, as received) or the platform's audio output (AHI) */
@@ -183,6 +190,7 @@ struct player {
     /* receiving: 2-byte length, then the packet (4-byte opcode + data) */
     uint16_t rx_expect;
     uint16_t rx_got;
+    int      rx_again_said;             /* "reported readable, nothing to read" said for this connection */
     uint8_t  rx_len[2];
     uint8_t  rx_buf[4096];
 
@@ -226,7 +234,8 @@ void mac_from_name(const char *name, uint8_t mac[6]);
 /* slimproto.c */
 int slim_connect(struct player *p, int reconnect);
 void slim_disconnect(struct player *p);
-/* Reads whatever is available on the socket; 0 if the connection is lost. */
+/* Reads whatever is available on the socket: 1, or 0 if the connection is lost, -1 if there was nothing to read
+ * (the socket was reported readable all the same) */
 int slim_receive(struct player *p);
 void slim_send_stat(struct player *p, const char *event, uint32_t server_ts);
 void slim_send_refusal(struct player *p);

@@ -278,16 +278,20 @@ static void run(struct player *p)
 {
     int reconnect = 0;
     uint32_t since = 0;                     /* when the connection was established */
+    int again = 0;                          /* control reported readable with nothing to read: left out of the */
+    uint32_t again_until = 0;               /* waits until then (AGAIN_WAIT_MS) */
 
     for (;;) {
         struct plat_fd fds[2];
-        int n = 0, r, events;
+        int n = 0, r, events, ctl = -1, st = -1, rx = 1;
         uint32_t closes = p->stream.closes;
 
         if (p->sock < 0) {
             if (p->discover && p->server_ip == 0 && !find_server(p))
                 return;
             if (!slim_connect(p, reconnect)) {
+                if (plat_interrupted())
+                    return;
                 if (p->discover)
                     p->server_ip = 0;       /* found by discovery: look again, its address may have changed */
                 msg("retrying in %d s\n", RECONNECT_DELAY_S);
@@ -297,29 +301,42 @@ static void run(struct player *p)
             }
             reconnect = 1;
             since = plat_now_ms();
+            again = 0;
         }
 
-        fds[n].sock = p->sock;
-        fds[n].events = PLAT_READ;
-        n++;
+        if (again && (int32_t)(plat_now_ms() - again_until) >= 0)
+            again = 0;
+        if (!again) {
+            fds[n].sock = p->sock;
+            fds[n].events = PLAT_READ;
+            ctl = n++;
+        }
         events = stream_events(p);
         if (events) {
             fds[n].sock = p->stream.sock;
             fds[n].events = events;
-            n++;
+            st = n++;
         }
-        r = plat_wait(fds, n, player_busy(p) ? 100 : 1000);
+        r = plat_wait(fds, n, player_busy(p) || again ? 100 : 1000);
         if (r == -1)
             return;
-        if (r == -2 || ((fds[0].ready & PLAT_READ) && !slim_receive(p))) {
+        if (r != -2 && ctl >= 0 && (fds[ctl].ready & PLAT_READ))
+            rx = slim_receive(p);
+        if (r == -2 || rx == 0) {
+            if (plat_interrupted())
+                return;
             if (!connection_lost(p, since))
                 return;
             continue;
         }
+        if (rx < 0) {
+            again = 1;
+            again_until = plat_now_ms() + AGAIN_WAIT_MS;
+        }
         /* The control packet may have closed or replaced the stream: only use a ready state that is still valid. A
          * new socket may take the old one's number, so the closes are counted rather than the numbers compared. */
-        if (n > 1 && fds[1].ready && p->stream.closes == closes)
-            stream_io(p, fds[1].ready);
+        if (st >= 0 && fds[st].ready && p->stream.closes == closes)
+            stream_io(p, fds[st].ready);
         output_tick(p, plat_now_ms());
         if ((uint32_t)(plat_now_ms() - p->last_rx) > RX_TIMEOUT_MS) {
             msg("amisqueeze: no news from the server, reconnecting\n");

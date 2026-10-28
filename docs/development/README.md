@@ -93,7 +93,8 @@ Agreed with the user on 2026-10-26.
   2026-10-28). Coded and tested on the host on 2026-10-28; the A1200 next.
 - **A receive that never blocks** (player-16): non-blocking sockets, and Ctrl-C's EINTR taken as a stop. With
   AmiNetXDuo, a blocking receive could wait forever, so neither "no news from the server" nor a clean Ctrl-C
-  came (agreed with the user on 2026-10-28).
+  came (agreed with the user on 2026-10-28). Coded and tested on the host on 2026-10-28; WinUAE and the A1200
+  next.
 - **The writing rules** (publish-6): the plan and the user guide done on 2026-10-24; `docs/development/` next,
   where the user finds it worth it.
 
@@ -152,7 +153,7 @@ Agreed with the user on 2026-10-26.
 | player-13 A lower rate asked of the server | ✅ 2026-10-26: `MAXRATE` and the LMS rules; on the A1200, 62 % of the CPU at 32 kHz against 77 %; Music Assistant upstream: the user's decision |
 | player-14 The buffer running dry in the middle of a frame | ✅ 2026-10-27: on the host and the A1200 |
 | player-15 The task priority (`PRI`) | 🔶 2026-10-28: coded, tested on the host; the A1200 next |
-| player-16 A receive that never blocks | ⬜ agreed with the user on 2026-10-28 |
+| player-16 A receive that never blocks | 🔶 2026-10-28: coded, tested on the host; WinUAE and the A1200 next |
 | remote-0 Study (common interface, Music Assistant feasibility, name) | ⬜ before any amilms code |
 | remote-1 to remote-7 LMS | ⬜ |
 | remote-8 to remote-11 Music Assistant | ⬜ |

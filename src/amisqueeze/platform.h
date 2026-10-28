@@ -25,27 +25,38 @@ void msg_raw(const void *buf, int len);
 /* Host name or dotted address; returns 1 and *ip, or 0 if it cannot be resolved */
 int plat_resolve(const char *host, uint32_t *ip);
 
-/* Blocking TCP connection: returns a socket (>= 0), -1 if the socket cannot be created, -2 if the connection
- * fails. After a failure, plat_error() gives the system error code. */
+/* Connected TCP sockets are non-blocking (plan step player-16): a TCP/IP stack may report a socket readable when
+ * nothing can be read yet (AmiNetXDuo counts segments that arrived out of order), and a blocking receive would
+ * then wait, forever if the server is gone. */
+
+/* Blocking TCP connection: returns a socket (>= 0), non-blocking once connected; -1 if the socket cannot be
+ * created, -2 if the connection fails (or is interrupted: plat_interrupted()). After a failure, plat_error() gives
+ * the system error code. */
 int plat_connect(uint32_t ip, uint16_t port);
 
 /* Non-blocking TCP connection: returns a socket (>= 0) whose connection is in progress, -1 if the socket cannot
  * be created, -2 if the connection fails at once. Wait until the socket is writable (PLAT_WRITE), then call
- * plat_connect_finish(): 1 = connected (the socket is blocking again), 0 = failed (plat_error(); the socket is
- * still open). */
+ * plat_connect_finish(): 1 = connected, 0 = failed (plat_error(); the socket is still open). */
 int plat_connect_start(uint32_t ip, uint16_t port);
 int plat_connect_finish(int sock);
+
+/* 1 once the user asked to stop (Ctrl-C, Break) during a socket call, which failed for it: the core stops at once,
+ * without reporting that failure. plat_wait() then returns -1. */
+int plat_interrupted(void);
 
 /* UDP socket allowed to broadcast (server discovery): returns a socket (>= 0), or -1 (plat_error()) */
 int plat_udp_open(void);
 /* Sends len bytes to every host of the local network (255.255.255.255) on the given port; 0 on error
  * (plat_error()) */
 int plat_udp_broadcast(int sock, uint16_t port, const void *buf, int len);
-/* Reads one datagram, at most len bytes of it, and the address it came from; bytes read, < 0 on error */
+/* Reads one datagram, at most len bytes of it, and the address it came from; bytes read, < 0 on error. The UDP
+ * socket stays blocking: a datagram reported readable is there. */
 int plat_udp_recv(int sock, void *buf, int len, uint32_t *ip);
 
-int plat_send(int sock, const void *buf, int len);     /* bytes sent, <= 0 on error */
-int plat_recv(int sock, void *buf, int len);           /* bytes received, 0 = closed, < 0 = error */
+#define PLAT_AGAIN (-2)                 /* plat_recv(): nothing to read yet, not an error */
+
+int plat_send(int sock, const void *buf, int len);     /* bytes sent, <= 0 on error (a full buffer included) */
+int plat_recv(int sock, void *buf, int len);           /* bytes received, 0 = closed, PLAT_AGAIN, -1 = error */
 void plat_close(int sock);
 int plat_error(void);
 

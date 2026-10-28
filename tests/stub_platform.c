@@ -24,6 +24,11 @@ int      stub_file_fails;
 int      stub_file_limit;
 int      stub_wait[8][2];
 int      stub_waits;
+int      stub_wait_advances;
+int      stub_waits_without_control;
+int      stub_again;
+int      stub_connect_interrupted;
+static int interrupted;
 
 struct stub_audio_req stub_audio[8];
 int      stub_audio_fails;
@@ -59,6 +64,11 @@ void stub_reset(void)
     stream_ended = 0;
     stub_stream_open = 0;
     stub_waits = 0;
+    stub_wait_advances = 0;
+    stub_waits_without_control = 0;
+    stub_again = 0;
+    stub_connect_interrupted = 0;
+    interrupted = 0;
     stub_priority = STUB_PRI_NONE;
 }
 
@@ -146,7 +156,16 @@ int plat_connect(uint32_t ip, uint16_t port)
 {
     (void)ip;
     (void)port;
+    if (stub_connect_interrupted) {
+        interrupted = 1;
+        return -2;
+    }
     return STUB_CONTROL;
+}
+
+int plat_interrupted(void)
+{
+    return interrupted;
 }
 
 int plat_connect_start(uint32_t ip, uint16_t port)
@@ -180,12 +199,16 @@ int plat_recv(int sock, void *buf, int len)
     struct queue *q = sock == STUB_STREAM ? &srx : &rx;
     int n = q->len - q->pos;
 
+    if (sock != STUB_STREAM && stub_again > 0) {
+        stub_again--;
+        return PLAT_AGAIN;
+    }
     if (n > len)
         n = len;
     if (stub_chunk > 0 && n > stub_chunk)
         n = stub_chunk;
     if (n == 0 && sock == STUB_STREAM && !stream_ended)
-        return -1;                      /* nothing yet: the tests only read when data is queued */
+        return PLAT_AGAIN;              /* nothing yet */
     memcpy(buf, q->data + q->pos, (size_t)n);
     q->pos += n;
     return n;                           /* 0 when nothing is left = connection closed */
@@ -371,13 +394,18 @@ void plat_file_close(int file)
 
 int plat_wait(struct plat_fd *fds, int n, uint32_t timeout_ms)
 {
-    int i;
+    int i, control = 0;
 
-    (void)timeout_ms;
-    if (stub_waits == 0)
+    if (stub_waits == 0 || interrupted)
         return -1;                      /* as a Ctrl-C */
-    for (i = 0; i < n; i++)
-        fds[i].ready = i < 2 ? stub_wait[0][i] & fds[i].events : 0;
+    if (stub_wait_advances)
+        stub_now += timeout_ms;
+    for (i = 0; i < n; i++) {
+        fds[i].ready = stub_wait[0][fds[i].sock == STUB_STREAM] & fds[i].events;
+        control |= fds[i].sock == STUB_CONTROL;
+    }
+    if (!control)
+        stub_waits_without_control++;
     stub_waits--;
     memmove(stub_wait[0], stub_wait[1], sizeof(stub_wait) - sizeof(stub_wait[0]));
     return n;

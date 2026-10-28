@@ -79,6 +79,7 @@ struct Library *SocketBase;
 struct Device *TimerBase;
 static struct timerequest timer_io;
 static int last_error;
+static int stop_asked;                      /* a socket call was interrupted by Ctrl-C (EINTR) */
 
 /* ahi.device as a library, for AHI_GetAudioAttrsA (the device's base, while the unit is open) */
 struct Library *AHIBase;
@@ -264,7 +265,18 @@ int plat_resolve(const char *host, uint32_t *ip)
     return 1;
 }
 
-/* Socket and connection; non-blocking: the connection may still be in progress on return */
+/* The error of the socket call that just failed. EINTR: the stack's break mask (Ctrl-C by default) interrupted a
+ * blocking call, leaving the signal set or not depending on the stack: taken as the stop request itself. */
+static int sock_error(void)
+{
+    last_error = Errno();
+    if (last_error == EINTR)
+        stop_asked = 1;
+    return last_error;
+}
+
+/* Socket and connection, non-blocking once connected; nonblocking: from the start, the connection may still be in
+ * progress on return */
 static int connect_socket(uint32_t ip, uint16_t port, int nonblocking)
 {
     struct sockaddr_in sa;
@@ -272,7 +284,7 @@ static int connect_socket(uint32_t ip, uint16_t port, int nonblocking)
     LONG s = socket(AF_INET, SOCK_STREAM, 0);
 
     if (s < 0) {
-        last_error = Errno();
+        sock_error();
         return -1;
     }
     if (nonblocking)
@@ -283,12 +295,13 @@ static int connect_socket(uint32_t ip, uint16_t port, int nonblocking)
     sa.sin_port = htons(port);
     sa.sin_addr.s_addr = htonl(ip);
     if (connect(s, (struct sockaddr *)&sa, sizeof(sa)) < 0) {
-        last_error = Errno();
-        if (!(nonblocking && last_error == EINPROGRESS)) {
+        if (!(sock_error() == EINPROGRESS && nonblocking)) {
             CloseSocket(s);
             return -2;
         }
     }
+    if (!nonblocking)
+        IoctlSocket(s, FIONBIO, (char *)&one);
     return s;
 }
 
@@ -304,7 +317,7 @@ int plat_connect_start(uint32_t ip, uint16_t port)
 
 int plat_connect_finish(int sock)
 {
-    LONG err = 0, len = sizeof(err), zero = 0;
+    LONG err = 0, len = sizeof(err);
 
     if (getsockopt(sock, SOL_SOCKET, SO_ERROR, &err, &len) < 0)
         err = Errno();
@@ -312,8 +325,12 @@ int plat_connect_finish(int sock)
         last_error = err;
         return 0;
     }
-    IoctlSocket(sock, FIONBIO, (char *)&zero);
     return 1;
+}
+
+int plat_interrupted(void)
+{
+    return stop_asked;
 }
 
 int plat_send(int sock, const void *buf, int len)
@@ -321,7 +338,7 @@ int plat_send(int sock, const void *buf, int len)
     LONG n = send(sock, (APTR)buf, len, 0);
 
     if (n <= 0)
-        last_error = Errno();
+        sock_error();
     return n;
 }
 
@@ -329,9 +346,9 @@ int plat_recv(int sock, void *buf, int len)
 {
     LONG n = recv(sock, buf, len, 0);
 
-    if (n < 0)
-        last_error = Errno();
-    return n;
+    if (n < 0 && sock_error() == EWOULDBLOCK)
+        return PLAT_AGAIN;
+    return n < 0 ? -1 : n;
 }
 
 int plat_udp_open(void)
@@ -340,11 +357,11 @@ int plat_udp_open(void)
     LONG s = socket(AF_INET, SOCK_DGRAM, 0);
 
     if (s < 0) {
-        last_error = Errno();
+        sock_error();
         return -1;
     }
     if (setsockopt(s, SOL_SOCKET, SO_BROADCAST, &one, sizeof(one)) < 0) {
-        last_error = Errno();
+        sock_error();
         CloseSocket(s);
         return -1;
     }
@@ -361,7 +378,7 @@ int plat_udp_broadcast(int sock, uint16_t port, const void *buf, int len)
     sa.sin_port = htons(port);
     sa.sin_addr.s_addr = htonl(INADDR_BROADCAST);
     if (sendto(sock, (APTR)buf, len, 0, (struct sockaddr *)&sa, sizeof(sa)) != len) {
-        last_error = Errno();
+        sock_error();
         return 0;
     }
     return 1;
@@ -374,7 +391,7 @@ int plat_udp_recv(int sock, void *buf, int len, uint32_t *ip)
     LONG n = recvfrom(sock, buf, len, 0, (struct sockaddr *)&sa, &salen);
 
     if (n < 0)
-        last_error = Errno();
+        sock_error();
     else
         *ip = ntohl(sa.sin_addr.s_addr);
     return n;
@@ -616,6 +633,8 @@ int plat_wait(struct plat_fd *fds, int n, uint32_t timeout_ms)
     LONG r;
     int i, maxfd = -1;
 
+    if (stop_asked)
+        return -1;
     if (n == 0) {
         /* No socket: a plain delay (WaitSelect without any socket is not reliable with every stack) */
         if ((SetSignal(0, SIGBREAKF_CTRL_C) & SIGBREAKF_CTRL_C) || cx_killed())

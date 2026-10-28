@@ -48,7 +48,8 @@ static int send_all(struct player *p, const uint8_t *buf, int len)
     while (len > 0) {
         int n = plat_send(p->sock, buf, len);
         if (n <= 0) {
-            msg("amisqueeze: send: error %d\n", plat_error());
+            if (!plat_interrupted())
+                msg("amisqueeze: send: error %d\n", plat_error());
             return 0;
         }
         buf += n;
@@ -381,6 +382,8 @@ int slim_connect(struct player *p, int reconnect)
 {
     int s = plat_connect(p->server_ip, p->server_port);
 
+    if (s < 0 && plat_interrupted())
+        return 0;                           /* Ctrl-C while connecting: no failure to report */
     if (s == -1) {
         msg("amisqueeze: socket: error %d\n", plat_error());
         return 0;
@@ -392,6 +395,7 @@ int slim_connect(struct player *p, int reconnect)
     p->sock = s;
     p->rx_expect = 0;
     p->rx_got = 0;
+    p->rx_again_said = 0;
     p->last_rx = plat_now_ms();
     msg("connected to the server\n");
     if (!send_helo(p, reconnect)) {
@@ -417,6 +421,8 @@ int slim_receive(struct player *p)
 
     if (p->rx_expect == 0) {                /* packet length */
         n = plat_recv(p->sock, p->rx_len + p->rx_got, 2 - p->rx_got);
+        if (n == PLAT_AGAIN)
+            goto again;
         if (n <= 0)
             goto lost;
         p->rx_got += n;
@@ -432,6 +438,8 @@ int slim_receive(struct player *p)
     }
 
     n = plat_recv(p->sock, p->rx_buf + p->rx_got, p->rx_expect - p->rx_got);
+    if (n == PLAT_AGAIN)
+        goto again;
     if (n <= 0)
         goto lost;
     p->rx_got += n;
@@ -443,10 +451,16 @@ int slim_receive(struct player *p)
     }
     return 1;
 
+again:                                      /* said readable, nothing to read (plan step player-16) */
+    if (p->verbose && !p->rx_again_said)
+        msg("control: reported readable, nothing to read yet\n");
+    p->rx_again_said = 1;
+    return -1;
+
 lost:
     if (n == 0)
         msg("amisqueeze: connection closed by the server\n");
-    else
+    else if (!plat_interrupted())
         msg("amisqueeze: recv: error %d\n", plat_error());
     return 0;
 }

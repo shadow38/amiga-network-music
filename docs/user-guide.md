@@ -624,6 +624,7 @@ rows say what comes next.
 | `<- strm ...`, `-> STAT ...`, `-> DSCO ...`, `<- audg ...`, `<- aude ...` | the messages exchanged with the server |
 | `discovery: a packet that is no reply ignored (N bytes)` | while looking for a server, something else than a server's answer came in |
 | `<- vers ignored (N bytes)`, the same for `grfb`, `grfe`, `codc`, `cont` | messages amisqueeze does not need: Music Assistant sends them; `cont` also comes with some internet radios (see [known limits](#known-limits)) |
+| `control: reported readable, nothing to read yet` (or `stream: ...`) | the TCP/IP stack said data had come, but none could be read yet (AmiNetXDuo, after a packet was lost): amisqueeze waits for it. Said once per connection |
 | other `stream: ...` messages | the stream's events: parameters, connection, headers received, WAV header, end of the track's data |
 | other `output: ...` messages | the output's events: track started, buffer empty, end of playback, `OUTPUT` file opened and bytes written to it |
 
