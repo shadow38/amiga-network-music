@@ -653,7 +653,7 @@ belongs to the task that opened it; packets serialised field by field; buffers a
     amisqueeze receiving in smaller pieces, which amisqueeze itself could fix. Steps 3 and 5 would win the margin
     back; at 88 KB/s (step 3) nothing crackled even without `RXBUFFER`.
   - **Step 2, the driver read** (2026-10-24, `xircomce2.device` 1.1, GPL, sources on Aminet; the card is a Xircom
-    CE3B-100). The receive work runs in a software interrupt, `RXInt`, at priority 0. It loops until the card
+    CE3-10/100). The receive work runs in a software interrupt, `RXInt`, at priority 0. It loops until the card
     holds no frame, so a large burst keeps it busy long, and a software interrupt of the same priority waits. That
     fits the measures: `paula.audio` fills its next block in a software interrupt at priority 0 (checked on
     2026-10-25 in 4.23, 4.30 and 4.33). Each
