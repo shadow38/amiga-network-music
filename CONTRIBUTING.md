@@ -392,7 +392,9 @@ holding each archive's SHA-256.
 **The archives are made by GitHub from the tag** (`.github/workflows/release.yml`, since 0.7): pushing a tag
 `amisqueeze-<version>` runs `make dist` through the Docker way of `tools/amiga-make.sh` (the pinned image), checks
 that the archives bear the tag's version, and makes a **draft** pre-release with the archives, their `.sha256` and
-the readme, its notes holding the SHA-256 lines and a place for the rest. The executables' SHA-256 are in the job's
+the readme, its notes holding the SHA-256 lines and a place for the rest. The notes describe this version only,
+its known limits as plain facts: nothing about later versions (agreed with the maintainer on 2026-10-23; the
+roadmap stays in the plan). The executables' SHA-256 are in the job's
 summary: the build is reproducible, so they must be those of the build tried in WinUAE before the tag. The draft is
 published by hand once its notes are written and approved, and, when the making of the archive changed since its
 last trial on the Amiga (the image or the version of `lha`, the options of `make-dist.py`, a new kind of file in
