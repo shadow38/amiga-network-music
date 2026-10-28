@@ -26,8 +26,10 @@ are previews, tested in WinUAE only, not yet on a real Amiga.
 - The user guide rewritten: using amisqueeze first (installing, sound, server, starting, stopping, volume), then
   a reference (options, ToolTypes, default options, messages by theme, troubleshooting, known limits, what has
   been tried).
-- User guide and README: playback tried on a real A1200 (a 68020 at 26 MHz, a PCMCIA network card, Paula through
-  AHI), with the CPU load `MAXRATE` saves there; a known limit with Aminet's driver for Xircom PCMCIA cards.
+- User guide and README: tried on a real A1200 (a 68020 at 26 MHz, a PCMCIA network card, Paula through AHI):
+  playback, the commands, the recovery, an hour of playback, the server discovery with three TCP/IP stacks; with
+  the CPU load `MAXRATE` saves there; a known limit with Aminet's driver for Xircom PCMCIA cards.
+- README and user guide: how amisqueeze finds the server, and when to give `SERVER` instead.
 - User guide: with Paula, `SWAP` is now part of setting up the AHI unit, since `paula.audio` swaps left and right,
   on a real A1200 too.
 - User guide: which internet radios may cut with LMS, and its "Proxied Streaming" setting, which should avoid it.

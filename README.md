@@ -64,14 +64,18 @@ a fast Amiga; otherwise the server sends raw PCM) and plays it through AHI.
 3. **On the Amiga**: a TCP/IP stack running, and AHI installed, with unit 0 set to a "stereo++" mode in
    `SYS:Prefs/AHI` (with Paula: `Paula:14 bit stereo++`); without "++", the music plays on one side only. Where to
    get AHI and how to set it up: [sound](docs/user-guide.md#sound-ahi).
-4. **Start it**: it finds the server on the local network.
+4. **Start it**:
    - from the **Workbench**: double-click the icon. A window shows its messages. Copied into `SYS:WBStartup`, it
      starts with the Amiga;
    - from a **Shell**: `amisqueeze`.
 
-   A player called "Amiga" shows up in the server's web interface: choose it there or in an app, and play. If
-   amisqueeze finds no server, or finds several, give the server's address: `amisqueeze SERVER=192.168.1.10`, or
-   the ToolType `SERVER=192.168.1.10` (see [starting](docs/user-guide.md#starting-amisqueeze)).
+   **amisqueeze finds the server by itself**: it asks on the local network (UDP port 3483) and connects to the
+   server that answers. A player called "Amiga" then shows up in the server's web interface: choose it there or in
+   an app, and play.
+
+   **Or give the server's address**, with `amisqueeze SERVER=192.168.1.10` or the ToolType `SERVER=192.168.1.10`:
+   when amisqueeze finds no server (on another network, or 3483/udp closed by its firewall), or to choose one when
+   several answer (otherwise it takes the first). See [starting](docs/user-guide.md#starting-amisqueeze).
 5. **To stop it**: Exchange, the system's list of background programs, lists it ("Remove"); or Ctrl-C in its
    window or Shell. To keep the Shell options for the next times, then just type `amisqueeze`:
 

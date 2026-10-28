@@ -199,7 +199,7 @@ To keep its messages in a file, add [`LOG`](#log).
 To avoid typing the options every time, save them in the variable `amisqueeze.prefs`:
 
 ```
-Echo "SERVER=192.168.1.10 NAME=Amiga" >ENV:amisqueeze.prefs
+Echo "NAME=Kitchen SWAP" >ENV:amisqueeze.prefs
 Copy ENV:amisqueeze.prefs ENVARC:
 ```
 
@@ -676,10 +676,8 @@ rows say what comes next.
 
 ### Known limits
 
-- Playback tried on a real A1200; the commands, the recovery from network failures and long playback in WinUAE
-  only so far (see [what has been tried](#what-has-been-tried)).
-- amisqueeze finds a server on its own local network only, and in WinUAE only so far. With several servers, it
-  takes the first that answers.
+- Tried on one real machine so far, an A1200 with a 26 MHz 68020 (see [what has been tried](#what-has-been-tried)).
+- amisqueeze finds a server on its own local network only. With several servers, it takes the first that answers.
 - MP3 is decoded only by `amisqueeze.fpu`. With `amisqueeze`, LMS needs a [rule](#lyrion-music-server) to convert
   it. Other formats play only through the server's conversion to raw PCM.
 - Files above 48 kHz (88.2, 96, 192 kHz) play only when FLAC is decoded on the Amiga. Otherwise LMS cannot lower
@@ -708,13 +706,13 @@ rows say what comes next.
 
 ### What has been tried
 
-Playback was tried on a real A1200; everything else so far in WinUAE. What the README names but this table does
-not is expected to work, not checked.
+amisqueeze was tried in WinUAE and on a real A1200. What the README names but this table does not is expected to
+work, not checked.
 
 | | Tried | Expected, not tried yet |
 |---|---|---|
-| Machine | WinUAE 6.0 (an A1200 setup); a real A1200, playback only | other real Amigas |
-| Real A1200 | an ACA1221lc accelerator (68EC020 at 26.67 MHz, no FPU), Kickstart 3.1, AmiNetXDuo with a fixed `xircomce2.device` (a Xircom PCMCIA card), Paula through AHI 4.18; LMS 9.1.1, and Music Assistant 2.10.7 with a fix of its own (not published) for the lower rates: playback and its CPU load (see [`MAXRATE`](#maxrate)) | the commands, the recovery from network failures, an hour of playback |
+| Machine | WinUAE 6.0 (an A1200 setup); a real A1200 | other real Amigas |
+| Real A1200 | an ACA1221lc accelerator (68EC020 at 26.67 MHz, no FPU), Kickstart 3.1, AmiNetXDuo with a fixed `xircomce2.device` (a Xircom PCMCIA card), Paula through AHI 4.18. With LMS 9.1.1: playback and its CPU load (see [`MAXRATE`](#maxrate)), the commands, a server restart, a short network cut, an hour of playback, the Workbench. The server discovery with LMS and Music Assistant 2.10.7 (with a fix of its own, not published, for the lower rates), through AmiNetXDuo, Miami 3.2b and the demo of Roadshow 1.15 | a network cut of several seconds with AmiNetXDuo, since the fix of this version |
 | CPU | 68020, at about 28 MHz and with the JIT (the speed of a PiStorm, roughly); with and without a 68882 | 68030, 68040, 68060, a PiStorm with Emu68 |
 | AmigaOS | 3.2.3; 3.1 with AHI on the A1200; 3.0 and 3.1 from a Shell without AHI in WinUAE; 2.04, the oldest version it asks for, starts | 3.1.4, 3.5, 3.9 |
 | Memory | about 1.7 MB free to play through AHI: 1.3 MB for amisqueeze and its network connections, its 1 MB stream buffer (about 6 s of CD-quality audio) included; 0.25 MB for AHI's output; 0.2 MB more when AHI is not loaded yet. About 60 KB more for `amisqueeze.fpu` decoding MP3 | - |
