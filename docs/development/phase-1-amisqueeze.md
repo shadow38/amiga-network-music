@@ -770,9 +770,16 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   | Miami 3.2b | 22.05 kHz | 71 % (AmiNetXDuo: 50 %) | many crackles; probably Aminet's driver, without the fix (not checked) |
   | Roadshow 1.15 demo | 44.1 kHz | about 95 % (one early window; 86 % on 2026-10-25) | clean |
 
-  Left: `SYS:WBStartup`; `PRI=1` (player-15); the whole protocol with Music Assistant, with the `aac` row of the
-  user guide; the user guide's free memory (about 1.1 MB) against the 1.7 MB of fast memory playing takes here,
-  AHI and the stack included. Ctrl-C with AmiNetXDuo, and the missing "no news from the server": player-16.
+  Left, split with the user on 2026-10-28 while the A1200 is away:
+  - in WinUAE, not checked again on the A1200, since the result does not depend on the machine:
+    - `SYS:WBStartup`, with AmiNetXDuo started before the Workbench, as on the A1200;
+    - the whole protocol with Music Assistant, with the `aac` row of the user guide;
+    - the memory amisqueeze itself takes, against the user guide's free memory (about 1.1 MB). Playing takes
+      1.7 MB of fast memory here, AHI and the stack included;
+  - on the A1200:
+    - `PRI=1` against the gaps (player-15);
+    - the cable pulled, Ctrl-C with AmiNetXDuo and the missing "no news from the server" (player-16);
+    - the load with Music Assistant, only if it sends another format than LMS's raw PCM.
 - **Load of the lighter AHI settings, measured in WinUAE** (2026-10-22, 0.7-dev at `60a14fa`), to know which one
   to try first in step 4: slow profile (68020, about 28 MHz, no FPU, as the ACA1221lc), LMS 9.1.1, a 156 s song
   resampled to a 44.1 kHz 16-bit FLAC, sent as raw PCM by the server (`FLAC=AUTO` leaves FLAC to it on this
@@ -1135,8 +1142,10 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   given (`plat_set_priority`), and set back at the end on the Amiga: started from a Shell, amisqueeze runs in the
   Shell's own process. Tests: `test_priority` (not given, -10, 0, 10, then 11 and -11 refused), the fake server's
   arguments scenario (`PRI=11`, `PRI=-11`).
-- **On the A1200**: to check, `PRI=1` with a copy and windows moved: clean; without `PRI`: as before; the Shell's
-  priority unchanged after amisqueeze ends.
+- **In WinUAE**, not checked again on the A1200 (agreed with the user on 2026-10-28): `PRI` read from the
+  command line, the ToolTypes and `ENV:amisqueeze.prefs`; the priority unchanged without it; the Shell's priority
+  back after amisqueeze ends.
+- **On the A1200**: `PRI=1` with a copy and windows moved: clean. Without `PRI`: gaps, as before.
 
 ## player-16 A receive that never blocks 🔶 (2026-10-28, version 0.8: the A1200 next)
 
