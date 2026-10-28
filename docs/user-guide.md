@@ -111,7 +111,7 @@ amisqueeze needs three things from LMS:
   - 3483/udp, where amisqueeze asks for a server on the local network when it is given none;
   - the web port (9000/tcp by default), which also carries the music. LMS tells amisqueeze which web port it uses.
 
-  In Docker, publish them all; the image's `HTTP_PORT` setting moves the web port.
+  In Docker, publish all three, 3483/udp included.
 - **Its address**, only if amisqueeze does not find LMS by itself (see [starting](#starting-amisqueeze)): give it
   with `SERVER`. It is the one in the browser's address bar when LMS's web page is open on another computer:
   `http://<address>:9000`. Give the server a fixed address in the router, so that it does not change. A host name
