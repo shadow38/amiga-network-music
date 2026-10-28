@@ -31,9 +31,6 @@ directory. Copy the one for your CPU (`lha_68k`, `lha_68020` or `lha_68040`) to 
 LhA x amisqueeze-<version>.lha RAM:
 ```
 
-Each release gives the SHA-256 of both archives, in its notes and in `.sha256` files. To check an archive before
-unpacking it: `sha256sum` on Linux, `Get-FileHash` in PowerShell.
-
 The archive holds two executables of the same program. Take the one that suits the Amiga:
 
 | Executable | For | Decodes itself |
@@ -47,6 +44,9 @@ Copy it with its icon (`amisqueeze.info` or `amisqueeze.fpu.info`):
 - into any drawer, to start it from the Workbench.
 
 `amisqueeze.fpu` may be renamed `amisqueeze`; rename its icon the same way.
+
+To check an archive before unpacking it, compare its SHA-256 with the one given in the release's notes and its
+`.sha256` file: `sha256sum` on Linux, `Get-FileHash` in PowerShell.
 
 ### Sound (AHI)
 
@@ -92,9 +92,8 @@ With Paula, AHI converts and mixes the sound with the CPU. `Paula:8 bit stereo++
 
 With Paula, `paula.audio` swaps left and right: add [`SWAP`](#options) to amisqueeze's options.
 
-With Paula, the power LED dims as long as amisqueeze runs, even when nothing plays: `paula.audio` turns Paula's
-low-pass filter off, whose state the LED shows, while the AHI unit is open, and back on when amisqueeze quits.
-Seen on a real A1200.
+With Paula, the power LED dims as long as amisqueeze runs: `paula.audio` turns Paula's filter off, which the
+LED shows. This is normal; the LED comes back when amisqueeze quits.
 
 At start-up, amisqueeze checks the unit's mode and warns about a stereo mode without "++" or a mono mode.
 
@@ -155,8 +154,8 @@ Music Assistant drives amisqueeze through its Squeezelite provider. It needs:
   | `mp3` | only with `amisqueeze.fpu`; not recommended (see [known limits](#known-limits)) |
   | `aac` | not played |
 
-  With `wav` on a slow Amiga, turn off what makes Music Assistant work on the sound in 32 bits. Otherwise it sends
-  24-bit samples: half as much again as 16 bits, which amisqueeze plays anyway.
+  With `wav` on a slow Amiga, turn off these settings: Music Assistant then sends 16-bit samples instead of 24,
+  a third less to receive.
 
   - Settings > System > Player Queues > Audio: "Volume normalization (EBU-R128 based)" to "Disabled";
   - Settings > System > Player Queues > Crossfade: "Enable crossfade by default" unchecked;
@@ -265,15 +264,14 @@ and unmute fade in about a second. Pause, stop and seek act at once.
 **With Paula, or on a slow Amiga, fix the volume at 100 and set it on the amplifier.** Below 100, amisqueeze
 scales the samples itself, which:
 
-- costs CPU time: on a 68020 at about 28 MHz with Paula, about a quarter of the CPU, on top of AHI's two thirds;
+- costs CPU time: on an A1200 with a 26 MHz 68020, the sound breaks up at volume 50 and plays cleanly at 100;
 - brings out Paula's own noise: a crackle can be heard at 50, gone at 100.
 
 To fix it in LMS: in the player's settings (*Settings*, the player, then *Audio*), set **Volume Control** to
 **Output level is fixed at 100%**. LMS then greys out or hides the slider, and keeps the choice for the player.
 On the same page, leave **Audio Startup Time** at 0: it is meant for receivers fed by a digital output.
 
-LMS's volume scale is logarithmic: 50 is already quiet (about -25 dB, 6 % of full amplitude), 25 very quiet
-(about -37 dB, 1.4 %).
+LMS's volume scale is logarithmic: 50 is already quiet, 25 very quiet.
 
 ## Reference
 
@@ -301,7 +299,7 @@ SERVER,PORT/N/K,NAME/K,MAC/K,OUTPUT/K,LOG/K,UNIT/N/K,NOAUDIO/S,SWAP/S,FLAC/K,MP3
 | `LOG` | a file that keeps a copy of every message (see [`LOG`](#log)) | none |
 | `VERBOSE` | prints the messages exchanged with the server and the stream's events | off |
 | `NOAUDIO` | no sound: the music is received and consumed at the playing pace, as if played | off |
-| `OUTPUT` | a file that receives the audio, for checking; no sound with it (see [`OUTPUT`](#output)) | none |
+| `OUTPUT` | for developers: writes the audio to a file instead of playing it, to check playback (see [CONTRIBUTING](https://github.com/shadow38/amiga-network-music/blob/main/CONTRIBUTING.md#checks-the-host-tests-cannot-make)) | none |
 
 #### `LOG`
 
@@ -374,11 +372,13 @@ MP3 at 320 kbit/s (the slowest) decoded at 74.2x real time: MP3=AUTO lets this m
 
 #### `MAXRATE`
 
-`MAXRATE` asks the server for music at a lower sample rate, to lighten a slow Amiga: less to receive from the
-network, less for AHI to mix. Without it, the server sends each file at its own rate, up to 48 kHz.
+`MAXRATE` asks the server for music at a lower sample rate, to lighten a slow Amiga: less to receive, less for
+AHI to mix. Without it, the server sends each file at its own rate, up to 48 kHz.
 
-What it saves, measured on an A1200 with a 68EC020 at 26.67 MHz (AmiNetXDuo, `Paula:14 bit stereo++` at
-27429 Hz, volume 100, LMS and its rules below, a CD-quality file sent as 16-bit WAV):
+**On a slow Amiga with Paula**, give `MAXRATE=AHI` and, with LMS, add the rules below. The music then comes at the
+rate Paula plays (27429 Hz), and nothing Paula can play is lost.
+
+What it saves, on an A1200 with a 68EC020 at 26.67 MHz, Paula at 27429 Hz, LMS and its rules below:
 
 | Rate asked | Stream | CPU taken |
 |---|---|---|
@@ -386,26 +386,16 @@ What it saves, measured on an A1200 with a 68EC020 at 26.67 MHz (AmiNetXDuo, `Pa
 | 32000 Hz | 128 KB/s | 62 % |
 | 22050 Hz | 88 KB/s | 50 % |
 
-No gap nor crackle in any of them. The load follows what the network brings in: 24-bit samples cost half as
-much again.
+No gap nor crackle in any of them.
 
-- **`MAXRATE=AHI`** asks for the AHI unit's own rate: Paula at 27429 Hz gives 27429 Hz. The music then comes at
-  the rate AHI plays, and nothing Paula can play is lost (up to about 13.7 kHz).
-- **`MAXRATE=AHISTD`** asks for the standard rate at or below the unit's: 27429 Hz gives 24000 Hz. For a server
-  that makes only the standard rates (8000, 11025, 12000, 16000, 22050, 24000, 32000, 44100, 48000 Hz), such
-  as LMS lowering the rate of MP3 for `amisqueeze.fpu` (see below). LMS keeps a file's family of rates: asked
-  for 24000 Hz, it sends a 44.1 kHz file at 22050 Hz.
-- **`MAXRATE=<Hz>`** gives the rate, from 8000 to 48000. `MAXRATE=22050` halves the network traffic of CD-quality
-  music, with duller treble.
+- **`MAXRATE=AHI`**: the AHI unit's own rate. The cleanest sound: AHI plays the music as it comes.
+- **`MAXRATE=AHISTD`**: the standard rate at or below the unit's (27429 Hz gives 24000 Hz), for a server that
+  makes only standard rates, such as LMS with MP3 decoded by `amisqueeze.fpu` (see below).
+- **`MAXRATE=<Hz>`**: a rate from 8000 to 48000. `MAXRATE=22050` halves the traffic of CD-quality music, with
+  duller treble.
 
-The sound is cleanest when the music comes at the unit's own rate: AHI then plays it as it is. Otherwise AHI
-converts the rate itself, simply, which adds faint whistles, heard with a sweep: above the unit's rate it folds
-what it cannot play back into the treble, and below it, it adds images of the sound. Hence:
-
-- with Paula at its usual 27429 Hz, `MAXRATE=AHI` and LMS's rules below;
-- with any server, the unit itself set to 22050 Hz in `SYS:Prefs/AHI`, then `MAXRATE=AHI`: `AHI` and `AHISTD`
-  are then the same, most music (44.1 kHz) comes at that rate, and AHI spares the conversion, a few points of CPU
-  too. Not 24000 Hz: LMS would still send 44.1 kHz files at 22050 Hz.
+At another rate than the unit's, AHI converts it simply, which adds faint whistles. For the lightest load, set the
+unit itself to 22050 Hz in `SYS:Prefs/AHI`, then give `MAXRATE=AHI`.
 
 At start-up, amisqueeze says what it asks for:
 
@@ -413,9 +403,8 @@ At start-up, amisqueeze says what it asks for:
 MAXRATE: at most 27429 Hz asked of the server (AHI unit 0 at 27429 Hz)
 ```
 
-**With LMS, `MAXRATE` needs rules on the server.** LMS cannot lower the rate of raw PCM by itself: without the
-rules, it refuses every file above the rate asked. Add these lines to `custom-convert.conf` (see
-[Lyrion Music Server](#lyrion-music-server)), then restart LMS:
+**With LMS, `MAXRATE` needs rules on the server**: without them, LMS refuses every file above the rate asked. Add
+these lines to `custom-convert.conf` (see [Lyrion Music Server](#lyrion-music-server)), then restart LMS:
 
 ```
 flc pcm * 02:41:4d:d4:ca:84
@@ -427,37 +416,19 @@ mp3 pcm * 02:41:4d:d4:ca:84
 	[sox] -q -t mp3 $FILE$ -t wav $RESAMPLE$ -b 16 -c 2 - $START$
 ```
 
-- **Put the player's MAC address**, in lowercase, in place of `02:41:4d:d4:ca:84`, that of the default name
-  `Amiga`. amisqueeze prints it at start-up: `player "Amiga" (02:41:4D:D4:CA:84), ...`.
-- **The rules are for that player only.** They send WAV, whose header tells amisqueeze the rate and sample size;
-  another player would play the header as music.
-- **They send 16-bit samples**, even without `MAXRATE`: a 24-bit file needs a third less traffic.
-- **Other formats** (WAV, AIFF, Ogg...) need a rule of the same kind. Without one, LMS refuses those files above
-  the rate asked.
+- `02:41:4d:d4:ca:84` is the player's MAC address for the default name `Amiga`. With another name, put the one
+  amisqueeze prints at start-up, in lowercase: `player "Amiga" (02:41:4D:D4:CA:84), ...`.
+- The rules are for that player only, and send 16-bit WAV, even without `MAXRATE`.
+- Other formats (WAV, AIFF, Ogg...) need a rule of the same kind; without one, LMS refuses them above the rate
+  asked.
 
-With `amisqueeze.fpu` decoding FLAC on the Amiga, LMS lowers the rate of FLAC files itself, without a rule. It
-lowers the rate of MP3 decoded on the Amiga by encoding it again, which loses a little quality, and only to a
-standard rate (`AHISTD`): asked for another, it sends the MP3 at its own rate. `MP3=OFF` and the rules above
-avoid both.
+With `amisqueeze.fpu` decoding FLAC, LMS lowers the rate of FLAC files itself, without a rule. MP3 decoded on the
+Amiga is encoded again by LMS at a standard rate (`AHISTD`), with a small loss: `MP3=OFF` and the rules above
+avoid it.
 
 **With Music Assistant, leave `MAXRATE` out.** Music Assistant 2.10 offers no rate below 44.1 kHz to a player that
 asks for less, and the music does not play (tried with 2.10.7: the stream fails with a server error). Lower rates
 need a change in Music Assistant itself.
-
-#### `OUTPUT`
-
-`OUTPUT=<file>` writes the audio to a file as it is played. It is meant for checking playback, not for listening:
-**there is no sound with it**, as with `NOAUDIO`.
-
-- The file is created, or replaced, when amisqueeze starts, and closed when it stops.
-- Everything played in between follows, track after track; nothing while paused.
-- Raw PCM is written as the server sent it: from LMS, 16-bit **little-endian** samples (44.1 kHz stereo: about
-  10 MB a minute).
-- FLAC and MP3 decoded on the Amiga are written as 16-bit samples in the Amiga's byte order (big-endian).
-
-To check the file, compare it with the expected PCM, for instance with `tools/pcm-compare.py` from the
-repository. In an emulator, write it to a volume shared with the host. Do not put `OUTPUT` in the default
-options: every run would fill the disk.
 
 ### ToolTypes
 
@@ -649,8 +620,7 @@ rows say what comes next.
     [`MAXRATE`](#maxrate) are missing, or carry another player's MAC address.
 - **The music plays on one side only.** The AHI unit uses a plain "stereo" mode: choose a "stereo++" one (see
   [setting up the unit](#setting-up-the-unit)).
-- **Left and right are swapped.** Add `SWAP`. Seen with `paula.audio` 4.30 in WinUAE, in 8 and 14 bits, and
-  with `paula.audio` 4.18 on a real A1200, while Paula itself is right.
+- **Left and right are swapped.** Add `SWAP`: `paula.audio` swaps them.
 - **The sound stutters or stops now and then.** The Amiga does not keep up:
   - run `amisqueeze BENCH`: if FLAC or MP3 is decoded at less than a few times real time, give `FLAC=OFF` or
     `MP3=OFF` so that the server converts them;
@@ -699,10 +669,9 @@ rows say what comes next.
   options, a log that cannot be opened, no TCP/IP stack.
 - Synchronised players (LMS's player groups) are not supported, nor tried.
 - Exchange's Active/Inactive switch is shown, but does not affect the music.
-- Occasional crackles with `paula.audio` in WinUAE also occur without amisqueeze, with AHI's own test tone.
 - With a Xircom PCMCIA card and Aminet's `xircomce2.device` 1.1, Paula crackles now and then while the music comes
-  in. AmiNetXDuo's `RXBUFFER=8192` stops it, at about 90 % of the CPU on a 26 MHz 68020. The author of amisqueeze
-  fixed the driver on this point: 77 %, without `RXBUFFER`. The fix is not published yet.
+  in. AmiNetXDuo's `RXBUFFER=8192`, in its interface file, stops it, at about 90 % of the CPU on a 26 MHz 68020.
+  The CPU figures of this guide were measured with a fixed version of that driver, not published.
 
 ### What has been tried
 

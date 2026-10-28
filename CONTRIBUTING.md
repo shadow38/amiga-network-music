@@ -354,6 +354,11 @@ Text that ships in the archives (the README, the user guide) also follows [Text 
   on the server: a lower volume scales the samples down and brings out Paula's 14-bit noise (a crackle at 50).
 - **On the server**: measure through its CLI (`<player> time ?`, `<player> mode ?`, the playlist index), never on
   its web page, whose progress bar moves by itself.
+- **`OUTPUT=<file>`** writes the audio to a file as it is played, without sound (as with `NOAUDIO`). The file is
+  created, or replaced, at the start and closed at the end; everything played follows, track after track, nothing
+  while paused. Raw PCM is written as the server sent it (from LMS, 16-bit little-endian; 44.1 kHz stereo is about
+  10 MB a minute); FLAC and MP3 decoded on the Amiga as 16-bit big-endian. In an emulator, write it to a volume
+  shared with the host; never put it in the default options, every run would fill the disk.
 - **`OUTPUT` comparisons** (`tools/pcm-compare.py`, byte by byte): start playback with a single `play`, and compare
   only once the output has drained (`output: end of playback` with `VERBOSE`) and amisqueeze has stopped. Good
   references: a counter pattern in FLAC (decoded losslessly by LMS), MP3s decoded by the server's own `sox`. Make

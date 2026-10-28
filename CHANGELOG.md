@@ -30,6 +30,8 @@ are previews, until 1.0.
   playback, the commands, the recovery, an hour of playback, the server discovery with three TCP/IP stacks; with
   the CPU load `MAXRATE` saves there; a known limit with Aminet's driver for Xircom PCMCIA cards.
 - README and user guide: how amisqueeze finds the server, and when to give `SERVER` instead.
+- User guide: simpler: `MAXRATE` starts with what to do on a slow Amiga, fewer technical details, and `OUTPUT`,
+  meant for developers, is described in `CONTRIBUTING.md`.
 - User guide: with Paula, `SWAP` is now part of setting up the AHI unit, since `paula.audio` swaps left and right,
   on a real A1200 too.
 - User guide: which internet radios may cut with LMS, and its "Proxied Streaming" setting, which should avoid it.
