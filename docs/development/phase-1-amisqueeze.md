@@ -752,7 +752,7 @@ belongs to the task that opened it; packets serialised field by field; buffers a
 
   | Step | Result |
   |---|---|
-  | 1 machine | Kickstart 40.68, Workbench 47.2. Free with the stack up: chip 1,974,000, fast 7,781,872 (largest 4,672,784). `BENCH`: FLAC 8 at 0.2x, so `FLAC=AUTO` leaves FLAC to the server. Idle count 13,521 with the corrected `cpucount`, 13,528 with the old one. Out-of-range `PORT` and `UNIT`, and an `ENV:amisqueeze.prefs` of 510 characters, refused with their messages |
+  | 1 machine | Kickstart 40.68, Workbench 47.2: AmigaOS 3.1, whose `version.library` comes from 3.2 (`workbench.library` 40.5). Free with the stack up: chip 1,974,000, fast 7,781,872 (largest 4,672,784). `BENCH`: FLAC 8 at 0.2x, so `FLAC=AUTO` leaves FLAC to the server. Idle count 13,521 with the corrected `cpucount`, 13,528 with the old one. Out-of-range `PORT` and `UNIT`, and an `ENV:amisqueeze.prefs` of 510 characters, refused with their messages |
   | 2 connection | the player shows up, renamed from LMS; after a server restart, it reconnects by itself |
   | 3 sound | the left and right tones in place with `SWAP`. The LED filter stays off as long as amisqueeze runs, playing or not, and comes back on when it ends |
   | 4 load | raw PCM at 44.1 kHz for 5 minutes, volume 100: 77 % of the CPU (counts 3,087 to 3,119), no `STMo`, clean. Free while playing: fast 6,091,032 (largest 2,810,472). While the Amiga works: gaps at priority 0 without `STMo`, clean at 1 (player-15) |

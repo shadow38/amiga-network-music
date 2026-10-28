@@ -682,8 +682,8 @@ rows say what comes next.
 
 What the README names but this section does not is expected to work, not checked.
 
-**On a real A1200**: an ACA1221lc accelerator (68EC020 at 26.67 MHz, no FPU), Kickstart 3.1, Paula through
-AHI 4.18, a Xircom CE3-10/100 PCMCIA card with a fixed `xircomce2.device`:
+**On a real A1200**: an ACA1221lc accelerator (68EC020 at 26.67 MHz, no FPU), AmigaOS 3.1,
+Paula through AHI 4.18, a Xircom CE3-10/100 PCMCIA card with a fixed `xircomce2.device`:
 
 - with LMS 9.1.1: playback and its CPU load (see [`MAXRATE`](#maxrate)), the commands, a server restart, a short
   network cut, an hour of playback, the Workbench;
