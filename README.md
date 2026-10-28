@@ -76,7 +76,7 @@ a fast Amiga; otherwise the server sends raw PCM) and plays it through AHI.
    window or Shell. To keep the Shell options for the next times, then just type `amisqueeze`:
 
    ```
-   Echo "SERVER=192.168.1.10 NAME=Amiga" >ENV:amisqueeze.prefs
+   Echo "NAME=Kitchen SWAP" >ENV:amisqueeze.prefs
    Copy ENV:amisqueeze.prefs ENVARC:
    ```
 
@@ -94,8 +94,8 @@ C, cross-compiled; tested in WinUAE, and its playback on a real A1200.
 
 **amisqueeze** works:
 
-- **as a player**: it shows up in LMS and Music Assistant and plays through AHI; play, pause, seek, stop, next track without a gap,
-  volume;
+- **as a player**: it finds the server on the local network by itself, shows up in LMS and Music Assistant and
+  plays through AHI; play, pause, seek, stop, next track without a gap, volume;
 - **raw PCM**: 8 to 32 bits, mono or stereo, up to 48 kHz;
 - **FLAC**: decoded on the Amiga when the CPU is fast enough (a PiStorm-class CPU, measured at start-up), otherwise
   converted by the server;
