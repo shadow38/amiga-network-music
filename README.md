@@ -94,7 +94,7 @@ Everything else (all the options, sound settings, volume, messages) is in the **
 ## Status
 
 Under development, in testable steps described in the [development plan](docs/development/README.md). Written in
-C, cross-compiled; tested in WinUAE, and its playback on a real A1200.
+C, cross-compiled; tested in WinUAE and on a real A1200.
 
 **amisqueeze** works:
 
@@ -110,8 +110,9 @@ C, cross-compiled; tested in WinUAE, and its playback on a real A1200.
   `SYS:WBStartup`), listed in Exchange, which stops it; a log file (`LOG`) if wanted.
 
 Tested in WinUAE with emulated networking: LMS 9.1.1 (listening, one hour of playback) and Music Assistant 2.10.7
-(listening). On a real A1200 with a 26 MHz 68020 accelerator, a PCMCIA network card and Paula, playback
-from LMS takes about three quarters of the CPU at CD quality, half at 22.05 kHz. The user guide lists
+(listening). On a real A1200 with an ACA1221lc accelerator (a 68EC020 at 26.67 MHz), a Xircom CE3-10/100 PCMCIA
+network card (driver `xircomce2.device`) and Paula, playback from LMS takes about three quarters of the CPU at CD
+quality, half at 22.05 kHz. The user guide lists
 [what has been tried](docs/user-guide.md#what-has-been-tried), the [known limits](docs/user-guide.md#known-limits) and
 some [troubleshooting](docs/user-guide.md#troubleshooting).
 
