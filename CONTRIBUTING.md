@@ -8,6 +8,8 @@ Using the programs is covered in the [user guide](docs/user-guide.md); what come
 
 - For anything more than a small fix, **open an issue first**: the work proceeds in planned steps, each with an
   agreed content and success criterion (see the plan), and a change may already be planned, or ruled out.
+- **Branches**: `main` is the last published version; the work goes on in `dev`, and pull requests target `dev`
+  (see [Releasing](#releasing)).
 - `make test` must pass (GitHub runs it on each pull request); add tests for what you change in the portable core.
   The Amiga build must also be tried in WinUAE (see below): the tests run the core on the build machine only.
 - A change users can see (an option, a message, a behaviour) is documented in the
@@ -403,6 +405,11 @@ the executables' SHA-256 those of the build tried before the tag, `Version <exe>
 need not run again: the executables are the same); otherwise the checks of `make dist` are enough. Run by hand
 (Actions, "release", "Run workflow"), the workflow is a trial: the development archives in a draft marked never to
 publish, to delete afterwards (a draft's tag is created only when it is published).
+
+**Branches**: the tag is made on `dev`. Once the release is published, `main` moves forward to it, without a merge
+commit: `git push origin amisqueeze-<version>^{commit}:main`. So `main`, the repository's page and its README
+always describe the version that can be downloaded. A fix to a published version starts from its tag, in a branch
+of its own; once released, it is merged into `dev` too.
 
 **Aminet** (from 1.0): the files are renamed without the version (Aminet's rule), and the readme's `Uploader:`
 gets an e-mail address; the `.lha` to be uploaded is first extracted by LhA in WinUAE, the scenarios run on what

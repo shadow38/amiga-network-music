@@ -869,7 +869,7 @@ belongs to the task that opened it; packets serialised field by field; buffers a
     player-9 protocol. A test server the broadcast does not reach directly (in a container, for instance) needs a
     UDP relay.
 - **Internet radios' metadata** (ICY; designed with the user on 2026-10-27, version 0.9). Coded in a branch,
-  rebased on `main` once 0.8 is out. Read in LMS 9.1.1 and aioslimproto 3.2.3 (Music Assistant 2.10.7):
+  rebased on `dev` once 0.8 is out. Read in LMS 9.1.1 and aioslimproto 3.2.3 (Music Assistant 2.10.7):
   - LMS sends `cont` for a direct stream only, once it has read the `RESP`. It holds the blocks' interval
     (32 bits), a `loop` byte, a count of GUIDs (16 bits), then the GUIDs. On a 3xx, LMS sends a new `strm s`
     itself. Outside 200 to 399, the stream fails (`Squeezebox2.pm`, `directHeaders`).

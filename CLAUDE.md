@@ -56,6 +56,8 @@ One line each; the pointer says where it is explained.
   then waits for that track forever (`architecture.md`, A track's life).
 - No measurement on the server's web page: through its CLI (`CONTRIBUTING.md`, Checks the host tests cannot make).
 - No Kickstart ROM in the repository (licensed).
+- No work committed to `main`: it is the last release, moved forward only at a release; work on `dev`
+  (`CONTRIBUTING.md`, Releasing).
 
 ## Before touching X, read Y
 

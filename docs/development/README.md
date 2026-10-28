@@ -104,7 +104,7 @@ Agreed with the user on 2026-10-26.
 - **Internet radios' metadata** (ICY, player-10), designed with the user on 2026-10-27 (see
   [player-10](phase-1-amisqueeze.md)). For a radio played directly by `amisqueeze.fpu`, LMS asks the radio for
   `Icy-MetaData: 1`, then sends the blocks' interval in `cont`. amisqueeze will wait for `cont`, remove the blocks
-  and send their titles back to LMS. Coded in a branch, rebased on `main` once 0.8 is out.
+  and send their titles back to LMS. Coded in a branch, rebased on `dev` once 0.8 is out.
 - **From the 0.7 review's 50 list** (agreed with the user on 2026-10-23), in the same branch:
   - the HTTP status line is never checked (with ICY);
   - the body of a direct stream plays before LMS's `cont`, so a redirect or an error page plays as a track (with
