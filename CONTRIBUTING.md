@@ -414,7 +414,8 @@ the readme, its notes holding the SHA-256 lines and a place for the rest. The no
 its known limits as plain facts: nothing about later versions (agreed with the maintainer on 2026-10-23; the
 roadmap stays in the plan). The executables' SHA-256 are in the job's
 summary: the build is reproducible, so they must be those of the build tried in WinUAE before the tag. The draft is
-published by hand once its notes are written and approved, and, when the making of the archive changed since its
+published by hand once `tests.yml` is green on the tag (`release.yml` does not wait for it), once its notes are
+written and approved, and, when the making of the archive changed since its
 last trial on the Amiga (the image or the version of `lha`, the options of `make-dist.py`, a new kind of file in
 it), once the draft's own `.lha` has been extracted by LhA in WinUAE: the files there with their protection bits,
 the executables' SHA-256 those of the build tried before the tag, `Version <exe> FULL` for both (the scenarios
