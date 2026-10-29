@@ -175,9 +175,18 @@ Neither planned nor dropped for good. Each is taken up only by the user's decisi
 
 - **`BUFFER` option**: the 1 MB stream buffer is fixed. Only if the real machines show a need (player-9: memory on
   a small Amiga, Wi-Fi), then in player-10 (agreed with the user on 2026-10-19).
-- **64-bit multiplies in dr_flac**: slow on a 68060, whose CPU library emulates them. Dropped (agreed with the user
-  on 2026-10-19): no 68060 among the target machines, and `FLAC=AUTO` measures the speed. To look at again if a
-  68060 user reports a problem.
+- **Instructions a 68040 or 68060 emulates**: built for the 68020, the code holds some that their CPU libraries
+  emulate, hundreds of cycles each. Found in the assembly on 2026-10-29:
+  - dr_flac: about 470 64-bit multiplies (`muls.l` into a register pair), emulated on a 68060. dr_flac takes that
+    path when bits per sample, precision and log2(order) add up to more than 32, likely for CD-quality FLAC at
+    level 8;
+  - minimp3 (`amisqueeze.fpu`): `fintrz` in the synthesis filter and the sample conversion, emulated on a 68040,
+    once per sample.
+
+  Likely fix: GCC's `-m68020-40` or `-m68020-60`, code still valid on a 68020; `BENCH` on a 68020 in WinUAE checks
+  for a slowdown. Earlier, the multiplies were left alone (agreed with the user on 2026-10-19): no 68060 among the
+  target machines, and `AUTO` measures the speed. Seen again on 2026-10-29, proposed for 0.9; a report from a
+  68040 or 68060 owner would settle it.
 - From the outside review of 2026-10-20, no known failure: `stream.c` is the first module to split when it grows.
   ICY adds a small module of its own and leaves the rest in place (agreed with the user on 2026-10-27). Its other
   points went to player-12 (agreed with the user on 2026-10-27).
