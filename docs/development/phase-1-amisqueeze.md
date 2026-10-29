@@ -1034,10 +1034,12 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   - the four channels started in step;
   - the longest `ioa_Length`;
   - how a channel taken by another program is reported (`ADIOERR_CHANNELSTOLEN`);
-  - the clock that gives the period, PAL and NTSC.
+  - the period from the machine's own clock (3,546,895 Hz PAL, 3,579,545 Hz NTSC; `REALLY_PAL` in
+    `GfxBase->DisplayFlags`, to check), never from the screen mode.
 - **Criterion** (agreed with the user on 2026-10-29):
   - in WinUAE, slow profile: player-4 to player-6's LMS criteria (test tones, pause, seek, volume, tracks without
-    gaps), and the load measured with `cpucount`, as in player-4c;
+    gaps), and the load measured with `cpucount`, as in player-4c; then WinUAE set to NTSC: the same pitch as in
+    PAL, and the same elapsed time in LMS;
   - on the A1200 with LMS, at 22.05 kHz sent by the server: a load clearly below AHI's 50 % (30-40 %
     estimated), the same at volume 50 with a clean sound;
   - on the A1200, 44.1 kHz divided by the core: a clean playback, its load measured;
