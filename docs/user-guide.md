@@ -714,6 +714,7 @@ rows say what comes next.
 - **An internet radio does not play with LMS and `amisqueeze.fpu`, with `body not handled`.** The radio's address
   leads to a playlist (see [known limits](#known-limits)). In the player's settings in LMS (*Settings*, the
   player, then *Audio*), set **Streaming Method** to **Proxied Streaming**: LMS then fetches the radio itself.
+  Expected from LMS's code, not tried yet.
 - **Crackles at low volume with Paula.** Fix the volume at 100 and turn the amplifier down instead (see
   [volume](#volume)).
 - **Nothing happens from the Workbench.** With `QUIET`, add `LOG=<file>` to see the messages. If amisqueeze already
@@ -729,10 +730,10 @@ rows say what comes next.
 - Files above 48 kHz (88.2, 96, 192 kHz) play only when FLAC is decoded on the Amiga. Otherwise LMS cannot lower
   their rate as it makes raw PCM: its log says "Couldn't create command line for flc playback".
 - Internet radios: LMS lets `amisqueeze.fpu` fetch an MP3 radio at an `http://` address itself. amisqueeze then
-  takes the titles the radio mixes into its sound out of it, and passes them on to LMS. Not tried with a real
-  radio yet. When the radio's address leads to a playlist rather than to the sound, LMS asks the player to send
-  it back, which amisqueeze does not do: the radio does not play (see [troubleshooting](#troubleshooting)).
-  Music Assistant, and LMS in the other cases, fetch the radio themselves.
+  takes the titles the radio mixes into its sound out of it, and passes them on to LMS. When the radio's address
+  leads to a playlist rather than to the sound, LMS asks the player to send it back, which amisqueeze does not do:
+  the radio does not play (see [troubleshooting](#troubleshooting)). Music Assistant, and LMS in the other cases,
+  fetch the radio themselves.
 - MP3 tracks follow each other without a gap only when the file has the header that LAME, and the encoders that
   copy its format, write in the first frame. Without it, a few hundredths of a second of silence remain between
   tracks.
@@ -776,11 +777,14 @@ Paula through AHI 4.18, a Xircom CE3-10/100 PCMCIA card with a fixed `xircomce2.
 - sound: AHI 6.6 with `paula.audio` and a Toccata card, checked by ear;
 - with LMS 9.1.1: everything amisqueeze does, an hour of playback included; with Music Assistant 2.10.7:
   playback, the commands, its codecs, a server restart;
+- an internet radio with LMS: an MP3 radio at an `http://` address fetched by `amisqueeze.fpu` itself, its titles
+  shown by LMS;
 - `BENCH`: FLAC 0.2x on a 68020 without JIT (left to the server); FLAC 77x and MP3 74x with the JIT and a 68882
   (`amisqueeze.fpu`: both decoded on the Amiga).
 
 **Not tried yet**: other real Amigas; 68030, 68040, 68060, a PiStorm with Emu68; AmigaOS 3.1.4, 3.5, 3.9;
-Roadshow's full version, AmiTCP; other sound cards, a PiStorm's own outputs; other versions of the servers.
+Roadshow's full version, AmiTCP; other sound cards, a PiStorm's own outputs; other versions of the servers; an
+internet radio on a real Amiga with an FPU, or one whose address redirects.
 
 ### Removing amisqueeze
 

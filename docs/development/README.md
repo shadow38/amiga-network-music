@@ -154,7 +154,7 @@ Agreed with the user on 2026-10-26.
 | player-8 Local decoding (FLAC, then MP3) | ✅ 2026-10-19 |
 | player-8d MP3 without gaps between tracks | ✅ 2026-10-20 |
 | player-9 Real machine | ✅ 2026-10-29: the protocol on the A1200 with LMS; `SYS:WBStartup`, Music Assistant and the memory in WinUAE; a PiStorm when one is at hand |
-| player-10 Finishing touches | 🔶 the parts of 0.4 and 0.5 done; server discovery 2026-10-27 (0.8), on the A1200 with three stacks; ICY coded 2026-10-27 in a branch (0.9), checked on the host, WinUAE next |
+| player-10 Finishing touches | 🔶 the parts of 0.4 and 0.5 done; server discovery 2026-10-27 (0.8), on the A1200 with three stacks; ICY done 2026-10-27 in a branch (0.9), checked on the host and in WinUAE; rebased on `dev`, WinUAE again next |
 | player-11 Direct Paula output, without AHI | ⬜ idea (CPU load on a slow 68020; crackles with a PCMCIA network card, player-9) |
 | player-12 Hardening (the 0.7 review's 50 list) | ✅ 2026-10-27 (version 0.8) |
 | player-13 A lower rate asked of the server | ✅ 2026-10-26: `MAXRATE` and the LMS rules; on the A1200, 62 % of the CPU at 32 kHz against 77 %; Music Assistant upstream: the user's decision |
