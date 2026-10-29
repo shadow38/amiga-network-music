@@ -86,14 +86,18 @@ stack, the sound output and the server. With a problem, add a log: `amisqueeze V
 
 ## For developers
 
-Building (cross-compiler, `make`, `make dist`), the host build and its tests (`make test`, also run by GitHub on
-each push), a build of the version in development (the `dev` branch), testing in WinUAE, the repository layout:
-**[CONTRIBUTING.md](CONTRIBUTING.md)**. The roadmap and the design decisions are in the
-[development plan](docs/development/README.md).
+- **[CONTRIBUTING.md](CONTRIBUTING.md)**: building (cross-compiler, `make`, `make dist`), the tests (`make test`,
+  also run by GitHub on each push), testing in WinUAE, the repository layout, and a build of the version in
+  development (the `dev` branch).
+- **[Architecture](docs/development/architecture.md)**: how amisqueeze works, and why this way.
+- **[Development plan](docs/development/README.md)**: the roadmap and the design decisions.
 
 ## Licence
 
-MIT, see [LICENSE](LICENSE). amisqueeze is written from scratch from the protocol description; squeezelite and
-LMS (GPL) are used as references for the protocol's behaviour, not as a source of code. Third-party code, in
-`third_party/` (each with a README giving its origin and licence): dr_flac (FLAC decoding), public domain or MIT No
-Attribution; minimp3 (MP3 decoding), CC0 1.0 (public domain dedication).
+**MIT**, see [LICENSE](LICENSE).
+
+- amisqueeze is written from scratch from the protocol's description. squeezelite and LMS (GPL) served as
+  references for the protocol's behaviour, not as a source of code.
+- Third-party code, in `third_party/`, each with a README giving its origin and licence:
+  - [dr_flac](https://github.com/mackron/dr_libs) (FLAC decoding): public domain or MIT No Attribution;
+  - [minimp3](https://github.com/lieff/minimp3) (MP3 decoding): CC0 1.0, a public domain dedication.
