@@ -23,29 +23,17 @@ are previews, until 1.0.
 - The messages Music Assistant sends and amisqueeze does not need (`vers`, `grfb`, `grfe`, `codc`, `cont`) no
   longer read as errors: they are shown with `VERBOSE` only, as `<- vers ignored (N bytes)`. Any other message
   amisqueeze does not know is still shown.
-- The user guide rewritten: using amisqueeze first (installing, sound, server, starting, stopping, volume), then
-  a reference (options, ToolTypes, default options, messages by theme, troubleshooting, known limits, what has
-  been tried).
-- User guide and README: tried on a real A1200 (a 68020 at 26 MHz, a PCMCIA network card, Paula through AHI):
-  playback, the commands, the recovery, an hour of playback, the server discovery with three TCP/IP stacks; with
-  the CPU load `MAXRATE` saves there; a known limit with Aminet's driver for Xircom PCMCIA cards.
-- README and user guide: how amisqueeze finds the server, and when to give `SERVER` instead.
-- User guide: simpler: `MAXRATE` starts with what to do on a slow Amiga, fewer technical details, and `OUTPUT`,
-  meant for developers, is described in `CONTRIBUTING.md`.
-- User guide: with Paula, `SWAP` is now part of setting up the AHI unit, since `paula.audio` swaps left and right,
-  on a real A1200 too.
-- User guide: which internet radios may cut with LMS, and its "Proxied Streaming" setting, which should avoid it.
-- User guide: with Paula, the power LED dims as long as amisqueeze runs, since `paula.audio` turns Paula's filter
-  off; seen on a real A1200.
-- User guide and README: the free memory amisqueeze needs, now measured: about 1.7 MB to play through AHI, not
-  1.1 MB.
-- README: shorter: the quick start in five steps, the server's ports among them; the details it repeated are
-  left to the user guide. Badges at the top: the latest release and the preview status; Miami among the TCP/IP
-  stacks; a call for reports from other Amigas.
-- User guide: "Settings for your Amiga", the program, options and server settings for a slow and a fast Amiga in
-  one table; "With Paula", Paula's settings together; "Ports", the server's ports in one table.
-- User guide: where to start without a server; where LMS reads `custom-convert.conf` on each system; the discovery
-  with a server in Docker; checking the Amiga's network with `ping`; a new `NAME` needs new `MAXRATE` rules.
+- The user guide rewritten, for setting up the whole chain: first the steps (installing, the settings for your
+  Amiga from `BENCH`, sound and Paula, the server with its ports and where to start without one, starting,
+  stopping, volume), then a reference (options, ToolTypes, default options, messages by theme, troubleshooting,
+  known limits, what has been tried). New in it: where LMS reads `custom-convert.conf` on each system, a server in
+  Docker, internet radios that may cut with LMS and its "Proxied Streaming" setting.
+- Tried on a real A1200 (a 68020 at 26 MHz, a PCMCIA network card, Paula through AHI): playback and its CPU load,
+  the commands, the recovery, an hour of playback, the server discovery with three TCP/IP stacks. There too,
+  Paula needs `SWAP` and dims the power LED; a known limit with Aminet's driver for Xircom PCMCIA cards.
+- The free memory amisqueeze needs, now measured: about 1.7 MB to play through AHI, not 1.1 MB.
+- The README shorter: a quick start in five steps, badges for the latest release and the preview status, a call
+  for reports from other Amigas.
 
 ### Fixed
 
@@ -58,8 +46,8 @@ are previews, until 1.0.
 - A player name given on the server with accents showed as garbled characters in `player name: ...`: each byte
   outside plain ASCII now shows as `?`, so an accented letter shows as `??`. The name the server keeps is
   unchanged.
-- A track started by the server while the previous one was still connecting could be taken as connected too
-  early, its request then lost: the old connection's state was taken for the new one's.
+- A track the server started while the previous one was still connecting could fail: its request went out
+  before the connection was up.
 - Default options in `ENV:amisqueeze.prefs` longer than 509 characters were cut without a word, possibly in the
   middle of a value: they are now refused with `ENV:amisqueeze.prefs is too long`.
 - When the network stopped in the middle of a sample (or of a FLAC or MP3 frame), the sound stopped but the server
