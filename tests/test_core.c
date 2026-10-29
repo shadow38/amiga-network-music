@@ -2920,6 +2920,38 @@ static void test_start_mode(void)
     CHECK(strstr(stub_out, "output: AHI unit 3\n") && !strstr(stub_out, "uses \""));
 }
 
+/* MAXRATE=AHI and AHISTD with the AHI unit's mode known (Paula at 27429 Hz): the rate asked of the server in HELO,
+ * and said */
+static void test_start_maxrate(void)
+{
+    struct player p;
+    struct options o;
+
+    memset(&o, 0, sizeof(o));
+    o.server = "127.0.0.1";
+    o.port = SLIMPROTO_PORT;
+    o.audio = 1;
+    o.flac = o.mp3 = DECODE_OFF;
+    o.maxrate = MAXRATE_AHI;
+    stub_reset();
+    stub_audio_fails = 0;
+    stub_audio_mode_known = 1;
+    memset(&stub_audio_mode, 0, sizeof(stub_audio_mode));
+    strcpy(stub_audio_mode.name, "Paula:14 bit stereo++");
+    stub_audio_mode.freq = 27429;
+    stub_audio_mode.stereo = stub_audio_mode.panning = 1;
+    memset(&p, 0, sizeof(p));
+    CHECK(player_main(&p, &o) == PLAYER_OK && helo_caps_have(",MaxSampleRate=27429,"));
+    CHECK(strstr(stub_out, "MAXRATE: at most 27429 Hz asked of the server (AHI unit 0 at 27429 Hz)\n") != NULL);
+
+    o.maxrate = MAXRATE_AHISTD;
+    stub_reset();
+    memset(&p, 0, sizeof(p));
+    CHECK(player_main(&p, &o) == PLAYER_OK && helo_caps_have(",MaxSampleRate=24000,"));
+    CHECK(strstr(stub_out, "MAXRATE: at most 24000 Hz asked of the server (AHI unit 0 at 27429 Hz)\n") != NULL);
+    stub_audio_mode_known = 0;
+}
+
 /* The main loop (run(), through player_main()) when a strm s replaces a stream still connecting, in the turn where
  * the old socket is reported writable: the new socket takes the same number (as on every system that reuses the
  * lowest free one), but that readiness belongs to the old one, so the new stream must not be taken as connected
@@ -3195,6 +3227,7 @@ int main(void)
     test_flush_loaded();
     test_ahi_mode();
     test_start_mode();
+    test_start_maxrate();
     test_priority();
     test_run_stale_ready();
     test_run_again();
