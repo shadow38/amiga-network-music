@@ -91,7 +91,7 @@ Agreed with the user on 2026-10-26.
   on the A1200 with the network cable pulled (agreed with the user on 2026-10-27). Done on 2026-10-27.
 - **The task priority** (player-15): a `PRI` option, 0 by default, and a line in the user guide's
   troubleshooting, since the A1200 plays with gaps while it works at priority 0 (agreed with the user on
-  2026-10-28). Coded and tested on the host and in WinUAE on 2026-10-28; the gaps on the A1200 next.
+  2026-10-28). Coded and tested on the host and in WinUAE on 2026-10-28; on the A1200 on 2026-10-29.
 - **A receive that never blocks** (player-16): non-blocking sockets, and Ctrl-C's EINTR taken as a stop. With
   AmiNetXDuo, a blocking receive could wait forever, so neither "no news from the server" nor a clean Ctrl-C
   came (agreed with the user on 2026-10-28). Done on 2026-10-28, checked on the host and in WinUAE with
@@ -159,7 +159,7 @@ Agreed with the user on 2026-10-26.
 | player-12 Hardening (the 0.7 review's 50 list) | ✅ 2026-10-27 (version 0.8) |
 | player-13 A lower rate asked of the server | ✅ 2026-10-26: `MAXRATE` and the LMS rules; on the A1200, 62 % of the CPU at 32 kHz against 77 %; Music Assistant upstream: the user's decision |
 | player-14 The buffer running dry in the middle of a frame | ✅ 2026-10-27: on the host and the A1200 |
-| player-15 The task priority (`PRI`) | 🔶 2026-10-28: coded, tested on the host and in WinUAE; the gaps on the A1200 next |
+| player-15 The task priority (`PRI`) | ✅ 2026-10-29: on the host, in WinUAE and on the A1200 |
 | player-16 A receive that never blocks | ✅ 2026-10-29: on the host, in WinUAE and on the A1200 with AmiNetXDuo |
 | player-17 Hardening after the 0.8 review | 🔶 2026-10-29: the tests, `QUIET` (R2), the code fixes, the documentation; WinUAE and the A1200 next, then the guide's `PRI` line (version 0.8) |
 | remote-0 Study (common interface, Music Assistant feasibility, name) | ⬜ before any amilms code |

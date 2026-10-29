@@ -706,9 +706,9 @@ rows say what comes next.
     [`MAXRATE`](#maxrate) asks for less.
 - **The sound has gaps while the Amiga works** (files copied, windows moved), and plays well otherwise. On a slow
   Amiga, amisqueeze needs most of the CPU and shares it with the other programs. Give it `PRI=1`: the sound then
-  goes first, and the Workbench gets slower. Tried on an A1200 at 26 MHz: gaps at the default priority 0, clean at
-  1, the Workbench slow but usable; at 5, very slow. With [`MAXRATE`](#maxrate), the Workbench keeps more of the
-  CPU.
+  goes first, and the Workbench gets slower. Tried on an A1200 at 26 MHz, copying files and moving windows: gaps
+  without `PRI`, clean with `PRI=1`, the Workbench slow but usable; at 5, very slow. With
+  [`MAXRATE`](#maxrate), the Workbench keeps more of the CPU.
 - **An internet radio cuts several times a second, with LMS and `amisqueeze.fpu`.** The radio mixes its titles
   into the sound, and LMS lets amisqueeze fetch it itself (see [known limits](#known-limits)). `VERBOSE` shows
   `<- cont ignored`. In the player's settings in LMS (*Settings*, the player, then *Audio*), set **Streaming

@@ -1128,7 +1128,7 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   stopped. Without `STMo`, amisqueeze did not say "no news from the server" either, over more than 3 minutes:
   see player-16.
 
-## player-15 The task priority 🔶 (2026-10-28, version 0.8: the A1200 next)
+## player-15 The task priority ✅ (2026-10-29, version 0.8)
 
 - **Found on the A1200** (2026-10-27, player-9 step 4, LMS, raw PCM at 44.1 kHz, about 77 % of the CPU): the
   sound has gaps as soon as the Amiga works, at amisqueeze's priority 0, without any `STMo` (the buffer never runs
@@ -1157,7 +1157,9 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   back after amisqueeze ends. Done on 2026-10-28: 5 from the command line and from a ToolType, -3 from
   `ENV:amisqueeze.prefs`; a Shell at 2 stays at 2 without `PRI` and comes back to 2 after; `PRI=11` refused from
   `ENV:` and from a ToolType, with its message.
-- **On the A1200**: `PRI=1` with a copy and windows moved: clean. Without `PRI`: gaps, as before.
+- **On the A1200** (2026-10-29, `dev` at `ae71a6e`, raw PCM at 44.1 kHz, a 2.6 MB file copied in a loop for 60 s
+  and windows moved): `PRI=1` clean, the Workbench slower but usable, a copy in 29 to 56 s. Without `PRI`: gaps,
+  the Workbench smooth, a copy in 8 to 11 s. No `STMo` in either.
 
 ## player-16 A receive that never blocks ✅ (2026-10-29, version 0.8)
 
