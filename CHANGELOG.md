@@ -42,10 +42,10 @@ are previews, until 1.0.
 - Started from the Workbench with `QUIET`, every error at start-up now opens the window. An invalid `MAC`, an
   `OUTPUT` file that cannot be created, a server not found or an AHI unit that cannot be opened went to the log
   only, and amisqueeze quit without a word. The new checks of `PORT`, `UNIT` and `PRI` open it too.
-- After `send: error N` on the connection to the server, amisqueeze now reconnects at once. It used to go on, and
-  the server could read the next messages out of step.
-- A TCP/IP stack that refuses to make a connection non-blocking is now reported (`socket: error N`, or `stream:
-  cannot connect: error N`), and amisqueeze tries again. It used to go on with that connection, which could
+- `send: error N` on the connection to the server now counts as a lost connection: amisqueeze reconnects, as
+  after any lost connection. It used to go on, and the server could read the next messages out of step.
+- A TCP/IP stack that refuses to make a connection non-blocking is now reported: `socket: error N`, then a retry,
+  or `stream: cannot connect: error N` for a track. amisqueeze used to go on with that connection, which could
   leave it stuck.
 - With `VERBOSE`, the stream's request is shown in plain ASCII, like the player name: a byte outside it shows as
   `?`. It was shown as the server sent it, control bytes included.
