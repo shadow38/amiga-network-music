@@ -583,7 +583,7 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   by the user in WinUAE (68020 + 68882, JIT, Toccata): a 12 s glide cut into three MP3s, with mini gaps from 0.3
   (12.9 s) and seamless now (12.3 s).
 
-## player-9 Real machine 🔶 (2026-10-28, version 0.8: the A1200 next for player-15 and player-16)
+## player-9 Real machine ✅ (2026-10-29, version 0.8: the A1200; a PiStorm when one is at hand)
 
 - **Content**: both kinds of target with a TCP/IP stack (AmiNetXDuo or Roadshow) and an LMS server reachable
   from the local network, then a Music Assistant server (decided 2026-10-21: one session for both servers): a PiStorm with Emu68, sound through its own AHI outputs (I2S DAC of the PiStorm32-lite
@@ -775,7 +775,9 @@ belongs to the task that opened it; packets serialised field by field; buffers a
     2026-10-28 (below);
   - on the A1200: `PRI=1` against the gaps (player-15); the cable pulled, Ctrl-C with AmiNetXDuo and the missing
     "no news from the server" (player-16). The load with Music Assistant only if it sent another format than
-    LMS's raw PCM: it does not (below).
+    LMS's raw PCM: it does not (below). Done on 2026-10-29 (player-15, player-16).
+
+  The step is done for the A1200; the PiStorm target waits for a machine (agreed with the user on 2026-10-29).
 - **The rest in WinUAE** (2026-10-28, `main` at `1b2d040`, Music Assistant 2.10.7 without the local fix, volume
   normalization off, codec `wav`):
 

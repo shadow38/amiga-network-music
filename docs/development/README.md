@@ -153,7 +153,7 @@ Agreed with the user on 2026-10-26.
 | player-7b Music Assistant | ✅ 2026-10-23 |
 | player-8 Local decoding (FLAC, then MP3) | ✅ 2026-10-19 |
 | player-8d MP3 without gaps between tracks | ✅ 2026-10-20 |
-| player-9 Real machine | 🔶 2026-10-28: the protocol with LMS on the A1200; `SYS:WBStartup`, Music Assistant and the memory in WinUAE; the A1200 next for player-15 and player-16 |
+| player-9 Real machine | ✅ 2026-10-29: the protocol on the A1200 with LMS; `SYS:WBStartup`, Music Assistant and the memory in WinUAE; a PiStorm when one is at hand |
 | player-10 Finishing touches | 🔶 the parts of 0.4 and 0.5 done; server discovery 2026-10-27 (0.8), on the A1200 with three stacks; ICY designed 2026-10-27 (0.9) |
 | player-11 Direct Paula output, without AHI | ⬜ idea (CPU load on a slow 68020; crackles with a PCMCIA network card, player-9) |
 | player-12 Hardening (the 0.7 review's 50 list) | ✅ 2026-10-27 (version 0.8) |
