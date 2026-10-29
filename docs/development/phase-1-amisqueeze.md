@@ -1203,3 +1203,44 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   - Ctrl-C idle, three times while playing through AHI, and in pause: "stopped" alone each time;
   - the load with `NOAUDIO`, raw PCM at 44.1 kHz, the builds before and after in turn (six 10 s windows each):
     42.4 % before, 42.8 % after, within the spread of the windows (about 1 %). Unchanged.
+
+## player-17 Hardening after the 0.8 review ⬜ (version 0.8)
+
+- **Goal**: a 0.8 closer to 1.0: the findings of the [0.8 review](reviews/0.8.md) at 75, and most of its 50 list
+  (agreed with the user on 2026-10-29). The safety nets are in tools-13; R1 is settled by the A1200 session of
+  player-16.
+- **Content**, one commit per item:
+  - tests for what no test sees removed:
+    - `31bab90`'s guard, on both outputs (R4);
+    - "no news" at 35 s while the control socket is reported readable with nothing to read (R5);
+    - the discovery table's cap, with nine servers answering (R6);
+    - `MAXRATE=AHI` and `AHISTD` with a known AHI mode (R7);
+    - the checks of `flac.c`: not a FLAC stream, no STREAMINFO, more than 2 channels, a stream that cannot be
+      opened;
+    - a stream stopping in the middle of an MP3 frame;
+    - a receive with nothing to read in a packet's body and in the headers;
+    - "said once per connection": the resets at each connection and stream;
+    - a short `aude`, a `setd` name with the byte 0x7F;
+    - EINTR on a send and on a receive (the stub interrupting them too);
+  - code:
+    - with `QUIET`, the window also opens for the start-up errors the core checks: `PORT`, `UNIT`, `PRI`, `MAC`,
+      `OUTPUT`, a server not found, `ahi.device` (R2);
+    - a `MAXRATE` too large refused, instead of wrapping to a valid rate;
+    - a failed send taken as a lost connection;
+    - a socket the stack refuses to make non-blocking: said, and taken as a failed connection;
+    - the `VERBOSE` dump of a `strm s` request shown in ASCII, as the `setd` name;
+  - documentation: the user guide (`PRI` among the bad numbers, `QUIET`, the `PRI` line once player-15 is done on
+    the A1200); a CHANGELOG line for "server not found" when a name has no address; `QUIET` in
+    `CONTRIBUTING.md`; the comments of `stream.c` ("should not happen") and `Makefile` (stack sizes);
+    `architecture.md` without the developer's setup; player-14's description and the plan's statuses.
+- **Criterion**:
+  - each new test seen failing with its guard removed, in a throwaway copy; `make test` green;
+  - in WinUAE: MP3 tracks back to back, then raw PCM, with `amisqueeze.fpu` (`31bab90` on an Amiga); an icon with
+    `QUIET` and `PRI=11`: the window opens with the message;
+  - on the A1200, in the session of player-15 and player-16: the stack measured again with AmiNetXDuo
+    (`CONTRIBUTING.md`, Stack and memory);
+  - then a light review of `6d1f562..` (publish-5): its findings at 75 fixed or accepted, its 50 list left to 0.9,
+    without another round.
+- **Left for 0.9** (agreed with the user on 2026-10-29): dr_flac's `assert()` active in the Amiga build (a change
+  to how third-party code is built, with no defect found); and the items of the 0.8 review already planned for
+  0.9 (the 88.2 kHz rate code, the ignored `strm s` fields, the 2 KB of headers).
