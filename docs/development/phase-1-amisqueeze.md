@@ -1006,7 +1006,11 @@ belongs to the task that opened it; packets serialised field by field; buffers a
     high channel at the server's volume (1 to 64; 0 only for 0), the low one at 0. That is 8 bits lowered by
     Paula: no CPU, and Paula's noise goes down with the music. Changed at once with `ADCMD_PERVOL`.
   - **8 bits on request** (`AUDIO=PAULA8`): the high channels only, at Paula's volume even at 100. One channel per
-    side stays free, for the system's beep or another program.
+    side stays free, for the system's beep or another program. With `AUTO`, the four channels are nearly always
+    free at start-up, so every other sound is silent while amisqueeze runs: `PAULA8` is for an Amiga used for
+    work. The user guide's Sound section gets a table, one row per output: `AUTO` or `PAULA` (14 bits, the least
+    CPU, other sounds silent), `PAULA8` (8 bits, one channel per side free), `AHI` (14 bits, more CPU, AHI
+    programs play along since AHI mixes them).
   - **A channel taken by another program**: the channels are allocated at a precedence the system's beep cannot
     take them from. If one is taken all the same: a message and a clean stop. Playing 8 bits while the low
     channels are taken, then taking them back: later, if at all.
@@ -1048,6 +1052,8 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   - the longest `ioa_Length`;
   - how a channel taken by another program is reported (`ADIOERR_CHANNELSTOLEN`), and at which precedence the
     Sound preferences play the beep;
+  - whether AHI, set to a Paula 8-bit mode, plays on the two channels `PAULA8` leaves free (to know, for the
+    user guide; not part of the criterion);
   - the period from the machine's own clock (3,546,895 Hz PAL, 3,579,545 Hz NTSC; `REALLY_PAL` in
     `GfxBase->DisplayFlags`, to check), never from the screen mode.
 - **Criterion** (agreed with the user on 2026-10-29):
