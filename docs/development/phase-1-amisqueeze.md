@@ -1000,8 +1000,13 @@ belongs to the task that opened it; packets serialised field by field; buffers a
     the next block's address while one plays, so a late interrupt makes no gap. Requests sent with `BeginIO`,
     never `DoIO`: it clears `io_Flags`, so `ADIOF_PERVOL` is lost and the volume is 0 (tools-5).
   - **14 bits**: two channels per side, the 8 high bits at volume 64 and the next 6 at volume 1. Left: channels 0
-    (high) and 3 (low); right: 1 and 2 (`WT:paula-lr`, tools-5). All four channels are taken. A calibration
-    table, as in `paula.audio`'s "calibrated" modes: later, if at all.
+    (high) and 3 (low); right: 1 and 2 (`WT:paula-lr`, tools-5). All four channels are taken.
+  - **Calibration**: after player-11c, only if the A1200 shows an audible fault of the uncalibrated 14 bits. AHI
+    ships no table: `paula.audio`'s "calibrated" modes read the machine's own 256 bytes from
+    `ENV:CyberSound/SoundDrivers/14Bit_Calibration`, written by CyberSound's calibration program, else a default
+    curve. From them, a table of 65,536 two-byte entries (128 KB, fast RAM) gives each sample's two bytes: no
+    more CPU than the split. `paula.audio` is LGPL: its file read, its table built by our own code. Only the 14
+    bits use it, so volume 100.
   - **The volume is Paula's, never the samples'.** At 100, or fixed by LMS: 64 and 1, so 14 bits. Below 100: the
     high channel at the server's volume (1 to 64; 0 only for 0), the low one at 0. That is 8 bits lowered by
     Paula: no CPU, and Paula's noise goes down with the music. Changed at once with `ADCMD_PERVOL`.
