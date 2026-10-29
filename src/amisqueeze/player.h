@@ -182,6 +182,7 @@ struct player {
     uint8_t  mac[6];
     char     name[PLAYER_NAME_LEN + 1];
     uint32_t last_rx;                   /* ms of the last packet received from the server */
+    int      send_failed;               /* a send failed on this connection: nothing more sent, taken as lost */
     int      verbose;
     int      flac;                      /* FLAC advertised in HELO */
     int      mp3;                       /* MP3 advertised in HELO */

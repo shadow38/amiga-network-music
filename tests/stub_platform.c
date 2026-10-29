@@ -29,6 +29,7 @@ int      stub_waits_without_control;
 int      stub_again;
 int      stub_connect_interrupted;
 int      stub_udp_replies;
+int      stub_send_fail_in;
 static int interrupted;
 static int udp_given;                   /* discovery replies received */
 
@@ -72,6 +73,7 @@ void stub_reset(void)
     stub_connect_interrupted = 0;
     stub_udp_replies = 0;
     udp_given = 0;
+    stub_send_fail_in = 0;
     interrupted = 0;
     stub_priority = STUB_PRI_NONE;
 }
@@ -192,6 +194,8 @@ int plat_send(int sock, const void *buf, int len)
         memcpy(stub_stream_tx + stub_stream_tx_len, buf, (size_t)len);
         stub_stream_tx_len += len;
     } else {
+        if (stub_send_fail_in > 0 && --stub_send_fail_in == 0)
+            return -1;
         memcpy(stub_tx + stub_tx_len, buf, (size_t)len);
         stub_tx_len += len;
     }

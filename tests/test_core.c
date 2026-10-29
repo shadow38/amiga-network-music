@@ -3050,6 +3050,42 @@ static void test_run_again_no_news(void)
     CHECK(count_in_trace("HELO") == 2);
 }
 
+/* A send that fails on the control connection (the packet may be cut short): nothing more is sent on it, and the
+ * main loop takes it as lost: a new connection, after the wait of a short session */
+static void test_send_failed(void)
+{
+    struct player p;
+    struct options o;
+    int i;
+
+    setup(&p, "Amiga");
+    CHECK(slim_connect(&p, 0));
+    clear_tx();
+    stub_send_fail_in = 1;
+    slim_send_stat(&p, "STMt", 0);
+    slim_send_dsco(&p, DSCO_OK);
+    CHECK(p.send_failed && stub_tx_len == 0 && strstr(stub_out, "amisqueeze: send: error") != NULL);
+    teardown(&p);
+
+    memset(&o, 0, sizeof(o));
+    o.server = "127.0.0.1";
+    o.port = SLIMPROTO_PORT;
+    o.flac = o.mp3 = DECODE_OFF;
+    stub_reset();
+    feed_strm('t', NULL, 0, 0, 0, NULL);                /* its STMt fails */
+    memset(stub_wait, 0, sizeof(stub_wait));
+    for (i = 0; i < 2; i++)
+        stub_wait[i][0] = PLAT_READ;                    /* strm t: its length, its body */
+    stub_waits = 2 + 50 + 1;                            /* then "retrying in 5 s", then the new connection */
+    stub_wait_advances = 1;
+    stub_send_fail_in = 2;                              /* HELO, then STMt */
+    memset(&p, 0, sizeof(p));
+    CHECK(player_main(&p, &o) == PLAYER_OK && stub_waits == 0);
+    CHECK(strstr(stub_out, "amisqueeze: send: error") && strstr(stub_out, "retrying in 5 s"));
+    CHECK(!strstr(stub_out, "no news"));                /* at once, not after the 35 s without news */
+    CHECK(count_in_trace("HELO") == 2 && count_in_trace("STAT") == 0);
+}
+
 /* Ctrl-C while connecting, the call interrupted (EINTR, plan step player-16): the player stops at once, without a
  * failure reported nor a retry */
 static void test_run_interrupted(void)
@@ -3233,6 +3269,7 @@ int main(void)
     test_run_stale_ready();
     test_run_again();
     test_run_again_no_news();
+    test_send_failed();
     test_run_interrupted();
     test_stream_again();
     test_lame_header();

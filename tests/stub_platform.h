@@ -39,6 +39,7 @@ extern int      stub_wait_advances;     /* 1: each plat_wait() moves stub_now on
 extern int      stub_waits_without_control;  /* plat_wait() calls that left the control connection out */
 extern int      stub_again;             /* the next stub_again plat_recv() on the control connection: PLAT_AGAIN */
 extern int      stub_connect_interrupted;    /* 1: plat_connect() fails as interrupted by a Ctrl-C (EINTR) */
+extern int      stub_send_fail_in;      /* n > 0: the n-th plat_send() on the control connection from now fails */
 /* Server discovery: with 0, no UDP socket (the fake server tries discovery); otherwise the socket gets that many
  * replies, each from its own address (127.0.0.2, 127.0.0.3...), then plat_wait() on it times out, moving stub_now on */
 extern int      stub_udp_replies;

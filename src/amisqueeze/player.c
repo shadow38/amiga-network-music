@@ -322,7 +322,7 @@ static void run(struct player *p)
             return;
         if (r != -2 && ctl >= 0 && (fds[ctl].ready & PLAT_READ))
             rx = slim_receive(p);
-        if (r == -2 || rx == 0) {
+        if (r == -2 || rx == 0 || p->send_failed) {    /* a send failed: here at the latest the turn after */
             if (plat_interrupted())
                 return;
             if (!connection_lost(p, since))

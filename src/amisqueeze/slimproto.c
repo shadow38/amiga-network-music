@@ -43,13 +43,18 @@ static uint32_t get32(const uint8_t *b)
     return (uint32_t)b[0] << 24 | (uint32_t)b[1] << 16 | (uint32_t)b[2] << 8 | b[3];
 }
 
+/* A failed send may leave a packet cut short: the server would read what follows out of step. Nothing more is sent
+ * on that connection, which the main loop takes as lost. */
 static int send_all(struct player *p, const uint8_t *buf, int len)
 {
+    if (p->send_failed)
+        return 0;
     while (len > 0) {
         int n = plat_send(p->sock, buf, len);
         if (n <= 0) {
             if (!plat_interrupted())
                 msg("amisqueeze: send: error %d\n", plat_error());
+            p->send_failed = 1;
             return 0;
         }
         buf += n;
@@ -396,6 +401,7 @@ int slim_connect(struct player *p, int reconnect)
     p->rx_expect = 0;
     p->rx_got = 0;
     p->rx_again_said = 0;
+    p->send_failed = 0;
     p->last_rx = plat_now_ms();
     msg("connected to the server\n");
     if (!send_helo(p, reconnect)) {

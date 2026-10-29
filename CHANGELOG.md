@@ -42,6 +42,8 @@ are previews, until 1.0.
 - Started from the Workbench with `QUIET`, every error at start-up now opens the window. An invalid `MAC`, an
   `OUTPUT` file that cannot be created, a server not found or an AHI unit that cannot be opened went to the log
   only, and amisqueeze quit without a word. The new checks of `PORT`, `UNIT` and `PRI` open it too.
+- After `send: error N` on the connection to the server, amisqueeze now reconnects at once. It used to go on, and
+  the server could read the next messages out of step.
 - A player name given on the server with accents showed as garbled characters in `player name: ...`: each byte
   outside plain ASCII now shows as `?`, so an accented letter shows as `??`. The name the server keeps is
   unchanged.
