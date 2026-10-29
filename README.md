@@ -3,8 +3,10 @@
 **Network music for classic Amigas**: the Amiga becomes a Squeezebox player, playing the music of a server on
 your local network and driven like any other player in the house.
 
-[![tests](https://github.com/shadow38/amiga-network-music/actions/workflows/tests.yml/badge.svg)](https://github.com/shadow38/amiga-network-music/actions/workflows/tests.yml) |
-**a preview until 1.0** (0.7: the latest release) | AmigaOS 3.x | 68020 or better | sound through AHI | MIT licence
+[![tests](https://github.com/shadow38/amiga-network-music/actions/workflows/tests.yml/badge.svg)](https://github.com/shadow38/amiga-network-music/actions/workflows/tests.yml)
+[![latest release](https://img.shields.io/github/v/release/shadow38/amiga-network-music?include_prereleases&display_name=release&label=latest%20release)](https://github.com/shadow38/amiga-network-music/releases)
+![status: preview until 1.0](https://img.shields.io/badge/status-preview%20until%201.0-orange) |
+AmigaOS 3.x | 68020 or better | sound through AHI | MIT licence
 
 ## How it works
 

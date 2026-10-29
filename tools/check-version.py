@@ -8,8 +8,7 @@
 - the user guide's state line reads "Version x.y in development. The latest release, <latest>," for x.y-dev, or
   "Version x.y," for a release (V6);
 - CHANGELOG.md starts with "## [Unreleased]"; its newest numbered section is the latest release, the one the guide
-  and the README name; an x.y-dev version comes after it; a release version is that section, with the $VER: date
-  (V4, V5).
+  names; an x.y-dev version comes after it; a release version is that section, with the $VER: date (V4, V5).
 
 With --release (make dist, through make-dist.py), also refuses an x.y-dev version and a non-empty "Unreleased"
 part (V4, V5).
@@ -26,7 +25,6 @@ NAMES = ["amisqueeze", "amisqueeze.fpu"]
 SOURCES = "src/amisqueeze/*.c"
 SLIMPROTO = "src/amisqueeze/slimproto.c"
 GUIDE = "docs/user-guide.md"
-README = "README.md"
 CHANGELOG = "CHANGELOG.md"
 CBD_TITLELEN = 40       # libraries/commodities.h: the title's buffer, NUL included
 
@@ -163,13 +161,6 @@ def check(release=False):
         elif not line.startswith(f"Version {version},") or "in development" in line:
             fail(f'{GUIDE}:{n} does not start with "Version {version}," (a release), $VER: says {version} ({where})',
                  "V6")
-
-    named = find(README, rf"\(({NUMBER}): ")
-    if len(named) != 1:
-        fail(f'{len(named)} "(<x.y>: " naming the latest release in {README}, expected one', "V6")
-    for n, m in named:
-        if latest and m.group(1) != latest[1]:
-            fail(f"{README}:{n} names {m.group(1)} as the latest release, {CHANGELOG} {latest[1]} ({latest[0]})", "V6")
 
     if problems:
         sys.exit("\n".join(problems))

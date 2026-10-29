@@ -146,8 +146,8 @@ lines into the notes. Before a release, the "Unreleased" part of `CHANGELOG.md` 
 date. `make dist DEV=1` accepts a development version, to try the archives (`out/amisqueeze-<x.y>-dev.*`, never
 published).
 `make dist` refuses to build the archive unless `tools/check-version.py --release` accepts the version: not a
-`-dev` one, the same in both `$VER:` strings, `Firmware=`, the user guide and the README, with its section at the
-top of the changelog, dated as the `$VER:` strings, and nothing left under "Unreleased". It also refuses a text
+`-dev` one, the same in both `$VER:` strings, `Firmware=` and the user guide, with its section at the top of the
+changelog, dated as the `$VER:` strings, and nothing left under "Unreleased". It also refuses a text
 file of the archive (`LICENSE`, the README, the changelog, the user guide) or a source of amisqueeze that is not
 ASCII with LF line endings ([Text for the Amiga](#code-rules)); `make test` checks them too.
 
@@ -187,7 +187,8 @@ make test HOSTCC=clang            # another native compiler (untested)
 Before the tests, `make test` runs `tools/check-version.py`: the version number must be the same in both `$VER:` strings
 (declared as `static char <name>[] = "$VER: ...";`, never const), `Firmware=` and the user guide's state line
 (`Version x.y in development` for `x.y-dev`, `Version x.y,` for a release); the latest release named by the guide
-and the README must be the newest section of `CHANGELOG.md`; the commodity's title must fit 39 characters.
+must be the newest section of `CHANGELOG.md`; the commodity's title must fit 39 characters. The README names no
+version: its badge shows the latest release published on GitHub.
 `make test` needs no LMS server: the unit tests run the core on a fake platform (`tests/stub_platform.c`), and
 `tests/fake_server.py` plays a slimproto server and its HTTP streams on localhost (handshake, renaming,
 disconnection and reconnection, a server silent for 35 s, Ctrl-C, argument errors; server discovery: one server, two, none, malformed
