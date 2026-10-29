@@ -572,7 +572,7 @@ amisqueeze stops at once.
 
 | Message | Meaning |
 |---|---|
-| `amisqueeze: <AmigaDOS error>`, e.g. `amisqueeze: bad number` | the command line does not fit the template: a bad number for `PORT` or `UNIT`, an unknown keyword...; the text is AmigaDOS's own |
+| `amisqueeze: <AmigaDOS error>`, e.g. `amisqueeze: bad number` | the command line does not fit the template: a bad number for `PORT`, `UNIT` or `PRI`, an unknown keyword...; the text is AmigaDOS's own |
 | `ENV:amisqueeze.prefs: ...` | the default options cannot be read: an unknown option, a syntax error |
 | `ENV:amisqueeze.prefs is too long: at most 509 characters` | the default options do not fit what amisqueeze reads |
 | `the icon's ToolTypes: ...` | a ToolType cannot be read: an unknown value, a bad number...; shown in the window, which stays open |

@@ -31,7 +31,7 @@ PROGS   := $(notdir $(wildcard src/*))
 # Per-program options
 # amisqueeze (slimproto player): targets 68020+ (WinUAE, PiStorm), without FPU.
 # -Wno-pointer-sign: dos.library prototypes expect UBYTE * strings. -Werror=format: msg() format checks.
-# The Shell's stack (4 KB by default) is too small for the decoders (dr_flac about 5 KB, minimp3 about 17 KB):
+# The Shell's stack (4 KB by default) is too small for the decoders (dr_flac about 5.5 KB, minimp3 about 17.5 KB):
 # libnix's start-up code enlarges it (__stkinit, linked in here; size in __stack, amiga.c). tools/check-stack.py
 # reads the linker map of each program of STACK_PROGS: __stkinit linked, __stack defined in its amiga.o.
 amisqueeze_CFLAGS  := -m68020 -Wno-pointer-sign -Werror=format -Ithird_party/dr_flac -Ithird_party/minimp3

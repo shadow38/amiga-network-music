@@ -51,7 +51,7 @@ agreed with the user.
 | Version | Brings | Steps | Status |
 |---|---|---|---|
 | 0.1 to 0.7 | the player for LMS and Music Assistant: PCM, FLAC, MP3, start from the Workbench, the `.lha`, releases built by the CI | player-1 to player-8d, player-7b, part of player-10, tools-10 (LMS), publish-2 (`.lha`), publish-3 | ✅ 2026-10-19 to 2026-10-23, see the [changelog](../../CHANGELOG.md) |
-| 0.8 | what the real machine shows; a lower rate asked of the server; automatic server discovery; hardening; the writing rules applied to the documentation | player-9, player-10 (discovery), player-12, player-13, player-14, player-15, player-16, player-17, tools-11, tools-13, publish-6 | ⬜ |
+| 0.8 | what the real machine shows; a lower rate asked of the server; automatic server discovery; hardening; the writing rules applied to the documentation | player-9, player-10 (discovery), player-12, player-13, player-14, player-15, player-16, player-17, tools-11, tools-13, publish-6 | 🔶 |
 | 0.9 | internet radios' metadata (ICY) | player-10 (end) | ⬜ |
 | 1.0 | setup guides, a full audit, the upload to Aminet | publish-4, publish-5, tools-10 (Music Assistant), publish-2 (Aminet) | ⬜ |
 | none yet | ideas: direct Paula output, source-level debugging | player-11, tools-8 | ⬜ |
@@ -96,10 +96,13 @@ Agreed with the user on 2026-10-26.
   AmiNetXDuo, a blocking receive could wait forever, so neither "no news from the server" nor a clean Ctrl-C
   came (agreed with the user on 2026-10-28). Done on 2026-10-28, checked on the host and in WinUAE with
   AmiNetXDuo; the A1200 next.
-- **The writing rules** (publish-6): the plan and the user guide done on 2026-10-24; `docs/development/` next,
-  where the user finds it worth it.
+- **The writing rules** (publish-6): the plan and the user guide done on 2026-10-24. The step is closed for 0.8;
+  `docs/development/` comes later, one document at a time, where the user finds it worth it (agreed with the user
+  on 2026-10-29).
 - **After the 0.8 review** (player-17, tools-13): its findings at 75 and most of its 50 list, for a version close
-  to 1.0; then a light review of what they change (agreed with the user on 2026-10-29).
+  to 1.0; then a light review of what they change (agreed with the user on 2026-10-29). Until the release, the
+  documentation changes only for them, for the A1200 session and for real errors (agreed with the user on
+  2026-10-29).
 
 ### 0.9
 
@@ -158,7 +161,7 @@ Agreed with the user on 2026-10-26.
 | player-14 The buffer running dry in the middle of a frame | ✅ 2026-10-27: on the host and the A1200 |
 | player-15 The task priority (`PRI`) | 🔶 2026-10-28: coded, tested on the host and in WinUAE; the gaps on the A1200 next |
 | player-16 A receive that never blocks | 🔶 2026-10-28: on the host and in WinUAE with AmiNetXDuo; the A1200 next |
-| player-17 Hardening after the 0.8 review | 🔶 2026-10-29: the tests, `QUIET` (R2), the code fixes; the documentation, then WinUAE and the A1200 next (version 0.8) |
+| player-17 Hardening after the 0.8 review | 🔶 2026-10-29: the tests, `QUIET` (R2), the code fixes, the documentation; WinUAE and the A1200 next, then the guide's `PRI` line (version 0.8) |
 | remote-0 Study (common interface, Music Assistant feasibility, name) | ⬜ before any amilms code |
 | remote-1 to remote-7 LMS | ⬜ |
 | remote-8 to remote-11 Music Assistant | ⬜ |
@@ -168,7 +171,7 @@ Agreed with the user on 2026-10-26.
 | publish-3 Public versions | 🔶 0.1 to 0.7 published; the CI tests, builds and drafts the release from a tag |
 | publish-4 Setup guides: minimal server, the Amiga on the network | ⬜ before 1.0 |
 | publish-5 Review before each release | ✅ 2026-10-20; reviews since: [0.6](reviews/0.6.md), [0.7](reviews/0.7.md) |
-| publish-6 Writing rules for the documentation | 🔶 2026-10-24: the rules, the plan and the user guide; `docs/development/` next, where the user finds it worth it |
+| publish-6 Writing rules for the documentation | ✅ 2026-10-24: the rules, the plan and the user guide; `docs/development/` later, where the user finds it worth it (closed on 2026-10-29) |
 
 Phase 0 moves forward as needed: a tooling step is done when a step of phase 1 or 2 needs it. Phases 1 and 2 can
 progress in parallel.

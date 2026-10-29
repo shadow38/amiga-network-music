@@ -241,8 +241,8 @@ request and the connection. Every reply starting with `E` within 2 s counts; the
 encodes the whole packet in UTF-8, so a name outside ASCII gives a wrong length (from 128 characters, the length
 byte itself takes two). The older request `d` (the Squeezebox's) is not used: its reply carries only the host
 name, 17 bytes. A discovered server is looked for again when a connection to it fails, not after a lost
-connection: the same address is tried first. A router does not pass a broadcast on, and some NATs (an Incus
-bridge, for instance) rewrite a broadcast's source, so that the replies are lost.
+connection: the same address is tried first. A router does not pass a broadcast on, and some NATs (the
+bridge of a container host, for instance) rewrite a broadcast's source, so that the replies are lost.
 
 **Music Assistant** (seen with 2.10.7, plan step player-7b) speaks the same protocol, with differences. It
 transcodes everything to the output codec set for the player (`flac` by default, `mp3`, `aac`, `wav`; its

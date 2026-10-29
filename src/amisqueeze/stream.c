@@ -135,7 +135,9 @@ void stream_start(struct player *p, uint32_t ip, uint16_t port, const uint8_t *r
     s->again = 0;
     s->again_said = 0;
 
-    if (o->queued == MAX_TRACKS) {      /* should not happen: forget the oldest */
+    /* Full only with tracks so short that more than MAX_TRACKS fit in the buffer (a server sends the next track once
+     * a stream has ended): the oldest is forgotten, its start then never said (one STMs fewer) */
+    if (o->queued == MAX_TRACKS) {
         memmove(o->queue, o->queue + 1, (MAX_TRACKS - 1) * sizeof(o->queue[0]));
         o->queued--;
     }

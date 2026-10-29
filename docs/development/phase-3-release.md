@@ -201,7 +201,7 @@ Back to the [plan](README.md).
 - **Criterion**: on `0.3..0.4` the review finds what the outside review found at 75 or more (met); on `0.4..0.5`
   it finds defects beyond the outside review (met: six).
 
-## publish-6 Writing rules for the documentation (agreed with the user on 2026-10-24) ⬜
+## publish-6 Writing rules for the documentation (agreed with the user on 2026-10-24) ✅ (2026-10-24, closed on 2026-10-29: `docs/development/` later)
 
 - **Why**: the README reads well, but the other documents are hard to read. Each fact comes with all its
   exceptions, sentences pile up clauses, and the plan had become a log of past work. The user guide is too long.

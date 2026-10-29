@@ -56,6 +56,8 @@ are previews, until 1.0.
   before the connection was up.
 - Default options in `ENV:amisqueeze.prefs` longer than 509 characters were cut without a word, possibly in the
   middle of a value: they are now refused with `ENV:amisqueeze.prefs is too long`.
+- A `SERVER` name that the TCP/IP stack resolves without an address is now refused with `server ... not found`.
+  amisqueeze used to read an address that was not there.
 - When the network stopped in the middle of a sample (or of a FLAC or MP3 frame), the sound stopped but the server
   was not told the buffer had run dry, so LMS did not pause the player while the data was missing. Seen on a real
   A1200 with the network cable pulled for 10 s.

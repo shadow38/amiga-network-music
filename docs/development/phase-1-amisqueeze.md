@@ -583,7 +583,7 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   by the user in WinUAE (68020 + 68882, JIT, Toccata): a 12 s glide cut into three MP3s, with mini gaps from 0.3
   (12.9 s) and seamless now (12.3 s).
 
-## player-9 Real machine 🔶 (2026-10-27, release 0.8: Music Assistant next)
+## player-9 Real machine 🔶 (2026-10-28, version 0.8: the A1200 next for player-15 and player-16)
 
 - **Content**: both kinds of target with a TCP/IP stack (AmiNetXDuo or Roadshow) and an LMS server reachable
   from the local network, then a Music Assistant server (decided 2026-10-21: one session for both servers): a PiStorm with Emu68, sound through its own AHI outputs (I2S DAC of the PiStorm32-lite
@@ -757,7 +757,7 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   | 3 sound | the left and right tones in place with `SWAP`. The LED filter stays off as long as amisqueeze runs, playing or not, and comes back on when it ends |
   | 4 load | raw PCM at 44.1 kHz for 5 minutes, volume 100: 77 % of the CPU (counts 3,087 to 3,119), no `STMo`, clean. Free while playing: fast 6,091,032 (largest 2,810,472). While the Amiga works: gaps at priority 0 without `STMo`, clean at 1 (player-15) |
   | 5 commands | pause (time frozen), resume, seek to 100 s (102.26 s three seconds later), next track, stop: right, no `STMo`. At volume 50: about 100 % of the CPU, crackles and gaps, as the user guide says |
-  | 6 robustness | the cable pulled: player-14. Then the test setup's relay dropped both connections, and amisqueeze never said "no news from the server" (open). LMS restarted: reconnected by itself. Ctrl-C connected, playing, in pause and while retrying: "stopped" alone, in under 2 s. In the half-open state, AmiNetXDuo first shows "recv: error 4" and a retry (see Open points, Ctrl-C) |
+  | 6 robustness | the cable pulled: player-14. Then the test setup's relay dropped both connections, and amisqueeze never said "no news from the server" (open). LMS restarted: reconnected by itself. Ctrl-C connected, playing, in pause and while retrying: "stopped" alone, in under 2 s. In the half-open state, AmiNetXDuo first shows "recv: error 4" and a retry (see player-16) |
   | 6 one hour | 24 tracks, no `STMo`; `Avail` the same to the byte before and after. LMS's time: +60.00 s a minute; -0.48 s over 59 minutes (-0.014 %, within the rounding of the tracks' lengths), against -0.44 % in WinUAE |
   | 7 Workbench | the icon as shipped; `QUIET` with `LOG` (no window, all in the log); `UNIT=9` (the window says why); Exchange's Remove (sound stopped, "stopped"). The icon as shipped takes unit 0, Paula Fast 8 bit mono here: amisqueeze warns it plays in mono |
   | 8 discovery | LMS, Music Assistant (its own `PORT`) and no server, with each stack below. Ctrl-C while looking: "stopped" alone. AmiNetXDuo also from the icon as shipped |
@@ -841,7 +841,7 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   So the elapsed time after a command is judged on the real machine (step 5 of the protocol above); the player-4c
   statement "seek ... all as with the virtual output" was true of both outputs alike.
 
-## player-10 Finishing touches 🔶 (versions 0.4 to 0.9: the parts of 0.4 and 0.5 done)
+## player-10 Finishing touches 🔶 (versions 0.4 to 0.9: the parts of 0.4 and 0.5, and the discovery of 0.8, done)
 
 - **Split** (decided 2026-10-20, see the [plan](README.md)): **0.4** the volume modes (`LMS` and `FIXED`, done
   as LMS's own setting, see below; `MIXER` left for later) and the AHI mode warning; **0.5** `LOG=<file>` and
@@ -849,7 +849,7 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   last check needs the real machine, in the same session as player-9); **0.9** the internet radios' metadata.
   The `BUFFER` option only if player-9 shows a need. Each part is designed with the user when it starts.
 - **Automatic server discovery** (designed with the user on 2026-10-27, version 0.8). Done on 2026-10-27, checked
-  on the host and in WinUAE (LMS and Music Assistant found); the A1200 next, step 8 of the player-9 protocol:
+  on the host, in WinUAE (LMS and Music Assistant found) and on the A1200 with three TCP/IP stacks:
   - Only when no `SERVER` is given: not on the command line, in `ENV:amisqueeze.prefs` or in the ToolTypes. No
     new option.
   - A discovery request is broadcast on UDP: `e`, then the field `NAME` with no value, to 255.255.255.255 on
@@ -1112,8 +1112,10 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   frame (a sample of 4 bytes, or a FLAC or MP3 frame of several KB) leaves the start of that frame in the ring.
   The decoder cannot use it, so the output has nothing to play, yet the ring is not empty. With `amisqueeze.fpu`
   decoding FLAC or MP3, a stall almost always falls in the middle of a frame.
-- **Fixed** (agreed with the user on 2026-10-27): when the decoder produces nothing and takes nothing, the output
-  is empty, whatever the ring still holds (`stream.c`, both outputs). A partial frame at the end of a track was
+- **Fixed** (agreed with the user on 2026-10-27): when the decoder produces nothing and takes nothing while its
+  track is still arriving, the output is empty, whatever the ring still holds (`stream.c`, both outputs). Narrowed
+  on 2026-10-28 (`31bab90`): for a complete track, such a call only ends its decoding, since the next track may
+  already be in the ring; the output is then empty only when the ring is. A partial frame at the end of a track was
   already dropped: `STMu` was not affected.
 - **Tests**: the fake server's stall scenario stops the PCM stream after a whole frame, then 2 bytes into one; a
   new scenario stalls a FLAC stream 100 bytes into a frame; the unit test of the AHI output runs dry after 40000
@@ -1204,7 +1206,7 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   - the load with `NOAUDIO`, raw PCM at 44.1 kHz, the builds before and after in turn (six 10 s windows each):
     42.4 % before, 42.8 % after, within the spread of the windows (about 1 %). Unchanged.
 
-## player-17 Hardening after the 0.8 review 🔶 (2026-10-29, version 0.8: the tests, `QUIET` (R2) and the code fixes done)
+## player-17 Hardening after the 0.8 review 🔶 (2026-10-29, version 0.8: the tests, `QUIET` (R2), the code fixes and the documentation done)
 
 - **Goal**: a 0.8 closer to 1.0: the findings of the [0.8 review](reviews/0.8.md) at 75, and most of its 50 list
   (agreed with the user on 2026-10-29). The safety nets are in tools-13; R1 is settled by the A1200 session of
