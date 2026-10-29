@@ -34,8 +34,8 @@ are previews, until 1.0.
 ### Fixed
 
 - With AmiNetXDuo, a network cut could leave amisqueeze stuck: it never said `no news from the server` nor
-  reconnected, and Ctrl-C showed `recv: error 4` and a retry before `stopped`. Ctrl-C while connecting now stops
-  it without an error message.
+  reconnected, and Ctrl-C showed `recv: error 4` and a retry before `stopped`. It now says `no news from the
+  server` after 35 s and reconnects, and Ctrl-C stops it cleanly, also while connecting.
 - `PORT` and `UNIT` out of range are refused at start-up (`PORT=...: expected 1 to 65535`, `UNIT=...: expected 0
   to 3`). `PORT=70000` used to connect to port 4464 without a word, and `UNIT=4` failed later with a misleading
   message.
