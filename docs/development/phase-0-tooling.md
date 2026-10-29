@@ -303,9 +303,10 @@ phase 1; the figures below are those of 0.6.
   - `check-stack.py` checks the value of `__stack` (16 KB, 32 KB), not only that it is defined;
   - `--check-text` also covers `tools/amiga/cpucount.c`, which runs on the Amiga;
   - `release.yml`: the draft's first line without "tested in WinUAE only" (R3);
-  - `CONTRIBUTING.md`: what `check-saves.py` sees, and the host compiler as the CI has it.
-- **To decide with the user**: `release.yml` waiting for the tests before making the draft. Kept out on
-  2026-10-27 (player-12); raised again by the 0.8 review.
+  - `CONTRIBUTING.md`: what `check-saves.py` sees, and the host compiler as the CI has it;
+  - `CONTRIBUTING.md`, Releasing: the draft published only once `tests.yml` is green on the tag.
+- **Kept**: `release.yml` does not wait for the tests (decided on 2026-10-27 in player-12, confirmed with the user
+  on 2026-10-29).
 - **Criterion**: each new check seen failing on a planted defect, then green; `make test` and the CI green. Not
   user-visible but R3: no `CHANGELOG.md` line.
 - **Left for 0.9** (agreed with the user on 2026-10-29): the blind spots of `check-saves.py` (a `movem` or
