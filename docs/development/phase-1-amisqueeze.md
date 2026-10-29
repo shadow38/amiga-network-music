@@ -1220,7 +1220,7 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   - Ctrl-C and Exchange's Remove while playing: "stopped" alone;
   - the load 77 % (counts 3,090 to 3,154, idle about 13,520), as in player-9; no `STMo`.
 
-## player-17 Hardening after the 0.8 review 🔶 (2026-10-29, version 0.8: the tests, `QUIET` (R2), the code fixes, the documentation, the A1200 and WinUAE done)
+## player-17 Hardening after the 0.8 review ✅ (2026-10-29, version 0.8)
 
 - **Goal**: a 0.8 closer to 1.0: the findings of the [0.8 review](reviews/0.8.md) at 75, and most of its 50 list
   (agreed with the user on 2026-10-29). The safety nets are in tools-13; R1 is settled by the A1200 session of
