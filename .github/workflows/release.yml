@@ -57,7 +57,7 @@ jobs:
             title="TRIAL $title, never to publish: delete it"
           fi
           {
-            echo "**amisqueeze $version** — preview, tested in WinUAE only"
+            echo "**amisqueeze $version** — preview"
             echo
             echo "NOTES TO WRITE, approved by the user."
             echo
