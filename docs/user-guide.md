@@ -21,7 +21,16 @@ In order: install amisqueeze, set up AHI, set up the server, then start amisquee
 
 amisqueeze works out most of it by itself: at start-up, it measures how fast the Amiga decodes FLAC and MP3. It
 decodes a format only at twice real time or more, and leaves the others to the server. What is left to choose
-depends on the machine:
+depends on the machine.
+
+To see where your Amiga stands, once amisqueeze is [installed](#installing), run from a Shell:
+
+```
+amisqueeze BENCH
+```
+
+With an FPU, run `amisqueeze.fpu BENCH`, which measures MP3 too. It needs no server, prints the speeds and quits
+(see [`FLAC`, `MP3` and `BENCH`](#flac-mp3-and-bench)). Then follow the row that matches:
 
 | Your Amiga | Program | Options | LMS | Music Assistant |
 |---|---|---|---|---|
@@ -30,8 +39,8 @@ depends on the machine:
 
 - The Slow row was tried on an A1200 with a 68EC020 at 26 MHz and Paula. The Fast row was tried in WinUAE with
   the JIT, at about a PiStorm's speed.
-- A 68030, 68040 or 68060 has not been tried yet. Run `amisqueeze BENCH`: a format it leaves to the server needs
-  that server's settings of the Slow row. `MAXRATE` and `PRI` only if the sound has gaps.
+- A 68030, 68040 or 68060 has not been tried yet. A format that `BENCH` leaves to the server needs that server's
+  settings of the Slow row; `MAXRATE` and `PRI` only if the sound has gaps.
 - With Paula, see also [with Paula](#with-paula).
 
 To keep the options for every start: [keeping the options](#keeping-the-options).
