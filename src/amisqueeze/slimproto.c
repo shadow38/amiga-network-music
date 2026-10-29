@@ -23,7 +23,7 @@
  * decoded here); the server converts the rest. HasDigitalOut=1: LMS then offers its "Volume Control" setting for
  * this player, whose "Output level is fixed at 100%" sends audg with adjust 0 (plan step player-10, volume modes).
  * MaxSampleRate follows: the MAXRATE option, 48000 without it. */
-#define CAPS "Model=squeezelite,ModelName=AmiSqueeze,Firmware=0.8-dev,AccuratePlayPoints=0,HasDigitalOut=1," \
+#define CAPS "Model=squeezelite,ModelName=AmiSqueeze,Firmware=0.8,AccuratePlayPoints=0,HasDigitalOut=1," \
              "MaxSampleRate="
 
 /* ---- serialisation ---- */

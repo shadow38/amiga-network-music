@@ -69,6 +69,7 @@ Back to the [plan](README.md).
   and prints the line for the notes: the zip, its `.sha256` and the notes come from the same run.
   amisqueeze 0.7 (2026-10-23): the zip and the `.lha` with the same files, each with its `.sha256`, and the Aminet
   `.readme`, made by the CI from the tag as a draft, its `.lha` tried in WinUAE before the user publishes it.
+  amisqueeze 0.8 (2026-10-29): the same, the tag on `dev` and `main` moved forward to it once published.
 - **Branches** (agreed with the user on 2026-10-28): `main` holds the last published version, so that the
   repository's page, its README and the user guide describe what can be downloaded. The work goes on in `dev`. At
   a release, `main` moves forward to the tagged commit. From the 0.8 release on: until then, `main` keeps the 0.8

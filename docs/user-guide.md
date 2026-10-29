@@ -3,8 +3,7 @@
 This guide tells how to set up and use amisqueeze, then lists every option, message and known limit. What
 amisqueeze is and what the Amiga needs: the [README](../README.md).
 
-Version 0.8 in development. The latest release, 0.7, is a preview, like this version (see
-[what has been tried](#what-has-been-tried)).
+Version 0.8, a preview (see [what has been tried](#what-has-been-tried)).
 
 **Using amisqueeze**: [installing](#installing) | [settings for your Amiga](#settings-for-your-amiga) |
 [sound (AHI)](#sound-ahi) | [server setup](#server-setup) | [starting](#starting-amisqueeze) |

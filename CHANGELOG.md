@@ -7,6 +7,8 @@ are previews, until 1.0.
 
 ## [Unreleased]
 
+## [0.8] - 2026-10-29
+
 ### Added
 
 - Without `SERVER`, amisqueeze finds the server on the local network by itself: it asks on UDP port 3483 (or
@@ -213,7 +215,8 @@ Lyrion Music Server (LMS) as a player and plays through AHI.
 - Options `SERVER`, `PORT`, `NAME`, `MAC`, `UNIT` (AHI unit), `SWAP`, `NOAUDIO`, `OUTPUT`, `VERBOSE`; default
   options in `ENV:amisqueeze.prefs`.
 
-[Unreleased]: https://github.com/shadow38/amiga-network-music/compare/amisqueeze-0.7...HEAD
+[Unreleased]: https://github.com/shadow38/amiga-network-music/compare/amisqueeze-0.8...HEAD
+[0.8]: https://github.com/shadow38/amiga-network-music/compare/amisqueeze-0.7...amisqueeze-0.8
 [0.7]: https://github.com/shadow38/amiga-network-music/compare/amisqueeze-0.6...amisqueeze-0.7
 [0.6]: https://github.com/shadow38/amiga-network-music/compare/amisqueeze-0.5...amisqueeze-0.6
 [0.5]: https://github.com/shadow38/amiga-network-music/compare/amisqueeze-0.4...amisqueeze-0.5
