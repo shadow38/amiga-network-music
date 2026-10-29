@@ -293,7 +293,7 @@ phase 1; the figures below are those of 0.6.
   place; `CONTRIBUTING.md` (Repository layout), the "Before touching X, read Y" table of `CLAUDE.md` and "Where
   we are" updated. Not user-visible: no `CHANGELOG.md` line.
 
-## tools-13 Safety nets from the 0.8 review ⬜ (version 0.8)
+## tools-13 Safety nets from the 0.8 review ✅ (2026-10-29, version 0.8)
 
 - **Goal**: rules of `CONTRIBUTING.md` checked by a script rather than by a review, from the
   [0.8 review](reviews/0.8.md) (agreed with the user on 2026-10-29).

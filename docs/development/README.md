@@ -141,7 +141,7 @@ Agreed with the user on 2026-10-26.
 | tools-10 Regression scenarios in WinUAE | 🔶 2026-10-23: the LMS scenarios ([winuae-scenarios.md](winuae-scenarios.md)); Music Assistant before 1.0 |
 | tools-11 A real TCP/IP stack in WinUAE (AmiNetXDuo, PCMCIA card) | ✅ 2026-10-24 |
 | tools-12 Amiga reference documents (`docs/amiga/`) | ⬜ agreed with the user on 2026-10-24; tools-12a (AHI, network) first |
-| tools-13 Safety nets from the 0.8 review | ⬜ agreed with the user on 2026-10-29 (version 0.8) |
+| tools-13 Safety nets from the 0.8 review | ✅ 2026-10-29 (version 0.8) |
 | player-1 Control connection | ✅ 2026-10-18 |
 | player-1b Default options (`ENV:amisqueeze.prefs`) | ✅ 2026-10-18 |
 | player-2 Receiving the stream (virtual output) | ✅ 2026-10-18 |
