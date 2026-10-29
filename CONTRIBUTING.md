@@ -45,7 +45,8 @@ Two ways to get the toolchain:
   UndefinedBehaviorSanitizer support, POSIX sockets;
 - `python3` (fake server).
 
-Tested with gcc 14 on Linux. clang, macOS and other POSIX systems should work but have not been tried.
+Tested with gcc 14 on Linux. The CI uses the default `cc` of GitHub's `ubuntu-24.04` runner, gcc 13. clang, macOS
+and other POSIX systems should work but have not been tried.
 
 Note that in the `amigadev/crosstools` image, `gcc` is the Amiga cross-compiler: use another environment, or set
 `HOSTCC` to a native compiler.
@@ -168,7 +169,9 @@ checks before assembling. The build fails if a function modifies a register the 
 (d2-d7, a2-a6, and fp2-fp7 in `amisqueeze.fpu`) without saving it. This was a bug in `m68k-amigaos-gcc`
 16.1.1b (image `wischner/gcc-m68k-amiga:1.1.0`): programs crashed with an *address error* `#80000003`. It is fixed
 in 16.2, but the GCC 16 port is recent. `make test` checks the safeguard itself on `tests/check-saves.s`: a few
-functions with such a fault (a plain write, `(an)+`, `-(an)`, `dbra`, an FPU register) and a few without. No
+functions with such a fault (a plain write, `(an)+`, `-(an)`, `dbra`, an FPU register) and a few without. It
+takes every `movem`/`fmovem` other than a push, and every `(sp)+` pop, for a restore. A register loaded that way
+without having been saved is not seen; the compiler loads them only to restore what it saved. No
 compiler option avoided the bug (`-O1`, `-Os`, `-O2`, `-mlra`, `-mno-lra`); it was fixed in 16.2-rc16. The GCC 16 port is still young: when a crash
 makes no sense, look at the generated assembly.
 
