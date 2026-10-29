@@ -53,8 +53,8 @@ agreed with the user.
 | 0.1 to 0.7 | the player for LMS and Music Assistant: PCM, FLAC, MP3, start from the Workbench, the `.lha`, releases built by the CI | player-1 to player-8d, player-7b, part of player-10, tools-10 (LMS), publish-2 (`.lha`), publish-3 | ✅ 2026-10-19 to 2026-10-23, see the [changelog](../../CHANGELOG.md) |
 | 0.8 | what the real machine shows; a lower rate asked of the server; automatic server discovery; hardening; the writing rules applied to the documentation | player-9, player-10 (discovery), player-12, player-13, player-14, player-15, player-16, tools-11, publish-6 | ⬜ |
 | 0.9 | internet radios' metadata (ICY) | player-10 (end) | ⬜ |
-| 1.0 | setup guides, a full audit, the upload to Aminet | publish-4, publish-5, tools-10 (Music Assistant), publish-2 (Aminet) | ⬜ |
-| none yet | ideas: direct Paula output, source-level debugging | player-11, tools-8 | ⬜ |
+| 1.0 | the direct Paula output; setup guides, a full audit, the upload to Aminet | player-11, publish-4, publish-5, tools-10 (Music Assistant), publish-2 (Aminet) | ⬜ |
+| none yet | ideas: source-level debugging | tools-8 | ⬜ |
 | none | reference documents on AmigaOS for contributors, committed when ready (agreed with the user on 2026-10-24) | tools-12 | ⬜ |
 
 The remote (remote-0 to remote-12) will have versions of its own, its name chosen by its study (remote-0). It
@@ -114,6 +114,9 @@ Agreed with the user on 2026-10-26.
 
 ### 1.0
 
+- **The direct Paula output** (player-11): 14 bits through `audio.device`, Paula's own volume, the rate divided
+  in the core above Paula's maximum. Coded in a branch from `dev`; brought into 0.9 with ICY if it is ready by
+  then (agreed with the user on 2026-10-29).
 - **Before it**: the setup guides (publish-4), a full audit (publish-5), the Music Assistant scenario in WinUAE
   (tools-10).
 - **Then**: the upload to Aminet (publish-2), once the `Author:` and `Uploader:` of the `.readme` are corrected.
@@ -149,7 +152,7 @@ Agreed with the user on 2026-10-26.
 | player-8d MP3 without gaps between tracks | ✅ 2026-10-20 |
 | player-9 Real machine | 🔶 2026-10-28: the protocol with LMS on the A1200; `SYS:WBStartup`, Music Assistant and the memory in WinUAE; the A1200 next for player-15 and player-16 |
 | player-10 Finishing touches | 🔶 the parts of 0.4 and 0.5 done; server discovery 2026-10-27 (0.8), on the A1200 with three stacks; ICY designed 2026-10-27 (0.9) |
-| player-11 Direct Paula output, without AHI | ⬜ idea (CPU load on a slow 68020; crackles with a PCMCIA network card, player-9) |
+| player-11 Direct Paula output, without AHI | ⬜ study agreed 2026-10-29 (1.0, or 0.9 with ICY); the `audio.device` checks next |
 | player-12 Hardening (the 0.7 review's 50 list) | ✅ 2026-10-27 (version 0.8) |
 | player-13 A lower rate asked of the server | ✅ 2026-10-26: `MAXRATE` and the LMS rules; on the A1200, 62 % of the CPU at 32 kHz against 77 %; Music Assistant upstream: the user's decision |
 | player-14 The buffer running dry in the middle of a frame | ✅ 2026-10-27: on the host and the A1200 |
