@@ -201,7 +201,8 @@ struct player {
 };
 
 /* player.c */
-/* Sets up the player from the options, then runs until interrupted; returns PLAYER_OK or PLAYER_FAIL */
+/* Sets up the player from the options, then runs until interrupted; returns PLAYER_OK, or PLAYER_FAIL for an error
+ * at start-up only (amiga.c then opens the window of a Workbench start with QUIET) */
 int player_main(struct player *p, const struct options *o);
 /* BENCH option: measures how fast FLAC and MP3 are decoded here and prints it; returns PLAYER_OK */
 int player_bench(void);

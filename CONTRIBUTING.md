@@ -471,8 +471,9 @@ Tasks (`.vscode/tasks.json`, calling `tools/amiga-make.sh`, through WSL on Windo
 - **Workbench start and libnix**: started from the Workbench, libnix opens the console named by `__stdiowin`
   before `main()`; `amiga.c` sets it to NULL and opens its own once it has read the icon (`WINDOW`, `QUIET`). A
   `CON:` window needs `SMART`, or it loses its text when uncovered. With `QUIET` there is no output (`msg()`
-  checks `Output()`), except during start-up (`main()`, up to `bsdsocket.library`): a message then opens the
-  window (`MAC` and `OUTPUT`, checked by the core, go to the log only).
+  checks `Output()`), except during start-up. Up to `bsdsocket.library`, a message opens the window. While
+  `player_main()` runs, the messages are also kept (`quiet_hold()`), and shown in the window if it returns
+  `PLAYER_FAIL`, which it does only for an error at start-up (`PORT`, `MAC`, server not found, `ahi.device`...).
 - **The commodity**: amisqueeze is a commodity ("Remove" in Exchange = Ctrl-C), one at a time (`CBERR_DUP`); a
   second start does nothing to the running one.
 - **LMS drops every status after a `strm s` until `STMc`**: a refusal must come after a `STMc`, or LMS waits for

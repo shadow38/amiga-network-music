@@ -115,7 +115,9 @@ struct Library *IconBase;
 static struct DiskObject *wb_icon;
 static BPTR wb_console;                     /* the message window; with QUIET, 0 unless start-up failed */
 static const char *wb_window;               /* its specification: WINDOW, or DEFAULT_WINDOW */
-static int wb_quiet;                        /* QUIET, during start-up: a message then opens the window */
+static int wb_quiet;                        /* QUIET: 1 during start-up (a message then opens the window), 2 while */
+static char quiet_held[1024];               /* player_main() runs (the messages also kept here, for the window if */
+static int quiet_held_len;                  /* its start-up fails) */
 static char tt_line[512];                   /* the icon's ToolTypes as a command line */
 
 /* Commodity: amisqueeze shows in Exchange, which can stop it; one at a time */
@@ -192,10 +194,26 @@ static void wb_open_window(void)
  * go nowhere, or to the log only; the window opens for it (and stays until it is closed) */
 static void quiet_start_message(void)
 {
-    if (Output() == 0 && wb_quiet) {
+    if (Output() == 0 && wb_quiet == 1) {
         wb_quiet = 0;
         wb_open_window();
     }
+}
+
+/* QUIET, while player_main() runs: keeps the text of the messages, the newest when they do not fit. This goes on
+ * while it plays, at the cost of a copy per message: PLAYER_FAIL, which shows them, comes only before. */
+static void quiet_hold(const char *buf, int len)
+{
+    if (wb_quiet != 2 || len <= 0)
+        return;
+    if (len > (int)sizeof(quiet_held)) {
+        buf += len - (int)sizeof(quiet_held);
+        len = sizeof(quiet_held);
+    }
+    if (quiet_held_len + len > (int)sizeof(quiet_held))
+        quiet_held_len = 0;
+    memcpy(quiet_held + quiet_held_len, buf, (size_t)len);
+    quiet_held_len += len;
 }
 
 void msg(const char *fmt, ...)
@@ -215,6 +233,7 @@ void msg(const char *fmt, ...)
     quiet_start_message();
     if (Output() != 0)
         Write(Output(), msg_line, len);
+    quiet_hold(msg_line, len);
     log_write(msg_line, len);
 }
 
@@ -223,6 +242,7 @@ void msg_raw(const void *buf, int len)
     quiet_start_message();
     if (Output() != 0)
         Write(Output(), (APTR)buf, len);
+    quiet_hold(buf, len);
     log_write(buf, len);
 }
 
@@ -856,7 +876,8 @@ int main(void)
             goto out_timer;
         }
     }
-    wb_quiet = 0;                           /* QUIET: from here on, the messages go to the log only */
+    /* QUIET: from here on, the messages go to the log only; kept too until the player has started */
+    wb_quiet = wb_quiet && !o.bench ? 2 : 0;
     if (args[ARG_VERBOSE])
         msg("%s\n", version + 6);           /* without "$VER: " */
     if (o.bench) {
@@ -865,6 +886,12 @@ int main(void)
     }
 
     rc = player_main(&player, &o);
+    if (wb_quiet == 2 && rc == PLAYER_FAIL) {   /* an error in the player's start-up: shown in the window */
+        wb_open_window();
+        if (Output() != 0)
+            Write(Output(), quiet_held, quiet_held_len);
+    }
+    wb_quiet = 0;
 
     if (pri_set)                            /* started from a Shell, this is the Shell's own process */
         SetTaskPri(FindTask(NULL), pri_saved);

@@ -518,7 +518,7 @@ Two ToolTypes are for the Workbench only:
 | ToolType | Meaning |
 |---|---|
 | `WINDOW=CON:...` | the message window: position, size, title. The default is `CON:0/20/640/120/amisqueeze/AUTO/CLOSE/WAIT/SMART`; the window opens at the first message |
-| `QUIET` | no window: amisqueeze runs silently; add `LOG=<file>` to keep its messages. An error at start-up still opens the window (see [known limits](#known-limits)) |
+| `QUIET` | no window: amisqueeze runs silently; add `LOG=<file>` to keep its messages. An error at start-up still opens the window, which stays until it is closed |
 
 ### Default options
 
@@ -740,9 +740,6 @@ rows say what comes next.
   - `aac` does not play: amisqueeze refuses the stream, but Music Assistant still shows the track as playing;
   - `mp3` plays only with `amisqueeze.fpu`. Music Assistant encodes it on the fly without the LAME header: the
     change of track can be heard, and some sounds get small artefacts from the second lossy encoding.
-- With `QUIET`, an invalid `MAC` or an `OUTPUT` file that cannot be created is reported in the log only. The
-  other errors at start-up open the window, which stays until it is closed: in the ToolTypes or the default
-  options, a log that cannot be opened, no TCP/IP stack.
 - Synchronised players (LMS's player groups) are not supported, nor tried.
 - Exchange's Active/Inactive switch is shown, but does not affect the music.
 - With a Xircom PCMCIA card and Aminet's `xircomce2.device` 1.1, Paula crackles now and then while the music comes

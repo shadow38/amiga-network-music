@@ -39,6 +39,9 @@ are previews, until 1.0.
 - `PORT` and `UNIT` out of range are refused at start-up (`PORT=...: expected 1 to 65535`, `UNIT=...: expected 0
   to 3`). `PORT=70000` used to connect to port 4464 without a word, and `UNIT=4` failed later with a misleading
   message.
+- Started from the Workbench with `QUIET`, every error at start-up now opens the window. An invalid `MAC`, an
+  `OUTPUT` file that cannot be created, a server not found or an AHI unit that cannot be opened went to the log
+  only, and amisqueeze quit without a word. The new checks of `PORT`, `UNIT` and `PRI` open it too.
 - A player name given on the server with accents showed as garbled characters in `player name: ...`: each byte
   outside plain ASCII now shows as `?`, so an accented letter shows as `??`. The name the server keeps is
   unchanged.
