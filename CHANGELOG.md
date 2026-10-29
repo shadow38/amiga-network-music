@@ -14,7 +14,8 @@ are previews, until 1.0.
   server's firewall must let 3483/udp in. `SERVER` is no longer required.
 - `MAXRATE=AHI`, `MAXRATE=AHISTD` or `MAXRATE=<Hz>`: asks the server for a lower sample rate, to lighten a slow
   Amiga. `AHI` takes the AHI unit's rate, `AHISTD` the standard rate at or below it (27429 Hz gives 24000). With
-  LMS it needs conversion rules on the server, given in the user guide; not with Music Assistant.
+  LMS it needs conversion rules on the server, given in the user guide. Leave it out with Music Assistant: the
+  music does not play.
 - `PRI=<n>`, -10 to 10: amisqueeze's task priority. On a slow Amiga, `PRI=1` keeps the sound going while files
   are copied or windows moved; the Workbench is then slower. Without it, the priority is left as it is (0).
 
@@ -23,23 +24,18 @@ are previews, until 1.0.
 - The messages Music Assistant sends and amisqueeze does not need (`vers`, `grfb`, `grfe`, `codc`, `cont`) no
   longer read as errors: they are shown with `VERBOSE` only, as `<- vers ignored (N bytes)`. Any other message
   amisqueeze does not know is still shown.
-- The user guide rewritten, for setting up the whole chain: first the steps (installing, the settings for your
-  Amiga from `BENCH`, sound and Paula, the server with its ports and where to start without one, starting,
-  stopping, volume), then a reference (options, ToolTypes, default options, messages by theme, troubleshooting,
-  known limits, what has been tried). New in it: where LMS reads `custom-convert.conf` on each system, a server in
-  Docker, internet radios that may cut with LMS and its "Proxied Streaming" setting.
+- The user guide rewritten to set up the whole chain, from installing a server to troubleshooting. New in it:
+  where LMS reads `custom-convert.conf` on each system, a server in Docker, internet radios that may cut with LMS.
 - Tried on a real A1200 (a 68020 at 26 MHz, a PCMCIA network card, Paula through AHI): playback and its CPU load,
   the commands, the recovery, an hour of playback, the server discovery with three TCP/IP stacks. There too,
   Paula needs `SWAP` and dims the power LED; a known limit with Aminet's driver for Xircom PCMCIA cards.
 - The free memory amisqueeze needs, now measured: about 1.7 MB to play through AHI, not 1.1 MB.
-- The README shorter: a quick start in five steps, badges for the latest release and the preview status, a call
-  for reports from other Amigas.
 
 ### Fixed
 
 - With AmiNetXDuo, a network cut could leave amisqueeze stuck: it never said `no news from the server` nor
-  reconnected, and Ctrl-C showed `recv: error 4` and a retry before `stopped`. amisqueeze no longer waits in a
-  receive the TCP/IP stack cannot complete, and Ctrl-C while connecting stops it without an error message.
+  reconnected, and Ctrl-C showed `recv: error 4` and a retry before `stopped`. Ctrl-C while connecting now stops
+  it without an error message.
 - `PORT` and `UNIT` out of range are refused at start-up (`PORT=...: expected 1 to 65535`, `UNIT=...: expected 0
   to 3`). `PORT=70000` used to connect to port 4464 without a word, and `UNIT=4` failed later with a misleading
   message.
