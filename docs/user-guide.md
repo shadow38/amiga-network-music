@@ -26,8 +26,8 @@ comes in two forms holding the same files:
 - the `.lha`, to unpack on the Amiga itself with LhA;
 - the zip, to unpack on a PC.
 
-AmigaOS 3.2 has no LhA. Aminet's `util/arc/lha.run` provides it: run it, and it unpacks itself into the current
-directory. Copy the one for your CPU (`lha_68k`, `lha_68020` or `lha_68040`) to `C:LhA`, then unpack amisqueeze:
+AmigaOS 3.x does not include LhA. Aminet's `util/arc/lha.run` provides it: run it, and it unpacks itself
+into the current directory. Copy the one for your CPU (`lha_68k`, `lha_68020` or `lha_68040`) to `C:LhA`, then unpack amisqueeze:
 
 ```
 LhA x amisqueeze-<version>.lha RAM:
@@ -37,8 +37,8 @@ The archive holds two executables of the same program. Take the one that suits t
 
 | Executable | For | Decodes itself |
 |---|---|---|
-| `amisqueeze` | any Amiga with a 68020 or better | raw PCM; FLAC when the CPU is fast enough |
-| `amisqueeze.fpu` | an Amiga with an FPU: 68881 or 68882, or a 68040/68060 with its FPU (a PiStorm with Emu68, for instance) | the same, and MP3 when the CPU is fast enough |
+| `amisqueeze` | any Amiga with a 68020 or better | raw PCM (uncompressed audio, as on a CD); FLAC when the CPU is fast enough |
+| `amisqueeze.fpu` | an Amiga with an FPU, a maths coprocessor: 68881 or 68882, or a 68040/68060 with its FPU (a PiStorm with Emu68, for instance) | the same, and MP3 when the CPU is fast enough |
 
 Copy it with its icon (`amisqueeze.info` or `amisqueeze.fpu.info`):
 
@@ -65,18 +65,22 @@ To see where your Amiga stands, run from a Shell:
 amisqueeze BENCH
 ```
 
-With an FPU, run `amisqueeze.fpu BENCH`, which measures MP3 too. It needs no server, prints the speeds and quits
-(see [`FLAC`, `MP3` and `BENCH`](#flac-mp3-and-bench)). Then follow the row that matches:
+With an FPU, run `amisqueeze.fpu BENCH`, which measures MP3 too. Not sure the Amiga has one? Run it anyway:
+without an FPU, it says so. `BENCH` needs no server, prints its measures and quits (see
+[`FLAC`, `MP3` and `BENCH`](#flac-mp3-and-bench)). For each format, its line ends with "lets this machine decode
+..." or "leaves ... to the server". Then follow the row that matches:
 
 | Your Amiga | Program | Options | LMS | Music Assistant |
 |---|---|---|---|---|
-| **Slow**: `BENCH` below 2x, such as a 68020 at 26 MHz | `amisqueeze` | `SWAP` with Paula; `PRI=1` if the sound has gaps while the Workbench is used | `MAXRATE=AHI` and its [rules](#maxrate), which also convert MP3 (without `MAXRATE`: the [MP3 rule](#lyrion-music-server)); the volume [fixed at 100](#volume) | the codec `wav`, with normalization and crossfade off (see [Music Assistant](#music-assistant)); leave `MAXRATE` out |
-| **Fast**: FLAC and MP3 at 2x or more in `BENCH`, such as a PiStorm with Emu68 | `amisqueeze.fpu` | `SWAP` with Paula | nothing | the codec `flac`, the default |
+| **Slow**: `BENCH` leaves FLAC to the server, such as on a 68020 at 26 MHz | `amisqueeze` | `SWAP` with Paula; `PRI=1` if the sound has gaps while the Workbench is used | `MAXRATE=AHI` and its [rules](#maxrate), which also convert MP3 (without `MAXRATE`: the [MP3 rule](#lyrion-music-server)); the volume [fixed at 100](#volume) | the codec `wav`, with normalization and crossfade off (see [Music Assistant](#music-assistant)); leave `MAXRATE` out |
+| **Fast**: `BENCH` lets this machine decode FLAC and MP3, such as on a PiStorm | `amisqueeze.fpu` | `SWAP` with Paula | nothing | the codec `flac`, the default |
 
-- The Slow row was tried on an A1200 with a 68EC020 at 26 MHz and Paula. The Fast row was tried in WinUAE with
-  the JIT, at about a PiStorm's speed.
+- The Slow row was tried on an A1200 with a 68EC020 at 26 MHz and Paula. The Fast row was tried in WinUAE, at
+  about a PiStorm's speed.
 - A 68030, 68040 or 68060 has not been tried yet. A format that `BENCH` leaves to the server needs that server's
   settings of the Slow row; `MAXRATE` and `PRI` only if the sound has gaps.
+- The `MAXRATE` rules name the player by its MAC address, which comes from its name: after a change of `NAME`,
+  put the new address in them (see [`MAXRATE`](#maxrate)).
 - With Paula, see also [with Paula](#with-paula).
 
 To keep the options for every start: [keeping the options](#keeping-the-options).
@@ -141,9 +145,18 @@ CPU.
 amisqueeze plays the music of a Lyrion Music Server (LMS) or of a Music Assistant server. The server runs on
 another computer of the local network; it is set up once.
 
+Without a server yet, install one first, following its own guide:
+[LMS](https://lyrion.org/getting-started/) or [Music Assistant](https://www.music-assistant.io/installation/).
+Then tell it where the music is:
+
+- LMS: its "Media Folders", asked at its first start, or later in *Settings > Basic Settings*;
+- Music Assistant: a music provider, such as "Filesystem (local disk)" for files on its computer.
+
 #### Ports
 
 The server's firewall must let the Amiga in on these ports. In Docker, publish all of them, the UDP one included.
+Even so, the discovery may not reach a server in Docker's default network (bridge): then use Docker's host
+network, or give amisqueeze `SERVER`. Not tried with amisqueeze.
 
 | Port | LMS | Music Assistant | Used for |
 |---|---|---|---|
@@ -165,7 +178,7 @@ amisqueeze needs from LMS:
   works too, if the Amiga's TCP/IP stack can resolve it.
 - **A rule for MP3**, only when amisqueeze leaves MP3 to the server: with `amisqueeze`, or with `amisqueeze.fpu`
   on a slow Amiga (see [`FLAC`, `MP3` and `BENCH`](#flac-mp3-and-bench)). Add these lines to a file
-  `custom-convert.conf`, in LMS's root directory or at the root of a plugins directory, then restart LMS:
+  `custom-convert.conf` (where it goes: see below), then restart LMS:
 
   ```
   mp3 pcm * *
@@ -175,6 +188,15 @@ amisqueeze needs from LMS:
 
   FLAC, WAV and AIFF need no rule: LMS converts them by default.
 - **Rules for `MAXRATE`**, only with that option: see [`MAXRATE`](#maxrate).
+
+Where `custom-convert.conf` goes depends on how LMS was installed. Restart LMS after each change.
+
+- Windows, macOS: the "Preferences Folder" shown in LMS's *Settings > Information*;
+- Debian, Ubuntu (LMS's `.deb` package): `/etc/squeezeboxserver`;
+- Red Hat, Fedora (its `.rpm` package): `/etc/lyrionmusicserver`;
+- Docker (the image `lmscommunity/lyrionmusicserver`): mounted as `/lms/custom-convert.conf`, for instance with
+  `-v /path/to/custom-convert.conf:/lms/custom-convert.conf:ro`; tried with that image;
+- another installation: LMS's own folder, the one that holds `slimserver.pl`.
 
 #### Music Assistant
 
@@ -190,13 +212,13 @@ Music Assistant drives amisqueeze through its Squeezelite provider. It needs:
   the Amiga cannot reach that address, amisqueeze connects but no track plays. Then give the address the Amiga
   reaches the computer on in "Published IP address", an advanced setting of Settings > System > Streams. It must be
   an IP address, not a host name.
-- **A codec amisqueeze plays.** Music Assistant converts every track to the player's output codec, set in the
-  player's settings:
+- **A codec amisqueeze plays.** Music Assistant converts every track to the player's output codec, the format it
+  sends, set in the player's settings:
 
   | Output codec | With amisqueeze |
   |---|---|
   | `flac` (the default) | the best choice: lossless, without gaps between tracks; needs a fast Amiga (see [`FLAC`, `MP3` and `BENCH`](#flac-mp3-and-bench)) |
-  | `wav` | for a slow Amiga (a 68020 without FPU): no decoding, but about 2 Mbit/s on the network |
+  | `wav` | for a slow Amiga (a 68020 without FPU): no decoding, but about 2 Mbit/s on the network, 1.4 with the settings below turned off |
   | `mp3` | only with `amisqueeze.fpu`; not recommended (see [known limits](#known-limits)) |
   | `aac` | not played |
 
@@ -250,6 +272,9 @@ Copy ENV:amisqueeze.prefs ENVARC:
 
 The copy in `ENVARC:` keeps them after a reboot. Then just type `amisqueeze`. Options given on the command line
 win over the saved ones: see [default options](#default-options).
+
+A new `NAME` makes a new player for the server, with another MAC address: the [`MAXRATE` rules](#maxrate), if
+any, need the new one.
 
 #### From the Workbench
 
@@ -353,7 +378,7 @@ SERVER,PORT/N/K,NAME/K,MAC/K,OUTPUT/K,LOG/K,UNIT/N/K,NOAUDIO/S,SWAP/S,FLAC/K,MP3
 (`>file`) sends them to the file only.
 
 - Each run is appended to the file, after a line with the date and time, for instance
-  `--- amisqueeze 0.5 (...), started 20-Oct-26 14:32:05`.
+  `--- amisqueeze <version> (...), started 20-Oct-26 14:32:05`.
 - The file is written as the messages come: `Type` reads it while amisqueeze runs.
 - It starts when the file is open: an error in the options shows in the window only.
 - In the default options, it keeps a lasting trace of what happened, handy when something goes wrong.
@@ -634,7 +659,7 @@ rows say what comes next.
 
 | Message | Meaning |
 |---|---|
-| `amisqueeze 0.7 (...)` | the version, at start-up |
+| `amisqueeze <version> (...)` | the version, at start-up |
 | `FLAC: decoded here (FLAC=ON)` (or `converted to PCM by the server (FLAC=OFF)`), the same for MP3 | where the format is decoded, as the option sets it |
 | `output: AHI unit N (..., N Hz)` | the AHI mode and frequency played with, for instance `output: AHI unit 0 (Paula:14 bit stereo++ calibrated, 27429 Hz)`; `output: virtual (no sound)` with `NOAUDIO` or `OUTPUT` |
 | `volume: 5.9 % of full amplitude`, `volume: fixed at 100 % by LMS (samples untouched)` | a change of volume |
@@ -653,6 +678,9 @@ rows say what comes next.
   - `no server answered`: check that the server runs, that its firewall lets 3483/udp in, and that it is on the
     same local network (see [ports](#ports)). A router does not pass the question on to another
     network. With Music Assistant on another slimproto port, give it with `PORT`. Or give `SERVER`;
+  - `no server answered` or `cannot connect`, and the server is fine: check that the Amiga itself is on the
+    network. If its TCP/IP stack has a `ping` command, `ping <server's address>` must get answers; if not, see the
+    stack's own documentation;
   - `cannot connect`: nothing answers at that address. Check `SERVER`, that the server runs, and that its
     firewall lets 3483/tcp in (see [ports](#ports));
   - `connected to the server`: the connection is up.

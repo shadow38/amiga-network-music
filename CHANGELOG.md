@@ -44,6 +44,8 @@ are previews, until 1.0.
   stacks; a call for reports from other Amigas.
 - User guide: "Settings for your Amiga", the program, options and server settings for a slow and a fast Amiga in
   one table; "With Paula", Paula's settings together; "Ports", the server's ports in one table.
+- User guide: where to start without a server; where LMS reads `custom-convert.conf` on each system; the discovery
+  with a server in Docker; checking the Amiga's network with `ping`; a new `NAME` needs new `MAXRATE` rules.
 
 ### Fixed
 
