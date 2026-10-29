@@ -152,7 +152,7 @@ Agreed with the user on 2026-10-26.
 | player-8d MP3 without gaps between tracks | ✅ 2026-10-20 |
 | player-9 Real machine | 🔶 2026-10-28: the protocol with LMS on the A1200; `SYS:WBStartup`, Music Assistant and the memory in WinUAE; the A1200 next for player-15 and player-16 |
 | player-10 Finishing touches | 🔶 the parts of 0.4 and 0.5 done; server discovery 2026-10-27 (0.8), on the A1200 with three stacks; ICY designed 2026-10-27 (0.9) |
-| player-11 Direct Paula output, without AHI | ⬜ study agreed 2026-10-29 (1.0, or 0.9 with ICY); the `audio.device` checks next |
+| player-11 Direct Paula output, without AHI | ⬜ study agreed 2026-10-29 (1.0, or 0.9 with ICY); player-11a (the host) next |
 | player-12 Hardening (the 0.7 review's 50 list) | ✅ 2026-10-27 (version 0.8) |
 | player-13 A lower rate asked of the server | ✅ 2026-10-26: `MAXRATE` and the LMS rules; on the A1200, 62 % of the CPU at 32 kHz against 77 %; Music Assistant upstream: the user's decision |
 | player-14 The buffer running dry in the middle of a frame | ✅ 2026-10-27: on the host and the A1200 |

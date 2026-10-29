@@ -1022,7 +1022,14 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   - **An option `AUDIO=AHI|PAULA`**, AHI by default, also as a ToolType and in `ENV:amisqueeze.prefs`; accepted and
     ignored by the host build. `UNIT` is unused with Paula. Until this output exists, the user guide has Paula
     users add `SWAP` (agreed with the user on 2026-10-27).
-- **To check before coding**, in the autodocs or in WinUAE:
+- **Sub-steps** (agreed with the user on 2026-10-29), one commit each. `stream.c` keeps the `audio_*` interface;
+  `audio.c`'s blocks stay in fast RAM, and the conversion writes from them into the four channels' chip buffers.
+  - **player-11a, on the host only**: the conversion, the divisor, the server's volume turned into 0 to 64, the
+    bytes played; a fake Paula device in `tests/stub_platform.c`.
+  - **player-11b**: `plat_paula_*` in `platform.h`, `audio.device` in `amiga.c`, the `AUDIO` option; the checks
+    below first, then WinUAE.
+  - **player-11c**: the A1200.
+- **To check before coding**, in the autodocs or in WinUAE (player-11b):
   - `CMD_STOP` and `CMD_START` stop and restart a write at once: the pause would then send nothing again;
   - the four channels started in step;
   - the longest `ioa_Length`;
