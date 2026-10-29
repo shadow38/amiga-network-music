@@ -3109,6 +3109,23 @@ static void test_discovery_reply(void)
     CHECK(!reply("", 0, name, sizeof(name)));
 }
 
+/* Nine servers answering, each from its own address: the first eight kept (the table on the stack holds eight), the
+ * ninth left out, the first one chosen */
+static void test_discovery_nine(void)
+{
+    struct player p;
+
+    stub_reset();
+    memset(&p, 0, sizeof(p));
+    p.server_port = SLIMPROTO_PORT;
+    stub_udp_replies = 9;
+    CHECK(slim_discover(&p) == 1 && p.server_ip == 0x7f000002);
+    CHECK(strstr(stub_out, "server \"A\" found at 127.0.0.2\n") &&
+          strstr(stub_out, "server \"H\" found at 127.0.0.9\n"));
+    CHECK(!strstr(stub_out, "127.0.0.10") && !strstr(stub_out, "error"));
+    CHECK(strstr(stub_out, "8 servers answered: connecting to the first") != NULL);
+}
+
 int main(void)
 {
     test_ring();
@@ -3187,6 +3204,7 @@ int main(void)
     test_lame_header();
     test_tooltypes();
     test_discovery_reply();
+    test_discovery_nine();
     printf("test_core: %d checks, %d failed\n", checks, failures);
     return failures ? 1 : 0;
 }

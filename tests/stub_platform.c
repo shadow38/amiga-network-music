@@ -28,7 +28,9 @@ int      stub_wait_advances;
 int      stub_waits_without_control;
 int      stub_again;
 int      stub_connect_interrupted;
+int      stub_udp_replies;
 static int interrupted;
+static int udp_given;                   /* discovery replies received */
 
 struct stub_audio_req stub_audio[8];
 int      stub_audio_fails;
@@ -68,6 +70,8 @@ void stub_reset(void)
     stub_waits_without_control = 0;
     stub_again = 0;
     stub_connect_interrupted = 0;
+    stub_udp_replies = 0;
+    udp_given = 0;
     interrupted = 0;
     stub_priority = STUB_PRI_NONE;
 }
@@ -214,22 +218,27 @@ int plat_recv(int sock, void *buf, int len)
     return n;                           /* 0 when nothing is left = connection closed */
 }
 
-/* Server discovery is tried against the fake server (tests/fake_server.py), not here */
+/* Server discovery: tried against the fake server (tests/fake_server.py), here only with stub_udp_replies */
 int plat_udp_open(void)
 {
-    return -1;
+    return stub_udp_replies > 0 ? STUB_UDP : -1;
 }
 
 int plat_udp_broadcast(int sock, uint16_t port, const void *buf, int len)
 {
     (void)sock; (void)port; (void)buf; (void)len;
-    return 0;
+    return 1;
 }
 
 int plat_udp_recv(int sock, void *buf, int len, uint32_t *ip)
 {
-    (void)sock; (void)buf; (void)len; (void)ip;
-    return -1;
+    (void)sock;
+    if (udp_given >= stub_udp_replies || len < 7)
+        return -1;
+    memcpy(buf, "ENAME\001", 6);
+    ((uint8_t *)buf)[6] = (uint8_t)('A' + udp_given);
+    *ip = 0x7f000002 + (uint32_t)udp_given++;
+    return 7;
 }
 
 void plat_close(int sock)
@@ -396,6 +405,12 @@ int plat_wait(struct plat_fd *fds, int n, uint32_t timeout_ms)
 {
     int i, control = 0;
 
+    if (n == 1 && fds[0].sock == STUB_UDP && !interrupted) {
+        fds[0].ready = udp_given < stub_udp_replies ? PLAT_READ : 0;
+        if (!fds[0].ready)
+            stub_now += timeout_ms;
+        return fds[0].ready ? 1 : 0;
+    }
     if (stub_waits == 0 || interrupted)
         return -1;                      /* as a Ctrl-C */
     if (stub_wait_advances)

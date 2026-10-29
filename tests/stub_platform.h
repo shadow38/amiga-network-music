@@ -2,7 +2,7 @@
  * stub_platform.h - fake platform for the unit tests of the portable core: no network, packets sent by the
  * player are captured, packets from the "server" are fed in, the clock is set by the test.
  * Socket 3 is the control connection, socket 4 the stream (HTTP) connection; handle 5 is the OUTPUT file, captured
- * in memory. The audio device plays requests in the order sent; the test ends them (stub_audio_finish) or a
+ * in memory; socket 6 is server discovery's (UDP), when stub_udp_replies asks for it. The audio device plays requests in the order sent; the test ends them (stub_audio_finish) or a
  * pause aborts them; what they "played" is captured in stub_audio_out.
  */
 #ifndef STUB_PLATFORM_H
@@ -15,6 +15,7 @@
 #define STUB_CONTROL 3
 #define STUB_STREAM  4
 #define STUB_FILE    5
+#define STUB_UDP     6
 
 extern uint8_t  stub_tx[8192];          /* bytes sent by the player on the control connection */
 extern int      stub_tx_len;
@@ -38,6 +39,9 @@ extern int      stub_wait_advances;     /* 1: each plat_wait() moves stub_now on
 extern int      stub_waits_without_control;  /* plat_wait() calls that left the control connection out */
 extern int      stub_again;             /* the next stub_again plat_recv() on the control connection: PLAT_AGAIN */
 extern int      stub_connect_interrupted;    /* 1: plat_connect() fails as interrupted by a Ctrl-C (EINTR) */
+/* Server discovery: with 0, no UDP socket (the fake server tries discovery); otherwise the socket gets that many
+ * replies, each from its own address (127.0.0.2, 127.0.0.3...), then plat_wait() on it times out, moving stub_now on */
+extern int      stub_udp_replies;
 
 struct stub_audio_req {
     const uint8_t *data;
