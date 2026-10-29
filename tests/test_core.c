@@ -2987,6 +2987,36 @@ static void test_run_again(void)
     CHECK(!strstr(stub_out, "recv: error") && !strstr(stub_out, "connection closed") && !strstr(stub_out, "retrying"));
 }
 
+/* The control connection reported readable with nothing to read at every wait (AmiNetXDuo after a cable cut, plan
+ * step player-16): after RX_TIMEOUT_MS without a packet, "no news from the server" and a new connection all the
+ * same. 80 waits of 1 s and 100 ms in turn: 44 s. */
+static void test_run_again_no_news(void)
+{
+    static const char said[] = "amisqueeze: no news from the server, reconnecting\n";
+    struct player p;
+    struct options o;
+    const char *m;
+    int i;
+
+    memset(&o, 0, sizeof(o));
+    o.server = "127.0.0.1";
+    o.port = SLIMPROTO_PORT;
+    o.flac = o.mp3 = DECODE_OFF;
+    stub_reset();
+    for (i = 0; i < 8; i++) {
+        stub_wait[i][0] = PLAT_READ;
+        stub_wait[i][1] = 0;
+    }
+    stub_waits = 80;
+    stub_wait_advances = 1;
+    stub_again = 1000;
+    memset(&p, 0, sizeof(p));
+    CHECK(player_main(&p, &o) == PLAYER_OK);
+    CHECK(stub_waits == 0 && stub_again > 0);
+    CHECK((m = strstr(stub_out, said)) != NULL && strstr(m + 1, said) == NULL);
+    CHECK(count_in_trace("HELO") == 2);
+}
+
 /* Ctrl-C while connecting, the call interrupted (EINTR, plan step player-16): the player stops at once, without a
  * failure reported nor a retry */
 static void test_run_interrupted(void)
@@ -3151,6 +3181,7 @@ int main(void)
     test_priority();
     test_run_stale_ready();
     test_run_again();
+    test_run_again_no_news();
     test_run_interrupted();
     test_stream_again();
     test_lame_header();
