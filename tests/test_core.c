@@ -3170,6 +3170,35 @@ static void test_run_interrupted(void)
     CHECK(!strstr(stub_out, "cannot connect") && !strstr(stub_out, "retrying"));
 }
 
+/* Ctrl-C during a receive, then during a send on the control connection (EINTR): the player stops at once, without
+ * an error said nor a new connection */
+static void test_run_interrupted_io(void)
+{
+    struct player p;
+    struct options o;
+    int send;
+
+    memset(&o, 0, sizeof(o));
+    o.server = "127.0.0.1";
+    o.port = SLIMPROTO_PORT;
+    o.flac = o.mp3 = DECODE_OFF;
+    for (send = 0; send < 2; send++) {
+        stub_reset();
+        feed_strm('t', NULL, 0, 0, 0, NULL);
+        memset(stub_wait, 0, sizeof(stub_wait));
+        stub_wait[0][0] = stub_wait[1][0] = PLAT_READ;
+        stub_waits = 8;
+        if (send) {
+            stub_send_fail_in = 2;                      /* HELO, then STMt */
+            stub_send_interrupted = 1;
+        } else
+            stub_recv_interrupted = 1;
+        memset(&p, 0, sizeof(p));
+        CHECK(player_main(&p, &o) == PLAYER_OK && strstr(stub_out, "stopped\n") != NULL);
+        CHECK(!strstr(stub_out, "error") && !strstr(stub_out, "retrying") && count_in_trace("HELO") == 1);
+    }
+}
+
 /* The stream reported readable with nothing to read (plan step player-16): no error, no DSCO, left out of the waits
  * for AGAIN_WAIT_MS, said once with VERBOSE; then read as usual */
 static void test_stream_again(void)
@@ -3411,6 +3440,7 @@ int main(void)
     test_run_again_no_news();
     test_send_failed();
     test_run_interrupted();
+    test_run_interrupted_io();
     test_stream_again();
     test_again_body_headers();
     test_again_said_each();

@@ -30,6 +30,8 @@ int      stub_again;
 int      stub_connect_interrupted;
 int      stub_udp_replies;
 int      stub_send_fail_in;
+int      stub_send_interrupted;
+int      stub_recv_interrupted;
 static int interrupted;
 static int udp_given;                   /* discovery replies received */
 
@@ -74,6 +76,8 @@ void stub_reset(void)
     stub_udp_replies = 0;
     udp_given = 0;
     stub_send_fail_in = 0;
+    stub_send_interrupted = 0;
+    stub_recv_interrupted = 0;
     interrupted = 0;
     stub_priority = STUB_PRI_NONE;
 }
@@ -194,8 +198,11 @@ int plat_send(int sock, const void *buf, int len)
         memcpy(stub_stream_tx + stub_stream_tx_len, buf, (size_t)len);
         stub_stream_tx_len += len;
     } else {
-        if (stub_send_fail_in > 0 && --stub_send_fail_in == 0)
+        if (stub_send_fail_in > 0 && --stub_send_fail_in == 0) {
+            if (stub_send_interrupted)
+                interrupted = 1;
             return -1;
+        }
         memcpy(stub_tx + stub_tx_len, buf, (size_t)len);
         stub_tx_len += len;
     }
@@ -207,6 +214,11 @@ int plat_recv(int sock, void *buf, int len)
     struct queue *q = sock == STUB_STREAM ? &srx : &rx;
     int n = q->len - q->pos;
 
+    if (sock != STUB_STREAM && stub_recv_interrupted) {
+        stub_recv_interrupted = 0;
+        interrupted = 1;
+        return -1;
+    }
     if (sock != STUB_STREAM && stub_again > 0) {
         stub_again--;
         return PLAT_AGAIN;
