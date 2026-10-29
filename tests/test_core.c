@@ -2119,6 +2119,132 @@ static void test_decoder_virtual(void)
     teardown(&p);
 }
 
+/* Read-ahead decoder, for the tests only: the widening decoder's output, but it first takes all the input there is
+ * into a stage of its own, as mp3.c does. Less than a frame left at the track's end (as an MP3 file's ID3v1 tag) is
+ * dropped by the call that ends its decoding, which writes nothing when it has no PCM left. Until then it has not
+ * finished, though the reading has passed its track and the next track may wait in the buffer. */
+static uint8_t ahead_stage[65536];
+static uint32_t ahead_len, ahead_pos;
+static int ahead_done;
+
+static int ahead_start(struct decoder *d, const struct pcm_format *in)
+{
+    ahead_len = ahead_pos = 0;
+    ahead_done = 0;
+    return widen_start(d, in);
+}
+
+static uint32_t ahead_run(struct decoder *d, struct ring *r, uint32_t avail, int complete, uint8_t *out,
+                          uint32_t out_max)
+{
+    uint32_t n;
+
+    if (avail > sizeof(ahead_stage) - ahead_len)
+        avail = sizeof(ahead_stage) - ahead_len;    /* the tests stay below */
+    ahead_len += ring_read(r, ahead_stage + ahead_len, avail);
+    n = ahead_len - ahead_pos;
+    if (n > out_max / 2)
+        n = out_max / 2;
+    n -= n % d->in_frame;
+    widen(out, ahead_stage + ahead_pos, n);
+    ahead_pos += n;
+    if (complete && ahead_len - ahead_pos < d->in_frame && out_max - 2 * n >= 2 * d->in_frame)
+        ahead_done = 1;                             /* room left: the end is known in this call */
+    return 2 * n;
+}
+
+static uint32_t ahead_buffered(const struct decoder *d)
+{
+    return 2 * ((ahead_len - ahead_pos) - (ahead_len - ahead_pos) % d->in_frame);
+}
+
+static int ahead_finished(const struct decoder *d)
+{
+    (void)d;
+    return ahead_done;
+}
+
+static const struct decoder_ops decoder_ahead = { "ahead", ahead_start, widen_stop, ahead_run,
+                                                  widen_input_for, ahead_buffered, ahead_finished };
+
+/* Track A through the read-ahead decoder: its first na bytes */
+static void open_ahead(struct player *p, uint32_t na)
+{
+    fill(track_a, sizeof(track_a), 21);
+    fill(track_b, sizeof(track_b), 22);
+    open_stream(p, '1', 1);
+    p->out.queue[p->out.queued - 1].ops = &decoder_ahead;
+    stub_feed_stream(track_a, (int)na);
+    drain_stream(p);
+}
+
+/* A's stream ends, then a raw track B (nb bytes) comes whole */
+static void end_then_raw(struct player *p, uint32_t nb)
+{
+    stub_stream_end();
+    stream_io(p, PLAT_READ);
+    stub_reset();
+    open_stream(p, '1', 1);
+    stub_feed_stream(track_b, (int)nb);
+    drain_stream(p);
+    stub_stream_end();
+    stream_io(p, PLAT_READ);
+    clear_tx();
+}
+
+/* The call that only ends a complete track's decoding, while the next track waits in the buffer, its stream ended:
+ * not an empty output (no STMu), the next track plays (31bab90). A ends with a byte that is not a whole frame.
+ * Audio output: A's PCM fills two blocks, then A's and B's streams end and the device plays both blocks before the
+ * next tick (the main loop late), so it has nothing left at that call. */
+static void test_decoder_end_call_audio(void)
+{
+    struct player p;
+    uint32_t na = BLOCK + 1, nb = 30000;
+    int guard;
+
+    setup_audio(&p, 0);
+    open_ahead(&p, na);
+    output_tick(&p, stub_now);
+    CHECK(stub_audio_sends == 2 && audio_pending(&p) == 2 && !ahead_done);    /* more of A to come: waits */
+    end_then_raw(&p, nb);
+    stub_audio_finish();
+    stub_audio_finish();
+    stub_now += 400;
+    output_tick(&p, stub_now);
+    CHECK(audio_pending(&p) == 0 && ahead_done && count_in_trace("STAT:STMu") == 0);
+    for (guard = 0; guard < 20 && p.out.state == OUTPUT_RUNNING; guard++)
+        finish(&p);
+    widen(decoded, track_a, na - 1);
+    to_device(expect, decoded, 2 * (na - 1), 0);
+    to_device(expect + 2 * (na - 1), track_b, nb, 0);
+    CHECK(stub_audio_out_len == (int)(2 * (na - 1) + nb) && !memcmp(stub_audio_out, expect, 2 * (na - 1) + nb));
+    CHECK(count_in_trace("STMo") == 0 && count_in_trace("STAT:STMs") == 1 && count_in_trace("STAT:STMu") == 1);
+    CHECK(stub_audio_bad == 0);
+    teardown(&p);
+}
+
+/* The same on the virtual output and OUTPUT file: A's PCM fills the decoding buffer exactly (four times 4 KB), with
+ * time left in the tick for the call that ends it */
+static void test_decoder_end_call_virtual(void)
+{
+    struct player p;
+    uint32_t na = 8193, nb = PCM_BPS / 10;
+
+    setup_file(&p);
+    open_ahead(&p, na);
+    end_then_raw(&p, nb);
+    stub_now += 100;
+    output_tick(&p, stub_now);
+    CHECK(ahead_done && count_in_trace("STAT:STMu") == 0);
+    play_for(&p, 400);
+    CHECK(p.out.state == OUTPUT_STOPPED);
+    CHECK(count_in_trace("STMo") == 0 && count_in_trace("STAT:STMs") == 1 && count_in_trace("STAT:STMu") == 1);
+    widen(decoded, track_a, na - 1);
+    memcpy(decoded + 2 * (na - 1), track_b, nb);
+    CHECK(stub_file_len == (int)(2 * (na - 1) + nb) && !memcmp(stub_file, decoded, 2 * (na - 1) + nb));
+    teardown(&p);
+}
+
 /* Decoder that cannot start (as without memory), for the tests only: counts its starts, and any later call */
 static int nostart_starts, nostart_used;
 
@@ -3008,6 +3134,8 @@ int main(void)
     test_decoder_audio_gapless();
     test_decoder_audio_pause();
     test_decoder_virtual();
+    test_decoder_end_call_audio();
+    test_decoder_end_call_virtual();
     test_decoder_no_start();
     test_decoder_no_start_audio();
     test_flush();
