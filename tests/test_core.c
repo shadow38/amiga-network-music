@@ -2265,6 +2265,43 @@ static void test_decoder_end_call_virtual(void)
     teardown(&p);
 }
 
+/* The FLAC decoder on a whole track of len bytes it cannot play: the reason said, the track dropped, its decoding
+ * ended */
+static void flac_refused(const uint8_t *data, uint32_t len, const char *said)
+{
+    static const struct pcm_format in = { 44100, 2, 2, 0 };
+    struct ring r;
+    struct decoder d;
+    uint8_t *w, out[256];
+
+    CHECK(ring_init(&r, 4096) && ring_write_space(&r, &w) >= len);
+    memcpy(w, data, len);
+    ring_commit(&r, len);
+    memset(&d, 0, sizeof(d));
+    stub_reset();
+    CHECK(decoder_flac.start(&d, &in));
+    CHECK(decoder_flac.run(&d, &r, len, 1, out, sizeof(out)) == 0);
+    CHECK(strstr(stub_out, said) != NULL && ring_used(&r) == 0 && decoder_flac.finished(&d));
+    decoder_flac.stop(&d);
+    ring_free(&r);
+}
+
+/* The checks of flac.c: not FLAC, no STREAMINFO block, more than 2 channels. "cannot open the stream" is left out:
+ * dr_flac opens any STREAMINFO, and flac.c always gives it one, so only a lack of memory leads there. */
+static void test_flac_refused(void)
+{
+    /* "fLaC", the last metadata block: STREAMINFO (34 bytes), 4096 PCM frames per block, 44100 Hz, 3 channels,
+     * 16 bits */
+    static const uint8_t three[42] = { 'f', 'L', 'a', 'C', 0x80, 0, 0, 34, 0x10, 0x00, 0x10, 0x00, 0, 0, 0, 0, 0, 0,
+                                       0x0A, 0xC4, 0x44, 0xF0 };
+    /* "fLaC", then a PADDING block of 4 bytes, the last one */
+    static const uint8_t no_info[12] = { 'f', 'L', 'a', 'C', 0x81, 0, 0, 4 };
+
+    flac_refused((const uint8_t *)"RIFF\0\0\0\0WAVE", 12, "amisqueeze: flac: not a FLAC stream, track skipped\n");
+    flac_refused(no_info, sizeof(no_info), "amisqueeze: flac: no STREAMINFO block, track skipped\n");
+    flac_refused(three, sizeof(three), "amisqueeze: flac: more than 2 channels, track skipped\n");
+}
+
 /* Decoder that cannot start (as without memory), for the tests only: counts its starts, and any later call */
 static int nostart_starts, nostart_used;
 
@@ -3272,6 +3309,7 @@ int main(void)
     test_decoder_virtual();
     test_decoder_end_call_audio();
     test_decoder_end_call_virtual();
+    test_flac_refused();
     test_decoder_no_start();
     test_decoder_no_start_audio();
     test_flush();
