@@ -153,9 +153,10 @@ class HttpServer(threading.Thread):
     """Serves one PCM track: `seconds` of audio, sent in chunks of `chunk` bytes every `pause` seconds. The bytes
     are pseudo-random (fixed `seed`): a byte lost, duplicated or moved shows in a comparison. A slow network:
     sending stops for `stall` seconds after `stall_at` bytes. A broken connection: it is reset (RST) after
-    `cut_at` bytes."""
+    `cut_at` bytes. `headers`: the response's status line and headers."""
 
-    def __init__(self, seconds=0.0, chunk=65536, pause=0.0, seed=1, stall_at=None, stall=0.0, cut_at=None, data=None):
+    def __init__(self, seconds=0.0, chunk=65536, pause=0.0, seed=1, stall_at=None, stall=0.0, cut_at=None, data=None,
+                 headers=None):
         super().__init__(daemon=True)
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -165,6 +166,7 @@ class HttpServer(threading.Thread):
         self.data = data if data is not None else random.Random(seed).randbytes(frames(seconds))
         self.chunk, self.pause = chunk, pause
         self.stall_at, self.stall, self.cut_at = stall_at, stall, cut_at
+        self.headers = headers or HTTP_HEADERS
         self.request = b""
         self.closed_by_player = False
 
@@ -177,7 +179,7 @@ class HttpServer(threading.Thread):
         end = len(self.data) if self.cut_at is None else self.cut_at
         marks = sorted({end} | ({self.stall_at} if self.stall_at is not None else set()))
         try:
-            conn.sendall(HTTP_HEADERS)
+            conn.sendall(self.headers)
             pos = 0
             for mark in marks:
                 for i in range(pos, mark, self.chunk):
@@ -418,13 +420,23 @@ def sox_wav_header(rate, bits=16, channels=2):
             + b"data" + struct.pack("<I", 0x7ffff000))
 
 
+def cont(interval=0, loop=0):
+    """cont body: the metadata blocks' interval, the loop byte, no GUID (laid out as LMS and Music Assistant do)"""
+    return struct.pack(">IBH", interval, loop, 0)
+
+
 def send_strm_wav(session, http):
-    fmt7 = b"3p1321" + bytes([64])      # as Music Assistant: autostart 3, PCM announced as 16 bits 44.1 kHz stereo
+    """As Music Assistant: autostart 3, PCM announced as 16 bits 44.1 kHz stereo, then cont with an interval of 0
+    once RESP has come"""
+    fmt7 = b"3p1321" + bytes([64])
     send_packet(session.conn, b"strm", strm("s", port=http.port, ip=0, fmt7=fmt7, request=HTTP_REQUEST))
+    session.until("RESP")
+    send_packet(session.conn, b"cont", cont())
 
 
 def scenario_wav():
-    print("-- WAV header (Music Assistant's wav codec): two 24-bit tracks announced as 16 bits, back to back")
+    print("-- WAV header (Music Assistant's wav codec, cont with an interval of 0): two 24-bit tracks announced as "
+          "16 bits, back to back")
     path = os.path.join(tempfile.mkdtemp(), "play.pcm")
     rng = random.Random(3)
     pcm1, pcm2 = rng.randbytes(6 * 44100 * 3 // 2), rng.randbytes(6 * 44100)     # 1.5 s and 1 s of 24-bit stereo
@@ -479,6 +491,105 @@ def scenario_wav_rate():
     check(data == pcm, "file identical to the data without the header (first difference at byte %d)"
           % first_difference(data, pcm))
     check("stream: WAV header: 16 bits, 22050 Hz, 2 channel(s), 2147479552 bytes" in out, "WAV header reported")
+
+
+def icy_data(sound, interval):
+    """An internet radio's stream: `sound` with a metadata block every `interval` bytes. The blocks: a title every
+    third one, the longest possible block (255 x 16 bytes) once, the others empty. Returns the stream and the blocks
+    that are not empty."""
+    data, blocks = bytearray(), []
+    for k, pos in enumerate(range(0, len(sound), interval)):
+        data += sound[pos:pos + interval]
+        if pos + interval >= len(sound):
+            break
+        if k == 4:
+            block = b"StreamTitle='Long';" + bytes(range(1, 256)) * 16
+            block = block[:255 * 16]
+        elif k % 3 == 1:
+            block = b"StreamTitle='Song %d - Caf\xc3\xa9';StreamUrl='';" % k
+            block += b"\0" * (-len(block) % 16)
+        else:
+            block = b""
+        data += bytes([len(block) // 16]) + block
+        if block:
+            blocks.append(block)
+    return bytes(data), blocks
+
+
+def scenario_icy():
+    print("-- internet radio: ICY 200 OK, nothing before a late cont, then blocks every 8000 bytes taken out of the "
+          "sound and sent in META")
+    path = os.path.join(tempfile.mkdtemp(), "play.pcm")
+    sound = random.Random(21).randbytes(frames(2.0))
+    data, blocks = icy_data(sound, 8000)
+    http = HttpServer(data=data, headers=b"ICY 200 OK\r\nicy-metaint:8000\r\nContent-Type: audio/L16\r\n\r\n")
+    http.start()
+    server, proc, s = start_session("Icy", "OUTPUT=" + path)
+    try:
+        fmt7 = b"3p1321" + bytes([16])  # autostart 3, as LMS for a direct stream
+        send_packet(s.conn, b"strm", strm("s", port=http.port, ip=0, fmt7=fmt7, request=HTTP_REQUEST))
+        s.until("RESP")
+        time.sleep(1.0)                 # the whole stream has arrived on the socket by now
+        send_packet(s.conn, b"strm", strm("t", replay_gain=7))
+        _, _, body = s.until("STAT:STMt")
+        check(stat_bytes(body) == 0 and "STAT:STMs" not in s.names(), "nothing received nor played before cont")
+        t_cont = time.time() - s.t0
+        send_packet(s.conn, b"cont", cont(8000))
+        t_start, _, _ = s.until("STAT:STMs")
+        _, _, body_d = s.until("STAT:STMd")
+        t_end, _, _ = s.until("STAT:STMu", timeout=6)
+        check(t_start >= t_cont, "playback starts after cont")
+        check(stat_bytes(body_d) == len(sound), "bytes received: the sound alone (%d)" % stat_bytes(body_d))
+        check(1.85 <= t_end - t_start <= 2.4, "2 s of sound played in %.2f s" % (t_end - t_start))
+        meta = [b for _, n, b in s.log if n == "META"]
+        check(meta == blocks, "each block that is not empty in META, as received (%d of %d)" % (len(meta), len(blocks)))
+    finally:
+        rc, out = stop(proc)
+        server.close()
+    check(rc == 0, "stopped cleanly (exit code %d)" % rc)
+    played = read_output(path)
+    check(played == sound, "file identical to the sound without the blocks (first difference at byte %d)"
+          % first_difference(played, sound))
+    check("stream: title: Song 1 - Caf??\n" in out and "stream: title: Long\n" in out, "titles shown in ASCII")
+
+
+def scenario_http_refused():
+    print("-- HTTP 404: autostart 3 then strm q, autostart 3 then cont (Music Assistant), autostart 1: nothing played")
+    headers = b"HTTP/1.0 404 Not Found\r\nContent-Type: text/html\r\n\r\n"
+    servers = [HttpServer(data=b"<html>not here</html>", headers=headers) for _ in range(3)]
+    for h in servers:
+        h.start()
+    server, proc, s = start_session("Refused")
+    try:
+        direct, autostart_1 = b"3p1321" + bytes([1]), b"1p1321" + bytes([1])
+        send_packet(s.conn, b"strm", strm("s", port=servers[0].port, ip=0, fmt7=direct, request=HTTP_REQUEST))
+        s.until("RESP")
+        send_packet(s.conn, b"strm", strm("q"))
+        s.until("STAT:STMf")
+        check(s.names() == ["STAT:STMf", "STAT:STMc", "RESP", "STAT:STMf"], "autostart 3: RESP, no DSCO, then strm q "
+              "answered (%s)" % s.names())
+
+        s.log = []
+        send_packet(s.conn, b"strm", strm("s", port=servers[1].port, ip=0, fmt7=direct, request=HTTP_REQUEST))
+        s.until("RESP")
+        send_packet(s.conn, b"cont", cont())
+        _, _, dsco = s.until("DSCO")
+        check(dsco == b"\2" and s.names() == ["STAT:STMf", "STAT:STMc", "RESP", "DSCO"],
+              "autostart 3: a cont that comes anyway gets DSCO 2 (%s)" % s.names())
+
+        s.log = []
+        send_packet(s.conn, b"strm", strm("s", port=servers[2].port, ip=0, fmt7=autostart_1, request=HTTP_REQUEST))
+        _, _, dsco = s.until("DSCO")
+        check(dsco == b"\2" and s.names() == ["STAT:STMf", "STAT:STMc", "RESP", "DSCO"],
+              "autostart 1: DSCO 2 after RESP (%s)" % s.names())
+        send_packet(s.conn, b"strm", strm("t", replay_gain=1))
+        _, _, body = s.until("STAT:STMt")
+        check(stat_bytes(body) == 0 and "STAT:STMs" not in s.names(), "nothing played")
+    finally:
+        rc, out = stop(proc)
+        server.close()
+    check(rc == 0 and out.count("amisqueeze: stream: HTTP status 404, nothing played from this address") == 3,
+          "the status said each time, clean exit")
 
 
 def scenario_stall():
@@ -1294,6 +1405,8 @@ if __name__ == "__main__":
     scenario_output()
     scenario_wav()
     scenario_wav_rate()
+    scenario_icy()
+    scenario_http_refused()
     scenario_stall()
     scenario_cut()
     scenario_control_lost()

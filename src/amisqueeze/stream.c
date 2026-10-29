@@ -5,6 +5,10 @@
  *   strm s -> STMf, non-blocking connection, request sent as is, STMc; response headers -> RESP;
  *   body -> ring buffer; the output starts once `threshold` bytes are buffered
  *     (autostart 1: STMs; autostart 0: STMl, then strm u);
+ *   autostart 3 and 2 (a direct stream: LMS's internet radios, every track of Music Assistant): after RESP the body
+ *     waits for cont, which gives the interval of the radio's metadata blocks (icy.c, each one sent back in META),
+ *     then as 1 and 0;
+ *   a status outside 2xx: nothing played; autostart 0 and 1 send DSCO 2, with 2 and 3 the server decides;
  *   end of the HTTP body -> DSCO + STMd: the server then sends the next track, appended to the buffer, and
  *     STMs is sent again when the output reaches it (gapless);
  *   buffer empty: STMo while still streaming, STMu once everything was played;
@@ -98,15 +102,21 @@ void stream_flush(struct player *p)
     ring_truncate(&p->ring, t->start);  /* its data, what the decoding has not taken yet */
 }
 
-/* The stream ends early (connection failed, error): DSCO with the reason; a track without any data is dropped */
-static void stream_fail(struct player *p, int reason)
+/* The stream ends early, in the given state: a track without any data is dropped */
+static void stream_abandon(struct player *p, int state)
 {
     struct output *o = &p->out;
 
     stream_close(p);
-    p->stream.state = STREAM_IDLE;
+    p->stream.state = state;
     if (o->queued > 0 && o->queue[o->queued - 1].start == p->ring.total_in)
         o->queued--;
+}
+
+/* The stream ends early (connection failed, error): DSCO with the reason */
+static void stream_fail(struct player *p, int reason)
+{
+    stream_abandon(p, STREAM_IDLE);
     slim_send_dsco(p, reason);
 }
 
@@ -129,11 +139,13 @@ void stream_start(struct player *p, uint32_t ip, uint16_t port, const uint8_t *r
     s->ip = ip;
     s->port = port;
     s->headers_len = 0;
+    s->headers_end = 0;
     s->bytes = 0;
     s->threshold = threshold;
     s->autostart = autostart;
     s->again = 0;
     s->again_said = 0;
+    icy_start(&s->icy, 0);              /* blocks only once a cont asks for them */
 
     /* Full only with tracks so short that more than MAX_TRACKS fit in the buffer (a server sends the next track once
      * a stream has ended): the oldest is forgotten, its start then never said (one STMs fewer) */
@@ -221,7 +233,7 @@ static int streaming(const struct player *p)
 {
     int s = p->stream.state;
 
-    return s == STREAM_CONNECTING || s == STREAM_HEADERS || s == STREAM_BODY;
+    return s == STREAM_CONNECTING || s == STREAM_HEADERS || s == STREAM_CONT || s == STREAM_BODY;
 }
 
 /* 1 while the decoder has not handed over everything it took from the buffer */
@@ -462,11 +474,11 @@ static void check_start(struct player *p)
     struct stream *s = &p->stream;
     struct output *o = &p->out;
 
-    if (o->state != OUTPUT_STOPPED || o->queued == 0)
+    if (o->state != OUTPUT_STOPPED || o->queued == 0 || s->state == STREAM_CONT)
         return;
     if (s->bytes < s->threshold && s->state != STREAM_DONE)
         return;
-    if (s->autostart) {
+    if (s->autostart & 1) {             /* 1, or 3 once cont has come */
         o->state = OUTPUT_RUNNING;
         o->last_tick = o->last_stmt = plat_now_ms();
         o->carry = 0;
@@ -705,11 +717,71 @@ static void read_again(struct player *p)
     s->again_until = plat_now_ms() + AGAIN_WAIT_MS;
 }
 
+/* A complete metadata block: passed on to the server, its title shown with VERBOSE */
+static void block_received(struct player *p)
+{
+    static char title[80];
+    const struct icy *m = &p->stream.icy;
+
+    slim_send_meta(p, m->block, m->block_len);
+    if (!p->verbose)
+        return;
+    if (icy_title(m->block, m->block_len, title, sizeof(title)))
+        msg("stream: title: %s\n", title);
+    else
+        msg("stream: metadata without a title (%lu bytes)\n", (unsigned long)m->block_len);
+}
+
+/* Body bytes received with the headers: through the metadata blocks into the ring (the headers were read only
+ * with room for them in the ring) */
+static void take_held(struct player *p)
+{
+    struct stream *s = &p->stream;
+    const uint8_t *d = (const uint8_t *)s->headers + s->headers_end;
+    uint32_t left = (uint32_t)(s->headers_len - s->headers_end);
+
+    while (left > 0) {
+        uint32_t n = icy_sound(&s->icy, left);
+
+        if (n > 0) {
+            store(p, d, n);
+            icy_took_sound(&s->icy, n);
+            s->bytes += n;
+        } else {
+            uint8_t *w = icy_meta_space(&s->icy, &n);
+
+            if (n > left)
+                n = left;
+            memcpy(w, d, n);
+            if (icy_took_meta(&s->icy, n))
+                block_received(p);
+        }
+        d += n;
+        left -= n;
+    }
+    s->headers_len = s->headers_end;
+}
+
+/* A status outside 2xx: the body never enters the buffer. Autostart 0 or 1: the stream fails. Autostart 2 or 3:
+ * the server, which has the headers in RESP, decides (LMS follows a redirect itself); a DSCO now would count as a
+ * second failure, or against the next track. */
+static void refuse(struct player *p, int status)
+{
+    if (status < 0)
+        msg("amisqueeze: stream: no HTTP status in the response, nothing played\n");
+    else
+        msg("amisqueeze: stream: HTTP status %d, nothing played from this address\n", status);
+    if (p->stream.autostart < 2)
+        stream_fail(p, DSCO_REMOTE);
+    else
+        stream_abandon(p, STREAM_REFUSED);
+}
+
 static void read_headers(struct player *p)
 {
     struct stream *s = &p->stream;
     int room = (int)sizeof(s->headers) - 1 - s->headers_len;
-    int n, end;
+    int n, end, status;
 
     if (room <= 0) {
         msg("amisqueeze: stream: response headers too long\n");
@@ -735,33 +807,72 @@ static void read_headers(struct player *p)
     if (p->verbose)
         msg("stream: response headers received (%d bytes)\n", end);
     slim_send_resp(p, s->headers, end);
-    s->state = STREAM_BODY;
-    if (s->headers_len > end) {         /* body bytes received with the headers */
-        uint32_t extra = (uint32_t)(s->headers_len - end);
-        store(p, (const uint8_t *)s->headers + end, extra);
-        s->bytes += extra;
+    status = http_status(s->headers, end);
+    if (status < 200 || status > 299) {
+        refuse(p, status);
+        return;
     }
-    s->headers_len = end;
+    s->headers_end = end;
+    if (s->autostart >= 2) {            /* body bytes received with the headers wait in s->headers */
+        s->state = STREAM_CONT;
+        if (p->verbose)
+            msg("stream: waiting for cont\n");
+        return;
+    }
+    s->state = STREAM_BODY;
+    take_held(p);
     check_start(p);
 }
 
+void stream_cont(struct player *p, uint32_t interval)
+{
+    struct stream *s = &p->stream;
+
+    if (s->state == STREAM_REFUSED) {   /* Music Assistant sends cont whatever the status */
+        s->state = STREAM_IDLE;
+        slim_send_dsco(p, DSCO_REMOTE);
+        return;
+    }
+    if (s->state != STREAM_CONT) {
+        if (p->verbose)
+            msg("stream: cont with no stream waiting for it, ignored\n");
+        return;
+    }
+    icy_start(&s->icy, interval);
+    s->state = STREAM_BODY;
+    take_held(p);
+    check_start(p);
+}
+
+/* Each recv stops where the next metadata block begins: the sound goes straight into the ring, the block into its
+ * own buffer */
 static void read_body(struct player *p)
 {
     struct stream *s = &p->stream;
     uint8_t *w;
-    uint32_t room = ring_write_space(&p->ring, &w);
-    int n;
+    uint32_t room = ring_write_space(&p->ring, &w), want;
+    int n, meta;
 
     if (room == 0)
         return;
-    n = plat_recv(s->sock, w, room > 65536 ? 65536 : (int)room);
+    want = icy_sound(&s->icy, room > 65536 ? 65536 : room);
+    meta = want == 0;
+    if (meta)                           /* a block's length byte, or the block */
+        w = icy_meta_space(&s->icy, &want);
+    n = plat_recv(s->sock, w, (int)want);
     if (n == PLAT_AGAIN) {
         read_again(p);
         return;
     }
     s->again = 0;
     if (n > 0) {
+        if (meta) {
+            if (icy_took_meta(&s->icy, (uint32_t)n))
+                block_received(p);
+            return;
+        }
         ring_commit(&p->ring, (uint32_t)n);
+        icy_took_sound(&s->icy, (uint32_t)n);
         s->bytes += (uint32_t)n;
         check_start(p);
         return;

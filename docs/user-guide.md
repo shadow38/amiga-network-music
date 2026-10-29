@@ -617,6 +617,8 @@ rows say what comes next.
 | `stream: recv: error N` | the stream broke during a track: what was received plays, then the next track follows |
 | `stream: request too long (N bytes)` | the stream's request exceeds 1 KB; LMS moves on to the next track |
 | `stream: response headers too long` | the server's answer exceeds 2 KB |
+| `stream: HTTP status N, nothing played from this address` | the stream's server answered with an error instead of the music: 404 for an address not found. With LMS, an internet radio's redirection (a status from 300 to 399) is normal: LMS then sends the new address |
+| `stream: no HTTP status in the response, nothing played` | the stream's server does not answer in HTTP |
 | `flac: not a FLAC stream, track skipped` | the stream is not FLAC |
 | `flac: no STREAMINFO block, track skipped`, `flac: cannot open the stream, track skipped` | a damaged FLAC header |
 | `flac: sample rate 0, track skipped` | a FLAC file with a sample rate of 0 |
@@ -634,7 +636,7 @@ rows say what comes next.
 
 | Message | Meaning |
 |---|---|
-| `strm X not handled`, `strm too short (N)`, `XXXX not handled (N bytes)`, `packet too short (N)` | the server sent a message amisqueeze does not know, or a malformed one: it is ignored. Worth reporting, with the server's name and version |
+| `strm X not handled`, `strm too short (N)`, `cont too short (N)`, `XXXX not handled (N bytes)`, `packet too short (N)` | the server sent a message amisqueeze does not know, or a malformed one: it is ignored. Worth reporting, with the server's name and version |
 | `invalid packet size (N)` | the same, but amisqueeze closes the connection and reconnects |
 
 #### Files
@@ -663,10 +665,11 @@ rows say what comes next.
 | `FLAC: decoded here (FLAC=ON)` (or `converted to PCM by the server (FLAC=OFF)`), the same for MP3 | where the format is decoded, as the option sets it |
 | `output: AHI unit N (..., N Hz)` | the AHI mode and frequency played with, for instance `output: AHI unit 0 (Paula:14 bit stereo++ calibrated, 27429 Hz)`; `output: virtual (no sound)` with `NOAUDIO` or `OUTPUT` |
 | `volume: 5.9 % of full amplitude`, `volume: fixed at 100 % by LMS (samples untouched)` | a change of volume |
-| `<- strm ...`, `-> STAT ...`, `-> DSCO ...`, `<- audg ...`, `<- aude ...` | the messages exchanged with the server |
+| `<- strm ...`, `-> STAT ...`, `-> DSCO ...`, `<- audg ...`, `<- aude ...`, `<- cont ...` | the messages exchanged with the server |
 | `discovery: a packet that is no reply ignored (N bytes)` | while looking for a server, something else than a server's answer came in |
-| `<- vers ignored (N bytes)`, the same for `grfb`, `grfe`, `codc`, `cont` | messages amisqueeze does not need: Music Assistant sends them; `cont` also comes with some internet radios (see [known limits](#known-limits)) |
+| `<- vers ignored (N bytes)`, the same for `grfb`, `grfe`, `codc` | messages amisqueeze does not need: Music Assistant sends them |
 | `control: reported readable, nothing to read yet` (or `stream: ...`) | the TCP/IP stack said data had come, but none could be read yet (AmiNetXDuo, after a packet was lost): amisqueeze waits for it. Said once per connection |
+| `stream: title: ...` | the title an internet radio sends with its sound, also passed on to LMS, which shows it; `?` stands for each character outside plain ASCII |
 | other `stream: ...` messages | the stream's events: parameters, connection, headers received, WAV header, end of the track's data |
 | other `output: ...` messages | the output's events: track started, buffer empty, end of playback, `OUTPUT` file opened and bytes written to it |
 
@@ -708,11 +711,9 @@ rows say what comes next.
   goes first, and the Workbench gets slower. Tried on an A1200 at 26 MHz, copying files and moving windows: gaps
   without `PRI`, clean with `PRI=1`, the Workbench slow but usable; at 5, very slow. With
   [`MAXRATE`](#maxrate), the Workbench keeps more of the CPU.
-- **An internet radio cuts several times a second, with LMS and `amisqueeze.fpu`.** The radio mixes its titles
-  into the sound, and LMS lets amisqueeze fetch it itself (see [known limits](#known-limits)). `VERBOSE` shows
-  `<- cont ignored`. In the player's settings in LMS (*Settings*, the player, then *Audio*), set **Streaming
-  Method** to **Proxied Streaming**. LMS then fetches the radio and removes the titles from the sound. Expected
-  from LMS's code, not tried with amisqueeze yet.
+- **An internet radio does not play with LMS and `amisqueeze.fpu`, with `body not handled`.** The radio's address
+  leads to a playlist (see [known limits](#known-limits)). In the player's settings in LMS (*Settings*, the
+  player, then *Audio*), set **Streaming Method** to **Proxied Streaming**: LMS then fetches the radio itself.
 - **Crackles at low volume with Paula.** Fix the volume at 100 and turn the amplifier down instead (see
   [volume](#volume)).
 - **Nothing happens from the Workbench.** With `QUIET`, add `LOG=<file>` to see the messages. If amisqueeze already
@@ -727,11 +728,11 @@ rows say what comes next.
   it. Other formats play only through the server's conversion to raw PCM.
 - Files above 48 kHz (88.2, 96, 192 kHz) play only when FLAC is decoded on the Amiga. Otherwise LMS cannot lower
   their rate as it makes raw PCM: its log says "Couldn't create command line for flc playback".
-- Some internet radios mix their metadata (the title playing) into the MP3 stream. amisqueeze does not remove it
-  yet. Music Assistant always fetches the radio itself and removes it, and so does LMS in most cases. The
-  exception: LMS lets `amisqueeze.fpu` fetch an MP3 radio at an `http://` address itself. The sound may then cut
-  several times a second: see [troubleshooting](#troubleshooting) for the LMS setting that avoids it. Not
-  checked with a real radio yet.
+- Internet radios: LMS lets `amisqueeze.fpu` fetch an MP3 radio at an `http://` address itself. amisqueeze then
+  takes the titles the radio mixes into its sound out of it, and passes them on to LMS. Not tried with a real
+  radio yet. When the radio's address leads to a playlist rather than to the sound, LMS asks the player to send
+  it back, which amisqueeze does not do: the radio does not play (see [troubleshooting](#troubleshooting)).
+  Music Assistant, and LMS in the other cases, fetch the radio themselves.
 - MP3 tracks follow each other without a gap only when the file has the header that LAME, and the encoders that
   copy its format, write in the first frame. Without it, a few hundredths of a second of silence remain between
   tracks.

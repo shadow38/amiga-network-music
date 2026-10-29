@@ -7,6 +7,12 @@ are previews, until 1.0.
 
 ## [Unreleased]
 
+### Added
+
+- Internet radios that LMS lets `amisqueeze.fpu` fetch itself (MP3 at an `http://` address): the titles the radio
+  mixes into its sound are taken out of it, so that the sound no longer cuts, and passed on to LMS, which shows
+  them. `VERBOSE` shows them too, as `stream: title: ...`.
+
 ### Changed
 
 - User guide: a known limit for LMS's player settings amisqueeze ignores (fade-in, crossfade, output channel mode,
@@ -15,6 +21,8 @@ are previews, until 1.0.
 ### Fixed
 
 - Raw PCM at 88.2 kHz was refused as `stream format p not supported`: it is now played, as 96 kHz already was.
+- A stream whose server answered with an error, or with a redirection, was played as sound: nothing is played now,
+  with `stream: HTTP status N, nothing played from this address`. LMS follows a radio's redirection itself.
 
 ## [0.8] - 2026-10-29
 

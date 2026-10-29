@@ -9,7 +9,8 @@
  *
  * HELO (with the formats decoded here: pcm, flc and mp3 as decided at start-up), STAT, player name (setd),
  * streams (strm s: raw PCM, FLAC, MP3, handled by stream.c and the decoders), stop, flush, pause and unpause,
- * volume (audg); RESP (stream response headers) and DSCO (stream disconnection). Without SERVER, the server is found
+ * volume (audg), cont (a direct stream's body may be read); RESP (stream response headers), DSCO (stream
+ * disconnection) and META (a radio's metadata block). Without SERVER, the server is found
  * by a discovery request broadcast on UDP (LMS's Slim/Networking/Discovery.pm).
  */
 #include <string.h>
@@ -164,6 +165,17 @@ void slim_send_resp(struct player *p, const char *headers, int len)
         send_all(p, (const uint8_t *)headers, len);
 }
 
+void slim_send_meta(struct player *p, const uint8_t *block, uint32_t len)
+{
+    uint8_t pkt[8];
+
+    if (p->sock < 0)
+        return;
+    put_header(pkt, "META", len);
+    if (send_all(p, pkt, 8))
+        send_all(p, block, (int)len);
+}
+
 /* Stream disconnected: reason DSCO_OK (end of the data), DSCO_LOCAL, DSCO_REMOTE, DSCO_UNREACHABLE */
 void slim_send_dsco(struct player *p, int reason)
 {
@@ -273,11 +285,6 @@ static void process_strm_s(struct player *p, const uint8_t *pkt, int len)
     }
     if (autostart < 0 || autostart > 3)
         autostart = 1;
-    if (autostart >= 2) {                   /* would wait for "cont" (radio metadata): not supported yet */
-        if (p->verbose)
-            msg("stream: autostart %d (cont) handled as %d\n", autostart, autostart - 2);
-        autostart -= 2;
-    }
     stream_start(p, ip, (uint16_t)port, pkt + 28, len - 28, (uint32_t)pkt[11] * 1024, autostart, &fmt, ops);
 }
 
@@ -368,11 +375,30 @@ static void process_setd(struct player *p, const uint8_t *pkt, int len)
     send_setd_name(p);                      /* answer to the query, or confirmation */
 }
 
-/* Opcodes known and ignored, sent by Music Assistant (cont: radio metadata, planned for 0.9); they read as errors,
- * so they are shown with VERBOSE only, unlike an unknown opcode */
+/* cont, after the RESP of a stream with autostart 2 or 3: the interval of the radio's metadata blocks (LMS read
+ * icy-metaint in RESP; Music Assistant always sends 0), a loop byte, then GUIDs (Squeezebox2.pm sendContCommand) */
+static void process_cont(struct player *p, const uint8_t *pkt, int len)
+{
+    uint32_t interval;
+
+    if (len < 11) {
+        msg("amisqueeze: cont too short (%d)\n", len);
+        return;
+    }
+    interval = get32(pkt + 4);
+    if (p->verbose) {
+        msg("<- cont, metadata interval %lu\n", (unsigned long)interval);
+        if (pkt[8])
+            msg("stream: loop asked by cont, ignored\n");
+    }
+    stream_cont(p, interval);
+}
+
+/* Opcodes known and ignored, sent by Music Assistant; they read as errors, so they are shown with VERBOSE only,
+ * unlike an unknown opcode */
 static int ignored_opcode(const uint8_t *pkt)
 {
-    static const char ignored[] = "versgrfbgrfecodccont";
+    static const char ignored[] = "versgrfbgrfecodc";
     unsigned i;
 
     for (i = 0; i < sizeof(ignored) - 1; i += 4)
@@ -393,6 +419,8 @@ static void process(struct player *p, const uint8_t *pkt, int len)
         process_audg(p, pkt, len);
     else if (!memcmp(pkt, "setd", 4))
         process_setd(p, pkt, len);
+    else if (!memcmp(pkt, "cont", 4))
+        process_cont(p, pkt, len);
     else if (!memcmp(pkt, "aude", 4)) {
         if (p->verbose && len >= 6)
             msg("<- aude spdif %d dac %d\n", pkt[4], pkt[5]);

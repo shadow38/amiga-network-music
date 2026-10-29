@@ -108,8 +108,8 @@ Agreed with the user on 2026-10-26.
 
 - **Internet radios' metadata** (ICY, player-10), designed with the user on 2026-10-27 (see
   [player-10](phase-1-amisqueeze.md)). For a radio played directly by `amisqueeze.fpu`, LMS asks the radio for
-  `Icy-MetaData: 1`, then sends the blocks' interval in `cont`. amisqueeze will wait for `cont`, remove the blocks
-  and send their titles back to LMS. Coded in a branch, rebased on `dev` once 0.8 is out.
+  `Icy-MetaData: 1`, then sends the blocks' interval in `cont`. amisqueeze waits for `cont`, removes the blocks
+  and sends their titles back to LMS. Coded in a branch, rebased on `dev` once 0.8 is out.
 - **From the 0.7 review's 50 list** (agreed with the user on 2026-10-23), in the same branch:
   - the HTTP status line is never checked (with ICY);
   - the body of a direct stream plays before LMS's `cont`, so a redirect or an error page plays as a track (with
@@ -154,7 +154,7 @@ Agreed with the user on 2026-10-26.
 | player-8 Local decoding (FLAC, then MP3) | ✅ 2026-10-19 |
 | player-8d MP3 without gaps between tracks | ✅ 2026-10-20 |
 | player-9 Real machine | ✅ 2026-10-29: the protocol on the A1200 with LMS; `SYS:WBStartup`, Music Assistant and the memory in WinUAE; a PiStorm when one is at hand |
-| player-10 Finishing touches | 🔶 the parts of 0.4 and 0.5 done; server discovery 2026-10-27 (0.8), on the A1200 with three stacks; ICY designed 2026-10-27 (0.9) |
+| player-10 Finishing touches | 🔶 the parts of 0.4 and 0.5 done; server discovery 2026-10-27 (0.8), on the A1200 with three stacks; ICY coded 2026-10-27 in a branch (0.9), checked on the host, WinUAE next |
 | player-11 Direct Paula output, without AHI | ⬜ idea (CPU load on a slow 68020; crackles with a PCMCIA network card, player-9) |
 | player-12 Hardening (the 0.7 review's 50 list) | ✅ 2026-10-27 (version 0.8) |
 | player-13 A lower rate asked of the server | ✅ 2026-10-26: `MAXRATE` and the LMS rules; on the A1200, 62 % of the CPU at 32 kHz against 77 %; Music Assistant upstream: the user's decision |

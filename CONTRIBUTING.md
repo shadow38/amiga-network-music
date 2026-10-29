@@ -64,8 +64,8 @@ Note that in the `amigadev/crosstools` image, `gcc` is the Amiga cross-compiler:
 ```
 src/<prog>/           C sources, one directory per program -> out/<prog>; code shared between programs will go
                       in src/common/ (with amilms, none yet)
-src/amisqueeze/       portable core (player, slimproto, stream, ring, audio, decoders: decoder, flac, mp3, bench),
-                      system services behind platform.h: amiga.c (AmigaOS, Amiga build only), posix.c
+src/amisqueeze/       portable core (player, slimproto, stream, icy, ring, audio, decoders: decoder, flac, mp3,
+                      bench), system services behind platform.h: amiga.c (AmigaOS, Amiga build only), posix.c
                       (Linux/POSIX, host build only)
 tests/                unit tests of the core (test_core.c on stub_platform.c), fake server (fake_server.py),
                       test files (data/: FLAC and MP3 made from the signals of flac_data.py)
@@ -198,7 +198,8 @@ version: its badge shows the latest release published on GitHub.
 `tests/fake_server.py` plays a slimproto server and its HTTP streams on localhost (handshake, renaming,
 disconnection and reconnection, a server silent for 35 s, Ctrl-C, argument errors; server discovery: one server, two, none, malformed
 replies, found again after a failed connection; streams played, paused, stopped, flushed, refused, held,
-cut; the `OUTPUT` file compared with what was sent; FLAC and MP3 test files decoded from `tests/data/`, whole or
+cut, answered with an HTTP error; an internet radio's metadata blocks taken out of the sound and sent back; the
+`OUTPUT` file compared with what was sent; FLAC and MP3 test files decoded from `tests/data/`, whole or
 from the middle as after a seek, back to back with raw PCM). It also builds amisqueeze without the MP3 decoder
 (`out-host/amisqueeze-nomp3`), as `out/amisqueeze` is, and checks what that build advertises and refuses. The
 syntax of every Python and shell script of `tools/` and `tests/` is checked too, those run only by hand included.

@@ -15,6 +15,7 @@ POSIX header. Whatever touches the system (sockets, clock, files, the audio devi
 | `player.c` | set-up from the options, the main loop, reconnection, the FLAC and MP3 decision at start-up |
 | `slimproto.c` | the control connection: framing, incoming packets, `HELO`, `STAT`, `RESP`, `DSCO`, `SETD` |
 | `stream.c` | the HTTP stream, the queue of tracks, the output (which decoder runs, track boundaries, elapsed time, statuses), the virtual output |
+| `icy.c` | an internet radio's parts that need no system: the HTTP status line, the metadata blocks taken out of the sound, the title in them |
 | `ring.c` | the 1 MB ring buffer of stream bytes |
 | `decoder.c`, `flac.c`, `mp3.c` | the decoders: raw PCM (and a WAV header), FLAC (dr_flac), MP3 (minimp3, `AMISQUEEZE_MP3` only) |
 | `audio.c` | the audio output's blocks: order, conversion to 16-bit big-endian, volume, `SWAP`, bytes played, pause |
@@ -67,8 +68,8 @@ flowchart LR
     blocks["audio.c: 3 blocks (16-bit, volume, SWAP)"]
     ahi["amiga.c: ahi.device"]
 
-    server -->|"strm, audg, setd"| slim
-    slim -->|"STAT, RESP, DSCO, SETD"| server
+    server -->|"strm, cont, audg, setd"| slim
+    slim -->|"STAT, RESP, DSCO, META, SETD"| server
     slim -->|"strm s"| http
     server -->|"HTTP body"| http
     http --> ring --> dec --> out
@@ -149,8 +150,11 @@ The fake audio device of the unit tests counts the requests that break the first
 
 What the server expects, as squeezelite behaves (written from the protocol, not from its code):
 
-1. `strm s` -> `STMf`; connected and request sent -> `STMc`; response headers -> `RESP`.
+1. `strm s` -> `STMf`; connected and request sent -> `STMc`; response headers -> `RESP`. A status outside 2xx: see
+   [internet radios](#what-of-slimproto-is-handled).
 2. Threshold reached: autostart 1 -> `STMs`; autostart 0 -> `STMl`, then `strm u` -> `STMr` (and `STMs`).
+   Autostart 3 and 2 (a direct stream) are the same, but nothing of the body is read before `cont`, not even the
+   bytes that came with the headers; no time limit.
 3. While playing: `STMt` every second, and in reply to each `strm t` (its timestamp echoed); `strm p` -> `STMp`,
    `strm u` -> `STMr`.
 4. End of the HTTP body -> `DSCO` 0 + `STMd`. The server then sends the next track's `strm s`; its data is appended
@@ -193,7 +197,7 @@ Framing: server to client, a 2-byte length then a 4-byte opcode and the data; cl
   rules to `flc` have one. For PCM, `strm s` gives the source file's rate and sample size whatever the rule sends
   (`pcm_sample_rates`, `pcm_sample_sizes`): the rules of the user guide send WAV, whose header `decoder.c` plays
   (plan step player-13).
-- `STAT` (the statuses above), `RESP`, `DSCO`, `SETD` (the player name).
+- `STAT` (the statuses above), `RESP`, `DSCO`, `META` (a radio's metadata block), `SETD` (the player name).
 
 **Received and handled**:
 
@@ -204,6 +208,8 @@ Framing: server to client, a 2-byte length then a 4-byte opcode and the data; cl
   swaps it for AHI), autostart `1`, the control connection's address, request
   `GET /stream.mp3?player=<mac> HTTP/1.0`.
 - `strm t`, `q`, `f`, `p` (interval 0), `u`.
+- `cont`: the blocks' interval (32 bits), a `loop` byte, a count of GUIDs (16 bits), the GUIDs. Only the
+  interval is used; the `loop` byte, and a `cont` with no stream waiting for it, are said with `VERBOSE`.
 - `audg`: the 16.16 gains, already on the server's volume curve, applied to the samples by `audio.c`; adjust 0 =
   fixed volume (samples untouched). ahi.device always gets full volume (see [AHI](#ahi)).
 - `setd` id 0: the player name, set or queried; answered with `SETD`.
@@ -211,15 +217,14 @@ Framing: server to client, a 2-byte length then a 4-byte opcode and the data; cl
 **Received and ignored on purpose**:
 
 - `aude` (S/PDIF and DAC on or off): printed with `VERBOSE` only;
-- `vers`, `grfb`, `grfe`, `codc`, `cont`, which Music Assistant sends (`cont` also comes with LMS's internet
-  radios): `<- ... ignored` with `VERBOSE` only, since they read as errors;
+- `vers`, `grfb`, `grfe`, `codc`, which Music Assistant sends: `<- ... ignored` with `VERBOSE` only, since they
+  read as errors;
 - `strm a` (skip ahead) and `strm p` with an interval: for synchronised players; `strm u` resumes at once, whatever
-  time it gives;
-- autostart 2 and 3 (wait for `cont`, for radio metadata): played as 0 and 1.
+  time it gives.
 
-**Not handled** (message "not handled", always shown, nothing done): `serv`, and any other opcode. Not done at
-all: internet radios' metadata (ICY, planned for 0.9, see the plan), synchronisation between players, displays
-and IR.
+**Not handled** (message "not handled", always shown, nothing done): `serv`, LMS's `body` (for a playlist address
+played directly, LMS asks for the body back), and any other opcode. Not done at all: synchronisation between
+players, displays and IR, HTTPS.
 
 **Internet radios** (read in LMS 9.1.1's and Music Assistant 2.10.7's code): ICY blocks reach amisqueeze only
 on a direct stream, where the player fetches the radio itself.
@@ -231,6 +236,25 @@ on a direct stream, where the player fetches the radio itself.
 - Otherwise LMS fetches the radio, asks for `Icy-MetaData` and removes the blocks itself (`readMetaData`).
 - Music Assistant always fetches the radio, removes the blocks and keeps the title
   (`controllers/streams/audio.py`).
+
+A direct stream comes with autostart 3 or 2. LMS sends `cont` once it has read `RESP`, with the interval of
+`icy-metaint` (LMS asked the radio for `Icy-MetaData`); on a 3xx it sends a new `strm s` itself, and outside 200 to
+399 the stream fails (`Squeezebox2.pm`, `directHeaders`). Music Assistant sends autostart 3 or 2 for every track,
+then `codc` and `cont` with an interval of 0 after each `RESP`, even after an error (`client.py`, `_process_resp`).
+So:
+
+- **The status line**: its code is the three digits after the first space, whatever the protocol (`ICY 200 OK` is
+  a 200). Outside 2xx the body never enters the ring, and a message is always shown. Autostart 0 or 1: `DSCO` 2.
+  Autostart 2 or 3: `RESP` only, and the server decides; a `DSCO` would count as a second failure, or against the
+  next track. A `cont` that comes anyway gets `DSCO` 2. amisqueeze follows no redirect itself.
+- **The blocks**: every `interval` bytes of sound, a length byte (times 16), then the block, `StreamTitle='...';`
+  padded with NULs. Each `recv` stops where the next block begins (`icy_sound()`), so the sound goes straight into
+  the ring; the length byte and the block (4080 bytes at most) go to a buffer in `struct stream`. The bytes that
+  came with the headers are split the same way at `cont`. The threshold and `STAT` count the sound only. With an interval of 1000
+  (some radios), a `recv` every 1000 bytes at most.
+- **The titles**: LMS learns a direct stream's titles only from the player. Each block that is not empty goes
+  back in `META`, as received; LMS reads `StreamTitle` in it (`Protocols/HTTP.pm`, `parseMetadata`), shows it and
+  gives it to remotes. On the console, with `VERBOSE`, in ASCII.
 
 **Server discovery** (without `SERVER`): a UDP request broadcast to 255.255.255.255 on `PORT`, `e` then the
 field `NAME` with no value (a 4-byte tag, a 1-byte length). LMS (`Slim/Networking/Discovery.pm`) and Music
@@ -249,7 +273,8 @@ transcodes everything to the output codec set for the player (`flac` by default,
 `constants.py`, `CONF_ENTRY_OUTPUT_CODEC`):
 
 - `strm s` without the stream's parameters for FLAC and MP3, autostart 2 or 3, then `codc` (the codec) and `cont`
-  after the response headers: amisqueeze reads the body at once, and MA sends `strm u`;
+  after the response headers: amisqueeze reads the body once `cont` has come; with autostart 2, MA then sends
+  `strm u`;
 - its `wav` output codec sends a WAV header, 24 bits while `strm s` says 16: `decoder.c` reads the header at the
   start of each PCM track and plays its format;
 - its `mp3` codec has no LAME header (not gapless); `aac` is refused (`STMn`, which MA ignores);

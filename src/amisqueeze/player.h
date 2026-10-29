@@ -63,8 +63,25 @@ enum stream_state {
     STREAM_IDLE,                        /* no connection */
     STREAM_CONNECTING,                  /* non-blocking connection in progress */
     STREAM_HEADERS,                     /* request sent, reading the response headers */
+    STREAM_CONT,                        /* autostart 2 or 3: headers passed on in RESP, the body waits for cont */
+    STREAM_REFUSED,                     /* the same with a status outside 2xx: closed, nothing played; a cont
+                                           still coming gets DSCO 2 */
     STREAM_BODY,                        /* receiving audio data into the ring buffer */
     STREAM_DONE                         /* the server closed the connection: everything is in the buffer */
+};
+
+/* Metadata blocks of an internet radio (ICY), mixed into the sound every `interval` bytes (icy.c) */
+#define ICY_BLOCK_MAX (255 * 16)
+enum icy_state { ICY_SOUND, ICY_LENGTH, ICY_BLOCK };
+
+struct icy {
+    uint32_t interval;                  /* bytes of sound between two blocks, from cont; 0 = no blocks */
+    uint32_t sound_left;                /* bytes of sound before the next length byte */
+    int      state;                     /* enum icy_state: what the next byte of the stream is */
+    uint8_t  length;                    /* the length byte, times 16 */
+    uint32_t block_len;                 /* bytes of the block being received */
+    uint32_t block_got;
+    uint8_t  block[ICY_BLOCK_MAX];      /* as received, sent back to the server in META */
 };
 
 struct stream {
@@ -76,13 +93,16 @@ struct stream {
     uint8_t  request[1024];             /* HTTP request from strm s, sent as is */
     int      request_len;
     char     headers[2048];             /* HTTP response headers, passed on in RESP */
-    int      headers_len;
-    uint64_t bytes;                     /* body bytes received */
+    int      headers_len;               /* bytes in headers; in STREAM_CONT, body bytes follow headers_end */
+    int      headers_end;
+    uint64_t bytes;                     /* bytes of sound received (the metadata blocks left out) */
     uint32_t threshold;                 /* bytes to receive before the output may start */
-    int      autostart;                 /* 1 = start by itself, 0 = wait for strm u */
+    int      autostart;                 /* 1 = start by itself, 0 = wait for strm u; 3 and 2 the same once cont
+                                           has come */
     int      again;                     /* reported readable with nothing to read: left out of the wait until */
     uint32_t again_until;               /* this time (ms) */
     int      again_said;                /* said once for this stream (VERBOSE) */
+    struct icy icy;
 };
 
 /* A socket reported readable with nothing to read is left out of the waits for this long (plan step player-16):
@@ -243,6 +263,8 @@ void slim_send_stat(struct player *p, const char *event, uint32_t server_ts);
 void slim_send_refusal(struct player *p);
 void slim_send_resp(struct player *p, const char *headers, int len);
 void slim_send_dsco(struct player *p, int reason);
+/* A radio's metadata block, passed on as received (LMS reads the title in it) */
+void slim_send_meta(struct player *p, const uint8_t *block, uint32_t len);
 /* Server discovery: broadcasts a request on UDP port p->server_port, then takes replies for DISCOVERY_WAIT_MS.
  * Returns 1 with p->server_ip set to the first server that answered, 0 if none did, -1 if interrupted, -2 on a
  * network error (said). */
@@ -268,6 +290,9 @@ void stream_stop(struct player *p);
 void stream_flush(struct player *p);
 /* The stream socket became readable / writable (PLAT_READ, PLAT_WRITE) */
 void stream_io(struct player *p, int ready);
+/* cont: the stream waiting for it (autostart 2 or 3) is read, with metadata blocks every interval bytes of sound
+ * (0 = none) */
+void stream_cont(struct player *p, uint32_t interval);
 /* Events wanted on the stream socket (0 = none: idle, or buffer full) */
 int stream_events(const struct player *p);
 /* OUTPUT file: created (or replaced) before playing anything, closed at the end; 0 if it cannot be created */
@@ -316,5 +341,23 @@ struct audio_mode;
 int audio_check_mode(int unit, const struct audio_mode *m);
 /* Offset just after the blank line ending HTTP headers ("\r\n\r\n" or "\n\n"), 0 if not there yet */
 int http_header_end(const char *buf, int len);
+
+/* icy.c */
+/* The status code of an HTTP response: the three digits after the first space, whatever the protocol ("ICY 200 OK"
+ * gives 200); -1 if the first line has none */
+int http_status(const char *buf, int len);
+/* A stream starts: a block every interval bytes of sound, 0 = none */
+void icy_start(struct icy *m, uint32_t interval);
+/* Of the next n bytes of the stream, how many are sound; 0 when metadata comes first */
+uint32_t icy_sound(const struct icy *m, uint32_t n);
+/* n bytes of sound received (at most what icy_sound() allowed) */
+void icy_took_sound(struct icy *m, uint32_t n);
+/* Where the metadata due goes, and how many bytes (*n): the length byte, or the rest of the block */
+uint8_t *icy_meta_space(struct icy *m, uint32_t *n);
+/* n bytes of metadata written there; 1 when a block that is not empty is complete (block, block_len) */
+int icy_took_meta(struct icy *m, uint32_t n);
+/* The value of StreamTitle='...' in a block, in ASCII (any other byte as '?'), cut to size - 1 bytes; 0 if the
+ * block has none */
+int icy_title(const uint8_t *block, uint32_t len, char *title, int size);
 
 #endif
