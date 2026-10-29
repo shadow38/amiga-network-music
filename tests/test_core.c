@@ -3598,6 +3598,43 @@ static void test_again_body_headers(void)
     teardown(&p);
 }
 
+/* Reported readable with nothing to read while a radio's metadata is due: before its length byte, before the block,
+ * in the middle of the block. No error, no DSCO, left out of the waits; the rest read once it comes, the sound into
+ * the ring and the block to the server as without the pause */
+static void test_icy_again(void)
+{
+    static const int cuts[] = { 16, 17, 25 };           /* the sound read; the length byte too; half the block */
+    static uint8_t stream[49], got[32];
+    struct player p;
+    uint32_t n;
+    unsigned i;
+
+    memcpy(stream, pcm, 16);
+    stream[16] = 1;
+    memcpy(stream + 17, "StreamTitle='a';", 16);
+    memcpy(stream + 33, pcm + 16, 16);
+    for (i = 0; i < sizeof(cuts) / sizeof(cuts[0]); i++) {
+        setup(&p, "Amiga");
+        CHECK(slim_connect(&p, 0));
+        answer_stream(&p, '3', 1, http_ok, (int)strlen(http_ok));
+        feed_cont(16, 0);
+        drain(&p);
+        CHECK(p.stream.state == STREAM_BODY);
+        clear_tx();
+        stub_feed_stream(stream, cuts[i]);
+        drain_stream(&p);
+        stream_io(&p, PLAT_READ);                       /* nothing to read */
+        CHECK(p.stream.state == STREAM_BODY && stub_tx_len == 0 && stream_events(&p) == 0);
+        stub_now += AGAIN_WAIT_MS;
+        stub_feed_stream(stream + cuts[i], (int)sizeof(stream) - cuts[i]);
+        drain_stream(&p);
+        CHECK(p.stream.state == STREAM_BODY && p.stream.bytes == 32);
+        CHECK(ring_peek(&p.ring, 0, got, 32) == 32 && !memcmp(got, pcm, 32));
+        CHECK(metas(got, &n) == 1 && n == 16 && !memcmp(got, "StreamTitle='a';", 16));
+        teardown(&p);
+    }
+}
+
 static int count_in_out(const char *s)
 {
     const char *m = stub_out;
@@ -3796,6 +3833,7 @@ int main(void)
     test_stream_again();
     test_again_body_headers();
     test_again_said_each();
+    test_icy_again();
     test_lame_header();
     test_tooltypes();
     test_discovery_reply();
