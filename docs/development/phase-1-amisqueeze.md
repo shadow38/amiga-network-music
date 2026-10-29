@@ -1005,6 +1005,11 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   - **The volume is Paula's, never the samples'.** At 100, or fixed by LMS: 64 and 1, so 14 bits. Below 100: the
     high channel at the server's volume (1 to 64; 0 only for 0), the low one at 0. That is 8 bits lowered by
     Paula: no CPU, and Paula's noise goes down with the music. Changed at once with `ADCMD_PERVOL`.
+  - **8 bits on request** (`AUDIO=PAULA8`): the high channels only, at Paula's volume even at 100. One channel per
+    side stays free, for the system's beep or another program.
+  - **A channel taken by another program**: the channels are allocated at a precedence the system's beep cannot
+    take them from. If one is taken all the same: a message and a clean stop. Playing 8 bits while the low
+    channels are taken, then taking them back: later, if at all.
   - **The rate**: above Paula's maximum (about 28.6 kHz with a 15 kHz screen mode, a period of 124: to check), it
     is divided by the smallest integer that brings it under. So 48 kHz plays at 24, 44.1 at 22.05, 32 at 16, 88.2
     and 96 kHz at a quarter. Lower rates play as they come (27,429, 24, 22.05 kHz). The grouped samples are
@@ -1019,27 +1024,29 @@ belongs to the task that opened it; packets serialised field by field; buffers a
     host test in the spirit of the "widening" decoder.
   - **Paula's LED filter** off while playing, as `paula.audio` does, and its state restored at every exit, Ctrl-C
     included.
-  - **An option `AUDIO=AHI|PAULA`**, AHI by default, also as a ToolType and in `ENV:amisqueeze.prefs`; accepted and
+  - **An option `AUDIO=AHI|PAULA|PAULA8`**, AHI by default, also as a ToolType and in `ENV:amisqueeze.prefs`; accepted and
     ignored by the host build. `UNIT` is unused with Paula. Until this output exists, the user guide has Paula
     users add `SWAP` (agreed with the user on 2026-10-27).
 - **Sub-steps** (agreed with the user on 2026-10-29), one commit each. `stream.c` keeps the `audio_*` interface;
   `audio.c`'s blocks stay in fast RAM, and the conversion writes from them into the four channels' chip buffers.
   - **player-11a, on the host only**: the conversion, the divisor, the server's volume turned into 0 to 64, the
     bytes played; a fake Paula device in `tests/stub_platform.c`.
-  - **player-11b**: `plat_paula_*` in `platform.h`, `audio.device` in `amiga.c`, the `AUDIO` option; the checks
-    below first, then WinUAE.
+  - **player-11b**: `plat_paula_*` in `platform.h`, `audio.device` in `amiga.c`, the `AUDIO` option with
+    `PAULA8`; the checks below first, then WinUAE.
   - **player-11c**: the A1200.
 - **To check before coding**, in the autodocs or in WinUAE (player-11b):
   - `CMD_STOP` and `CMD_START` stop and restart a write at once: the pause would then send nothing again;
   - the four channels started in step;
   - the longest `ioa_Length`;
-  - how a channel taken by another program is reported (`ADIOERR_CHANNELSTOLEN`);
+  - how a channel taken by another program is reported (`ADIOERR_CHANNELSTOLEN`), and at which precedence the
+    Sound preferences play the beep;
   - the period from the machine's own clock (3,546,895 Hz PAL, 3,579,545 Hz NTSC; `REALLY_PAL` in
     `GfxBase->DisplayFlags`, to check), never from the screen mode.
 - **Criterion** (agreed with the user on 2026-10-29):
   - in WinUAE, slow profile: player-4 to player-6's LMS criteria (test tones, pause, seek, volume, tracks without
     gaps), and the load measured with `cpucount`, as in player-4c; then WinUAE set to NTSC: the same pitch as in
-    PAL, and the same elapsed time in LMS;
+    PAL, and the same elapsed time in LMS; with `PAULA8`, the system's beep heard while the music plays on
+    unbroken;
   - on the A1200 with LMS, at 22.05 kHz sent by the server: a load clearly below AHI's 50 % (30-40 %
     estimated), the same at volume 50 with a clean sound;
   - on the A1200, 44.1 kHz divided by the core: a clean playback, its load measured;
