@@ -6,7 +6,7 @@ amisqueeze is and what the Amiga needs: the [README](../README.md).
 Version 0.8 in development. The latest release, 0.7, is a preview, like this version (see
 [what has been tried](#what-has-been-tried)).
 
-**Using amisqueeze**: [settings for your Amiga](#settings-for-your-amiga) | [installing](#installing) |
+**Using amisqueeze**: [installing](#installing) | [settings for your Amiga](#settings-for-your-amiga) |
 [sound (AHI)](#sound-ahi) | [server setup](#server-setup) | [starting](#starting-amisqueeze) |
 [stopping](#stopping-amisqueeze) | [volume](#volume).
 **Reference**: [options](#options) | [ToolTypes](#tooltypes) | [default options](#default-options) |
@@ -15,35 +15,8 @@ Version 0.8 in development. The latest release, 0.7, is a preview, like this ver
 
 ## Using amisqueeze
 
-In order: install amisqueeze, set up AHI, set up the server, then start amisqueeze.
-
-### Settings for your Amiga
-
-amisqueeze works out most of it by itself: at start-up, it measures how fast the Amiga decodes FLAC and MP3. It
-decodes a format only at twice real time or more, and leaves the others to the server. What is left to choose
-depends on the machine.
-
-To see where your Amiga stands, once amisqueeze is [installed](#installing), run from a Shell:
-
-```
-amisqueeze BENCH
-```
-
-With an FPU, run `amisqueeze.fpu BENCH`, which measures MP3 too. It needs no server, prints the speeds and quits
-(see [`FLAC`, `MP3` and `BENCH`](#flac-mp3-and-bench)). Then follow the row that matches:
-
-| Your Amiga | Program | Options | LMS | Music Assistant |
-|---|---|---|---|---|
-| **Slow**: `BENCH` below 2x, such as a 68020 at 26 MHz | `amisqueeze` | `SWAP` with Paula; `PRI=1` if the sound has gaps while the Workbench is used | `MAXRATE=AHI` and its [rules](#maxrate), which also convert MP3 (without `MAXRATE`: the [MP3 rule](#lyrion-music-server)); the volume [fixed at 100](#volume) | the codec `wav`, with normalization and crossfade off (see [Music Assistant](#music-assistant)); leave `MAXRATE` out |
-| **Fast**: FLAC and MP3 at 2x or more in `BENCH`, such as a PiStorm with Emu68 | `amisqueeze.fpu` | `SWAP` with Paula | nothing | the codec `flac`, the default |
-
-- The Slow row was tried on an A1200 with a 68EC020 at 26 MHz and Paula. The Fast row was tried in WinUAE with
-  the JIT, at about a PiStorm's speed.
-- A 68030, 68040 or 68060 has not been tried yet. A format that `BENCH` leaves to the server needs that server's
-  settings of the Slow row; `MAXRATE` and `PRI` only if the sound has gaps.
-- With Paula, see also [with Paula](#with-paula).
-
-To keep the options for every start: [keeping the options](#keeping-the-options).
+In order: install amisqueeze, find the settings for your Amiga, set up AHI, set up the server, then start
+amisqueeze.
 
 ### Installing
 
@@ -79,6 +52,34 @@ more for `amisqueeze.fpu` decoding MP3.
 
 To check an archive before unpacking it, compare its SHA-256 with the one given in the release's notes and its
 `.sha256` file: `sha256sum` on Linux, `Get-FileHash` in PowerShell.
+
+### Settings for your Amiga
+
+amisqueeze works out most of it by itself: at start-up, it measures how fast the Amiga decodes FLAC and MP3. It
+decodes a format only at twice real time or more, and leaves the others to the server. What is left to choose
+depends on the machine.
+
+To see where your Amiga stands, run from a Shell:
+
+```
+amisqueeze BENCH
+```
+
+With an FPU, run `amisqueeze.fpu BENCH`, which measures MP3 too. It needs no server, prints the speeds and quits
+(see [`FLAC`, `MP3` and `BENCH`](#flac-mp3-and-bench)). Then follow the row that matches:
+
+| Your Amiga | Program | Options | LMS | Music Assistant |
+|---|---|---|---|---|
+| **Slow**: `BENCH` below 2x, such as a 68020 at 26 MHz | `amisqueeze` | `SWAP` with Paula; `PRI=1` if the sound has gaps while the Workbench is used | `MAXRATE=AHI` and its [rules](#maxrate), which also convert MP3 (without `MAXRATE`: the [MP3 rule](#lyrion-music-server)); the volume [fixed at 100](#volume) | the codec `wav`, with normalization and crossfade off (see [Music Assistant](#music-assistant)); leave `MAXRATE` out |
+| **Fast**: FLAC and MP3 at 2x or more in `BENCH`, such as a PiStorm with Emu68 | `amisqueeze.fpu` | `SWAP` with Paula | nothing | the codec `flac`, the default |
+
+- The Slow row was tried on an A1200 with a 68EC020 at 26 MHz and Paula. The Fast row was tried in WinUAE with
+  the JIT, at about a PiStorm's speed.
+- A 68030, 68040 or 68060 has not been tried yet. A format that `BENCH` leaves to the server needs that server's
+  settings of the Slow row; `MAXRATE` and `PRI` only if the sound has gaps.
+- With Paula, see also [with Paula](#with-paula).
+
+To keep the options for every start: [keeping the options](#keeping-the-options).
 
 ### Sound (AHI)
 
