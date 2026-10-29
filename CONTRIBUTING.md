@@ -88,7 +88,7 @@ CHANGELOG.md          what changed in each release (updated with each one)
 Makefile              build (m68k-amigaos-gcc must be in the PATH; HOSTCC for the host build)
 tools/amiga-make.sh   runs make with whichever toolchain is available (see "Building")
 tools/check-saves.py  checks the generated assembly (safeguard against a gcc bug, see "Building")
-tools/check-stack.py  checks the linker map: libnix's stack swap linked (see "Stack and memory")
+tools/check-stack.py  checks the linker map: libnix's stack swap linked, the stack's size (see "Stack and memory")
 tools/check-core.py   checks that the portable core includes no header of the system (make test, see "Code rules")
 tools/pcm-compare.py  compares the PCM written by amisqueeze (OUTPUT option) with a reference, byte by byte
 tools/make-test-audio.sh makes the test sounds (tones, sides, sweep, gapless MP3s, counter pattern)
@@ -268,8 +268,9 @@ with AHI 6.6; 4.x is expected to work, not checked). How the parts fit together:
 - Both executables set `__stack` (16 KB `amisqueeze`, 32 KB `amisqueeze.fpu`, in `amiga.c`) and link libnix's
   `__stkinit`, which gives them that stack when the Shell's is smaller: dr_flac needs about 5.5 KB (4.6 KB in
   `drflac_open` alone), minimp3 about 17.5 KB (most of it in `mp3dec_decode_frame`). After each link,
-  `tools/check-stack.py` reads the linker map (`obj/<prog>.map`): the build fails if `__stkinit` is not linked or
-  `__stack` is not defined in `amiga.c`.
+  `tools/check-stack.py` reads the linker map (`obj/<prog>.map`): the build fails if `__stkinit` is not linked,
+  `__stack` is not defined in `amiga.c`, or its value is not the one the `Makefile` expects (`<prog>_STACK`, to
+  change with it).
 - Measured with the probe of [Checks the host tests cannot make](#checks-the-host-tests-cannot-make), from a script
   with `Stack 4096`: `amisqueeze` on 2026-10-29 (0.8-dev, on an A1200 with AmiNetXDuo), 5688 of 16384 bytes with
   the server discovery, raw PCM and a seek, 5632 with FLAC and a seek; `amisqueeze.fpu` on 2026-10-23 (0.7, in
