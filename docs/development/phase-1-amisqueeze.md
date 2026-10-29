@@ -1006,7 +1006,8 @@ belongs to the task that opened it; packets serialised field by field; buffers a
     `ENV:CyberSound/SoundDrivers/14Bit_Calibration`, written by CyberSound's calibration program, else a default
     curve. From them, a table of 65,536 two-byte entries (128 KB, fast RAM) gives each sample's two bytes: no
     more CPU than the split. `paula.audio` is LGPL: its file read, its table built by our own code. Only the 14
-    bits use it, so volume 100.
+    bits use it, so volume 100. A separate application could measure the table from a PC's line input: outside
+    this project.
   - **The volume is Paula's, never the samples'.** At 100, or fixed by LMS: 64 and 1, so 14 bits. Below 100: the
     high channel at the server's volume (1 to 64; 0 only for 0), the low one at 0. That is 8 bits lowered by
     Paula: no CPU, and Paula's noise goes down with the music. Changed at once with `ADCMD_PERVOL`.
