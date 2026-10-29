@@ -3186,6 +3186,79 @@ static void test_stream_again(void)
     teardown(&p);
 }
 
+/* Reported readable with nothing to read in a control packet's body, then in the stream's response headers: no
+ * error, the packet and the headers read once they come */
+static void test_again_body_headers(void)
+{
+    struct player p;
+
+    setup(&p, "Amiga");
+    CHECK(slim_connect(&p, 0));
+    p.verbose = 1;
+    clear_tx();
+    feed_strm('t', NULL, 0, 0, 0, NULL);
+    CHECK(slim_receive(&p) == 1);                       /* its length */
+    stub_again = 1;
+    CHECK(slim_receive(&p) == -1 && strstr(stub_out, "control: reported readable, nothing to read yet\n"));
+    CHECK(slim_receive(&p) == 1 && !strcmp(trace(), "STAT:STMt"));
+
+    strm_pcm(&p, '1', 1);
+    stream_io(&p, PLAT_WRITE);                          /* connected, the request sent */
+    CHECK(p.stream.state == STREAM_HEADERS);
+    stub_out[0] = '\0';
+    stream_io(&p, PLAT_READ);                           /* nothing to read */
+    CHECK(p.stream.state == STREAM_HEADERS && stream_events(&p) == 0);
+    CHECK(!strcmp(stub_out, "stream: reported readable, nothing to read yet\n"));
+    stub_now += AGAIN_WAIT_MS;
+    clear_tx();
+    stub_feed_stream(http_ok, (int)strlen(http_ok));
+    drain_stream(&p);
+    CHECK(p.stream.state == STREAM_BODY && !strcmp(trace(), "RESP"));
+    teardown(&p);
+}
+
+static int count_in_out(const char *s)
+{
+    const char *m = stub_out;
+    int n = 0;
+
+    while ((m = strstr(m, s)) != NULL) {
+        n++;
+        m += strlen(s);
+    }
+    return n;
+}
+
+/* "Nothing to read yet" is said once per connection and once per stream (VERBOSE); a new stream is not left out of
+ * the waits because the one it replaces was */
+static void test_again_said_each(void)
+{
+    struct player p;
+
+    setup(&p, "Amiga");
+    CHECK(slim_connect(&p, 0));
+    p.verbose = 1;
+    stub_again = 2;
+    CHECK(slim_receive(&p) == -1 && slim_receive(&p) == -1);
+    slim_disconnect(&p);
+    CHECK(slim_connect(&p, 1));
+    stub_again = 1;
+    CHECK(slim_receive(&p) == -1 && count_in_out("control: reported readable, nothing to read yet\n") == 2);
+
+    open_stream(&p, '1', 1);
+    stream_io(&p, PLAT_READ);
+    stream_io(&p, PLAT_READ);
+    CHECK(stream_events(&p) == 0);                      /* left out of the waits */
+    strm_pcm(&p, '1', 1);                               /* the next track, its stream replacing that one */
+    CHECK(stream_events(&p) == PLAT_WRITE);
+    stream_io(&p, PLAT_WRITE);
+    stub_feed_stream(http_ok, (int)strlen(http_ok));
+    drain_stream(&p);
+    stream_io(&p, PLAT_READ);
+    CHECK(p.stream.state == STREAM_BODY && count_in_out("stream: reported readable, nothing to read yet\n") == 2);
+    teardown(&p);
+}
+
 /* Workbench start: an icon's ToolTypes turned into a command line for the template */
 static void test_tooltypes(void)
 {
@@ -3330,6 +3403,8 @@ int main(void)
     test_send_failed();
     test_run_interrupted();
     test_stream_again();
+    test_again_body_headers();
+    test_again_said_each();
     test_lame_header();
     test_tooltypes();
     test_discovery_reply();
