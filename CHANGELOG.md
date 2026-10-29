@@ -39,6 +39,8 @@ are previews, until 1.0.
   off; seen on a real A1200.
 - User guide and README: the free memory amisqueeze needs, now measured: about 1.7 MB to play through AHI, not
   1.1 MB.
+- README: shorter: the quick start in five steps, the server's ports among them; the details it repeated are
+  left to the user guide.
 
 ### Fixed
 

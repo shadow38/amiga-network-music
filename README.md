@@ -41,8 +41,7 @@ a fast Amiga; otherwise the server sends raw PCM) and plays it through AHI.
 ## Programs
 
 - **amisqueeze**: the player. Like squeezelite on a PC, the server sees it as one more Squeezebox, controlled from
-  its web interface, its apps or any Squeezebox remote; the sound goes through AHI (Paula or a sound card). A
-  software player, without a display or infrared remote.
+  its web interface, its apps or any Squeezebox remote. A software player, without a display or infrared remote.
 - **amilms**: a remote control from the Amiga (not started yet).
 
 ### What the Amiga needs
@@ -55,75 +54,49 @@ a fast Amiga; otherwise the server sends raw PCM) and plays it through AHI.
 
 ## Quick start
 
-1. **Download** the zip of the latest [release](https://github.com/shadow38/amiga-network-music/releases)
-   (0.7: a preview until 1.0), or its `.lha`. It holds amisqueeze and the user guide; what changed from one
-   version to the next is in the [changelog](CHANGELOG.md). A build of the version in development (the `dev`
-   branch): see [CONTRIBUTING](CONTRIBUTING.md#host-build-and-tests).
-2. **Pick the executable**: `amisqueeze` for any Amiga with a 68020 or better; `amisqueeze.fpu` for an Amiga
-   with an FPU, which also decodes MP3. Copy it with its icon (`.info`) into a drawer to start it from the
-   Workbench, or into `C:` to run it from a Shell.
-3. **On the Amiga**: a TCP/IP stack running, and AHI installed, with unit 0 set to a "stereo++" mode in
-   `SYS:Prefs/AHI` (with Paula: `Paula:14 bit stereo++`); without "++", the music plays on one side only. Where to
-   get AHI and how to set it up: [sound](docs/user-guide.md#sound-ahi).
-4. **Start it**:
-   - from the **Workbench**: double-click the icon. A window shows its messages. Copied into `SYS:WBStartup`, it
-     starts with the Amiga;
-   - from a **Shell**: `amisqueeze`.
+1. **Download** the zip or the `.lha` of the latest
+   [release](https://github.com/shadow38/amiga-network-music/releases) (0.7: a preview until 1.0).
+2. **Copy the executable** with its icon (`.info`) into a drawer, or into `C:` to run it from a Shell:
+   `amisqueeze` for any Amiga with a 68020 or better, `amisqueeze.fpu` for an Amiga with an FPU, which also decodes
+   MP3.
+3. **Set up AHI**: unit 0 in a "stereo++" mode in `SYS:Prefs/AHI` (with Paula: `Paula:14 bit stereo++`).
+   Without "++", the music plays on one side only. See [sound](docs/user-guide.md#sound-ahi).
+4. **Open the server's ports** to the Amiga: 3483 tcp and udp, and 9000/tcp for LMS or 8097/tcp for Music
+   Assistant. With LMS, MP3 needs a conversion rule on an Amiga that does not decode it. With Music Assistant on a
+   slow Amiga, choose the `wav` codec. See [server setup](docs/user-guide.md#server-setup).
+5. **Start amisqueeze**, with the TCP/IP stack running: double-click its icon, or type `amisqueeze` in a Shell.
+   It finds the server on the local network by itself. A player called "Amiga" then shows up in the server's web
+   interface: choose it there or in an app, and play.
 
-   **amisqueeze finds the server by itself**: it asks on the local network (UDP port 3483) and connects to the
-   server that answers. A player called "Amiga" then shows up in the server's web interface: choose it there or in
-   an app, and play.
-
-   **Or give the server's address**, with `amisqueeze SERVER=192.168.1.10` or the ToolType `SERVER=192.168.1.10`:
-   when amisqueeze finds no server (on another network, or 3483/udp closed by its firewall), or to choose one when
-   several answer (otherwise it takes the first). See [starting](docs/user-guide.md#starting-amisqueeze).
-5. **To stop it**: Exchange, the system's list of background programs, lists it ("Remove"); or Ctrl-C in its
-   window or Shell. To keep the Shell options for the next times, then just type `amisqueeze`:
-
-   ```
-   Echo "NAME=Kitchen SWAP" >ENV:amisqueeze.prefs
-   Copy ENV:amisqueeze.prefs ENVARC:
-   ```
-
-On the server side: the server reachable from the Amiga (ports 3483 tcp and udp, and 9000 for LMS; 3483 tcp and
-udp, and 8097 for Music Assistant); with LMS, for MP3 files on an Amiga that does not decode them, a conversion
-rule; with Music Assistant, the player's output codec set to `flac` (`wav` on a slow Amiga): see
-[server setup](docs/user-guide.md#server-setup).
+If no server is found, give its address: `amisqueeze SERVER=192.168.1.10`, or the ToolType of the same name. To
+stop amisqueeze: Ctrl-C in its window, or Remove in Exchange. See
+[starting](docs/user-guide.md#starting-amisqueeze) and [stopping](docs/user-guide.md#stopping-amisqueeze).
 
 Everything else (all the options, sound settings, volume, messages) is in the **[user guide](docs/user-guide.md)**.
 
 ## Status
 
-Under development, in testable steps described in the [development plan](docs/development/README.md). Written in
-C, cross-compiled; tested in WinUAE and on a real A1200.
-
 **amisqueeze** works:
 
-- **as a player**: it finds the server on the local network by itself, shows up in LMS and Music Assistant and
-  plays through AHI; play, pause, seek, stop, next track without a gap, volume;
-- **raw PCM**: 8 to 32 bits, mono or stereo, up to 48 kHz;
-- **FLAC**: decoded on the Amiga when the CPU is fast enough (a PiStorm-class CPU, measured at start-up), otherwise
-  converted by the server;
-- **MP3**: decoded on the Amiga by `amisqueeze.fpu` (Amigas with an FPU) when it is fast enough, otherwise
-  converted by the server;
-- **robustness**: it recovers from a slow or broken stream and from a server restart;
-- **on the Amiga**: started from a Shell or from the Workbench (icon, options in its ToolTypes, at boot from
-  `SYS:WBStartup`), listed in Exchange, which stops it; a log file (`LOG`) if wanted.
+- plays from LMS and Music Assistant: play, pause, seek, stop, next track without a gap, volume;
+- raw PCM up to 48 kHz; FLAC and MP3 decoded on the Amiga when its CPU is fast enough (MP3 with
+  `amisqueeze.fpu`), otherwise converted by the server;
+- recovers from a slow or broken stream and from a server restart;
+- starts from a Shell or from the Workbench, at boot too; Exchange lists it and stops it.
 
-Tested in WinUAE with emulated networking: LMS 9.1.1 (listening, one hour of playback) and Music Assistant 2.10.7
-(listening). On a real A1200 with an ACA1221lc accelerator (a 68EC020 at 26.67 MHz), a Xircom CE3-10/100 PCMCIA
-network card (driver `xircomce2.device`) and Paula, playback from LMS takes about three quarters of the CPU at CD
-quality, half at 22.05 kHz. The user guide lists
-[what has been tried](docs/user-guide.md#what-has-been-tried), the [known limits](docs/user-guide.md#known-limits) and
-some [troubleshooting](docs/user-guide.md#troubleshooting).
+Tested in WinUAE and on a real A1200 with a 26 MHz 68020, where CD-quality playback takes about three quarters of
+the CPU. The user guide lists [what has been tried](docs/user-guide.md#what-has-been-tried), the
+[known limits](docs/user-guide.md#known-limits) and some [troubleshooting](docs/user-guide.md#troubleshooting).
+What changed in each version: the [changelog](CHANGELOG.md).
 
 **amilms**: not started.
 
 ## For developers
 
 Building (cross-compiler, `make`, `make dist`), the host build and its tests (`make test`, also run by GitHub on
-each push), testing in WinUAE, the repository layout: **[CONTRIBUTING.md](CONTRIBUTING.md)**.
-The roadmap and the design decisions are in the [development plan](docs/development/README.md).
+each push), a build of the version in development (the `dev` branch), testing in WinUAE, the repository layout:
+**[CONTRIBUTING.md](CONTRIBUTING.md)**. The roadmap and the design decisions are in the
+[development plan](docs/development/README.md).
 
 ## Licence
 
