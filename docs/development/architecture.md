@@ -250,8 +250,8 @@ So:
 - **The blocks**: every `interval` bytes of sound, a length byte (times 16), then the block, `StreamTitle='...';`
   padded with NULs. Each `recv` stops where the next block begins (`icy_sound()`), so the sound goes straight into
   the ring; the length byte and the block (4080 bytes at most) go to a buffer in `struct stream`. The bytes that
-  came with the headers are split the same way at `cont`. The threshold and `STAT` count the sound only. With an interval of 1000
-  (some radios), a `recv` every 1000 bytes at most.
+  came with the headers are split the same way at `cont`. The threshold and `STAT` count the sound only. With an
+  interval of 1000 (some radios), a `recv` every 1000 bytes at most.
 - **The titles**: LMS learns a direct stream's titles only from the player. Each block that is not empty goes
   back in `META`, as received; LMS reads `StreamTitle` in it (`Protocols/HTTP.pm`, `parseMetadata`), shows it and
   gives it to remotes. On the console, with `VERBOSE`, in ASCII.

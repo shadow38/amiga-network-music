@@ -843,7 +843,7 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   So the elapsed time after a command is judged on the real machine (step 5 of the protocol above); the player-4c
   statement "seek ... all as with the virtual output" was true of both outputs alike.
 
-## player-10 Finishing touches 🔶 (versions 0.4 to 0.9: the parts of 0.4 and 0.5, and the discovery of 0.8, done)
+## player-10 Finishing touches ✅ (versions 0.4 to 0.9)
 
 - **Split** (decided 2026-10-20, see the [plan](README.md)): **0.4** the volume modes (`LMS` and `FIXED`, done
   as LMS's own setting, see below; `MIXER` left for later) and the AHI mode warning; **0.5** `LOG=<file>` and
@@ -873,8 +873,8 @@ belongs to the task that opened it; packets serialised field by field; buffers a
 - **Internet radios' metadata** (ICY; designed with the user on 2026-10-27, version 0.9). Coded in a branch,
   rebased on `dev` once 0.8 is out (agreed with the user on 2026-10-29). Done on 2026-10-27, checked on the host
   and in WinUAE (a real radio with LMS, Music Assistant's playback). Rebased on 2026-10-30: `read_body` makes one
-  `recv`, into the ring or into the block, then handles player-16's `PLAT_AGAIN` for both, with a test. Read in
-  LMS 9.1.1 and aioslimproto 3.2.3 (Music Assistant 2.10.7):
+  `recv`, into the ring or into the block, then handles player-16's `PLAT_AGAIN` for both, with a test; checked
+  again in WinUAE, with AmiNetXDuo. Read in LMS 9.1.1 and aioslimproto 3.2.3 (Music Assistant 2.10.7):
   - LMS sends `cont` for a direct stream only, once it has read the `RESP`. It holds the blocks' interval
     (32 bits), a `loop` byte, a count of GUIDs (16 bits), then the GUIDs. On a 3xx, LMS sends a new `strm s`
     itself. Outside 200 to 399, the stream fails (`Squeezebox2.pm`, `directHeaders`).
