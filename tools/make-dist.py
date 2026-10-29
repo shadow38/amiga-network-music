@@ -22,8 +22,9 @@ run.
 Paths inside the zip use forward slashes (the zip standard: Windows PowerShell 5.1's Compress-Archive writes
 backslashes, which other tools misread).
 
-The text files the archives hold, and the sources of the program (its messages), must be ASCII with LF line
-endings: the Amiga reads ISO-8859-1, the sources are UTF-8.
+The text files the archives hold, the sources of the program (its messages) and those of the developer tools that
+run on the Amiga (tools/amiga/) must be ASCII with LF line endings: the Amiga reads ISO-8859-1, the sources are
+UTF-8.
 
 Usage: make-dist.py [--dev] <prog>        (from the repository root, after the Amiga build)
          --dev: a development version is accepted (out/<prog>-<x.y>-dev.*), to try the archives; never published
@@ -43,6 +44,7 @@ import zipfile
 
 READMES = "dist"
 TEXTS = ("LICENSE", "README.md", "CHANGELOG.md", "docs/user-guide.md")     # in the archives
+AMIGA_TOOLS = "tools/amiga"     # developer tools built for the Amiga (make cpucount), not in the archives
 SHORT_MAX = 40          # Aminet: "This description must not be longer than 40 characters."
 LINE_MAX = 78           # Aminet: "Lines should not be longer than 78 characters"
 FIELDS = ("Short", "Uploader", "Author", "Type", "Version", "Replaces", "Architecture", "Requires", "Distribution",
@@ -118,10 +120,10 @@ def readme_problems(text, version):
 
 
 def text_problems(prog):
-    """The text files of the archives and the program's sources that are not ASCII with LF line endings, as a
-    list."""
+    """The text files of the archives, the program's sources and those of the tools that run on the Amiga that are
+    not ASCII with LF line endings, as a list."""
     problems = []
-    for path in TEXTS + tuple(sorted(glob.glob(f"src/{prog}/*.[ch]"))):
+    for path in TEXTS + tuple(sorted(glob.glob(f"src/{prog}/*.[ch]") + glob.glob(f"{AMIGA_TOOLS}/*.[ch]"))):
         with open(path, "rb") as f:
             lines = f.read().split(b"\n")
         wrong = [n for n, line in enumerate(lines, 1) if any(c > 127 for c in line)]
@@ -197,7 +199,8 @@ def main():
     if problems:
         sys.exit("\n".join(f"make-dist: {p}" for p in problems))
     if mode == "--check-text":
-        print(f"make-dist: the text files and the sources of {prog} are ASCII, with LF line endings")
+        print(f"make-dist: the text files, the sources of {prog} and of {AMIGA_TOOLS}/ are ASCII, with LF line "
+              "endings")
         return
     if not shutil.which("lha"):
         sys.exit("make-dist: lha not found: LHa for UNIX (https://github.com/jca02266/lha), which the image "

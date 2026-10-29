@@ -149,8 +149,9 @@ published).
 `make dist` refuses to build the archive unless `tools/check-version.py --release` accepts the version: not a
 `-dev` one, the same in both `$VER:` strings, `Firmware=` and the user guide, with its section at the top of the
 changelog, dated as the `$VER:` strings, and nothing left under "Unreleased". It also refuses a text
-file of the archive (`LICENSE`, the README, the changelog, the user guide) or a source of amisqueeze that is not
-ASCII with LF line endings ([Text for the Amiga](#code-rules)); `make test` checks them too.
+file of the archive (`LICENSE`, the README, the changelog, the user guide), a source of amisqueeze or of
+`tools/amiga/` that is not ASCII with LF line endings ([Text for the Amiga](#code-rules)); `make test` checks them
+too.
 
 Both workflows pin their actions by commit SHA, the version in a comment (as `tools/amiga-make.sh` pins the image
 by its digest; to update one, take the commit of its new tag), and their checkout keeps no token
