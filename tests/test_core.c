@@ -276,6 +276,7 @@ static void test_maxrate(void)
     CHECK(parse_maxrate("22050") == 22050 && parse_maxrate("8000") == 8000 && parse_maxrate("48000") == 48000);
     CHECK(parse_maxrate("7999") == 0 && parse_maxrate("48001") == 0 && parse_maxrate("") == 0);
     CHECK(parse_maxrate("22k") == 0 && parse_maxrate("-22050") == 0 && parse_maxrate("99999999999") == 0);
+    CHECK(parse_maxrate("4294989346") == 0);            /* 2^32 + 22050: refused, not wrapped to 22050 */
     CHECK(maxrate_from_ahi(MAXRATE_AHI, 27429) == 27429 && maxrate_from_ahi(MAXRATE_AHISTD, 27429) == 24000);
     CHECK(maxrate_from_ahi(MAXRATE_AHISTD, 22050) == 22050 && maxrate_from_ahi(MAXRATE_AHISTD, 22049) == 16000);
     CHECK(maxrate_from_ahi(MAXRATE_AHISTD, 44099) == 32000 && maxrate_from_ahi(MAXRATE_AHISTD, 8000) == 8000);
