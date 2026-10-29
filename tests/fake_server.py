@@ -898,6 +898,33 @@ def mp3_frames(data):
     return frames
 
 
+def scenario_mp3_stall():
+    print("-- MP3, slow network: the stream stops for 3 s in the middle of a frame, STMo, then playback resumes")
+    name = "s16-320-raw.mp3"
+    data = flac_file(name)
+    frames = mp3_frames(data)
+    stall_at = frames[len(frames) // 2][0] + 100        # 100 bytes into a frame
+    path = os.path.join(tempfile.mkdtemp(), "play.pcm")
+    http = HttpServer(data=data, chunk=3000, pause=0.001, stall_at=stall_at, stall=3.0)
+    http.start()
+    server, proc, s = start_session("Mp3Stall", "OUTPUT=" + path)
+    try:
+        send_strm_mp3(s, http, threshold_kb=16)
+        t_start, _, _ = s.until("STAT:STMs")
+        s.until("STAT:STMo")
+        t_end, _, _ = s.until("STAT:STMu", timeout=10)
+        # Once the buffer runs dry; maybe once more as the data comes back in pieces, a frame decoded before the
+        # next piece (seen 0.5 s, then 3.0 s after STMs)
+        check(1 <= s.names().count("STAT:STMo") <= 2, "STMo (%s)" % " ".join(s.names()))
+        check(3.0 <= t_end - t_start <= 4.5, "1 s of audio played in %.2f s, including the wait" % (t_end - t_start))
+    finally:
+        rc, out = stop(proc)
+        server.close()
+    data, want = read_output(path), mp3_decoded[name]
+    check(data == want and rc == 0, "decoded as without the stall (%d bytes, %d expected, first difference at %d)"
+          % (len(data), len(want), first_difference(data, want)))
+
+
 def scenario_mp3_seek_lms():
     print("-- MP3 seek as LMS sends it: the file's first frame (LAME header), then the data from a frame in the middle")
     file = flac_file("s16-128.mp3")
@@ -1281,6 +1308,7 @@ if __name__ == "__main__":
     scenario_maxrate()
     scenario_mp3()
     scenario_mp3_tags()
+    scenario_mp3_stall()
     scenario_mp3_seek()
     scenario_mp3_seek_lms()
     scenario_mp3_continuous()
