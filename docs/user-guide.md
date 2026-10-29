@@ -755,9 +755,10 @@ Paula through AHI 4.18, a Xircom CE3-10/100 PCMCIA card with a fixed `xircomce2.
 
 - with LMS 9.1.1: playback and its CPU load (see [`MAXRATE`](#maxrate)), the commands, a server restart, a short
   network cut, an hour of playback, the Workbench;
+- a network cut of 13 s with AmiNetXDuo: `no news from the server` about 35 s after the cut, then a reconnection,
+  and LMS played the track again from its beginning;
 - the server discovery, with LMS and Music Assistant 2.10.7, through AmiNetXDuo, Miami 3.2b and the demo of
-  Roadshow 1.15. Miami takes much more CPU: gaps at CD quality;
-- not yet: a network cut of several seconds with AmiNetXDuo, since the fix of this version.
+  Roadshow 1.15. Miami takes much more CPU: gaps at CD quality.
 
 **In WinUAE** (6.0, an A1200 setup):
 

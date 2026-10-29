@@ -1159,7 +1159,7 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   `ENV:` and from a ToolType, with its message.
 - **On the A1200**: `PRI=1` with a copy and windows moved: clean. Without `PRI`: gaps, as before.
 
-## player-16 A receive that never blocks 🔶 (2026-10-28, version 0.8: the A1200 next)
+## player-16 A receive that never blocks ✅ (2026-10-29, version 0.8)
 
 - **Found on the A1200** (2026-10-27, player-9 step 6, AmiNetXDuo 1.0.0-rc2): the cable pulled for 13 s left
   half-open connections. amisqueeze never said "no news from the server", over more than 3 minutes. Ctrl-C then
@@ -1172,7 +1172,8 @@ belongs to the task that opened it; packets serialised field by field; buffers a
     comes after it in the main loop.
   - Ctrl-C interrupts the call with EINTR and leaves the signal set: hence the messages.
 
-  The most likely cause, not proven: the `VERBOSE` line below will tell.
+  The most likely cause when found. The A1200 run below shows its first part: the socket reported readable with
+  nothing to read. The segment out of order is still read from the source, not seen.
 - **Content** (agreed with the user on 2026-10-28):
   1. both sockets non-blocking once connected. Today the control one is blocking, and the stream one goes back to
      blocking once connected. A receive with nothing to read means "nothing yet", not an error: a portable code
@@ -1205,6 +1206,15 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   - Ctrl-C idle, three times while playing through AHI, and in pause: "stopped" alone each time;
   - the load with `NOAUDIO`, raw PCM at 44.1 kHz, the builds before and after in turn (six 10 s windows each):
     42.4 % before, 42.8 % after, within the spread of the windows (about 1 %). Unchanged.
+- **On the A1200** (2026-10-29, `dev` at `ae71a6e`, AmiNetXDuo 1.0.0-rc2 with the fixed `xircomce2.device`, LMS,
+  raw PCM at 44.1 kHz):
+  - the cable pulled for 13 s while playing. The sound stopped, then came back after the cable, the Workbench
+    usable throughout. Then the `VERBOSE` line "control: reported readable, nothing to read yet", and the server's
+    side of the control connection closed without amisqueeze seeing it. "no news from the server" came about 35 s
+    after the cut, then a reconnection at once; LMS started the track again from its beginning;
+  - a first run of the same cut kept the control connection: `STMo`, then LMS restarted the track (player-6b);
+  - Ctrl-C and Exchange's Remove while playing: "stopped" alone;
+  - the load 77 % (counts 3,090 to 3,154, idle about 13,520), as in player-9; no `STMo`.
 
 ## player-17 Hardening after the 0.8 review 🔶 (2026-10-29, version 0.8: the tests, `QUIET` (R2), the code fixes and the documentation done)
 
