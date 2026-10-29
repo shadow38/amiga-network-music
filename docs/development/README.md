@@ -161,7 +161,7 @@ Agreed with the user on 2026-10-26.
 | player-14 The buffer running dry in the middle of a frame | ✅ 2026-10-27: on the host and the A1200 |
 | player-15 The task priority (`PRI`) | ✅ 2026-10-29: on the host, in WinUAE and on the A1200 |
 | player-16 A receive that never blocks | ✅ 2026-10-29: on the host, in WinUAE and on the A1200 with AmiNetXDuo |
-| player-17 Hardening after the 0.8 review | 🔶 2026-10-29: the tests, `QUIET` (R2), the code fixes, the documentation; WinUAE and the A1200 next, then the guide's `PRI` line (version 0.8) |
+| player-17 Hardening after the 0.8 review | 🔶 2026-10-29: the tests, `QUIET` (R2), the code fixes, the documentation, the stack on the A1200; WinUAE next, then the light review (version 0.8) |
 | remote-0 Study (common interface, Music Assistant feasibility, name) | ⬜ before any amilms code |
 | remote-1 to remote-7 LMS | ⬜ |
 | remote-8 to remote-11 Music Assistant | ⬜ |

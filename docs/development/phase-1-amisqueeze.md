@@ -1218,7 +1218,7 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   - Ctrl-C and Exchange's Remove while playing: "stopped" alone;
   - the load 77 % (counts 3,090 to 3,154, idle about 13,520), as in player-9; no `STMo`.
 
-## player-17 Hardening after the 0.8 review 🔶 (2026-10-29, version 0.8: the tests, `QUIET` (R2), the code fixes and the documentation done)
+## player-17 Hardening after the 0.8 review 🔶 (2026-10-29, version 0.8: the tests, `QUIET` (R2), the code fixes, the documentation and the A1200 done)
 
 - **Goal**: a 0.8 closer to 1.0: the findings of the [0.8 review](reviews/0.8.md) at 75, and most of its 50 list
   (agreed with the user on 2026-10-29). The safety nets are in tools-13; R1 is settled by the A1200 session of
@@ -1252,7 +1252,7 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   - in WinUAE: MP3 tracks back to back, then raw PCM, with `amisqueeze.fpu` (`31bab90` on an Amiga); an icon with
     `QUIET` and `PRI=11`: the window opens with the message;
   - on the A1200, in the session of player-15 and player-16: the stack measured again with AmiNetXDuo
-    (`CONTRIBUTING.md`, Stack and memory);
+    (`CONTRIBUTING.md`, Stack and memory). Done on 2026-10-29: at most 5688 of 16384 bytes, against 5600 in 0.7;
   - then a light review of `6d1f562..` (publish-5): its findings at 75 fixed or accepted, its 50 list left to 0.9,
     without another round.
 - **Left for 0.9** (agreed with the user on 2026-10-29): dr_flac's `assert()` active in the Amiga build (a change

@@ -268,9 +268,10 @@ with AHI 6.6; 4.x is expected to work, not checked). How the parts fit together:
   `drflac_open` alone), minimp3 about 17.5 KB (most of it in `mp3dec_decode_frame`). After each link,
   `tools/check-stack.py` reads the linker map (`obj/<prog>.map`): the build fails if `__stkinit` is not linked or
   `__stack` is not defined in `amiga.c`.
-- Measured last on 2026-10-23 on the 0.7 release build, with the probe of
-  [Checks the host tests cannot make](#checks-the-host-tests-cannot-make), from a script with `Stack 4096`: 5600 of
-  16384 bytes used by `amisqueeze` playing FLAC with a seek, 17544 of 32768 by `amisqueeze.fpu` with FLAC and MP3. Redo it when `-fstack-usage` shows the deepest path growing by more
+- Measured with the probe of [Checks the host tests cannot make](#checks-the-host-tests-cannot-make), from a script
+  with `Stack 4096`: `amisqueeze` on 2026-10-29 (0.8-dev, on an A1200 with AmiNetXDuo), 5688 of 16384 bytes with
+  the server discovery, raw PCM and a seek, 5632 with FLAC and a seek; `amisqueeze.fpu` on 2026-10-23 (0.7, in
+  WinUAE), 17544 of 32768 with FLAC and MP3. Redo it when `-fstack-usage` shows the deepest path growing by more
   than 1 KB, or when a new decoder, library or start-up path is linked; a few bytes more do not call for it.
 - Memory: see `Avail` in [Checks the host tests cannot make](#checks-the-host-tests-cannot-make).
 
