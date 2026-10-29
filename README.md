@@ -99,5 +99,5 @@ stack, the sound output and the server. With a problem, add a log: `amisqueeze V
 - amisqueeze is written from scratch from the protocol's description. squeezelite and LMS (GPL) served as
   references for the protocol's behaviour, not as a source of code.
 - Third-party code, in `third_party/`, each with a README giving its origin and licence:
-  - [dr_flac](https://github.com/mackron/dr_libs) (FLAC decoding): public domain or MIT No Attribution;
+  - [dr_flac](https://github.com/mackron/dr_libs) (FLAC decoding): public domain (Unlicense) or MIT No Attribution;
   - [minimp3](https://github.com/lieff/minimp3) (MP3 decoding): CC0 1.0, a public domain dedication.
