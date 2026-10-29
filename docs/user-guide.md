@@ -613,7 +613,7 @@ rows say what comes next.
 | Message | Meaning |
 |---|---|
 | `stream format X not supported` | a format other than raw PCM, FLAC, or MP3 with `amisqueeze.fpu`: the server has no rule to convert that file; LMS moves on to the next track |
-| `stream: cannot connect: error N` | the server's stream port cannot be reached: 9000 by default with LMS, 8097 with Music Assistant |
+| `stream: cannot connect: error N` | the server's stream port cannot be reached: 9000 by default with LMS, 8097 with Music Assistant; or the TCP/IP stack refuses to make the connection non-blocking |
 | `stream: connection lost before the response headers`, `stream: send: error N` | the stream broke before any music came |
 | `stream: recv: error N` | the stream broke during a track: what was received plays, then the next track follows |
 | `stream: request too long (N bytes)` | the stream's request exceeds 1 KB; LMS moves on to the next track |
