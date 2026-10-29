@@ -89,6 +89,7 @@ Makefile              build (m68k-amigaos-gcc must be in the PATH; HOSTCC for th
 tools/amiga-make.sh   runs make with whichever toolchain is available (see "Building")
 tools/check-saves.py  checks the generated assembly (safeguard against a gcc bug, see "Building")
 tools/check-stack.py  checks the linker map: libnix's stack swap linked (see "Stack and memory")
+tools/check-core.py   checks that the portable core includes no header of the system (make test, see "Code rules")
 tools/pcm-compare.py  compares the PCM written by amisqueeze (OUTPUT option) with a reference, byte by byte
 tools/make-test-audio.sh makes the test sounds (tones, sides, sweep, gapless MP3s, counter pattern)
 tools/winuae/         test scenarios run in WinUAE from the host (run-scenarios.py runs them all; serial shell
@@ -227,8 +228,9 @@ with AHI 6.6; 4.x is expected to work, not checked). How the parts fit together:
 [architecture](docs/development/architecture.md).
 
 - **Portable core**: every file of `src/amisqueeze/` but `amiga.c` and `posix.c` is standard C (`<stdint.h>`, no
-  Amiga or POSIX header); everything system-related goes through `platform.h`. Keep the core free of system calls
-  and the platform layers thin; the main loop (timeouts, reconnection) lives in the core.
+  Amiga or POSIX header: `tools/check-core.py`, run by `make test`, accepts only the C library's headers, the
+  program's own and the third-party ones); everything system-related goes through `platform.h`. Keep the core
+  free of system calls and the platform layers thin; the main loop (timeouts, reconnection) lives in the core.
 - **One task, one loop** around `plat_wait()`: `WaitSelect()` on the Amiga, where a `SocketBase` belongs to the
   task that opened it; `select()` on POSIX, with SIGINT and SIGTERM set without `SA_RESTART`, so that Ctrl-C stops
   the wait.
