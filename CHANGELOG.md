@@ -47,6 +47,8 @@ are previews, until 1.0.
 - A TCP/IP stack that refuses to make a connection non-blocking is now reported (`socket: error N`, or `stream:
   cannot connect: error N`), and amisqueeze tries again. It used to go on with that connection, which could
   leave it stuck.
+- With `VERBOSE`, the stream's request is shown in plain ASCII, like the player name: a byte outside it shows as
+  `?`. It was shown as the server sent it, control bytes included.
 - A player name given on the server with accents showed as garbled characters in `player name: ...`: each byte
   outside plain ASCII now shows as `?`, so an accented letter shows as `??`. The name the server keeps is
   unchanged.

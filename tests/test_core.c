@@ -610,6 +610,25 @@ static void test_headers_too_long(void)
 }
 
 /* A whole track: strm s, connection, headers, body, end of data, end of playback */
+/* VERBOSE shows the strm s request in ASCII: no CR, a control byte or a byte of UTF-8 as '?' (it could act on the
+ * Amiga's console); past 64 bytes too */
+static void test_strm_request_shown(void)
+{
+    static const char req[] = "GET /\033[2J\303\251_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa HTTP/1.0\r\n\r\n";
+    char fmt[7] = { '1', 'p', '1', '3', '2', '1', 1 };
+    struct player p;
+
+    setup(&p, "Amiga");
+    p.verbose = 1;
+    CHECK(slim_connect(&p, 0));
+    stub_out[0] = '\0';
+    feed_strm('s', fmt, 0, 9000, 0, req);
+    drain(&p);
+    CHECK(strstr(stub_out, "GET /?[2J??_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa HTTP/1.0\n\n") != NULL);
+    CHECK(strchr(stub_out, '\r') == NULL && strchr(stub_out, '\033') == NULL);
+    teardown(&p);
+}
+
 static void test_stream_sequence(void)
 {
     struct player p;
@@ -3215,6 +3234,7 @@ int main(void)
     test_strm_pcm_fields();
     test_strm_autostart();
     test_headers_too_long();
+    test_strm_request_shown();
     test_stream_sequence();
     test_read_min_space();
     test_gapless();

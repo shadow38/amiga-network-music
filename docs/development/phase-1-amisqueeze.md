@@ -1204,7 +1204,7 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   - the load with `NOAUDIO`, raw PCM at 44.1 kHz, the builds before and after in turn (six 10 s windows each):
     42.4 % before, 42.8 % after, within the spread of the windows (about 1 %). Unchanged.
 
-## player-17 Hardening after the 0.8 review 🔶 (2026-10-29, version 0.8: the tests of R4 to R7 and `QUIET` (R2) done)
+## player-17 Hardening after the 0.8 review 🔶 (2026-10-29, version 0.8: the tests of R4 to R7, `QUIET` (R2) and the code fixes done)
 
 - **Goal**: a 0.8 closer to 1.0: the findings of the [0.8 review](reviews/0.8.md) at 75, and most of its 50 list
   (agreed with the user on 2026-10-29). The safety nets are in tools-13; R1 is settled by the A1200 session of

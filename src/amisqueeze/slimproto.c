@@ -191,6 +191,26 @@ static int send_setd_name(struct player *p)
 
 /* ---- incoming packets (pkt = opcode + data, len = total length) ---- */
 
+/* Bytes from the server shown in ASCII, as the player name from setd: printable ones and line feeds as they are, CR
+ * left out, any other byte '?' */
+static void show_ascii(const uint8_t *b, int len)
+{
+    char out[64];
+    int n = 0;
+
+    for (; len > 0; b++, len--) {
+        if (*b == '\r')
+            continue;
+        out[n++] = (*b >= ' ' && *b <= '~') || *b == '\n' ? (char)*b : '?';
+        if (n == (int)sizeof(out)) {
+            msg_raw(out, n);
+            n = 0;
+        }
+    }
+    if (n > 0)
+        msg_raw(out, n);
+}
+
 /* PCM sample rates by strm code '0'..'9' (squeezelite pcm.c) */
 static const uint32_t pcm_rates[10] = { 11025, 22050, 32000, 44100, 48000, 8000, 12000, 16000, 24000, 96000 };
 
@@ -241,7 +261,7 @@ static void process_strm_s(struct player *p, const uint8_t *pkt, int len)
         msg("stream: http://%u.%u.%u.%u:%u\n",
             (unsigned)(ip >> 24), (unsigned)((ip >> 16) & 0xff), (unsigned)((ip >> 8) & 0xff),
             (unsigned)(ip & 0xff), (unsigned)port);
-        msg_raw(pkt + 28, len - 28);        /* HTTP request, sent as is (not NUL-terminated) */
+        show_ascii(pkt + 28, len - 28);     /* HTTP request (not NUL-terminated) */
     }
     slim_send_stat(p, "STMf", 0);
     if (ops == NULL) {                      /* raw PCM, FLAC, and MP3 in the builds that have its decoder */
