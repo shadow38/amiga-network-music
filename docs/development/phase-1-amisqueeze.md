@@ -1024,15 +1024,23 @@ belongs to the task that opened it; packets serialised field by field; buffers a
     host test in the spirit of the "widening" decoder.
   - **Paula's LED filter** off while playing, as `paula.audio` does, and its state restored at every exit, Ctrl-C
     included.
-  - **An option `AUDIO=AHI|PAULA|PAULA8`**, AHI by default, also as a ToolType and in `ENV:amisqueeze.prefs`; accepted and
-    ignored by the host build. `UNIT` is unused with Paula. Until this output exists, the user guide has Paula
-    users add `SWAP` (agreed with the user on 2026-10-27).
+  - **An option `AUDIO=AUTO|AHI|PAULA|PAULA8`**, `AUTO` by default, also as a ToolType and in
+    `ENV:amisqueeze.prefs`; accepted and ignored by the host build. `UNIT` is unused with Paula.
+  - **`AUTO`**, decided at start-up, before `HELO` (its `MAXRATE` depends on the output):
+    - AHI opens and the unit's driver is not Paula (`AHIDB_Driver`): AHI;
+    - AHI opens and the unit plays through Paula, or AHI is missing: the direct Paula output;
+    - there, the four channels (14 bits), else one per side (8 bits), else a message and a stop.
+
+    An AHI mode "Paula 8 bit" still gives 14 bits: in this output, 8 bits saves little CPU.
+  - **`SWAP` keeps its meaning everywhere.** Until this output, the user guide has Paula users add it (agreed with
+    the user on 2026-10-27); with the direct Paula output, it would swap sides that are right. So `SWAP` with this
+    output gives a message saying it is no longer needed, and the CHANGELOG says so.
 - **Sub-steps** (agreed with the user on 2026-10-29), one commit each. `stream.c` keeps the `audio_*` interface;
   `audio.c`'s blocks stay in fast RAM, and the conversion writes from them into the four channels' chip buffers.
   - **player-11a, on the host only**: the conversion, the divisor, the server's volume turned into 0 to 64, the
-    bytes played; a fake Paula device in `tests/stub_platform.c`.
-  - **player-11b**: `plat_paula_*` in `platform.h`, `audio.device` in `amiga.c`, the `AUDIO` option with
-    `PAULA8`; the checks below first, then WinUAE.
+    bytes played, `AUTO`'s rule; a fake Paula device in `tests/stub_platform.c`.
+  - **player-11b**: `plat_paula_*` in `platform.h`, `audio.device` in `amiga.c`, the `AUDIO` option, the AHI
+    unit's driver, the fall back from 14 to 8 bits; the checks below first, then WinUAE.
   - **player-11c**: the A1200.
 - **To check before coding**, in the autodocs or in WinUAE (player-11b):
   - `CMD_STOP` and `CMD_START` stop and restart a write at once: the pause would then send nothing again;
@@ -1046,7 +1054,7 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   - in WinUAE, slow profile: player-4 to player-6's LMS criteria (test tones, pause, seek, volume, tracks without
     gaps), and the load measured with `cpucount`, as in player-4c; then WinUAE set to NTSC: the same pitch as in
     PAL, and the same elapsed time in LMS; with `PAULA8`, the system's beep heard while the music plays on
-    unbroken;
+    unbroken; `AUTO` keeps AHI with Toccata and goes direct with Paula; `SWAP` with Paula direct gives its message;
   - on the A1200 with LMS, at 22.05 kHz sent by the server: a load clearly below AHI's 50 % (30-40 %
     estimated), the same at volume 50 with a clean sound;
   - on the A1200, 44.1 kHz divided by the core: a clean playback, its load measured;

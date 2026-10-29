@@ -115,7 +115,8 @@ Agreed with the user on 2026-10-26.
 ### 1.0
 
 - **The direct Paula output** (player-11): 14 bits (8 on request) through `audio.device`, Paula's own volume,
-  the rate divided in the core above Paula's maximum. Coded in a branch from `dev`; brought into 0.9 with ICY if
+  the rate divided in the core above Paula's maximum; chosen by default when AHI plays through Paula or is
+  missing (`AUDIO=AUTO`). Coded in a branch from `dev`; brought into 0.9 with ICY if
   it is ready by then (agreed with the user on 2026-10-29).
 - **Before it**: the setup guides (publish-4), a full audit (publish-5), the Music Assistant scenario in WinUAE
   (tools-10).
