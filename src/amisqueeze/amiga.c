@@ -295,20 +295,33 @@ static int sock_error(void)
     return last_error;
 }
 
+/* Makes socket s non-blocking; 0 if the stack refuses (the socket closed): a receive could then wait forever, the
+ * stall of plan step player-16 */
+static int make_nonblocking(LONG s)
+{
+    LONG one = 1;
+
+    if (IoctlSocket(s, FIONBIO, (char *)&one) < 0) {
+        sock_error();
+        CloseSocket(s);
+        return 0;
+    }
+    return 1;
+}
+
 /* Socket and connection, non-blocking once connected; nonblocking: from the start, the connection may still be in
  * progress on return */
 static int connect_socket(uint32_t ip, uint16_t port, int nonblocking)
 {
     struct sockaddr_in sa;
-    LONG one = 1;
     LONG s = socket(AF_INET, SOCK_STREAM, 0);
 
     if (s < 0) {
         sock_error();
         return -1;
     }
-    if (nonblocking)
-        IoctlSocket(s, FIONBIO, (char *)&one);
+    if (nonblocking && !make_nonblocking(s))
+        return -1;
     memset(&sa, 0, sizeof(sa));
     sa.sin_len = sizeof(sa);
     sa.sin_family = AF_INET;
@@ -320,8 +333,8 @@ static int connect_socket(uint32_t ip, uint16_t port, int nonblocking)
             return -2;
         }
     }
-    if (!nonblocking)
-        IoctlSocket(s, FIONBIO, (char *)&one);
+    if (!nonblocking && !make_nonblocking(s))
+        return -1;
     return s;
 }
 

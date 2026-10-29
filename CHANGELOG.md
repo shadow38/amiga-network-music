@@ -44,6 +44,9 @@ are previews, until 1.0.
   only, and amisqueeze quit without a word. The new checks of `PORT`, `UNIT` and `PRI` open it too.
 - After `send: error N` on the connection to the server, amisqueeze now reconnects at once. It used to go on, and
   the server could read the next messages out of step.
+- A TCP/IP stack that refuses to make a connection non-blocking is now reported (`socket: error N`, or `stream:
+  cannot connect: error N`), and amisqueeze tries again. It used to go on with that connection, which could
+  leave it stuck.
 - A player name given on the server with accents showed as garbled characters in `player name: ...`: each byte
   outside plain ASCII now shows as `?`, so an accented letter shows as `??`. The name the server keeps is
   unchanged.

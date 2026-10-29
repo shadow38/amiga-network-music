@@ -30,12 +30,12 @@ int plat_resolve(const char *host, uint32_t *ip);
  * then wait, forever if the server is gone. */
 
 /* Blocking TCP connection: returns a socket (>= 0), non-blocking once connected; -1 if the socket cannot be
- * created, -2 if the connection fails (or is interrupted: plat_interrupted()). After a failure, plat_error() gives
- * the system error code. */
+ * created or made non-blocking, -2 if the connection fails (or is interrupted: plat_interrupted()). After a
+ * failure, plat_error() gives the system error code. */
 int plat_connect(uint32_t ip, uint16_t port);
 
 /* Non-blocking TCP connection: returns a socket (>= 0) whose connection is in progress, -1 if the socket cannot
- * be created, -2 if the connection fails at once. Wait until the socket is writable (PLAT_WRITE), then call
+ * be created or made non-blocking, -2 if the connection fails at once. Wait until the socket is writable (PLAT_WRITE), then call
  * plat_connect_finish(): 1 = connected, 0 = failed (plat_error(); the socket is still open). */
 int plat_connect_start(uint32_t ip, uint16_t port);
 int plat_connect_finish(int sock);

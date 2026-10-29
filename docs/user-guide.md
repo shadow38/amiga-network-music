@@ -599,7 +599,7 @@ amisqueeze reconnects by itself.
 | `cannot connect: error N` | nothing answers at that address and port |
 | `retrying in 5 s` | after a failed connection, or a connection lost less than 10 s after it was made; after a longer session, amisqueeze reconnects at once. Without `SERVER`, a failed connection makes amisqueeze look for the server again: its address may have changed |
 | `discovery: socket: error N`, `discovery: cannot broadcast: error N`, `discovery: recv: error N` | looking for a server failed: a TCP/IP stack error, or no network yet; amisqueeze tries again |
-| `socket: error N` | the TCP/IP stack cannot create a connection (out of resources?) |
+| `socket: error N` | the TCP/IP stack cannot create a connection (out of resources?), or refuses to make it non-blocking |
 | `send: error N`, `recv: error N` | the connection to the server broke |
 | `WaitSelect: error N` | waiting on the network failed: a TCP/IP stack error |
 | `no news from the server, reconnecting` | the server stayed silent for 35 s |

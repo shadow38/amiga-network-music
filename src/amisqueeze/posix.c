@@ -136,6 +136,19 @@ int plat_resolve(const char *host, uint32_t *ip)
     return 1;
 }
 
+/* Makes socket s non-blocking; 0 if refused (the socket closed): it would let a receive wait forever */
+static int make_nonblocking(int s)
+{
+    int flags = fcntl(s, F_GETFL);
+
+    if (flags < 0 || fcntl(s, F_SETFL, flags | O_NONBLOCK) < 0) {
+        last_error = errno;
+        close(s);
+        return 0;
+    }
+    return 1;
+}
+
 /* Socket and connection, non-blocking once connected; nonblocking: from the start, the connection may still be in
  * progress on return */
 static int connect_socket(uint32_t ip, uint16_t port, int nonblocking)
@@ -147,8 +160,8 @@ static int connect_socket(uint32_t ip, uint16_t port, int nonblocking)
         last_error = errno;
         return -1;
     }
-    if (nonblocking)
-        fcntl(s, F_SETFL, fcntl(s, F_GETFL) | O_NONBLOCK);
+    if (nonblocking && !make_nonblocking(s))
+        return -1;
     memset(&sa, 0, sizeof(sa));
     sa.sin_family = AF_INET;
     sa.sin_port = htons(port);
@@ -160,8 +173,8 @@ static int connect_socket(uint32_t ip, uint16_t port, int nonblocking)
             return -2;
         }
     }
-    if (!nonblocking)
-        fcntl(s, F_SETFL, fcntl(s, F_GETFL) | O_NONBLOCK);
+    if (!nonblocking && !make_nonblocking(s))
+        return -1;
     return s;
 }
 
