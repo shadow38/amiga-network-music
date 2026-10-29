@@ -30,8 +30,8 @@ flowchart LR
 
 | Server | | Status |
 |---|---|---|
-| [Lyrion Music Server](https://lyrion.org) (LMS) | the free Squeezebox server, formerly Logitech Media Server; Windows, macOS, Linux, NAS, Raspberry Pi, Docker | **tested** (9.1.1) |
-| [Music Assistant](https://music-assistant.io) | a server close to Home Assistant | **tested** (2.10.7) |
+| [Lyrion Music Server](https://lyrion.org) (LMS) | the original Squeezebox server, formerly Logitech Media Server; free and open source; Windows, macOS, Linux, NAS, Raspberry Pi, Docker | **tested** (9.1.1) |
+| [Music Assistant](https://music-assistant.io) | a server for many kinds of players, Squeezebox among them; free and open source; inside Home Assistant, or standalone in Docker | **tested** (2.10.7) |
 
 ## What the Amiga needs
 
