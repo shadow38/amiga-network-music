@@ -504,6 +504,14 @@ static void test_short_packets(void)
     stub_feed_packet("setd", "", 0);                    /* no id */
     drain(&p);
     CHECK(stub_tx_len == 0 && stub_out[0] == '\0');
+
+    stub_feed_packet("aude", "\1\1", 2);
+    drain(&p);
+    CHECK(!strcmp(stub_out, "<- aude spdif 1 dac 1\n"));
+    clear_tx();
+    stub_feed_packet("aude", "\0", 1);                  /* 1 byte of the 2 an aude has; the previous one's follows */
+    drain(&p);
+    CHECK(stub_tx_len == 0 && stub_out[0] == '\0');
     teardown(&p);
 }
 
@@ -525,19 +533,20 @@ static void test_setd_long_name(void)
     teardown(&p);
 }
 
-/* A name the server sends in UTF-8 ("Sejour" with an e acute), or with a control byte: shown with '?' for each byte that is not
- * printable ASCII, kept and sent back as received (the server would rename the player otherwise) */
+/* A name the server sends in UTF-8 ("Sejour" with an e acute), or with a control byte (0x1B, 0x7F): shown with '?'
+ * for each byte that is not printable ASCII, kept and sent back as received (the server would rename the player
+ * otherwise) */
 static void test_setd_not_ascii(void)
 {
     struct player p;
-    static const char name[] = "\0S\xc3\xa9jour\x1b[2J";
+    static const char name[] = "\0S\xc3\xa9jour\x1b[2J\x7f";
 
     setup(&p, "Amiga");
     CHECK(slim_connect(&p, 0));
     clear_tx();
     stub_feed_packet("setd", name, sizeof(name) - 1);
     drain(&p);
-    CHECK(!strcmp(stub_out, "player name: S??jour?[2J\n"));
+    CHECK(!strcmp(stub_out, "player name: S??jour?[2J?\n"));
     CHECK(!strcmp(p.name, name + 1));
     CHECK(!memcmp(stub_tx, "SETD", 4) && be32(stub_tx + 4) == sizeof(name));
     CHECK(!memcmp(stub_tx + 8, name, sizeof(name)));
