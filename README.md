@@ -4,16 +4,14 @@
 your local network and driven like any other player in the house.
 
 [![tests](https://github.com/shadow38/amiga-network-music/actions/workflows/tests.yml/badge.svg)](https://github.com/shadow38/amiga-network-music/actions/workflows/tests.yml) |
-AmigaOS 3.x | 68020 or better | sound through AHI | MIT licence
+**a preview until 1.0** (0.7: the latest release) | AmigaOS 3.x | 68020 or better | sound through AHI | MIT licence
 
 ## How it works
 
-A **music server** holds the music library (files on a PC, a NAS or a Raspberry Pi; web radios and streaming
-services through plugins) and streams it to **players**. A web browser, a phone or a tablet chooses what plays
-where.
-
-The Amiga becomes one of these players through **slimproto**, the protocol of Logitech's Squeezebox players, now
-spoken by free software on both sides.
+amisqueeze needs a **music server** on the local network. The server holds the music library, web radios and
+streaming services, and streams them to its players. A web browser, a phone or a tablet chooses what plays where.
+The server sees the Amiga as one more Squeezebox, through slimproto, the protocol of Squeezebox players.
+amisqueeze receives the music, decodes it if needed and plays it through AHI.
 
 ```mermaid
 flowchart LR
@@ -28,42 +26,33 @@ flowchart LR
     sq -.->|"player state, elapsed time"| srv
 ```
 
-amisqueeze takes the server's commands, receives the music as an HTTP stream, decodes it if needed (FLAC, MP3 on
-a fast Amiga; otherwise the server sends raw PCM) and plays it through AHI.
-
 ## Supported servers
 
 | Server | | Status |
 |---|---|---|
-| [Lyrion Music Server](https://lyrion.org) (LMS) | the free, open-source Squeezebox server, formerly Logitech Media Server, now developed by its community; Windows, macOS, Linux, NAS, Raspberry Pi, Docker | **tested** (9.1.1) |
-| [Music Assistant](https://music-assistant.io) | a more recent server, close to Home Assistant, which drives Squeezebox players with the same protocol | **tested** (2.10.7) |
+| [Lyrion Music Server](https://lyrion.org) (LMS) | the free Squeezebox server, formerly Logitech Media Server; Windows, macOS, Linux, NAS, Raspberry Pi, Docker | **tested** (9.1.1) |
+| [Music Assistant](https://music-assistant.io) | a server close to Home Assistant | **tested** (2.10.7) |
 
-## Programs
-
-- **amisqueeze**: the player. Like squeezelite on a PC, the server sees it as one more Squeezebox, controlled from
-  its web interface, its apps or any Squeezebox remote. A software player, without a display or infrared remote.
-- **amilms**: a remote control from the Amiga (not started yet).
-
-### What the Amiga needs
+## What the Amiga needs
 
 - **AmigaOS 3.x** and a **68020 or better**: from a plain 68020 accelerator to a PiStorm.
 - About **1.7 MB of free memory**.
-- A **TCP/IP stack** providing `bsdsocket.library`: Roadshow, AmiTCP, AmiNetXDuo, or WinUAE's emulation.
+- A **TCP/IP stack** providing `bsdsocket.library`: Roadshow, Miami, AmiNetXDuo, AmiTCP, or WinUAE's emulation.
 - **AHI**, the standard Amiga audio system, with the driver of Paula or of a sound card. It is free, on Aminet,
   but not part of AmigaOS 3.x.
 
 ## Quick start
 
 1. **Download** the zip or the `.lha` of the latest
-   [release](https://github.com/shadow38/amiga-network-music/releases) (0.7: a preview until 1.0).
+   [release](https://github.com/shadow38/amiga-network-music/releases).
 2. **Copy the executable** with its icon (`.info`) into a drawer, or into `C:` to run it from a Shell:
    `amisqueeze` for any Amiga with a 68020 or better, `amisqueeze.fpu` for an Amiga with an FPU, which also decodes
    MP3.
 3. **Set up AHI**: unit 0 in a "stereo++" mode in `SYS:Prefs/AHI` (with Paula: `Paula:14 bit stereo++`).
    Without "++", the music plays on one side only. See [sound](docs/user-guide.md#sound-ahi).
 4. **Open the server's ports** to the Amiga: 3483 tcp and udp, and 9000/tcp for LMS or 8097/tcp for Music
-   Assistant. With LMS, MP3 needs a conversion rule on an Amiga that does not decode it. With Music Assistant on a
-   slow Amiga, choose the `wav` codec. See [server setup](docs/user-guide.md#server-setup).
+   Assistant. MP3, or a slow Amiga, may need a setting on the server: see
+   [server setup](docs/user-guide.md#server-setup).
 5. **Start amisqueeze**, with the TCP/IP stack running: double-click its icon, or type `amisqueeze` in a Shell.
    It finds the server on the local network by itself. A player called "Amiga" then shows up in the server's web
    interface: choose it there or in an app, and play.
@@ -89,7 +78,9 @@ the CPU. The user guide lists [what has been tried](docs/user-guide.md#what-has-
 [known limits](docs/user-guide.md#known-limits) and some [troubleshooting](docs/user-guide.md#troubleshooting).
 What changed in each version: the [changelog](CHANGELOG.md).
 
-**amilms**: not started.
+**Tried it on another Amiga?** Please tell, whether it plays or not, in an
+[issue](https://github.com/shadow38/amiga-network-music/issues). Give the CPU, the AmigaOS version, the TCP/IP
+stack, the sound output and the server. With a problem, add a log: `amisqueeze VERBOSE LOG=RAM:amisqueeze.log`.
 
 ## For developers
 
