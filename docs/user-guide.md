@@ -6,8 +6,9 @@ amisqueeze is and what the Amiga needs: the [README](../README.md).
 Version 0.8 in development. The latest release, 0.7, is a preview, like this version (see
 [what has been tried](#what-has-been-tried)).
 
-**Using amisqueeze**: [installing](#installing) | [sound (AHI)](#sound-ahi) | [server setup](#server-setup) |
-[starting](#starting-amisqueeze) | [stopping](#stopping-amisqueeze) | [volume](#volume).
+**Using amisqueeze**: [settings for your Amiga](#settings-for-your-amiga) | [installing](#installing) |
+[sound (AHI)](#sound-ahi) | [server setup](#server-setup) | [starting](#starting-amisqueeze) |
+[stopping](#stopping-amisqueeze) | [volume](#volume).
 **Reference**: [options](#options) | [ToolTypes](#tooltypes) | [default options](#default-options) |
 [messages](#messages) | [troubleshooting](#troubleshooting) | [known limits](#known-limits) |
 [what has been tried](#what-has-been-tried) | [removing amisqueeze](#removing-amisqueeze).
@@ -15,6 +16,25 @@ Version 0.8 in development. The latest release, 0.7, is a preview, like this ver
 ## Using amisqueeze
 
 In order: install amisqueeze, set up AHI, set up the server, then start amisqueeze.
+
+### Settings for your Amiga
+
+amisqueeze works out most of it by itself: at start-up, it measures how fast the Amiga decodes FLAC and MP3. It
+decodes a format only at twice real time or more, and leaves the others to the server. What is left to choose
+depends on the machine:
+
+| Your Amiga | Program | Options | LMS | Music Assistant |
+|---|---|---|---|---|
+| **Slow**: `BENCH` below 2x, such as a 68020 at 26 MHz | `amisqueeze` | `SWAP` with Paula; `PRI=1` if the sound has gaps while the Workbench is used | `MAXRATE=AHI` and its [rules](#maxrate), which also convert MP3 (without `MAXRATE`: the [MP3 rule](#lyrion-music-server)); the volume [fixed at 100](#volume) | the codec `wav`, with normalization and crossfade off (see [Music Assistant](#music-assistant)); leave `MAXRATE` out |
+| **Fast**: FLAC and MP3 at 2x or more in `BENCH`, such as a PiStorm with Emu68 | `amisqueeze.fpu` | `SWAP` with Paula | nothing | the codec `flac`, the default |
+
+- The Slow row was tried on an A1200 with a 68EC020 at 26 MHz and Paula. The Fast row was tried in WinUAE with
+  the JIT, at about a PiStorm's speed.
+- A 68030, 68040 or 68060 has not been tried yet. Run `amisqueeze BENCH`: a format it leaves to the server needs
+  that server's settings of the Slow row. `MAXRATE` and `PRI` only if the sound has gaps.
+- With Paula, see also [with Paula](#with-paula).
+
+To keep the options for every start: [keeping the options](#keeping-the-options).
 
 ### Installing
 
@@ -90,31 +110,45 @@ frequency at 27429 Hz and 1 channel on the right](images/ahi-prefs-unit0.png)
 *The AHI preferences (AHI 6, with MUI) set for amisqueeze with Paula: unit 0, `Paula:14 bit stereo++`, the
 highest frequency, 1 channel.*
 
-With Paula, AHI converts and mixes the sound with the CPU. `Paula:8 bit stereo++` takes a little less CPU than the
-14-bit mode, at a lower quality; the "HiFi" modes take more. On a slow Amiga, see [volume](#volume) too.
-
-With Paula, `paula.audio` swaps left and right: add [`SWAP`](#options) to amisqueeze's options.
-
-With Paula, the power LED dims as long as amisqueeze runs: `paula.audio` turns Paula's filter off, which the
-LED shows. This is normal; the LED comes back when amisqueeze quits.
-
 At start-up, amisqueeze checks the unit's mode and warns about a stereo mode without "++" or a mono mode.
+
+#### With Paula
+
+Paula is the Amiga's own sound chip, driven by AHI's `paula.audio`. AHI then converts and mixes the sound with the
+CPU.
+
+- **Add [`SWAP`](#options)**: `paula.audio` swaps left and right.
+- **Fix the volume at 100** on the server, and turn the amplifier down instead. Below 100, amisqueeze scales every
+  sample, which costs CPU and brings out a crackle. With LMS, a setting fixes it (see [volume](#volume)); with
+  Music Assistant, set the player's volume to 100 and leave it there.
+- **To save CPU**: `Paula:8 bit stereo++` takes a little less than the 14-bit mode, at a lower quality. The "HiFi"
+  modes take more.
+- **The power LED dims** while amisqueeze runs: `paula.audio` turns Paula's filter off, which the LED shows. This
+  is normal; the LED comes back when amisqueeze quits.
 
 ### Server setup
 
 amisqueeze plays the music of a Lyrion Music Server (LMS) or of a Music Assistant server. The server runs on
 another computer of the local network; it is set up once.
 
+#### Ports
+
+The server's firewall must let the Amiga in on these ports. In Docker, publish all of them, the UDP one included.
+
+| Port | LMS | Music Assistant | Used for |
+|---|---|---|---|
+| 3483/tcp | yes | yes: the Squeezelite provider's "Slimproto port" | the server's commands |
+| 3483/udp | yes | yes | finding the server on the local network; not needed with `SERVER` |
+| 9000/tcp | yes: the web port, which LMS tells amisqueeze | - | the music |
+| 8097/tcp | - | yes: the "TCP Port" of Settings > System > Streams | the music |
+
+These are the default ports. With Music Assistant on another slimproto port, give it to amisqueeze with `PORT`.
+
 #### Lyrion Music Server
 
 amisqueeze needs from LMS:
 
-- **Its ports** open to the Amiga in the server's firewall:
-  - 3483/tcp for the players;
-  - 3483/udp, where amisqueeze asks for a server on the local network when it is given none;
-  - the web port (9000/tcp by default), which also carries the music. LMS tells amisqueeze which web port it uses.
-
-  In Docker, publish all three, 3483/udp included.
+- **Its [ports](#ports)** open to the Amiga.
 - **Its address**, only if amisqueeze does not find LMS by itself (see [starting](#starting-amisqueeze)): give it
   with `SERVER`. It is the one in the browser's address bar when LMS's web page is open on another computer:
   `http://<address>:9000`. Give the server a fixed address in the router, so that it does not change. A host name
@@ -138,10 +172,7 @@ Music Assistant drives amisqueeze through its Squeezelite provider. It needs:
 
 - **The provider**: in Settings > Player providers, add "Squeezelite". Its "Slimproto port" is 3483 by default;
   give amisqueeze another one with `PORT`.
-- **Its ports** open to the Amiga in the server's firewall:
-  - 3483/tcp for the players (the provider's "Slimproto port");
-  - 3483/udp, where amisqueeze asks for a server on the local network when it is given none;
-  - 8097/tcp, which carries the music (the "TCP Port" of Settings > System > Streams).
+- **Its [ports](#ports)** open to the Amiga.
 - **Its address**, only if amisqueeze does not find Music Assistant by itself: give it with `SERVER`. It is the
   address of Music Assistant's computer, found as for LMS above.
 - **The right address for the streams**, when Music Assistant runs in a container or its computer has several
@@ -610,14 +641,15 @@ rows say what comes next.
   messages:
   - `bsdsocket.library not found`: no TCP/IP stack is running;
   - `no server answered`: check that the server runs, that its firewall lets 3483/udp in, and that it is on the
-    same local network (see [server setup](#server-setup)). A router does not pass the question on to another
+    same local network (see [ports](#ports)). A router does not pass the question on to another
     network. With Music Assistant on another slimproto port, give it with `PORT`. Or give `SERVER`;
   - `cannot connect`: nothing answers at that address. Check `SERVER`, that the server runs, and that its
-    firewall lets 3483/tcp in (see [server setup](#server-setup));
+    firewall lets 3483/tcp in (see [ports](#ports));
   - `connected to the server`: the connection is up.
 - **It connects, but a track does not play, or is skipped at once.**
   - `stream: cannot connect`: the server's stream port is blocked (LMS: its web port, 9000/tcp; Music Assistant:
-    8097/tcp), or Music Assistant's "Published IP address" is wrong (see [server setup](#server-setup)).
+    8097/tcp; see [ports](#ports)), or Music Assistant's "Published IP address" is wrong (see
+    [Music Assistant](#music-assistant)).
   - `stream format X not supported`, or nothing at all, with "Couldn't create command line" in LMS's `server.log`:
     LMS has no rule to convert that file. Typically MP3 with `amisqueeze`: add the
     [MP3 rule](#lyrion-music-server), or use `amisqueeze.fpu` on an Amiga with an FPU. Or a file above 48 kHz

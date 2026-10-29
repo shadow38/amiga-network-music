@@ -40,8 +40,10 @@ are previews, until 1.0.
 - User guide and README: the free memory amisqueeze needs, now measured: about 1.7 MB to play through AHI, not
   1.1 MB.
 - README: shorter: the quick start in five steps, the server's ports among them; the details it repeated are
-  left to the user guide. Badges at the top: the latest release and the preview status; Miami among the TCP/IP stacks; a call for reports
-  from other Amigas.
+  left to the user guide. Badges at the top: the latest release and the preview status; Miami among the TCP/IP
+  stacks; a call for reports from other Amigas.
+- User guide: "Settings for your Amiga", the program, options and server settings for a slow and a fast Amiga in
+  one table; "With Paula", Paula's settings together; "Ports", the server's ports in one table.
 
 ### Fixed
 

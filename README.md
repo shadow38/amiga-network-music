@@ -54,7 +54,7 @@ flowchart LR
    Without "++", the music plays on one side only. See [sound](docs/user-guide.md#sound-ahi).
 4. **Open the server's ports** to the Amiga: 3483 tcp and udp, and 9000/tcp for LMS or 8097/tcp for Music
    Assistant. MP3, or a slow Amiga, may need a setting on the server: see
-   [server setup](docs/user-guide.md#server-setup).
+   [settings for your Amiga](docs/user-guide.md#settings-for-your-amiga).
 5. **Start amisqueeze**, with the TCP/IP stack running: double-click its icon, or type `amisqueeze` in a Shell.
    It finds the server on the local network by itself. A player called "Amiga" then shows up in the server's web
    interface: choose it there or in an app, and play.
