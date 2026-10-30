@@ -151,8 +151,8 @@ uint32_t parse_maxrate(const char *s)
     return v >= MAXRATE_MIN && v <= MAXRATE_DEFAULT ? v : 0;
 }
 
-/* Never above the unit's rate: what it cannot play, AHI's conversion folds back into whistles (plan step
- * player-13, a sweep on the A1200) */
+/* Never above the unit's rate: what it cannot play, AHI's conversion folds back into whistles (heard
+ * on the A1200 with a sweep) */
 uint32_t maxrate_from_ahi(uint32_t which, uint32_t freq)
 {
     /* the rates of slimproto's strm up to MAXRATE_DEFAULT: those any server can make */

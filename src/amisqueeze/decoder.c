@@ -1,8 +1,8 @@
 /*
- * decoder.c - portable core: the raw PCM decoder (plan step player-8a). The PCM goes to the output as the server sent
+ * decoder.c - portable core: the raw PCM decoder. The PCM goes to the output as the server sent
  * it (any sample size and byte order: the audio output converts it); one copy, ring buffer to destination.
  *
- * A track that begins with a WAV header (plan step player-7b: Music Assistant's wav output codec, whose strm s gives
+ * A track that begins with a WAV header (Music Assistant's wav output codec, whose strm s gives
  * default values) is played in the header's format; LMS strips the headers itself. The header is read again from
  * the start at each call until its data chunk is in the buffer, then consumed in a call that returns no PCM: the
  * output sizes its next block from the new format.

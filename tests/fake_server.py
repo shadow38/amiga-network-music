@@ -677,7 +677,7 @@ def scenario_control_lost():
 
 
 def scenario_silent_server():
-    # Plan step player-16: on the A1200 the player sat in a blocking receive and never said it (AmiNetXDuo); here
+    # On the A1200 the player sat in a blocking receive and never said it (AmiNetXDuo); here
     # the core's side: the 35 s timeout runs while the output waits for data
     print("-- server silent without closing, while playing after STMo: \"no news\" after 35 s, then a reconnection")
     http = HttpServer(4.0, stall_at=frames(1.5), stall=40.0)

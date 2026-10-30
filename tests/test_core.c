@@ -970,7 +970,7 @@ static void test_autostart_0(void)
     teardown(&p);
 }
 
-/* ---- internet radios: cont, the HTTP status, metadata blocks (plan step player-10) ---- */
+/* ---- internet radios: cont, the HTTP status, metadata blocks ---- */
 
 static const char http_404[] = "HTTP/1.0 404 Not Found\r\nContent-Type: text/html\r\n\r\n";
 
@@ -1904,7 +1904,7 @@ static void test_audio_gapless_24bit(void)
     teardown(&p);
 }
 
-/* ---- WAV header (Music Assistant's wav output codec, plan step player-7b) ---- */
+/* ---- WAV header (Music Assistant's wav output codec) ---- */
 
 static uint8_t wav_buf[8192];
 
@@ -2270,7 +2270,7 @@ static void test_audio_volume_pause(void)
     teardown(&p);
 }
 
-/* ---- decoders (plan step player-8a) ---- */
+/* ---- decoders ---- */
 
 /* "Widening" decoder, for the tests only: each byte of input becomes a 16-bit little-endian sample
  * ((byte - 128) * 256), so the output is twice the input. With raw PCM, input and output have the same size and a
@@ -3103,7 +3103,7 @@ static void test_flush_loaded(void)
     teardown(&p);
 }
 
-/* ENV:Sys/ahi.prefs as saved by the AHI 6 preferences in WinUAE (plan step player-10): the Music unit (255), then units
+/* ENV:Sys/ahi.prefs as saved by the AHI 6 preferences in WinUAE: the Music unit (255), then units
  * 0 (Paula 14-bit stereo++, 27429 Hz), 1 (Toccata stereo++, 44100 Hz), 2 (Paula 8-bit stereo++) and 3 (Toccata
  * plain stereo) */
 static const uint8_t ahi_prefs[256] = {
@@ -3391,7 +3391,7 @@ static void test_run_stale_ready(void)
     CHECK(stub_waits == 0 && stub_stream_tx_len == 0);  /* neither request sent: no wait said B connected */
 }
 
-/* The control connection reported readable with nothing to read (plan step player-16: AmiNetXDuo counts segments
+/* The control connection reported readable with nothing to read (AmiNetXDuo counts segments
  * that arrived out of order): neither an error nor read again at once, but left out of the waits for
  * AGAIN_WAIT_MS, said once with VERBOSE; then read as usual */
 static void test_run_again(void)
@@ -3428,8 +3428,8 @@ static void test_run_again(void)
     CHECK(!strstr(stub_out, "recv: error") && !strstr(stub_out, "connection closed") && !strstr(stub_out, "retrying"));
 }
 
-/* The control connection reported readable with nothing to read at every wait (AmiNetXDuo after a cable cut, plan
- * step player-16): after RX_TIMEOUT_MS without a packet, "no news from the server" and a new connection all the
+/* The control connection reported readable with nothing to read at every wait (AmiNetXDuo after a cable cut):
+ * after RX_TIMEOUT_MS without a packet, "no news from the server" and a new connection all the
  * same. 80 waits of 1 s and 100 ms in turn: 44 s. */
 static void test_run_again_no_news(void)
 {
@@ -3494,7 +3494,7 @@ static void test_send_failed(void)
     CHECK(count_in_trace("HELO") == 2 && count_in_trace("STAT") == 0);
 }
 
-/* Ctrl-C while connecting, the call interrupted (EINTR, plan step player-16): the player stops at once, without a
+/* Ctrl-C while connecting, the call interrupted (EINTR): the player stops at once, without a
  * failure reported nor a retry */
 static void test_run_interrupted(void)
 {
@@ -3542,7 +3542,7 @@ static void test_run_interrupted_io(void)
     }
 }
 
-/* The stream reported readable with nothing to read (plan step player-16): no error, no DSCO, left out of the waits
+/* The stream reported readable with nothing to read: no error, no DSCO, left out of the waits
  * for AGAIN_WAIT_MS, said once with VERBOSE; then read as usual */
 static void test_stream_again(void)
 {

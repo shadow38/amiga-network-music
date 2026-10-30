@@ -22,7 +22,7 @@
 
 /* Advertised in HELO, followed by the formats played: only those really decoded (pcm always, flc and mp3 when
  * decoded here); the server converts the rest. HasDigitalOut=1: LMS then offers its "Volume Control" setting for
- * this player, whose "Output level is fixed at 100%" sends audg with adjust 0 (plan step player-10, volume modes).
+ * this player, whose "Output level is fixed at 100%" sends audg with adjust 0.
  * MaxSampleRate follows: the MAXRATE option, 48000 without it. */
 #define CAPS "Model=squeezelite,ModelName=AmiSqueeze,Firmware=0.9-dev,AccuratePlayPoints=0,HasDigitalOut=1," \
              "MaxSampleRate="
@@ -507,7 +507,7 @@ int slim_receive(struct player *p)
     }
     return 1;
 
-again:                                      /* said readable, nothing to read (plan step player-16) */
+again:                                      /* said readable, nothing to read */
     if (p->verbose && !p->rx_again_said)
         msg("control: reported readable, nothing to read yet\n");
     p->rx_again_said = 1;

@@ -47,7 +47,7 @@ struct options {
 
 /* MAXRATE option: the highest sample rate declared to the server (MaxSampleRate in HELO). Without it, 48000: the
  * server keeps the source's rate. Below the source's rate, LMS needs a conversion rule that can resample, or it
- * refuses the track (plan step player-13). */
+ * refuses the track. */
 #define MAXRATE_DEFAULT 48000
 #define MAXRATE_MIN     8000
 #define MAXRATE_AHI     1                   /* MAXRATE=AHI: the AHI unit's rate as it is */
@@ -105,7 +105,7 @@ struct stream {
     struct icy icy;
 };
 
-/* A socket reported readable with nothing to read is left out of the waits for this long (plan step player-16):
+/* A socket reported readable with nothing to read is left out of the waits for this long:
  * no busy loop if the TCP/IP stack keeps reporting it */
 #define AGAIN_WAIT_MS 100
 
@@ -153,7 +153,7 @@ struct output {
 
 /* Audio output through the platform (AHI on the Amiga): blocks of converted PCM played one after the other, two at
  * most with the device and one filled in advance. About 0.6 s ahead: enough to ride out a busy moment, short
- * enough for the volume (player-5). */
+ * enough for the volume. */
 #define AUDIO_BLOCKS     3
 #define AUDIO_BLOCK_SIZE 32768UL        /* about 0.19 s of 44.1 kHz 16-bit stereo; filled with whole frames only
                                            (a 24-bit frame, 3 or 6 bytes, does not divide it) */

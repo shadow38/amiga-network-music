@@ -1,5 +1,5 @@
 /*
- * icy.c - portable core: the parts of an internet radio's stream that need no system (plan step player-10, 0.9)
+ * icy.c - portable core: the parts of an internet radio's stream that need no system
  *
  * The HTTP status line, and the metadata blocks (ICY) some radios mix into the sound: every `interval` bytes of
  * sound, a length byte (times 16), then a block of that many bytes, usually StreamTitle='...';. The server gives the

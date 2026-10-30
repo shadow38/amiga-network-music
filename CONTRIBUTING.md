@@ -94,7 +94,8 @@ tools/amiga-make.sh   runs make with whichever toolchain is available (see "Buil
 tools/check-saves.py  checks the generated assembly (safeguard against a gcc bug, see "Building")
 tools/check-stack.py  checks the linker map: libnix's stack swap linked, the stack's size (see "Stack and memory")
 tools/check-core.py   checks that the portable core includes no header of the system (make test, see "Code rules")
-tools/check-quality.py checks the C code's size and complexity with lizard (make test, see "Code rules")
+tools/check-quality.py checks the C code's size and complexity with lizard, and that no step name is left in the
+                      code (make test, see "Code rules")
 tools/requirements.txt the Python packages of make test (lizard), pinned with their hashes
 tools/pcm-compare.py  compares the PCM written by amisqueeze (OUTPUT option) with a reference, byte by byte
 tools/make-test-audio.sh makes the test sounds (tones, sides, sweep, gapless MP3s, counter pattern)
@@ -208,7 +209,8 @@ cut, answered with an HTTP error; an internet radio's metadata blocks taken out 
 from the middle as after a seek, back to back with raw PCM). It also builds amisqueeze without the MP3 decoder
 (`out-host/amisqueeze-nomp3`), as `out/amisqueeze` is, and checks what that build advertises and refuses. The
 syntax of every Python and shell script of `tools/` and `tests/` is checked too, those run only by hand included.
-`tools/check-quality.py` holds the C code to the size and complexity limits of [Code rules](#code-rules).
+`tools/check-quality.py` holds the C code to the size and complexity limits of [Code rules](#code-rules), and
+keeps step names out of the code.
 The Amiga build must still be checked in WinUAE: the platform layers differ.
 
 GitHub runs `make test` on each push and pull request (`.github/workflows/tests.yml`, GitHub Actions, Ubuntu); the
@@ -282,6 +284,11 @@ with AHI 6.6; 4.x is expected to work, not checked). How the parts fit together:
   `tools/check-quality.py`, run by `make test`, enforces them. The functions over a limit today are listed in it
   (`OVER`) with their values: a listed function may not grow, and leaves the list once it fits. Raising a listed
   value needs the maintainer's agreement, with the reason in the commit.
+- **Comments** explain the code; they do not point to the project's history. No step name, no "plan step", no
+  review or version, no "decided with the user": give the reason in a sentence, or link to `architecture.md`. A fact
+  worth keeping stays, said plainly ("seen in WinUAE"). This holds for all the code: C, Python, shell, the
+  `Makefile`, the CI's workflows and the files of `tests/data/`. `tools/check-quality.py` fails on a step name.
+  Commit messages keep the step names.
 
 ### Stack and memory
 

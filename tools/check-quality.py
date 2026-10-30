@@ -8,7 +8,11 @@ The functions over a limit today are listed in OVER, with the values they reach:
 past them, its other values keep the common limits, and it leaves the list once it fits them all. Raising a listed
 value needs the maintainer's agreement, with the reason in the commit.
 
-Usage: check-quality.py   -> exit code 1 if a function or a file is over its limit, or if OVER is out of date.
+The code's comments do not point to the project's history: the check fails on the name of a step of the plan in
+the files of TEXT (CONTRIBUTING.md, Code rules).
+
+Usage: check-quality.py   -> exit code 1 if a function or a file is over its limit, if OVER is out of date, or if
+                             a step of the plan is named in the code.
 Needs lizard at the version of tools/requirements.txt: pip install --require-hashes -r tools/requirements.txt
 """
 import fnmatch
@@ -45,6 +49,14 @@ OVER = {
     ("tests/test_core.c", "lame_frame"): {"parameters": 8},
     ("tests/test_core.c", "main"): {"lines": 99},
 }
+
+# All the code, the C and what builds and tests it; the documents (docs/, *.md) and the review tooling (.claude/)
+# are left out
+TEXT = ("src/*/*.[ch]", "tests/*.[chs]", "tests/*.py", "tests/data/*.txt", "tools/*.py", "tools/*.sh",
+        "tools/*.txt", "tools/*/*.py", "tools/*/*.c", "Makefile", ".github/workflows/*.yml", "winuae/*.uae")
+# A step's name (the phase, a hyphen, its number), the words for a step of the plan, or an older name of a step
+# (two numbers and a dot); written so that this file does not match it
+STEP = re.compile(r"\b(tools|player|remote|publish)-\d+[a-z]?|\bplan\s+steps?\b|\bsteps?\s+\d+\.\d+\b", re.I)
 
 INSTALL = "pip install --require-hashes -r tools/requirements.txt"
 
@@ -109,10 +121,23 @@ def problems(lizard):
     return found, notes, count
 
 
+def steps_named():
+    found = []
+    for path in sorted({p.replace(os.sep, "/") for pattern in TEXT for p in glob.glob(pattern)}):
+        with open(path, encoding="latin-1") as f:
+            for n, line in enumerate(f, 1):
+                m = STEP.search(line)
+                if m:
+                    found.append(f"{path}:{n}: \"{m.group(0)}\" names a step of the plan: say the fact itself "
+                                 "(CONTRIBUTING.md, Code rules)")
+    return found
+
+
 if __name__ == "__main__":
     if len(sys.argv) != 1:
         sys.exit(__doc__)
     found, notes, count = problems(load_lizard())
+    found += steps_named()
     for n in notes:
         print(f"note: {n}")
     for p in found:
@@ -120,4 +145,4 @@ if __name__ == "__main__":
     if found:
         sys.exit(1)
     print(f"check-quality: {count} functions measured, all within the limits but the {len(OVER)} listed in OVER, "
-          "none of them grown")
+          "none of them grown; no step of the plan named in the code")

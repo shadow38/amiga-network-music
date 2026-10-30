@@ -1,4 +1,4 @@
-# The release archives made from a tag (plan step publish-3): pushing a tag amisqueeze-<version> builds both Amiga
+# The release archives made from a tag: pushing a tag amisqueeze-<version> builds both Amiga
 # executables and "make dist" through tools/amiga-make.sh (its Docker way, the pinned image, as in tests.yml), checks
 # that the archives bear the tag's version (make dist itself refuses a version that does not agree everywhere), then
 # makes a draft GitHub Release with the archives, their .sha256 and the Aminet readme. Nothing is public until the

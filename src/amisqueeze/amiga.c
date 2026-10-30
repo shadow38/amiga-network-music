@@ -42,7 +42,7 @@
 
 /* Read by the Version command: "Version amisqueeze". Printed with VERBOSE: a string nothing reads would be dropped
  * at link time (--gc-sections), and Version would find nothing. Not const: in the data hunk. In the code hunk,
- * AmigaOS 3.2's Version read "amiseeze 0.3" out of the 0.3 build, though the bytes were right. */
+ * AmigaOS 3.2's Version read a garbled name ("amiseeze"), though the bytes were right. */
 #ifdef AMISQUEEZE_FPU
 static char version[] = "$VER: amisqueeze.fpu 0.9-dev (30.10.2026)";
 #else
@@ -105,7 +105,7 @@ static char msg_line[512];
 static BPTR log_file;
 static const char *log_name;
 
-/* Workbench start (plan step player-10): libnix's start-up code sets _WBenchMsg (NULL from a Shell). It would open the
+/* Workbench start: libnix's start-up code sets _WBenchMsg (NULL from a Shell). It would open the
  * console named by __stdiowin before main(); none here: amisqueeze opens its own once it has read its icon's
  * ToolTypes (WINDOW, QUIET). */
 extern struct WBStartup *_WBenchMsg;
@@ -295,8 +295,8 @@ static int sock_error(void)
     return last_error;
 }
 
-/* Makes socket s non-blocking; 0 if the stack refuses (the socket closed): a receive could then wait forever, the
- * stall of plan step player-16 */
+/* Makes socket s non-blocking; 0 if the stack refuses (the socket closed): a receive could then wait forever
+ * (see platform.h) */
 static int make_nonblocking(LONG s)
 {
     LONG one = 1;
@@ -591,7 +591,7 @@ int32_t plat_audio_abort(int i)
     return (int32_t)r->ahir_Std.io_Actual;
 }
 
-/* Commodity (plan step player-10, decided with the user): amisqueeze shows in Exchange, whose "Remove" stops it, and
+/* Commodity: amisqueeze shows in Exchange, whose "Remove" stops it, and
  * runs once (NBU_UNIQUE). Started again while it runs: nothing happens to the running one (CXCMD_UNIQUE ignored),
  * the new one quits. Returns 0 if another amisqueeze runs; without commodities.library, 1 and no commodity. */
 static int cx_open(void)
@@ -843,7 +843,7 @@ int main(void)
             args[i] = prefs[i];
 
     if (!args[ARG_BENCH] && !cx_open()) {
-        /* Another amisqueeze runs: from the Workbench nothing happens (decided with the user), from a Shell a word */
+        /* Another amisqueeze runs: from the Workbench nothing happens, from a Shell a word */
         if (!wb)
             msg("amisqueeze: amisqueeze is already running (Exchange lists it and can stop it)\n");
         goto out_args;

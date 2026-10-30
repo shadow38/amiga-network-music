@@ -1,5 +1,5 @@
 /*
- * flac.c - portable core: the FLAC decoder (plan step player-8b), with dr_flac (dr_flac.c).
+ * flac.c - portable core: the FLAC decoder, with dr_flac (dr_flac.c).
  *
  * LMS sends a FLAC file as it is: "fLaC", metadata blocks (STREAMINFO first; an embedded picture may weigh more
  * than the ring buffer), then the audio frames. The header is read here as it arrives: STREAMINFO is kept, every

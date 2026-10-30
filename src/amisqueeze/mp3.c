@@ -1,10 +1,10 @@
 /*
- * mp3.c - portable core: the MP3 decoder (plan step player-8c), with minimp3 (minimp3.c). Only in the builds with
+ * mp3.c - portable core: the MP3 decoder, with minimp3 (minimp3.c). Only in the builds with
  * AMISQUEEZE_MP3: minimp3 computes in floating point, too slow without an FPU.
  *
  * LMS sends an MP3 file as it is, from its start (ID3v2 tags first: an embedded picture may weigh more than the
  * ring buffer) or, after a seek, from its first frame then anywhere in the middle. Tags are skipped as they arrive;
- * a LAME header in the first frame gives the samples to drop at the start and the end (gapless, step player-8d). The
+ * a LAME header in the first frame gives the samples to drop at the start and the end (gapless). The
  * frames go through a staging buffer, where minimp3 finds them. It wants the frame to decode and the header of the
  * next one (otherwise it starts over and loses the bit reservoir), and, to find the first frame, several frames in
  * a row: so it is called when the staging buffer is full (first frame) or holds the biggest frame and a header, or
@@ -67,7 +67,7 @@ static uint32_t get32(const uint8_t *b)
     return (uint32_t)b[0] << 24 | (uint32_t)b[1] << 16 | (uint32_t)b[2] << 8 | b[3];
 }
 
-/* Gapless playback (plan step player-8d): an encoder such as LAME writes in the first frame a header, "Xing" or "Info"
+/* Gapless playback: an encoder such as LAME writes in the first frame a header, "Xing" or "Info"
  * after the side information, with the number of audio frames, then its own extension with its delay and padding
  * (12 bits each, 21 bytes into it); the layout is the one minimp3_ex.h reads. lead gets the encoder's delay and
  * the decoder's, left the samples of the track; a frame count of 0 (a broken header) sets no limit, so that the

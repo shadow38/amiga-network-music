@@ -25,7 +25,7 @@ void msg_raw(const void *buf, int len);
 /* Host name or dotted address; returns 1 and *ip, or 0 if it cannot be resolved */
 int plat_resolve(const char *host, uint32_t *ip);
 
-/* Connected TCP sockets are non-blocking (plan step player-16): a TCP/IP stack may report a socket readable when
+/* Connected TCP sockets are non-blocking: a TCP/IP stack may report a socket readable when
  * nothing can be read yet (AmiNetXDuo counts segments that arrived out of order), and a blocking receive would
  * then wait, forever if the server is gone. */
 
