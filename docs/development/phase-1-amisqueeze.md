@@ -994,7 +994,18 @@ belongs to the task that opened it; packets serialised field by field; buffers a
 - **Criterion**: started without arguments, the player finds the server and shows up under the chosen name; with
   `LOG=<file>`, the messages appear in the Shell window and, at the same time, in the file.
 
-## player-11 Direct Paula output (idea) ⬜
+## player-11 Direct Paula output ⬜ version 1.0
+
+- **Scope for 1.0** (agreed with the user): after the split of `stream.c`, before the setup guides and the audit.
+  - An option, AHI still the default: nothing changes for those who use AHI today. Paula taken by itself when
+    `ahi.device` cannot be opened: to confirm in the study, since it is what lets an Amiga without AHI play.
+  - The rate: with LMS, asked of the server (`MAXRATE`, player-13), so the Amiga converts no rate. With Music
+    Assistant, which cannot lower it yet: AHI, or a plain halving if the measure allows it.
+  - 14 bits uncalibrated if it costs little CPU, otherwise 8 bits. Paula's own volume, the sides in place,
+    double buffering with `BeginIO` in chip RAM.
+  - Left for later: Paula by default, a rate conversion with a real filter, 14 bits calibrated.
+  - A ceiling: if the study finds 8 bits too poor to hear and 14 bits too costly, the step leaves 1.0 rather
+    than grow.
 
 - **Why**: on the slow profile, playing through AHI and `paula.audio` costs 61-68 % of the CPU, almost all of it in
   AHI (player-4c), and up to 88 % with the volume scaled in the core (player-6). A second audio sink that drives Paula through

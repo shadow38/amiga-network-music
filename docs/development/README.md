@@ -55,8 +55,8 @@ agreed with the user.
 | 0.1 to 0.7 | the player for LMS and Music Assistant: PCM, FLAC, MP3, start from the Workbench, the `.lha`, releases built by the CI | player-1 to player-8d, player-7b, part of player-10, tools-10 (LMS), publish-2 (`.lha`), publish-3 | ✅, see the [changelog](../../CHANGELOG.md) |
 | 0.8 | what the real machine shows; a lower rate asked of the server; automatic server discovery; hardening; the writing rules applied to the documentation | player-9, player-10 (discovery), player-12, player-13, player-14, player-15, player-16, player-17, tools-11, tools-13, publish-6 | ✅, see the [changelog](../../CHANGELOG.md) |
 | 0.9 | internet radios' metadata (ICY); the window shown and hidden from Exchange; finishing touches after the 0.8 reviews; the code's size and complexity checked; a readable architecture page; the technical documentation organised | player-10 (end), tools-14, player-18, player-19, publish-7, publish-8 | ⬜ |
-| 1.0 | `stream.c` and the unit tests split; setup guides, a full audit, the upload to Aminet | publish-4, publish-5, tools-10 (Music Assistant), publish-2 (Aminet) | ⬜ |
-| none yet | ideas: direct Paula output, source-level debugging | player-11, tools-8 | ⬜ |
+| 1.0 | `stream.c` and the unit tests split; a direct Paula output; setup guides, a full audit, the upload to Aminet | player-11, publish-4, publish-5, tools-10 (Music Assistant), publish-2 (Aminet) | ⬜ |
+| none yet | idea: source-level debugging | tools-8 | ⬜ |
 | none | reference documents on AmigaOS for contributors, committed when ready (agreed with the user) | tools-12 | ⬜ |
 
 The remote (remote-0 to remote-12) will have versions of its own, its name chosen by its study (remote-0). It
@@ -145,11 +145,15 @@ The rest agreed with the user, in this order, then a light review (publish-5):
 
 ### 1.0
 
-- **Before it**: `stream.c` and `tests/test_core.c` split, the former into smaller modules (its stream, its queue
-  of tracks, its output), the latter by module (agreed with the user); then the setup guides
-  (publish-4), a full audit (publish-5), which checks the split, the Music Assistant scenario in WinUAE
-  (tools-10).
-- **Then**: the upload to Aminet (publish-2), once the `Author:` and `Uploader:` of the `.readme` are corrected.
+In this order (agreed with the user):
+
+- **The split**: `stream.c` and `tests/test_core.c` split, the former into smaller modules (its stream, its queue
+  of tracks, its output), the latter by module. The output module is where the Paula output goes.
+- **A direct Paula output** (player-11), with a reduced scope: an option, AHI still the default (see
+  [player-11](phase-1-amisqueeze.md)). If its study rules it out, it leaves 1.0 rather than grow.
+- **The guides and the audit**: the setup guides (publish-4), written with the Paula output known; the Music
+  Assistant scenario in WinUAE (tools-10); a full audit (publish-5), which checks the split and the Paula output.
+- **Last**: the upload to Aminet (publish-2), once the `Author:` and `Uploader:` of the `.readme` are corrected.
 - **Perhaps**: an attestation of the archives' provenance (`actions/attest-build-provenance`). Left for 1.0 by the
   user: of little use to Amiga users, since the reproducible build already lets anyone check.
 
@@ -184,7 +188,7 @@ The rest agreed with the user, in this order, then a light review (publish-5):
 | player-8d MP3 without gaps between tracks | ✅ |
 | player-9 Real machine | ✅ the protocol on the A1200 with LMS; `SYS:WBStartup`, Music Assistant and the memory in WinUAE; a PiStorm when one is at hand |
 | player-10 Finishing touches | ✅ the parts of 0.4 and 0.5; server discovery (0.8), on the A1200 with three stacks; ICY (0.9), on the host and in WinUAE, again after the rebase on `dev` |
-| player-11 Direct Paula output, without AHI | ⬜ idea (CPU load on a slow 68020; crackles with a PCMCIA network card, player-9) |
+| player-11 Direct Paula output, without AHI | ⬜ version 1.0, reduced scope (CPU load on a slow 68020; crackles with a PCMCIA network card, player-9) |
 | player-12 Hardening (the 0.7 review's 50 list) | ✅ version 0.8 |
 | player-13 A lower rate asked of the server | ✅ `MAXRATE` and the LMS rules; on the A1200, 62 % of the CPU at 32 kHz against 77 %; Music Assistant upstream: the user's decision |
 | player-14 The buffer running dry in the middle of a frame | ✅ on the host and the A1200 |
