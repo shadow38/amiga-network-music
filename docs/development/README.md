@@ -122,7 +122,8 @@ The rest agreed with the user on 2026-10-30, in this order, then a light review 
 
 - **The code's size and complexity** (tools-14): limits per function and per file, checked by `make test` with
   lizard; today's excesses listed and never to grow. Comments without step names or other pointers to the
-  project's history, in all the code. Also the CI's host compiler pinned (from tools-13).
+  project's history, in all the code. Also the CI's host compiler: gcc 14 named (from tools-13). Done on
+  2026-10-30.
 - **After the 0.8 reviews** (player-18): response headers up to 4 KB, as squeezelite; dr_flac's `assert()` off on
   the Amiga; the track queue when full; two tests; comments and documents that say something false.
 - **The window from Exchange** (player-19): Show and Hide open and close the message window. The start stays as
@@ -165,7 +166,7 @@ The rest agreed with the user on 2026-10-30, in this order, then a light review 
 | tools-11 A real TCP/IP stack in WinUAE (AmiNetXDuo, PCMCIA card) | ✅ 2026-10-24 |
 | tools-12 Amiga reference documents (`docs/amiga/`) | ⬜ agreed with the user on 2026-10-24; tools-12a (AHI, network) first |
 | tools-13 Safety nets from the 0.8 review | ✅ 2026-10-29 (version 0.8) |
-| tools-14 The code's size and complexity | ⬜ version 0.9 |
+| tools-14 The code's size and complexity | ✅ 2026-10-30 (version 0.9) |
 | player-1 Control connection | ✅ 2026-10-18 |
 | player-1b Default options (`ENV:amisqueeze.prefs`) | ✅ 2026-10-18 |
 | player-2 Receiving the stream (virtual output) | ✅ 2026-10-18 |

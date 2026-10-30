@@ -311,33 +311,14 @@ phase 1; the figures below are those of 0.6.
   user-visible but R3: no `CHANGELOG.md` line.
 - **Left for 0.9** (agreed with the user on 2026-10-29): the blind spots of `check-saves.py` (a `movem` or
   `fmovem` load from memory, a `(sp)+` pop), which the compiler does not emit today; the CI's compiler, not
-  pinned.
+  pinned (gcc 14 named in tools-14).
 
-## tools-14 The code's size and complexity ⬜ (version 0.9)
+## tools-14 The code's size and complexity ✅ (2026-10-30, version 0.9)
 
-- **Goal**: no drift towards functions or files too long or too complex, measured rather than judged (agreed
-  with the user on 2026-10-30).
-- **Content**, one commit each:
-  - limits in `CONTRIBUTING.md`, Code rules, for the C sources but `third_party/` and the generated `bench_*.c`:
-    - per function: a cyclomatic complexity of 15 at most, counted by lizard's `-m` (a `switch` counts once, so
-      that a flat list of cases is not taken for a complex function), 60 lines of code, 6 parameters;
-    - per source file: 800 lines of code; none for the tests' files until `test_core.c` is split (1.0);
-  - `tools/check-quality.py`, run by `make test` and in the CI, with lizard at a pinned version (MIT, a
-    development tool, not in the program). Today's excesses are listed with their values: a listed function may
-    not grow, and leaves the list once it fits. Raising a value needs the user's agreement, with the reason in
-    the commit;
-  - comments that explain the code, without pointing to the project's history: no step name, no "plan step", no
-    review or version, no "decided with the user". The reason in a sentence, or a link to `architecture.md`. A
-    rule in `CONTRIBUTING.md`, Code rules, for all the code: C, Python, `Makefile`, the CI's workflows, the files
-    of `tests/data/`. `tools/check-quality.py` fails on a step name or "plan step"; the 40 found on 2026-10-30
-    removed in the same commit, their useful facts kept ("seen in WinUAE"). Commit messages keep the step names
-    (agreed with the user on 2026-10-30);
-  - question S6 of `review-protocol-security` points to the limits and the list (the user's decision, taken on
-    2026-10-30);
-  - the CI's host compiler pinned (left from tools-13).
-- **Measured** on 2026-10-30 (lizard 1.24.3, without `-m`): 16 functions above a complexity of 15, the worst
-  `main` of `amiga.c` (35), `read_header` of `flac.c` (34), `player_main` (33); 9 above 60 lines; `stream_start`
-  with 9 parameters; `stream.c` 745 lines of code in functions, `test_core.c` 3176.
-- **Criterion**: each check seen failing on a planted defect (a function past each limit, a listed function grown,
-  a file too long, a step name in a comment), then green; `make test` and the CI green. Lizard in the local build container only with the
-  user's agreement. Not user-visible: no `CHANGELOG.md` line.
+- Limits per function and per file in `CONTRIBUTING.md`, Code rules, checked by `tools/check-quality.py` in
+  `make test` and the CI (lizard pinned with its hashes in `tools/requirements.txt`); the 20 functions over them on
+  2026-10-30 listed there, never to grow. Comments without pointers to the project's history, step names checked
+  by the same script. Question S6 of `review-protocol-security` points to the limits (agreed with the user on
+  2026-10-30).
+- The CI's host compiler: gcc 14 named, its exact version printed, rather than a container pinned by digest (the
+  user's choice, 2026-10-30).
