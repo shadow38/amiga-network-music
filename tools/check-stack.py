@@ -5,7 +5,7 @@ program itself, not left to a default, with the size the Makefile expects (read 
 object file, -save-temps=obj).
 
 Without __stkinit, the program builds and starts, then overflows the Shell's stack in the decoders without a
-warning (AmigaOS does not detect it): see CONTRIBUTING.md, Stack and memory.
+warning (AmigaOS does not detect it): see docs/development/code-rules.md, Stack and memory.
 
 Usage: check-stack.py <map> <object file that defines __stack> <size in bytes>
        -> exit code 1 if either is missing, or __stack has another size.

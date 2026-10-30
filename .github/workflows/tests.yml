@@ -1,6 +1,6 @@
 # On each push and pull request:
 # - host: the portable core built natively with AddressSanitizer and UBSan, its unit tests, then the fake server's
-#   scenarios against the host build, and the C code's size and complexity ("make test" in CONTRIBUTING.md);
+#   scenarios against the host build, and the C code's size and complexity ("make test" in docs/development/testing.md);
 # - amiga: both Amiga executables (with tools/check-saves.py on their assembly), the developer tool cpucount (never
 #   released) and the release archives in their development form, built through tools/amiga-make.sh, which finds neither the toolchain nor a local script on the
 #   runner and so takes its Docker way, the one documented for a new contributor, with the image pinned there;
@@ -34,7 +34,7 @@ jobs:
           python3 -m venv "$RUNNER_TEMP/venv"
           "$RUNNER_TEMP/venv/bin/pip" install --require-hashes -r tools/requirements.txt
           echo "$RUNNER_TEMP/venv/bin" >> "$GITHUB_PATH"
-      # gcc 14 named, as in CONTRIBUTING.md (the runner's default cc is gcc 13), its version in the log
+      # gcc 14 named, as in docs/development/testing.md (the runner's default cc is gcc 13), its version in the log
       - name: Host build, unit tests, fake server scenarios
         run: |
           gcc-14 --version | head -1

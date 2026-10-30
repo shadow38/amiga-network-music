@@ -1,5 +1,5 @@
 # Cross-compilation for AmigaOS: m68k-amigaos-gcc must be in the PATH (otherwise use tools/amiga-make.sh, which
-# finds the available toolchain; see CONTRIBUTING.md).
+# finds the available toolchain; see docs/development/building.md).
 #
 # One program per directory: src/<prog>/*.c -> out/<prog>. In a program directory, amiga*.c (amiga.c,
 # amiga_ahi.c) are only built for the Amiga and posix.c only for the host.
@@ -34,7 +34,7 @@ PROGS   := $(notdir $(wildcard src/*))
 # The Shell's stack (4 KB by default) is too small for the decoders (dr_flac about 5.5 KB, minimp3 about 17.5 KB):
 # libnix's start-up code enlarges it (__stkinit, linked in here; size in __stack, amiga.c). tools/check-stack.py
 # reads the linker map of each program of STACK_PROGS: __stkinit linked, __stack defined in its amiga.o, with the
-# size <prog>_STACK (the measure: CONTRIBUTING.md, Stack and memory).
+# size <prog>_STACK (the measure: docs/development/code-rules.md, Stack and memory).
 amisqueeze_CFLAGS  := -m68020 -Wno-pointer-sign -Werror=format -Ithird_party/dr_flac -Ithird_party/minimp3
 amisqueeze_LDFLAGS := -Wl,-u,___stkinit
 amisqueeze_STACK   := 16384

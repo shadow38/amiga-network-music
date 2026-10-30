@@ -290,7 +290,7 @@ phase 1; the figures below are those of 0.6.
   - tools-12e: the Workbench start and the console (icon, ToolTypes, `CON:` window, commodity).
 - **Criterion** (each part): every rule and finding on its subject in `architecture.md`, `testing.md`,
   `CONTRIBUTING.md` and the steps' findings has its explanation in `docs/amiga/`, sourced, with the links in
-  place; `CONTRIBUTING.md` (Repository layout), the "Before touching X, read Y" table of `CLAUDE.md` and "Where
+  place; `building.md` (Repository layout), the "Before touching X, read Y" table of `CLAUDE.md` and "Where
   we are" updated. Not user-visible: no `CHANGELOG.md` line.
 
 ## tools-13 Safety nets from the 0.8 review ✅ (2026-10-29, version 0.8)
@@ -315,7 +315,7 @@ phase 1; the figures below are those of 0.6.
 
 ## tools-14 The code's size and complexity ✅ (2026-10-30, version 0.9)
 
-- Limits per function and per file in `CONTRIBUTING.md`, Code rules, checked by `tools/check-quality.py` in
+- Limits per function and per file in `code-rules.md`, checked by `tools/check-quality.py` in
   `make test` and the CI (lizard pinned with its hashes in `tools/requirements.txt`); the 20 functions over them on
   2026-10-30 listed there, never to grow. Comments without pointers to the project's history, step names checked
   by the same script. Question S6 of `review-protocol-security` points to the limits (agreed with the user on

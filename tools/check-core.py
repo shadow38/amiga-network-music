@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Checks that the portable core of a program includes no system header: every file of src/<prog>/ but its
 platform layers (amiga*.c, posix.c) includes only the C library's headers, the program's own and the third-party
-ones (third_party/*/). Everything system-related goes through platform.h: see CONTRIBUTING.md, Code rules.
+ones (third_party/*/). Everything system-related goes through platform.h: see docs/development/code-rules.md.
 
 Usage: check-core.py <prog>   -> exit code 1 if a file of the core includes another header.
 """

@@ -79,7 +79,7 @@ def main():
         s.query("playlist", "clear")
         for _ in range(2):
             s.query("playlistcontrol", "cmd:add", f"track_id:{track_id}")
-        # A single play (CONTRIBUTING.md, OUTPUT comparisons): no index then play, which could start the stream
+        # A single play (docs/development/testing.md, OUTPUT comparisons): no index then play, which could start the stream
         # twice and leave an extra beginning in the file
         s.query("play")
         t_play = time.monotonic()

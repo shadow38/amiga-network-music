@@ -283,7 +283,7 @@ reaches amisqueeze (`audg`) and that the pause works with scaled samples; the fa
 
 amisqueeze with `OUTPUT=NM:output-<case>.pcm` (the virtual output, no sound), the track twice in the playlist and
 a single `play` (the rules of `OUTPUT` comparisons in
-[CONTRIBUTING.md](../../CONTRIBUTING.md#checks-the-host-tests-cannot-make)); the end of playback awaited within
+[testing.md](testing.md#checks-the-host-tests-cannot-make)); the end of playback awaited within
 the tracks' length + 30 s, then amisqueeze stopped, `bytes written` awaited in the log, and the file compared.
 
 | Case | Program, options | Track | Stream | Compared with |

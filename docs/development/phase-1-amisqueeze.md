@@ -1297,7 +1297,7 @@ belongs to the task that opened it; packets serialised field by field; buffers a
     `amiga.c` would pass the 800 lines of a file: the `ahi.device` calls move to `amiga_ahi.c` first, as they are
     (agreed with the user on 2026-10-30).
 - **How** (tried in WinUAE with AmigaOS 3.2.3, `ACTION_FORCE` and `WAIT` also with Kickstart 3.1; agreed with the
-  user on 2026-10-30; the details in `CONTRIBUTING.md`, Pitfalls):
+  user on 2026-10-30; the details in `pitfalls.md`):
   - an asynchronous read always waits on the window, which is in RAW mode: in the usual mode, a key typed without
     Return held every write until Return, and amisqueeze with it (0.8 has the same code; seen in a Shell too).
     The close gadget comes as a RAW event (`CSI 11;`), which hides the window;

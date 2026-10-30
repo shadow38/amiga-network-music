@@ -1,14 +1,94 @@
-# Testing in WinUAE
+# Testing
+
+For contributors testing a change: which test covers what, the host build and its tests, the tests in WinUAE, and
+the checks only the Amiga can make. Building is in [building.md](building.md).
+
+## What tests what
+
+From the most automated to the most manual. A change is tested at every level it reaches: a change to the
+portable core by `make test`, a change to the Amiga side in WinUAE too.
+
+| Level | What runs | What it covers | What it does not |
+|---|---|---|---|
+| Unit tests (`make test`) | `tests/test_core.c` on `tests/stub_platform.c`: the core with a simulated clock, sockets and audio device | the packets of slimproto, the stream and its states, the queue of tracks, the output and its statuses, the decoders on the files of `tests/data/`, the audio blocks and the rules of AHI (`stub_audio_bad`), ICY, the discovery's replies, the Workbench's helpers (ToolTypes, window, message history) | the system: sockets, time, AHI, AmigaOS |
+| Scenarios against a fake server (`make test`) | `tests/fake_server.py` against `out-host/amisqueeze` (`posix.c`), on localhost | the program from end to end, with real sockets and real time: see [Host build and tests](#host-build-and-tests) | AHI and AmigaOS; the servers' real behaviour |
+| Checks of `make test` | `tools/check-version.py`, `check-core.py`, `check-quality.py`, the self-test of `check-saves.py`, the scripts' syntax, the Aminet readme, the archives' texts in ASCII | the rules a script can hold | |
+| Checks of the Amiga build | `tools/check-saves.py` on the assembly, `tools/check-stack.py` on the linker map | the compiler's register bug; the stack's set-up | how much stack is used |
+| Scenarios in WinUAE | `python3 tools/winuae/run-scenarios.py`, with LMS ([winuae-scenarios.md](winuae-scenarios.md)) | the Amiga build with a real LMS: a test tone through AHI, LMS's commands, the `OUTPUT` file compared with the source | Music Assistant; a real TCP/IP stack (unless the profile [Real network](#real-network)); listening |
+| By hand in WinUAE | the [checks the host tests cannot make](#checks-the-host-tests-cannot-make), and what no scenario covers yet | the stack, the speed, the memory, the sound; Music Assistant, the window and Exchange | the speed of a real machine |
+| On the real machines | listening and measures, at the end of a phase and when a change needs it (the plan's [method](README.md#method)) | the sound, the CPU load, a real network card and TCP/IP stack | |
+
+## Host build and tests
+
+### Requirements
+
+- a **native C compiler** for the build machine (`$(HOSTCC)`, default `cc`) with AddressSanitizer and
+  UndefinedBehaviorSanitizer support, POSIX sockets;
+- `python3` (fake server);
+- [lizard](https://github.com/terryyin/lizard) and what it needs, at the versions of `tools/requirements.txt`
+  (the size and complexity check): `pip install --require-hashes -r tools/requirements.txt`, in a virtual
+  environment if the system's Python refuses it.
+
+Tested with gcc 14 on Linux. The CI uses gcc 14 too (`HOSTCC=gcc-14` on GitHub's `ubuntu-24.04` runner, whose
+default `cc` is gcc 13), and prints its version. clang, macOS
+and other POSIX systems should work but have not been tried.
+
+Note that in the `amigadev/crosstools` image, `gcc` is the Amiga cross-compiler: use another environment, or set
+`HOSTCC` to a native compiler.
+
+### Running them
+
+amisqueeze is split into a **portable core** in standard C (no Amiga headers) and a thin **platform layer**
+(`platform.h`): `amiga.c` and `amiga_ahi.c` on AmigaOS, `posix.c` on Linux and other POSIX systems. The same core
+therefore also runs on the build machine, where it is fast to test (how the core and the platform layer fit
+together: [architecture](architecture.md)):
+
+```sh
+make host                         # out-host/amisqueeze, with AddressSanitizer and UBSan
+out-host/amisqueeze SERVER=192.168.1.10 NAME=Test VERBOSE     # same arguments as on the Amiga; Ctrl-C stops it
+make test                         # unit tests of the core, then scenarios against out-host/amisqueeze
+make test HOSTCC=clang            # another native compiler (untested)
+```
+
+Before the tests, `make test` runs `tools/check-version.py`: the version number must be the same in both `$VER:` strings
+(declared as `static char <name>[] = "$VER: ...";`, never const), `Firmware=` and the user guide's state line
+(`Version x.y in development` for `x.y-dev`, `Version x.y,` for a release); the latest release named by the guide
+must be the newest section of `CHANGELOG.md`; the commodity's title must fit 39 characters. The README names no
+version: its badge shows the latest release published on GitHub.
+`make test` needs no LMS server: the unit tests run the core on a fake platform (`tests/stub_platform.c`), and
+`tests/fake_server.py` plays a slimproto server and its HTTP streams on localhost (handshake, renaming,
+disconnection and reconnection, a server silent for 35 s, Ctrl-C, argument errors; server discovery: one server, two, none, malformed
+replies, found again after a failed connection; streams played, paused, stopped, flushed, refused, held,
+cut, answered with an HTTP error; an internet radio's metadata blocks taken out of the sound and sent back; the
+`OUTPUT` file compared with what was sent; FLAC and MP3 test files decoded from `tests/data/`, whole or
+from the middle as after a seek, back to back with raw PCM). It also builds amisqueeze without the MP3 decoder
+(`out-host/amisqueeze-nomp3`), as `out/amisqueeze` is, and checks what that build advertises and refuses. The
+syntax of every Python and shell script of `tools/` and `tests/` is checked too, those run only by hand included.
+`tools/check-quality.py` holds the C code to the size and complexity limits of [code-rules.md](code-rules.md), and
+keeps step names out of the code.
+The Amiga build must still be checked in WinUAE: the platform layers differ.
+
+### On GitHub
+
+GitHub runs `make test` on each push and pull request (`.github/workflows/tests.yml`, GitHub Actions, Ubuntu); the
+badge at the top of the README shows the result of the latest run. A second job builds the Amiga programs and
+their archives: [Builds made by GitHub](building.md#builds-made-by-github).
+
+The tests use real time (playback pacing, reconnection delays), so a slow runner can make one fail: rerun it
+before suspecting the code. The reverse happens too: a race can pass on a fast machine and fail on the runner. After
+changing when the output starts, ends or runs dry (the statuses at a track's end, `STMo`, `STMu`), run the
+scenarios concerned several times, not once.
+
+## Testing in WinUAE
 
 How amisqueeze is tested in an emulated Amiga: the machine, its profiles, AHI, how to drive it from the host, the
-server side, the CPU load, and the test sounds. The host build and its tests (`make test`) are in
-[CONTRIBUTING.md](../../CONTRIBUTING.md#host-build-and-tests), with the checks only the Amiga can make
-([Checks the host tests cannot make](../../CONTRIBUTING.md#checks-the-host-tests-cannot-make)). The plan's steps
-behind this setup: tools-4, tools-5 and tools-7 of [phase-0-tooling.md](phase-0-tooling.md).
+server side, the CPU load, and the test sounds. The plan's steps behind this setup: tools-4, tools-5 and tools-7
+of [phase-0-tooling.md](phase-0-tooling.md).
 
-## What you need
+### What you need
 
-- **WinUAE** 6.0 (Windows).
+- **WinUAE** 6.0 (Windows), or a real machine, with a TCP/IP stack: WinUAE's own emulation (`bsdsocket_emu`) is
+  enough.
 - **A Kickstart ROM and AmigaOS**, 3.1 or later (tested with 3.2): both are licensed, never in the repository.
   AmigaOS installed on a hard file (`.hdf`).
 - **AHI 6 and MUI** in that system, from Aminet, as the [user guide](../user-guide.md#installing-ahi) describes;
@@ -16,9 +96,12 @@ behind this setup: tools-4, tools-5 and tools-7 of [phase-0-tooling.md](phase-0-
 - **A server** reachable from the host: Lyrion Music Server or Music Assistant, set up as the
   [user guide](../user-guide.md) says, with the [test sounds](#test-sounds) in its music folder. The
   [automated scenarios](#automated-scenarios) need LMS, running, on the host or forwarded to it
-  ([what they expect of it](winuae-scenarios.md#running-them)).
+  ([what they expect of it](winuae-scenarios.md#running-them)). With LMS, add the user guide's `mp3 pcm` rule
+  ([server setup](../user-guide.md#server-setup)), to test the builds that leave MP3 to the server. Its CLI
+  (9090/tcp) is handy to drive it from scripts ([the server side](#the-server-side)), and squeezelite on the PC as
+  a reference player (steps tools-2 and tools-3 of the [tooling plan](phase-0-tooling.md)).
 
-## The test machine
+### The test machine
 
 [`winuae/amisqueeze-test.uae`](../../winuae/amisqueeze-test.uae) is a template: copy it outside the repository,
 put your paths in place of its `<...>`, and start it with `winuae64.exe -f <your copy>`. The settings that matter:
@@ -27,7 +110,7 @@ put your paths in place of its `<...>`, and start it with `winuae64.exe -f <your
 |---|---|
 | A1200, AGA, 68020, 2 MB chip, 8 MB fast | the classic target; Zorro II fast RAM (a 16-bit bus, slower than an accelerator's own) |
 | `bsdsocket_emu=true` | WinUAE provides `bsdsocket.library` through the host's network: no TCP/IP stack in the Amiga, and a server on the host is `127.0.0.1` |
-| `filesystem2=rw,NM:...:<repository>/out` | the programs under test as `NM:` (see [the two volumes](#the-two-volumes)) |
+| `filesystem2=rw,NM:...:<repository>/out,-128` | the programs under test as `NM:` (see [the two volumes](#the-two-volumes)); boot priority -128, never booted from |
 | `filesystem2=ro,WT:...` | your Amiga-side test tools as `WT:` (optional) |
 | `sound_stereo_separation=10` | full separation (the default 7 mixes the sides: left would be heard on the right) |
 | `toccata=true` | an emulated 16-bit sound card, the reference for Paula |
@@ -36,7 +119,10 @@ put your paths in place of its `<...>`, and start it with `winuae64.exe -f <your
 
 **Never start two configurations on the same hard file at once**: it would be corrupted.
 
-### The two volumes
+In a WinUAE configuration file (syntax checked in WinUAE's `cfgfile.cpp`), `chipmem_size` counts in 512 KB units
+and `fastmem_size` in MB.
+
+#### The two volumes
 
 Host folders mounted as Amiga volumes, so that nothing is copied onto the system hard file:
 
@@ -54,7 +140,7 @@ Host folders mounted as Amiga volumes, so that nothing is copied onto the system
   Read-only, so that a test cannot change its own tools. amisqueeze itself needs only `NM:`: without `WT:`, test
   from a Shell.
 
-## Profiles
+### Profiles
 
 The template is the **default** profile: a 68020 as fast as the host allows (about 45 MHz). The others override
 the CPU lines on the command line (`-s name=value`):
@@ -68,7 +154,7 @@ the CPU lines on the command line (`-s name=value`):
 Not a 68040: it needs its CPU library (`68040.library`) in the system. Speeds measured in WinUAE are not those
 of a real machine: the plan leaves timings to the real machines (step player-9).
 
-### Real network
+#### Real network
 
 With `bsdsocket_emu`, the TCP/IP stack runs on the host and costs the Amiga nothing. To count it (step tools-11),
 add to a profile (usually **slow**):
@@ -95,7 +181,7 @@ add to a profile (usually **slow**):
 - **The serial shell** sometimes loses characters in this profile (a command is retyped, or not sent): keep its
   command lines short.
 
-## AHI
+### AHI
 
 Set the units in `SYS:Prefs/AHI` (the [user guide](../user-guide.md#setting-up-the-unit) explains the modes). The
 tests use:
@@ -116,9 +202,9 @@ tests use:
   file (lost at the next start, `ENV:` being copied from `ENVARC:`), then `Avail FLUSH` (as the tests of
   2026-10-22 did). With `VERBOSE`, amisqueeze prints the mode and frequency it reads there.
 
-## Driving the Amiga from the host
+### Driving the Amiga from the host
 
-### Serial shell
+#### Serial shell
 
 An AmigaDOS Shell on the serial port, reached through the TCP socket of `win32.serial_port`. In
 `S:User-Startup`:
@@ -145,7 +231,7 @@ A host script connects to `127.0.0.1:1234`, sends a command line and reads the o
 - If the Shell hangs: from another Shell in the Amiga, `Status`, then `Break <n>` twice on the serial Shell's
   process; otherwise restart WinUAE.
 
-### amiagent (optional)
+#### amiagent (optional)
 
 [amiagent](https://aminet.net/search?query=amiagent) (Aminet, `comm/net`, Apache 2.0) is a small
 server in the Amiga: commands, files, screen captures, mouse clicks and keys, ARexx. Its host half,
@@ -168,12 +254,12 @@ AI assistant such as Claude Code drive the Amiga through it; it can also be used
   to WinUAE (refuse when Windows asks to allow it): the client is `127.0.0.1`.
 - One command at a time: a command that does not return blocks the next ones until it is interrupted.
 - Its Shell has a **256 KB stack**, which hides stack overflows: a stack test runs from a script that starts with
-  `Stack 4096` (see [Checks the host tests cannot make](../../CONTRIBUTING.md#checks-the-host-tests-cannot-make)).
+  `Stack 4096` (see [Checks the host tests cannot make](#checks-the-host-tests-cannot-make)).
 - Clicks work on the Workbench, icons and GadTools gadgets; MUI gadgets need the mouse moved, then the button
   pressed and released. The screen is 640 x 256: pixels twice as high as wide (double the height of a capture
   meant for the documentation).
 
-## The server side
+### The server side
 
 Measure on the server through its command line interface, never on its web page (whose progress bar moves by
 itself). With LMS, the CLI on TCP port 9090, one command per line:
@@ -194,7 +280,7 @@ So after a seek or a new start, LMS's absolute time is wrong for about 50 s (for
 after a seek near its end), while intervals stay right. Compare intervals in WinUAE; judge absolute times on a
 real machine or with the host build.
 
-## CPU load
+### CPU load
 
 Count the CPU left over with `cpucount` ([`tools/amiga/cpucount.c`](../../tools/amiga/cpucount.c), built by
 `make cpucount` into `out/`, so `NM:cpucount` in WinUAE; plain 68000 code, copy it to a real machine as it is): at
@@ -211,7 +297,7 @@ rounds in 10 s when idle). Start the measuring window a few seconds after playba
 first), and send nothing to the Amiga during a window (the serial shell and amiagent cost CPU too). The results
 so far: steps player-4c and player-9 of the [plan](phase-1-amisqueeze.md).
 
-## Test sounds
+### Test sounds
 
 `sh tools/make-test-audio.sh [DIR]` makes them (default `out/test-audio`), with `sox`, `flac`, `lame` and
 `python3`; put them in the server's music folder and rescan. The tones are at half of full scale. Bring your own
@@ -228,12 +314,42 @@ music for the rest: the test sounds check the player, not the listening pleasure
 | `sweep.flac` | 20 Hz to 20 kHz in 20 s | a clean rise, without crackles; above half of the AHI unit's rate (about 13.7 kHz at 27,429 Hz) Paula cannot play it, and what is heard there depends on AHI's conversion |
 | `test-20s.mp3` | 440 Hz left, 660 Hz right, 20 s, MP3 | MP3 decoding (`amisqueeze.fpu`, or the server), the sides |
 | `gapless-1.mp3` to `gapless-3.mp3` | a 12 s glide from 220 to 880 Hz cut in three MP3s | in one playlist, a continuous glide: no click or gap at the two boundaries (gapless MP3) |
-| `test-pattern.flac` | the counter pattern of `tools/pcm-compare.py`, 20 s | not to listen to: the `OUTPUT` file compared byte by byte (`pcm-compare.py --counter`, see [CONTRIBUTING.md](../../CONTRIBUTING.md#checks-the-host-tests-cannot-make)) |
+| `test-pattern.flac` | the counter pattern of `tools/pcm-compare.py`, 20 s | not to listen to: the `OUTPUT` file compared byte by byte (`pcm-compare.py --counter`, see [Checks the host tests cannot make](#checks-the-host-tests-cannot-make)) |
 
-## Automated scenarios
+### Automated scenarios
 
 [winuae-scenarios.md](winuae-scenarios.md): `tools/winuae/` runs tests from the host (starting WinUAE if needed)
 and prints `OK` or the reason of the failure, with an exit code: a test tone, LMS's commands through AHI and
 `OUTPUT` comparisons (PCM, FLAC and MP3 decoded on the Amiga), all of them with
 `python3 tools/winuae/run-scenarios.py`, in the JIT profile with a 68882. Its serial shell client also runs one
 command: `python3 tools/winuae/amiga_shell.py "Status"`.
+
+## Checks the host tests cannot make
+
+- **Stack**: AmigaOS does not detect a stack overflow (silent corruption), and a Shell with a large stack hides
+  one: from 0.2 to 0.4, `amisqueeze` overflowed the default 4 KB at every start, unseen by tests run from a Shell
+  with 256 KB. To measure what is used, add a temporary probe in `main()` (fill the stack from `tc_SPLower` up to
+  below the current pointer with a pattern, find at the end how much of it was overwritten) and run the program
+  from a script that starts with `Stack 4096`. `-fstack-usage` gives the size of each function's frame.
+- **Speed**: without its JIT, WinUAE at its fastest is about a 68020 at 45 MHz, a slow Amiga (FLAC level 8 decodes
+  at 0.2x real time). For a fast one such as a PiStorm, enable the JIT (68020, 32-bit addressing, not cycle-exact)
+  and, for `amisqueeze.fpu`, `compfpu=true`: without it the JIT interprets the FPU instructions (MP3 at 1.8x real
+  time instead of 74x). A 68040 needs its CPU library in the emulated system: without one, emulate a 68020 with
+  the JIT.
+- **Memory**: `Avail` before and after a few play and stop cycles; watch its `Largest` column too, where a
+  corrupted free memory list shows first.
+- **Sound**: Paula through AHI (`paula.audio`) is the main test, an AHI sound card (Toccata in WinUAE) the 16-bit
+  reference. With Paula in WinUAE, use `SWAP` (left and right come out swapped). Judge Paula's sound at volume 100
+  on the server: a lower volume scales the samples down and brings out Paula's 14-bit noise (a crackle at 50).
+- **On the server**: measure through its CLI (`<player> time ?`, `<player> mode ?`, the playlist index), never on
+  its web page, whose progress bar moves by itself.
+- **`OUTPUT=<file>`** writes the audio to a file as it is played, without sound (as with `NOAUDIO`). The file is
+  created, or replaced, at the start and closed at the end; everything played follows, track after track, nothing
+  while paused. Raw PCM is written as the server sent it (from LMS, 16-bit little-endian; 44.1 kHz stereo is about
+  10 MB a minute); FLAC and MP3 decoded on the Amiga as 16-bit big-endian. In an emulator, write it to a volume
+  shared with the host; never put it in the default options, every run would fill the disk.
+- **`OUTPUT` comparisons** (`tools/pcm-compare.py`, byte by byte): start playback with a single `play`, and compare
+  only once the output has drained (`output: end of playback` with `VERBOSE`) and amisqueeze has stopped. Good
+  references: a counter pattern in FLAC (decoded losslessly by LMS), MP3s decoded by the server's own `sox`. Make
+  test MP3s without an ID3v1 tag (`lame --id3v2-only`): LMS strips it before converting, and `sox` then drops the
+  last frame.

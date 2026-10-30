@@ -8,7 +8,7 @@
 # Usage: sh tools/amiga-make.sh [all|clean|sdk|host|test|dist|<prog>]
 set -e
 
-# m68k-amigaos-gcc (AmigaDev 04c51c0) 16.2.1b; to change it: CONTRIBUTING.md, Requirements
+# m68k-amigaos-gcc (AmigaDev 04c51c0) 16.2.1b; to change it: docs/development/building.md, Requirements
 REFERENCE_IMAGE=amigadev/crosstools:m68k-amigaos-gcc10@sha256:96ca6c4c63af047ff4e717f2b1782dad628cdbe5bed3160415282ace83efc27d
 
 cd "$(dirname "$0")/.."

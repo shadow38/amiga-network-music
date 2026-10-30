@@ -207,7 +207,7 @@ Back to the [plan](README.md).
 - **Why**: the README reads well, but the other documents are hard to read. Each fact comes with all its
   exceptions, sentences pile up clauses, and the plan had become a log of past work. The user guide is too long.
 - **Content**:
-  - the rules, in `CONTRIBUTING.md`, [Writing documentation](../../CONTRIBUTING.md#writing-documentation);
+  - the rules, in [documentation-rules.md](documentation-rules.md) (in `CONTRIBUTING.md` until publish-8);
   - the plan ([README.md](README.md)) rewritten to them first, to try them;
   - then the user guide, in one file with two parts: using amisqueeze (the common case), then a reference
     (options, ToolTypes, messages, troubleshooting, limits);

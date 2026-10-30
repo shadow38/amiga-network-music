@@ -1,5 +1,9 @@
 # Development plan
 
+> This folder holds the documents for contributors and the plan below. Looking for how to build, test, or how
+> amisqueeze works? The documents, and the question each answers:
+> [CONTRIBUTING.md](../../CONTRIBUTING.md#the-documents).
+
 The plan of Amiga Network Music: the phases, split into testable steps, and the [roadmap](#roadmap) of the
 versions that bring them. Each step has a goal, an **observable** success criterion and a way to check it.
 
@@ -13,8 +17,6 @@ versions that bring them. Each step has a goal, an **observable** success criter
 Steps are named after their phase: `tools-<n>` (phase 0), `player-<n>` (1), `remote-<n>` (2), `publish-<n>` (3),
 with a letter for a part (`player-7b`). A step name never reads as a version: 0.7 is a version, `tools-7` a step.
 Review reports and commits before 2026-10-23 use the old numbers, `<phase>.<n>` (`1.7b` for `player-7b`).
-
-How to build and test: [CONTRIBUTING.md](../../CONTRIBUTING.md); testing in WinUAE: [testing.md](testing.md).
 
 ## Method
 

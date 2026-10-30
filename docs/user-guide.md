@@ -387,7 +387,7 @@ SERVER,PORT/N/K,NAME/K,MAC/K,OUTPUT/K,LOG/K,UNIT/N/K,NOAUDIO/S,SWAP/S,FLAC/K,MP3
 | `LOG` | a file that keeps a copy of every message (see [`LOG`](#log)) | none |
 | `VERBOSE` | prints the messages exchanged with the server and the stream's events | off |
 | `NOAUDIO` | no sound: the music is received and consumed at the playing pace, as if played | off |
-| `OUTPUT` | for developers: writes the audio to a file instead of playing it, to check playback (see [CONTRIBUTING](https://github.com/shadow38/amiga-network-music/blob/main/CONTRIBUTING.md#checks-the-host-tests-cannot-make)) | none |
+| `OUTPUT` | for developers: writes the audio to a file instead of playing it, to check playback (see [testing.md](https://github.com/shadow38/amiga-network-music/blob/main/docs/development/testing.md#checks-the-host-tests-cannot-make)) | none |
 
 #### `LOG`
 

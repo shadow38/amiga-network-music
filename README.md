@@ -87,9 +87,9 @@ stack, the sound output and the server. With a problem, add a log: `amisqueeze V
 
 ## For developers
 
-- **[CONTRIBUTING.md](CONTRIBUTING.md)**: building (cross-compiler, `make`, `make dist`), the tests (`make test`,
-  also run by GitHub on each push), testing in WinUAE, the repository layout, and a build of the version in
-  development (the `dev` branch).
+- **[CONTRIBUTING.md](CONTRIBUTING.md)**: a quick start, how to propose a change, and the map of the documents:
+  building (cross-compiler, `make`, `make dist`, a build of the version in development), the tests (`make test`,
+  also run by GitHub on each push, and WinUAE), the code rules.
 - **[Architecture](docs/development/architecture.md)**: how amisqueeze works, and why this way.
 - **[Development plan](docs/development/README.md)**: the roadmap and the design decisions.
 

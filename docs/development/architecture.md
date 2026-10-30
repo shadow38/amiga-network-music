@@ -1,8 +1,8 @@
 # Architecture of amisqueeze
 
 For contributors: how amisqueeze works, and why this way. The code comments give the details; this page gives the
-picture. Building and testing are in [CONTRIBUTING.md](../../CONTRIBUTING.md), the steps and their decisions in the
-[plan](README.md).
+picture. Building and testing are in [building.md](building.md) and [testing.md](testing.md), the steps and
+their decisions in the [plan](README.md).
 
 ## The picture
 
@@ -225,8 +225,8 @@ which puts a byte into the window's input and so ends the pending read. `AUTO` a
 - Showing the window holds the one task long enough to stop the sound for a moment on a slow 68020. Hence only
   512 bytes are kept, about a window's worth.
 
-What was tried, with which systems, the measurements, and the libnix side of the Workbench start: CONTRIBUTING.md,
-[Pitfalls](../../CONTRIBUTING.md#pitfalls).
+What was tried, with which systems, the measurements, and the libnix side of the Workbench start:
+[pitfalls.md](pitfalls.md).
 
 ## Slimproto: the messages
 

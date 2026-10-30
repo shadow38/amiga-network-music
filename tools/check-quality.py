@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Checks the size and complexity of the C code against the limits of CONTRIBUTING.md, Code rules, measured by
+"""Checks the size and complexity of the C code against the limits of docs/development/code-rules.md, measured by
 lizard: per function a complexity of 15 at most (lizard's -m count: a whole switch counts once), 60 lines of code
 and 6 parameters; per file 800 lines of code, the tests' files excepted. Lines of code are lizard's NLOC (neither
 comments nor blank lines). third_party/ and the generated bench_*.c are left out.
@@ -9,7 +9,7 @@ past them, its other values keep the common limits, and it leaves the list once 
 value needs the maintainer's agreement, with the reason in the commit.
 
 The code's comments do not point to the project's history: the check fails on the name of a step of the plan in
-the files of TEXT (CONTRIBUTING.md, Code rules).
+the files of TEXT (docs/development/code-rules.md).
 
 Usage: check-quality.py   -> exit code 1 if a function or a file is over its limit, if OVER is out of date, or if
                              a step of the plan is named in the code.
@@ -67,7 +67,7 @@ def load_lizard():
         import lizard
         from lizard_ext.version import version
     except ImportError:
-        sys.exit(f"error: lizard is missing: {INSTALL} (CONTRIBUTING.md, Requirements)")
+        sys.exit(f"error: lizard is missing: {INSTALL} (docs/development/testing.md, Requirements)")
     with open("tools/requirements.txt", encoding="utf-8") as f:
         pinned = re.search(r"^lizard==(\S+)", f.read(), re.M).group(1)
     if version != pinned:
@@ -129,7 +129,7 @@ def steps_named():
                 m = STEP.search(line)
                 if m:
                     found.append(f"{path}:{n}: \"{m.group(0)}\" names a step of the plan: say the fact itself "
-                                 "(CONTRIBUTING.md, Code rules)")
+                                 "(docs/development/code-rules.md)")
     return found
 
 
