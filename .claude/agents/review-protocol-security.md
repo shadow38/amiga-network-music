@@ -35,8 +35,11 @@ Answer every question, with evidence, even when the answer is "nothing found":
   fill it? Prove it either way.
 - **S5.** Time and position arithmetic: wrap-around, units, division by values that come from a file or the server
   (rate, channels, frame size equal to 0).
-- **S6.** *(full)* Architecture: does the portable core stay free of platform dependencies? Which modules carry too
-  many responsibilities for the next planned features?
+- **S6.** *(full)* Architecture: does the portable core stay free of platform dependencies? Size and complexity are
+  measured, not judged: the limits are in `CONTRIBUTING.md`, Code rules, checked by `tools/check-quality.py`, whose
+  `OVER` lists the functions over them today. Do not report a function or a file for its size alone. Which modules,
+  or which functions of `OVER`, carry too many responsibilities for the next planned features, and how would they
+  split?
 - **S7.** The comments of the files of your scope that the range touches: check every factual claim against the
   code (principle A2).
 
