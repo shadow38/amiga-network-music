@@ -73,7 +73,8 @@ Everything else (all the options, sound settings, volume, messages) is in the **
 - raw PCM up to 48 kHz; FLAC and MP3 decoded on the Amiga when its CPU is fast enough (MP3 with
   `amisqueeze.fpu`), otherwise converted by the server;
 - recovers from a slow or broken stream and from a server restart;
-- starts from a Shell or from the Workbench, at boot too; Exchange lists it and stops it.
+- starts from a Shell or from the Workbench, at boot too; Exchange lists it, shows and hides its window, and stops
+  it.
 
 Tested in WinUAE and on a real A1200 with a 26 MHz 68020, where CD-quality playback takes about three quarters of
 the CPU. The user guide lists [what has been tried](docs/user-guide.md#what-has-been-tried), the

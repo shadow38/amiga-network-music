@@ -100,15 +100,28 @@ static const char *log_name;
  * ToolTypes (WINDOW, QUIET). */
 extern struct WBStartup *_WBenchMsg;
 char *__stdiowin = NULL;
-#define DEFAULT_WINDOW "CON:0/20/640/120/amisqueeze/AUTO/CLOSE/WAIT/SMART"
+#define DEFAULT_WINDOW "CON:0/20/640/120/amisqueeze/CLOSE"
 struct Library *IconBase;
 static struct DiskObject *wb_icon;
-static BPTR wb_console;                     /* the message window; with QUIET, 0 unless start-up failed */
-static const char *wb_window;               /* its specification: WINDOW, or DEFAULT_WINDOW */
-static int wb_quiet;                        /* QUIET: 1 during start-up (a message then opens the window), 2 while */
-static char quiet_held[1024];               /* player_main() runs (the messages also kept here, for the window if */
-static int quiet_held_len;                  /* its start-up fails) */
 static char tt_line[512];                   /* the icon's ToolTypes as a command line */
+
+/* The message window, which Exchange shows and hides: started from the Workbench, or from a Shell into NIL:
+ * (Run >NIL: in S:User-Startup). It is in RAW mode: in the usual mode, a key typed without Return holds every
+ * write to the window until Return, and the one task of amisqueeze with it (seen in WinUAE). An asynchronous read
+ * always waits on it, for the keys (ignored) and the event of its close gadget, which hides it. */
+#ifndef ACTION_FORCE
+#define ACTION_FORCE 2001                   /* text into a console's input; not in the NDK's dosextens.h */
+#endif
+static char win_spec[256];                  /* its specification ("" = no window: a Shell start) */
+static BPTR win;                            /* the window, 0 while hidden */
+static BPTR win_out;                        /* the output while it is hidden: none (Workbench), or NIL: */
+static int win_on_message;                  /* hidden during start-up (QUIET, NIL:): a message opens it */
+static struct MsgPort *win_port;            /* the read's reply port and packet (NULL: no Show and Hide) */
+static struct DosPacket *win_pkt;
+static int win_reading;                     /* the read is pending */
+static char win_input[64];                  /* what it reads: keys, ignored, and events */
+static int win_csi;                         /* console_closed()'s state */
+static struct history history;              /* the messages, shown again when the window opens */
 
 /* Commodity: amisqueeze shows in Exchange, which can stop it; one at a time */
 struct Library *CxBase;
@@ -170,40 +183,145 @@ static void log_close(void)
     log_file = 0;
 }
 
-/* Opens the message window of a Workbench start; the output goes there */
-static void wb_open_window(void)
+/* Asks the window for what is typed: the read ends at a key, or an event */
+static void win_read(void)
 {
-    wb_console = Open((STRPTR)wb_window, MODE_NEWFILE);
-    if (wb_console == 0)
-        wb_console = Open((STRPTR)DEFAULT_WINDOW, MODE_NEWFILE);    /* a WINDOW that cannot be opened */
-    if (wb_console != 0)
-        SelectOutput(wb_console);
-}
+    struct FileHandle *fh = BADDR(win);
 
-/* QUIET: a message during start-up (an error in the options, a log that cannot be opened, a missing library) would
- * go nowhere, or to the log only; the window opens for it (and stays until it is closed) */
-static void quiet_start_message(void)
-{
-    if (Output() == 0 && wb_quiet == 1) {
-        wb_quiet = 0;
-        wb_open_window();
-    }
-}
-
-/* QUIET, while player_main() runs: keeps the text of the messages, the newest when they do not fit. This goes on
- * while it plays, at the cost of a copy per message: PLAYER_FAIL, which shows them, comes only before. */
-static void quiet_hold(const char *buf, int len)
-{
-    if (wb_quiet != 2 || len <= 0)
+    if (win_pkt == NULL || fh->fh_Type == NULL)
         return;
-    if (len > (int)sizeof(quiet_held)) {
-        buf += len - (int)sizeof(quiet_held);
-        len = sizeof(quiet_held);
+    win_pkt->dp_Type = ACTION_READ;
+    win_pkt->dp_Arg1 = fh->fh_Arg1;
+    win_pkt->dp_Arg2 = (LONG)win_input;
+    win_pkt->dp_Arg3 = sizeof(win_input);
+    SendPkt(win_pkt, fh->fh_Type, win_port);
+    win_reading = 1;
+}
+
+/* Opens the window in RAW mode, the output going there, and shows the messages kept. "CSI 11{" asks for its close
+ * gadget's event (AmigaOS 3.2 sends it in RAW mode without being asked). */
+static void win_show(void)
+{
+    const char *part[2];
+    int len[2], i;
+
+    if (win != 0 || win_spec[0] == '\0')
+        return;
+    win = Open((STRPTR)win_spec, MODE_NEWFILE);
+    if (win == 0)
+        win = Open((STRPTR)DEFAULT_WINDOW, MODE_NEWFILE);  /* a WINDOW that cannot be opened */
+    if (win == 0)
+        return;
+    win_on_message = 0;                     /* once hidden, it opens again from Exchange only */
+    SetMode(win, 1);
+    Write(win, "\x9b" "11{", 4);
+    win_csi = 0;
+    SelectOutput(win);
+    history_text(&history, part, len);
+    for (i = 0; i < 2; i++)
+        if (len[i] > 0)
+            Write(win, (APTR)part[i], len[i]);
+    win_read();
+}
+
+static void win_close(void)
+{
+    SelectOutput(win_out);
+    Close(win);
+    win = 0;
+}
+
+/* Exchange's Hide. A read still pending would never come back once the window is closed: ACTION_FORCE (a byte into
+ * its input) ends it first. A console that refuses it (a replacement of CON:) keeps its window. */
+static void win_hide(void)
+{
+    struct FileHandle *fh = BADDR(win);
+
+    if (win == 0)
+        return;
+    if (win_reading) {
+        if (!DoPkt(fh->fh_Type, ACTION_FORCE, fh->fh_Arg1, (LONG)"\n", 1, 0, 0)) {
+            msg("amisqueeze: this window cannot be hidden (error %ld)\n", (long)IoErr());
+            return;
+        }
+        WaitPort(win_port);
+        GetMsg(win_port);
+        win_reading = 0;
     }
-    if (quiet_held_len + len > (int)sizeof(quiet_held))
-        quiet_held_len = 0;
-    memcpy(quiet_held + quiet_held_len, buf, (size_t)len);
-    quiet_held_len += len;
+    win_close();
+}
+
+/* The window's read came back: at the close gadget's event (or an EOF, a console without RAW mode), the window
+ * hides; keys are ignored */
+static void win_event(void)
+{
+    LONG n;
+
+    if (!win_reading || GetMsg(win_port) == NULL)
+        return;
+    win_reading = 0;
+    n = win_pkt->dp_Res1;
+    if (n > 0 && !console_closed(&win_csi, win_input, (int)n))
+        win_read();
+    else
+        win_close();
+}
+
+/* Sets up the window: spec without AUTO and WAIT (the default if too long). It opens at the first message
+ * (on_message 1), or stays hidden (2: QUIET, NIL:), but a message during start-up opens it. Without the read's port
+ * and packet, it cannot be hidden. */
+static void win_begin(const char *spec, int on_message)
+{
+    if (!window_spec(spec, win_spec, sizeof(win_spec)))
+        strcpy(win_spec, DEFAULT_WINDOW);
+    win_out = Output();
+    win_on_message = on_message;
+    win_port = CreateMsgPort();
+    win_pkt = AllocDosObject(DOS_STDPKT, NULL);
+    if (win_port == NULL || win_pkt == NULL) {
+        if (win_port != NULL)
+            DeleteMsgPort(win_port);
+        if (win_pkt != NULL)
+            FreeDosObject(DOS_STDPKT, win_pkt);
+        win_port = NULL;
+        win_pkt = NULL;
+    }
+}
+
+/* QUIET, NIL:: from here on (the player starting), a message no longer opens the window; Show does */
+static void win_started(void)
+{
+    if (win_on_message == 2)
+        win_on_message = 0;
+}
+
+/* At the end, a window shown stays until it is closed, so that the last messages can be read: what WAIT does, which
+ * a window that hides cannot have */
+static void win_end(void)
+{
+    while (win != 0 && win_reading) {
+        WaitPort(win_port);
+        win_event();
+    }
+    if (win != 0)
+        win_close();
+    if (win_pkt != NULL)
+        FreeDosObject(DOS_STDPKT, win_pkt);
+    if (win_port != NULL)
+        DeleteMsgPort(win_port);
+}
+
+/* A message to the output: the window (opened for it, if a message should open it) or the Shell; kept for the
+ * window. Write() is unbuffered: the text reaches a redirected file at once. No output: the window hidden, from the
+ * Workbench (the LOG file only). */
+static void out_write(const void *buf, int len)
+{
+    if (win == 0 && win_on_message)
+        win_show();
+    if (Output() != 0)
+        Write(Output(), (APTR)buf, len);
+    if (win_spec[0] != '\0')
+        history_add(&history, buf, len);
 }
 
 void msg(const char *fmt, ...)
@@ -218,21 +336,13 @@ void msg(const char *fmt, ...)
         return;
     if (len >= (int)sizeof(msg_line))
         len = sizeof(msg_line) - 1;
-    /* Write() is unbuffered: the text reaches a redirected file at once. No output: started from the Workbench
-     * with QUIET, once started (the LOG file only) */
-    quiet_start_message();
-    if (Output() != 0)
-        Write(Output(), msg_line, len);
-    quiet_hold(msg_line, len);
+    out_write(msg_line, len);
     log_write(msg_line, len);
 }
 
 void msg_raw(const void *buf, int len)
 {
-    quiet_start_message();
-    if (Output() != 0)
-        Write(Output(), (APTR)buf, len);
-    quiet_hold(buf, len);
+    out_write(buf, len);
     log_write(buf, len);
 }
 
@@ -456,9 +566,10 @@ int plat_error(void)
     return last_error;
 }
 
-/* Commodity: amisqueeze shows in Exchange, whose "Remove" stops it, and
- * runs once (NBU_UNIQUE). Started again while it runs: nothing happens to the running one (CXCMD_UNIQUE ignored),
- * the new one quits. Returns 0 if another amisqueeze runs; without commodities.library, 1 and no commodity. */
+/* Commodity: amisqueeze shows in Exchange, whose "Remove" stops it, and whose Show and Hide open and close its
+ * window (COF_SHOW_HIDE, with a window only), and runs once (NBU_UNIQUE). Started again while it runs: nothing
+ * happens to the running one (CXCMD_UNIQUE ignored), the new one quits. Returns 0 if another amisqueeze runs;
+ * without commodities.library, 1 and no commodity. */
 static int cx_open(void)
 {
     struct NewBroker nb;
@@ -473,6 +584,7 @@ static int cx_open(void)
     nb.nb_Title = (STRPTR)(version + 6);   /* "amisqueeze x.y (dd.mm.yyyy)": within CBD_TITLELEN */
     nb.nb_Descr = (STRPTR)"Squeezebox network music player";
     nb.nb_Unique = NBU_UNIQUE | NBU_NOTIFY;
+    nb.nb_Flags = win_pkt != NULL ? COF_SHOW_HIDE : 0;
     nb.nb_Port = cx_port;
     broker = CxBroker(&nb, &error);
     if (broker == NULL)
@@ -517,8 +629,25 @@ static int cx_killed(void)
             kill = 1;
         else if (id == CXCMD_DISABLE || id == CXCMD_ENABLE)
             ActivateCxObj(broker, id == CXCMD_ENABLE);  /* shown in Exchange; the music is not affected */
+        else if (id == CXCMD_APPEAR)
+            win_show();
+        else if (id == CXCMD_DISAPPEAR)
+            win_hide();
     }                                           /* CXCMD_UNIQUE: started again, nothing to do */
     return kill;
+}
+
+/* The signals of the window's read and of Exchange */
+static ULONG ui_signals(void)
+{
+    return (win_port != NULL ? 1UL << win_port->mp_SigBit : 0) | (cx_port != NULL ? 1UL << cx_port->mp_SigBit : 0);
+}
+
+/* What the window and Exchange ask; 1 if asked to stop */
+static int ui_events(void)
+{
+    win_event();
+    return cx_killed();
 }
 
 int plat_wait(struct plat_fd *fds, int n, uint32_t timeout_ms)
@@ -526,8 +655,8 @@ int plat_wait(struct plat_fd *fds, int n, uint32_t timeout_ms)
     fd_set rfds, wfds;
     struct timeval tv;
     ULONG audio_sig = audio_signal();
-    ULONG cx_sig = cx_port != NULL ? 1UL << cx_port->mp_SigBit : 0;
-    ULONG sigs = SIGBREAKF_CTRL_C | audio_sig | cx_sig;
+    ULONG ui_sig = ui_signals();
+    ULONG sigs = SIGBREAKF_CTRL_C | audio_sig | ui_sig;
     LONG r;
     int i, maxfd = -1;
 
@@ -535,10 +664,10 @@ int plat_wait(struct plat_fd *fds, int n, uint32_t timeout_ms)
         return -1;
     if (n == 0) {
         /* No socket: a plain delay (WaitSelect without any socket is not reliable with every stack) */
-        if ((SetSignal(0, SIGBREAKF_CTRL_C) & SIGBREAKF_CTRL_C) || cx_killed())
+        if ((SetSignal(0, SIGBREAKF_CTRL_C) & SIGBREAKF_CTRL_C) || ui_events())
             return -1;
         Delay((timeout_ms + 19) / 20);
-        return ((SetSignal(0, SIGBREAKF_CTRL_C) & SIGBREAKF_CTRL_C) || cx_killed()) ? -1 : 0;
+        return ((SetSignal(0, SIGBREAKF_CTRL_C) & SIGBREAKF_CTRL_C) || ui_events()) ? -1 : 0;
     }
 
     FD_ZERO(&rfds);
@@ -555,7 +684,7 @@ int plat_wait(struct plat_fd *fds, int n, uint32_t timeout_ms)
     tv.tv_sec = timeout_ms / 1000;
     tv.tv_usec = (timeout_ms % 1000) * 1000;
     r = WaitSelect(maxfd + 1, &rfds, &wfds, NULL, &tv, &sigs);
-    if ((sigs & SIGBREAKF_CTRL_C) || ((sigs & cx_sig) && cx_killed()))
+    if ((sigs & SIGBREAKF_CTRL_C) || ((sigs & ui_sig) && ui_events()))
         return -1;                          /* Ctrl-C, Break, or "Remove" in Exchange */
     if (r >= 0 && (sigs & audio_sig))       /* an audio block ended */
         r++;
@@ -623,8 +752,8 @@ static struct RDArgs *read_prefs(LONG args[], BOOL *error)
 }
 
 /* Workbench start: reads the icon's ToolTypes, the options into tt_line (for the template), WINDOW and QUIET for
- * the message window, which it opens unless QUIET (AUTO: it shows at the first message). Returns 0 if the
- * ToolTypes are too long to be read. */
+ * the message window, which opens at the first message unless QUIET. Returns 0 if the ToolTypes are too long to
+ * be read. */
 static int wb_start(void)
 {
     struct WBArg *wa = _WBenchMsg->sm_ArgList;
@@ -652,23 +781,28 @@ static int wb_start(void)
             window = (const char *)w;
         ok = tooltypes_line(TEMPLATE, (const char *const *)tt, n, tt_line, sizeof(tt_line));
     }
-    wb_window = window;
-    if (quiet)
-        wb_quiet = 1;                       /* no window, unless a message comes during start-up */
-    else
-        wb_open_window();
+    win_begin(window, quiet ? 2 : 1);
     if (!ok)
         msg("amisqueeze: the icon's ToolTypes are too long\n");
     return ok;
 }
 
-/* Closes what wb_start() opened; the window stays until the user closes it if something was written (WAIT) */
+/* The message window: from the Workbench, or from a Shell into NIL: (Run >NIL:), where it is hidden until a
+ * message during start-up or Show. From another Shell, the messages go to that Shell. */
+static int window_start(int wb)
+{
+    struct FileHandle *out = Output() != 0 ? BADDR(Output()) : NULL;
+
+    if (wb)
+        return wb_start();
+    if (out != NULL && out->fh_Type == NULL)  /* NIL: has no handler */
+        win_begin(DEFAULT_WINDOW, 2);
+    return 1;
+}
+
+/* Frees what wb_start() opened, if anything */
 static void wb_end(void)
 {
-    if (wb_console != 0) {
-        SelectOutput(0);
-        Close(wb_console);
-    }
     if (wb_icon != NULL)
         FreeDiskObject(wb_icon);
     if (IconBase != NULL)
@@ -683,7 +817,7 @@ int main(void)
     BOOL prefs_error;
     int i, rc = RETURN_FAIL, wb = _WBenchMsg != NULL;
 
-    if (wb && !wb_start())
+    if (!window_start(wb))
         goto out_wb;
 #ifdef AMISQUEEZE_FPU
     /* Before anything uses floating point: built for a 68881/68882, this one would crash without an FPU */
@@ -754,8 +888,7 @@ int main(void)
             goto out_timer;
         }
     }
-    /* QUIET: from here on, the messages go to the log only; kept too until the player has started */
-    wb_quiet = wb_quiet && !o.bench ? 2 : 0;
+    win_started();
     if (args[ARG_VERBOSE])
         msg("%s\n", version + 6);           /* without "$VER: " */
     if (o.bench) {
@@ -764,12 +897,8 @@ int main(void)
     }
 
     rc = player_main(&player, &o);
-    if (wb_quiet == 2 && rc == PLAYER_FAIL) {   /* an error in the player's start-up: shown in the window */
-        wb_open_window();
-        if (Output() != 0)
-            Write(Output(), quiet_held, quiet_held_len);
-    }
-    wb_quiet = 0;
+    if (rc == PLAYER_FAIL)                  /* an error in the player's start-up: shown in a hidden window */
+        win_show();
 
     if (pri_set)                            /* started from a Shell, this is the Shell's own process */
         SetTaskPri(FindTask(NULL), pri_saved);
@@ -788,7 +917,7 @@ out_prefs:
         FreeDosObject(DOS_RDARGS, prefs_rda);
     }
 out_wb:
-    if (wb)
-        wb_end();
+    win_end();
+    wb_end();
     return rc;
 }

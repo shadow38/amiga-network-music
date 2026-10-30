@@ -122,6 +122,105 @@ int tooltypes_line(const char *template, const char *const *tooltypes, int n, ch
     return 1;
 }
 
+/* 1 if the len characters of s, in any case, are the upper-case word */
+static int same_field(const char *s, int len, const char *upper)
+{
+    int i;
+
+    if (len != (int)strlen(upper))
+        return 0;
+    for (i = 0; i < len && upper_char(s[i]) == upper[i]; i++)
+        ;
+    return i == len;
+}
+
+int window_spec(const char *window, char *spec, int size)
+{
+    const char *w = window;
+    int field = 0, pos = 0;
+
+    while (*w) {
+        const char *f = w;
+        int len;
+
+        while (*w && *w != '/')
+            w++;
+        len = (int)(w - f);
+        /* the options come after the title, the fifth field: a title "Wait" stays */
+        if (field < 5 || !(same_field(f, len, "AUTO") || same_field(f, len, "WAIT"))) {
+            if (pos + len + 2 > size)
+                return 0;
+            if (field > 0)
+                spec[pos++] = '/';
+            memcpy(spec + pos, f, (size_t)len);
+            pos += len;
+        }
+        if (*w == '/')
+            w++;
+        field++;
+    }
+    if (size < 1)
+        return 0;
+    spec[pos] = '\0';
+    return 1;
+}
+
+int console_closed(int *state, const char *buf, int len)
+{
+    /* states: 0 none, 1 after ESC, 2 after CSI, 3 after CSI 1, 4 after CSI 11 */
+    int i, closed = 0;
+
+    for (i = 0; i < len; i++) {
+        unsigned char c = (unsigned char)buf[i];
+
+        if (c == 0x9B || (*state == 1 && c == '['))
+            *state = 2;
+        else if (c == 0x1B)
+            *state = 1;
+        else if ((*state == 2 || *state == 3) && c == '1')
+            (*state)++;
+        else {
+            if (*state == 4 && c == ';')
+                closed = 1;                     /* the event's class, 11: IECLASS_CLOSEWINDOW */
+            *state = 0;
+        }
+    }
+    return closed;
+}
+
+void history_add(struct history *h, const char *buf, int len)
+{
+    while (len-- > 0) {
+        h->text[h->end++] = *buf++;
+        if (h->end == HISTORY_SIZE) {
+            h->end = 0;
+            h->full = 1;
+        }
+    }
+}
+
+void history_text(const struct history *h, const char *part[2], int len[2])
+{
+    int start = 0, n = h->end;
+
+    if (h->full) {
+        start = h->end;
+        n = HISTORY_SIZE;
+        while (n > 0 && h->text[start] != '\n') {
+            start = (start + 1) % HISTORY_SIZE;
+            n--;
+        }
+        if (n > 0) {                            /* after that newline */
+            start = (start + 1) % HISTORY_SIZE;
+            n--;
+        }
+    }
+    part[0] = h->text + start;
+    len[0] = n < HISTORY_SIZE - start ? n : HISTORY_SIZE - start;
+    part[1] = h->text;
+    len[1] = n - len[0];
+}
+
 int parse_decode_mode(const char *s)
 {
     if (same_word(s, "AUTO"))

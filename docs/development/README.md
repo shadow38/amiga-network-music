@@ -128,10 +128,12 @@ The rest agreed with the user on 2026-10-30, in this order, then a light review 
   the Amiga; the track queue when full (16 tracks, one more refused); two tests; comments and documents that said
   something false. Done on 2026-10-30.
 - **The window from Exchange** (player-19): Show and Hide open and close the message window. The start stays as
-  it is: the window, unless `QUIET`.
+  it is: the window, unless `QUIET`. A key typed in it no longer stops amisqueeze (RAW mode). Done on 2026-10-30.
 - **A readable architecture page** (publish-7): `architecture.md` rewritten from a sample the user accepts first;
   then a detailed reading of the user guide.
-- **Before the release**: Music Assistant on the A1200, since each of its tracks now waits for `cont`.
+- **Before the release**: Music Assistant on the A1200, since each of its tracks now waits for `cont`; there too,
+  with Kickstart 3.1, the window of player-19 (its close gadget in RAW mode, its text kept without `SMART`, Show
+  and Hide); `images/exchange.png` taken again with the release's build.
 - **Left out**:
   - from the 0.8 reviews' 50 lists: the blind spots of `check-saves.py`, a test of a socket refused
     non-blocking, a script against `printf` in the core, `quiet_hold`, `send_all` with nothing to send;
@@ -189,7 +191,7 @@ The rest agreed with the user on 2026-10-30, in this order, then a light review 
 | player-16 A receive that never blocks | ✅ 2026-10-29: on the host, in WinUAE and on the A1200 with AmiNetXDuo |
 | player-17 Hardening after the 0.8 review | ✅ 2026-10-29 (version 0.8) |
 | player-18 Hardening after the 0.8 light review | ✅ 2026-10-30 (version 0.9) |
-| player-19 The window shown and hidden from Exchange | ⬜ version 0.9 |
+| player-19 The window shown and hidden from Exchange | ✅ 2026-10-30 (version 0.9) |
 | remote-0 Study (common interface, Music Assistant feasibility, name) | ⬜ before any amilms code |
 | remote-1 to remote-7 LMS | ⬜ |
 | remote-8 to remote-11 Music Assistant | ⬜ |
@@ -223,6 +225,10 @@ Neither planned nor dropped for good. Each is taken up only by the user's decisi
   for a slowdown. Earlier, the multiplies were left alone (agreed with the user on 2026-10-19): no 68060 among the
   target machines, and `AUTO` measures the speed. Seen again on 2026-10-29, not taken for 0.9 (agreed with the
   user on 2026-10-30); a report from a 68040 or 68060 owner would settle it.
+- **More sound ahead in AHI**: 3 blocks of 32 KB, about 0.19 s each at 44.1 kHz. On a slow Amiga, a call that
+  holds the one task for 0.3 s (opening the window at Show, player-19) already stops the sound. More blocks, or
+  bigger ones, would cost memory and delay the server's commands (pause, volume) (agreed with the user on
+  2026-10-30).
 - **LMS's `body` frame**: for a playlist address played directly, LMS asks the player to send the body back.
   amisqueeze shows it as "not handled" (agreed with the user on 2026-10-27).
 

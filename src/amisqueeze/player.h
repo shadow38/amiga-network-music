@@ -243,6 +243,27 @@ uint32_t maxrate_from_ahi(uint32_t which, uint32_t freq);
  * number: a /N option may refuse quotes). Writes at most size
  * bytes, ended by a newline and a NUL; 0 if they do not fit. */
 int tooltypes_line(const char *template, const char *const *tooltypes, int n, char *line, int size);
+/* A console window's specification ("CON:x/y/w/h/title/options") without the options AUTO and WAIT (any case),
+ * which a window that amisqueeze closes and opens again cannot have. Writes at most size bytes, NUL included; 0 if
+ * it does not fit. */
+int window_spec(const char *window, char *spec, int size);
+
+/* What a console window in RAW mode reads (len bytes), one read after another: 1 once its close gadget's event has
+ * come ("CSI 11;...", CSI being 0x9B or ESC [), cut anywhere between reads; *state (0 at first) carries a cut
+ * sequence over to the next read */
+int console_closed(int *state, const char *buf, int len);
+
+/* The last messages, kept to show them again when the window opens (Exchange's Show) */
+#define HISTORY_SIZE 512
+struct history {
+    char text[HISTORY_SIZE];                /* a ring: the next byte goes at end */
+    int end;
+    int full;                               /* the ring went round: text[end] is the oldest byte */
+};
+void history_add(struct history *h, const char *buf, int len);
+/* The text kept, oldest first, in two parts (the second often empty); once some is lost, from the start of a
+ * line, since the oldest one is cut */
+void history_text(const struct history *h, const char *part[2], int len[2]);
 
 /* bench.c */
 /* FLAC decoding speed on this machine, in % of real time (300 = three times faster than playing): a built-in

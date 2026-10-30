@@ -28,8 +28,8 @@ GENERATED = "bench_*.c"   # made by tools/bin2c.py from the test files
 NO_FILE_LIMIT = "tests/*"
 
 OVER = {
-    ("src/amisqueeze/amiga.c", "plat_wait"): {"complexity": 25},
-    ("src/amisqueeze/amiga.c", "main"): {"complexity": 35, "lines": 105},
+    ("src/amisqueeze/amiga.c", "plat_wait"): {"complexity": 24},
+    ("src/amisqueeze/amiga.c", "main"): {"complexity": 29, "lines": 101},
     ("src/amisqueeze/decoder.c", "wav_header"): {"complexity": 19},
     ("src/amisqueeze/flac.c", "frame_streaminfo"): {"complexity": 29},
     ("src/amisqueeze/flac.c", "read_header"): {"complexity": 29, "lines": 95},

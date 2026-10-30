@@ -3816,6 +3816,80 @@ static void test_tooltypes(void)
     CHECK(tooltypes_line(template, tt, 0, line, sizeof(line)) && !strcmp(line, "\n"));
 }
 
+/* The window that Exchange shows and hides: its specification without AUTO and WAIT */
+static void test_window_spec(void)
+{
+    char spec[64], tiny[18];
+
+    CHECK(window_spec("CON:0/20/640/120/amisqueeze/AUTO/CLOSE/WAIT/SMART", spec, sizeof(spec)));
+    CHECK(!strcmp(spec, "CON:0/20/640/120/amisqueeze/CLOSE/SMART"));
+    CHECK(window_spec("CON:0/0/640/100/Wait/wait/auto/Autox", spec, sizeof(spec)));   /* the title stays */
+    CHECK(!strcmp(spec, "CON:0/0/640/100/Wait/Autox"));
+    CHECK(window_spec("CON:////x/AUTO/", spec, sizeof(spec)) && !strcmp(spec, "CON:////x"));
+    CHECK(window_spec("CON:", spec, sizeof(spec)) && !strcmp(spec, "CON:"));
+    CHECK(window_spec("", spec, sizeof(spec)) && !strcmp(spec, ""));
+    CHECK(window_spec("CON:0/0/640/100/t/WAIT", tiny, sizeof(tiny)) && !strcmp(tiny, "CON:0/0/640/100/t"));
+    CHECK(!window_spec("CON:0/0/640/100/ti", tiny, sizeof(tiny)));                  /* one too many */
+}
+
+/* The messages kept for the window: in order, and from a line start once the ring went round */
+static void test_history(void)
+{
+    static struct history h;
+    static char all[4096], got[HISTORY_SIZE];
+    const char *part[2];
+    int len[2], n = 0, i;
+
+    history_text(&h, part, len);
+    CHECK(len[0] == 0 && len[1] == 0);
+    history_add(&h, "one\ntwo\n", 8);
+    history_text(&h, part, len);
+    CHECK(len[0] == 8 && len[1] == 0 && !memcmp(part[0], "one\ntwo\n", 8));
+    memset(&h, 0, sizeof(h));
+    for (i = 0; n < 3000; i++) {        /* "line 0001\n" ...: the ring goes round, the text kept across its end */
+        int k = sprintf(all + n, "line %04d\n", i);
+        history_add(&h, all + n, k);
+        n += k;
+    }
+    history_text(&h, part, len);
+    CHECK(h.full && len[1] > 0 && len[0] + len[1] <= HISTORY_SIZE && len[0] + len[1] >= HISTORY_SIZE - 10);
+    memcpy(got, part[0], (size_t)len[0]);
+    memcpy(got + len[0], part[1], (size_t)len[1]);
+    CHECK(!memcmp(got, all + n - (len[0] + len[1]), (size_t)(len[0] + len[1])));   /* the newest bytes */
+    CHECK(!memcmp(got, "line ", 5));                                               /* a whole line first */
+}
+
+/* The close gadget's event read from a console window in RAW mode, as AmigaOS 3.2 sends it, cut anywhere */
+static void test_console_closed(void)
+{
+    static const char ev[] = "\x9b" "11;0;0;32768;0;0;1540921724;254127|";
+    static const char other[] = "\x9b" "1;0|\x9b" "111;0|\x9b" "2;11;0|11;x\x03";
+    int len = (int)sizeof(ev) - 1, cut, state;
+
+    for (cut = 0; cut <= len; cut++) {
+        int got;
+
+        state = 0;
+        got = console_closed(&state, "x", 1);
+        got |= console_closed(&state, ev, cut);
+        got |= console_closed(&state, ev + cut, len - cut);
+        CHECK(got);
+    }
+    state = 0;
+    CHECK(console_closed(&state, "\x1b[11;0|", 7));                             /* ESC [ */
+    state = 0;
+    CHECK(!console_closed(&state, other, (int)sizeof(other) - 1));                /* other events, keys */
+    CHECK(!console_closed(&state, "\x9b" "11", 3) && console_closed(&state, "\x9b" "11;", 4));
+}
+
+static void test_workbench(void)
+{
+    test_tooltypes();
+    test_window_spec();
+    test_history();
+    test_console_closed();
+}
+
 /* Server discovery: the replies of LMS and Music Assistant, and malformed ones */
 static int reply(const char *pkt, int len, char *name, int size)
 {
@@ -3956,7 +4030,7 @@ int main(void)
     test_again_said_each();
     test_icy_again();
     test_lame_header();
-    test_tooltypes();
+    test_workbench();
     test_discovery_reply();
     test_discovery_nine();
     printf("test_core: %d checks, %d failed\n", checks, failures);

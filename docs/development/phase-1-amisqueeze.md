@@ -1275,7 +1275,7 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   track ahead, so it holds 16 tracks and refuses one more, rather than forgetting the oldest (agreed with the user
   on 2026-10-30).
 
-## player-19 The window shown and hidden from Exchange ⬜ (version 0.9)
+## player-19 The window shown and hidden from Exchange ✅ (2026-10-30, version 0.9)
 
 - **Goal**: started from the Workbench, amisqueeze's message window opens and closes from Exchange (Show
   Interface, Hide Interface), as a commodity's window does (agreed with the user on 2026-10-30). Today both
@@ -1287,8 +1287,26 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   - the window's close gadget hides it: the music goes on, and the window no longer opens again at the next
     message (`AUTO` today);
   - the start stays as it is: the window opens, unless `QUIET` (agreed with the user on 2026-10-30);
-  - from a Shell, both buttons stay greyed: the messages go to that Shell;
-  - in `amiga.c` only, in functions of their own; no hot key.
+  - from a Shell, both buttons stay greyed: the messages go to that Shell. But a Shell start whose output is
+    `NIL:` (`Run >NIL: amisqueeze` in `S:User-Startup`) is a start without a window: Show and Hide work as with
+    `QUIET`, the default window (agreed with the user on 2026-10-30);
+  - in `amiga.c`, in functions of their own, the parts with no system call in the core (host-tested); no hot key.
+    `amiga.c` would pass the 800 lines of a file: the `ahi.device` calls move to `amiga_ahi.c` first, as they are
+    (agreed with the user on 2026-10-30).
+- **How** (tried in WinUAE with AmigaOS 3.2.3, `ACTION_FORCE` and `WAIT` also with Kickstart 3.1; agreed with the
+  user on 2026-10-30; the details in `CONTRIBUTING.md`, Pitfalls):
+  - an asynchronous read always waits on the window, which is in RAW mode: in the usual mode, a key typed without
+    Return held every write until Return, and amisqueeze with it (0.8 has the same code; seen in a Shell too).
+    The close gadget comes as a RAW event (`CSI 11;`), which hides the window;
+  - closing the window with that read pending would never get it back: `ACTION_FORCE` ends it first. A console
+    that refuses it (a replacement of `CON:`) keeps its window, with a message;
+  - `WAIT` and `AUTO` cannot go with a window that hides: taken out of `WINDOW`, and amisqueeze waits itself, at
+    the end, for its window to be closed;
+  - `SMART` dropped: it prevents selecting and copying, and the text was kept without it;
+  - 512 bytes of messages kept, about a window's worth (it has no scroll back): on a slow 68020 with Paula,
+    opening the window (about 0.2 s) already stops the sound for a moment, 2 KB shown again for 0.6 s more;
+  - `images/exchange.png` taken again.
 - **Criterion**: in WinUAE, through Exchange: Show and Hide, the close gadget, a start with `QUIET` then Show (the
-  start's messages shown), the music never interrupted; from a Shell, the buttons greyed. The user guide (Exchange)
-  and `CHANGELOG.md`.
+  start's messages shown), a key typed in the window, the music never interrupted in the JIT profile; in the slow
+  profile, the stop at Show measured and said in the guide (agreed with the user on 2026-10-30); from a Shell, the
+  buttons greyed. The user guide (Exchange) and `CHANGELOG.md`.

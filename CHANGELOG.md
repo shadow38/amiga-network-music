@@ -12,9 +12,15 @@ are previews, until 1.0.
 - Internet radios that LMS lets `amisqueeze.fpu` fetch itself (MP3 at an `http://` address): the titles the radio
   mixes into its sound are taken out of it, so that the sound no longer cuts, and passed on to LMS, which shows
   them. `VERBOSE` shows them too, as `stream: title: ...`.
+- Exchange's **Show Interface** and **Hide Interface** open and close amisqueeze's window, with the last messages
+  shown again, when started from the Workbench or with `Run >NIL:`. The window's close gadget closes it too, and
+  the music goes on. Its text can now be selected and copied.
 
 ### Changed
 
+- The default window is `CON:0/20/640/120/amisqueeze/CLOSE`; `AUTO` and `WAIT` are left out of a `WINDOW` ToolType,
+  since amisqueeze opens and closes the window itself. The window still stays open after `stopped` until it is
+  closed.
 - With several servers on the network, the message is now `N servers found: ...`: it counts the servers shown (8
   at most), where `N servers answered` said 8 when more answered.
 - User guide: a known limit for LMS's player settings amisqueeze ignores (fade-in, crossfade, output channel mode,
@@ -22,6 +28,9 @@ are previews, until 1.0.
 
 ### Fixed
 
+- A key typed without Return in amisqueeze's window held its next message, and amisqueeze with it: the music
+  stopped until Return. Keys typed in its window are now ignored. In a Shell it writes in, the same still happens
+  (see the user guide, troubleshooting).
 - A stream whose server answered with more than 2 KB of headers failed with `stream: response headers too long`:
   up to 4 KB are now accepted, as by squeezelite.
 - With more than 4 tracks waiting to play, the oldest one was played by the decoder of the track before it (a

@@ -7,7 +7,7 @@ Version 0.9 in development. The latest release, 0.8, is a preview (see [what has
 
 **Using amisqueeze**: [installing](#installing) | [settings for your Amiga](#settings-for-your-amiga) |
 [sound (AHI)](#sound-ahi) | [server setup](#server-setup) | [starting](#starting-amisqueeze) |
-[stopping](#stopping-amisqueeze) | [volume](#volume).
+[its window](#its-window) | [stopping](#stopping-amisqueeze) | [volume](#volume).
 **Reference**: [options](#options) | [ToolTypes](#tooltypes) | [default options](#default-options) |
 [messages](#messages) | [troubleshooting](#troubleshooting) | [known limits](#known-limits) |
 [what has been tried](#what-has-been-tried) | [removing amisqueeze](#removing-amisqueeze).
@@ -307,6 +307,25 @@ NAME=Amiga`, a test setup). Without `VERBOSE`, nothing more is printed while it 
 - **From the Workbench**: copy the program and its icon into `SYS:WBStartup`. The Workbench starts it at every
   boot. With the ToolTypes `QUIET` and `LOG`, it plays in the background without a window.
 - **From a script**: add `Run >NIL: amisqueeze` to `S:User-Startup`, after the line that starts the TCP/IP stack.
+  It then runs without a window, which Exchange can open (see [its window](#its-window)).
+
+### Its window
+
+Started from the Workbench, or from a script with `Run >NIL:`, amisqueeze shows its messages in a window of its
+own, which **Exchange** (`SYS:Tools/Commodities/Exchange`) opens and closes: select "amisqueeze", then
+
+- **Show Interface** opens it, with the last messages again (about a window's worth);
+- **Hide Interface** closes it. Its close gadget does the same.
+
+The music goes on, and the messages still go to the `LOG` file. Once closed, the window opens again only from
+Exchange. From the Workbench, it opens at the first message; with `QUIET`, or `Run >NIL:`, it stays closed, unless
+an error comes at start-up. Its text can be selected with the mouse and copied (right Amiga-C); keys typed in it
+are ignored.
+
+Started from a Shell, amisqueeze writes in that Shell: both buttons stay greyed.
+
+On a slow Amiga, opening the window takes the CPU for a moment, and the sound may stop for up to 0.3 s: with
+Paula on a slow 68020, tried in WinUAE.
 
 ### Stopping amisqueeze
 
@@ -320,7 +339,8 @@ amisqueeze shows in **Exchange** (`SYS:Tools/Commodities/Exchange`), the system'
 ![Exchange: amisqueeze selected in the list of commodities, its description on the right, the Remove button
 below](images/exchange.png)
 
-*Exchange with amisqueeze selected: **Remove** stops it.*
+*Exchange with amisqueeze selected: **Show Interface** and **Hide Interface** open and close its window,
+**Remove** stops it.*
 
 Once Exchange runs, Ctrl-Alt-Help brings its window back.
 
@@ -516,8 +536,8 @@ Two ToolTypes are for the Workbench only:
 
 | ToolType | Meaning |
 |---|---|
-| `WINDOW=CON:...` | the message window: position, size, title. The default is `CON:0/20/640/120/amisqueeze/AUTO/CLOSE/WAIT/SMART`; the window opens at the first message |
-| `QUIET` | no window: amisqueeze runs silently; add `LOG=<file>` to keep its messages. An error at start-up still opens the window, which stays until it is closed |
+| `WINDOW=CON:...` | the message window: position, size, title. The default is `CON:0/20/640/120/amisqueeze/CLOSE`; the window opens at the first message. `AUTO` and `WAIT` are left out: amisqueeze opens and closes the window itself (see [its window](#its-window)) |
+| `QUIET` | no window: amisqueeze runs silently; add `LOG=<file>` to keep its messages. An error at start-up still opens the window, which stays until it is closed; Exchange's **Show Interface** opens it at any time |
 
 ### Default options
 
@@ -718,8 +738,12 @@ rows say what comes next.
   Expected from LMS's code, not tried yet.
 - **Crackles at low volume with Paula.** Fix the volume at 100 and turn the amplifier down instead (see
   [volume](#volume)).
-- **Nothing happens from the Workbench.** With `QUIET`, add `LOG=<file>` to see the messages. If amisqueeze already
-  runs (Exchange lists it), a second start does nothing.
+- **Nothing happens from the Workbench.** With `QUIET`, Exchange's **Show Interface** shows the messages, or add
+  `LOG=<file>`. If amisqueeze already runs (Exchange lists it), a second start does nothing.
+- **The music stops when a key is typed in the Shell amisqueeze writes in**, and starts again after Return. A key
+  typed without Return holds the Shell's output until Return, and amisqueeze waits with it (tried in WinUAE). Press
+  Return, or start it with `Run >NIL:` and open its window from Exchange (see [its window](#its-window)). Its own
+  window does not do this.
 - **`amisqueeze.fpu needs an FPU`**: use `amisqueeze`.
 
 ### Known limits
