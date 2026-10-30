@@ -78,4 +78,5 @@ with AHI 6.6; 4.x is expected to work, not checked).
   2026-10-23 (0.7, in WinUAE), 17544 of 32768 with FLAC and MP3. Redo it when `-fstack-usage` shows the deepest
   path growing by more than 1 KB, or when a new decoder, library or start-up path is linked; a few bytes more do
   not call for it.
-- Memory: see `Avail` in [Checks the host tests cannot make](testing.md#checks-the-host-tests-cannot-make).
+- Memory: where it goes, in [architecture.md](architecture.md#memory); how to watch it, `Avail` in
+  [Checks the host tests cannot make](testing.md#checks-the-host-tests-cannot-make).

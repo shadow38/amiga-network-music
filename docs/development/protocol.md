@@ -238,8 +238,9 @@ encryption, and amisqueeze adds none.
 - **It listens on no port.** It only connects: TCP to the server and to the streams, UDP for the discovery, whose
   replies come back to the port it sent from.
 - **Plain HTTP only**: no HTTPS, and it follows no redirect itself. LMS does, with a new `strm s`.
-- **What it receives is untrusted all the same.** Every size that comes from the network is checked against the
-  buffer it goes to, and a packet out of bounds is refused:
+- **What it receives is untrusted all the same.** The rule: every size that comes from the network is checked
+  against the buffer it goes to (all the limits: [architecture.md](architecture.md#time-outs-and-limits)). For
+  instance:
   - a control packet over 4 KB, or of size 0, ends the connection, which is then made again;
   - a `strm s` whose request is over 1 KB is refused (`STMn`), as is one more track when 16 wait;
   - response headers over 4 KB end the stream (`DSCO` 1);

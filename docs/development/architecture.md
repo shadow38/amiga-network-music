@@ -131,6 +131,62 @@ was handed over.
 ring): the output frees a few hundred bytes at each turn, and reading them at once kept the loop awake. While the
 response headers come, 4 KB must be free, since body bytes may follow them in the same read.
 
+## The states
+
+Three state machines drive amisqueeze: the control connection (`run()` in `player.c`), the stream
+(`enum stream_state`) and the output (`enum output_state`, both in `stream.c`). Ctrl-C ends any of them.
+
+**The control connection**. It is lost when the server closes it, when a send fails, on a packet of an invalid
+size, or after 35 s without a packet.
+
+```mermaid
+stateDiagram-v2
+    [*] --> Discovery: no SERVER
+    [*] --> Connecting: SERVER
+    Discovery --> Discovery: no reply within 2 s, again 5 s later
+    Discovery --> Connecting: a server answered
+    Connecting --> Connected: connected, HELO sent
+    Connecting --> Waiting: failed
+    Waiting --> Connecting: 5 s later, SERVER given
+    Waiting --> Discovery: 5 s later, server discovered
+    Connected --> Connecting: lost after 10 s or more, same address
+    Connected --> Waiting: lost within 10 s
+```
+
+**The stream** of the last track queued. `strm q` and `strm f` close it (`IDLE`); a new `strm s` replaces it
+(`CONNECTING`), whatever its state.
+
+```mermaid
+stateDiagram-v2
+    [*] --> IDLE
+    IDLE --> CONNECTING: strm s
+    DONE --> CONNECTING: strm s
+    CONNECTING --> HEADERS: connected, request sent (STMc)
+    CONNECTING --> IDLE: failed (DSCO 3, or 1)
+    HEADERS --> BODY: 2xx, autostart 0 or 1 (RESP)
+    HEADERS --> CONT: 2xx, autostart 2 or 3 (RESP)
+    HEADERS --> REFUSED: outside 2xx, autostart 2 or 3 (RESP)
+    HEADERS --> IDLE: outside 2xx with autostart 0 or 1, lost, too long (DSCO 2 or 1)
+    CONT --> BODY: cont
+    REFUSED --> IDLE: cont (DSCO 2)
+    BODY --> DONE: end of the body (DSCO 0, or 2 on an error; STMd)
+```
+
+**The output**. It starts once the threshold of the first track queued is received, or the whole track, and
+never while its stream waits for `cont`. While it runs, `STMt` goes every second, and `STMo` when the buffer runs
+dry before the stream's end. `strm q` stops it from any state, and so does `strm f` with nothing playing.
+
+```mermaid
+stateDiagram-v2
+    [*] --> STOPPED
+    STOPPED --> RUNNING: threshold, autostart 1 or 3 (STMs)
+    STOPPED --> LOADED: threshold, autostart 0 or 2 (STMl)
+    LOADED --> RUNNING: strm u (STMr, then STMs)
+    RUNNING --> PAUSED: strm p (STMp)
+    PAUSED --> RUNNING: strm u (STMr)
+    RUNNING --> STOPPED: everything played (STMu)
+```
+
 ## Two kinds of position
 
 A decoder turns N bytes of the stream into M bytes of PCM. So positions are counted in two units, which must
@@ -228,3 +284,86 @@ which puts a byte into the window's input and so ends the pending read. `AUTO` a
 
 What was tried, with which systems, the measurements, and the libnix side of the Workbench start:
 [pitfalls.md](pitfalls.md).
+
+## Time-outs and limits
+
+Each value is a constant of the code, named in the second column; what happens when it is reached is said in the
+messages of the [user guide](../user-guide.md) or in [protocol.md](protocol.md#what-amisqueeze-trusts).
+
+| Time | Value | In the code |
+|---|---|---|
+| a turn of the main loop, at most | 100 ms while streaming or playing, 1 s otherwise | `run()`, `player.c` |
+| a socket reported readable with nothing to read, left out of the waits | 100 ms | `AGAIN_WAIT_MS` |
+| no packet from the server: the connection is made again (LMS asks for a status every 5 s) | 35 s | `RX_TIMEOUT_MS` |
+| after a failed connection or discovery, before the next try | 5 s | `RECONNECT_DELAY_S` |
+| a connection lost sooner than this waits as a failed one, otherwise it is made again at once | 10 s | `SESSION_MIN_MS` |
+| the discovery listens for replies | 2 s | `DISCOVERY_WAIT_MS` |
+| `STMt` while playing | every second | `output_tick()` |
+| the speed measure of `AUTO` and `BENCH`, per format | about 0.3 s | `BENCH_MS` |
+| a stream's connection, its response headers, `cont` | no limit | [protocol.md](protocol.md#what-amisqueeze-does-not-handle) |
+
+| Size | Value | In the code |
+|---|---|---|
+| the ring buffer | 1 MB | `STREAM_BUFFER_SIZE` |
+| room in the ring before the stream socket is read | 8 KB, 4 KB while the headers come | `READ_MIN_SPACE` |
+| a control packet | 4 KB | `rx_buf` |
+| the HTTP request of `strm s` | 1 KB | `stream.request` |
+| the response headers | 4 KB, as squeezelite | `stream.headers` |
+| tracks waiting after the one playing | 16 | `MAX_TRACKS` |
+| a radio's metadata block | 4,080 bytes | `ICY_BLOCK_MAX` |
+| the audio output | 3 blocks of 32 KB, 2 of them with the device | `AUDIO_BLOCKS`, `AUDIO_BLOCK_SIZE` |
+| a WAV header; a WAV's rate | 4 KB; 384 kHz | `WAV_HEADER_MAX`, `WAV_RATE_MAX` |
+| a FLAC frame waited for whole | 256 KB | `BOUND_MAX` |
+| MP3 staging, where the first frame is looked for | 16 KB | `STAGE_SIZE` |
+| the servers kept by the discovery; a reply | 8; 1,500 bytes | `DISCOVERY_MAX_SERVERS` |
+| the player's name | 64 characters | `PLAYER_NAME_LEN` |
+| the messages kept for the window | 512 bytes | `HISTORY_SIZE` |
+| `MAXRATE` | 8,000 to 48,000 Hz | `MAXRATE_MIN`, `MAXRATE_DEFAULT` |
+| `AUTO` decodes a format on the Amiga from | twice real time | `DECODE_MIN_SPEED` |
+
+## Memory
+
+amisqueeze needs about 1.7 MB of free memory, measured with `Avail` in WinUAE (the
+[user guide](../user-guide.md)). Most of it is the ring buffer. Computed from the linker maps of the 0.9-dev
+builds and the allocations of the code:
+
+| Part | `amisqueeze` | `amisqueeze.fpu` |
+|---|---|---|
+| code, libnix included | 120 KB | 155 KB |
+| static data, `struct player` included | 31 KB | 31 KB |
+| stack (`__stack`) | 16 KB | 32 KB |
+| the ring buffer | 1,024 KB | 1,024 KB |
+| the audio output's blocks | 96 KB | 96 KB |
+| the decoder of the track | FLAC: about 40 KB | FLAC as `amisqueeze`; MP3: about 28 KB |
+| **sum** | **about 1.3 MB** | **about 1.35 MB** |
+
+- FLAC: dr_flac's state with its 4 KB cache, and a block of decoded samples at 4 bytes a sample: 32 KB for the
+  usual stereo blocks of 4,096 samples, more for a file with bigger ones. MP3: minimp3's state (7 KB), the
+  16 KB staging buffer, a frame of PCM (4.5 KB).
+- AHI takes about 0.2 MB more the first time a program opens it.
+- The rest of what `Avail` shows, about 0.2 MB, is not broken down. Likely parts: the process, the window, what
+  the TCP/IP stack allocates for a new client, libnix's memory lists.
+
+The stack's own measures: [code-rules.md](code-rules.md#stack-and-memory).
+
+## What a platform layer provides
+
+A platform layer implements `platform.h`, whose comments are the reference; `posix.c` and
+`tests/stub_platform.c` show two other ways to do it. What the core expects, by group:
+
+- **the clock**: milliseconds that only go forward, wrapping around;
+- **messages**: `msg()` and `msg_raw()`, written at once, unbuffered;
+- **TCP**: a blocking `plat_connect()` for the control connection, a non-blocking one in two calls for a stream.
+  Once connected, a socket never blocks: `plat_recv()` returns `PLAT_AGAIN` when there is nothing to read;
+- **UDP**: a socket allowed to broadcast, for the discovery;
+- **the wait**: `plat_wait()` on the sockets given, with a time-out. Ctrl-C ends it (`-1`), and so does the end
+  of an audio request. After a socket call failed because of Ctrl-C, `plat_interrupted()` says so;
+- **the audio device**: `AUDIO_BLOCKS` requests of 16-bit big-endian PCM, at full volume. A request linked to
+  another starts when that one ends. The unit's mode (`plat_audio_mode()`), and on an abort, the bytes played, or
+  `-1` when the device cannot tell;
+- **the output file** of `OUTPUT`, the task's priority (`PRI`), and the name resolution of `SERVER`;
+- **the entry point**: it reads the options into `struct options`, then calls `player_main()`, or
+  `player_bench()` for `BENCH`.
+
+Addresses and ports cross `platform.h` in host byte order. Everything runs in one task, the one that opened the
+network library.

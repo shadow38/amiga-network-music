@@ -210,7 +210,7 @@ The rest agreed with the user on 2026-10-30, in this order, then a light review 
 | publish-5 Review before each release | ✅ 2026-10-20; reviews since: [0.6](reviews/0.6.md), [0.7](reviews/0.7.md) |
 | publish-6 Writing rules for the documentation | ✅ 2026-10-24: the rules, the plan and the user guide; `docs/development/` later, where the user finds it worth it (closed on 2026-10-29) |
 | publish-7 A readable architecture page | ✅ 2026-10-30 (version 0.9) |
-| publish-8 The technical documentation organised | ⬜ version 0.9 |
+| publish-8 The technical documentation organised | 🔶 2026-10-30 (version 0.9): written; the user's reading left |
 
 Phase 0 moves forward as needed: a tooling step is done when a step of phase 1 or 2 needs it. Phases 1 and 2 can
 progress in parallel.

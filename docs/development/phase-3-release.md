@@ -222,7 +222,7 @@ Back to the [plan](README.md).
 then a detailed reading of the user guide, whose remarks the user sorted. Paula's settings heard on the A1200
 were left out of the guide: an open point.
 
-## publish-8 The technical documentation organised (agreed with the user on 2026-10-30) ⬜
+## publish-8 The technical documentation organised (agreed with the user on 2026-10-30) 🔶
 
 - **Why**: an outside reading of the technical documentation (2026-10-30) found its content good, but nothing to
   show which page answers which question. `CONTRIBUTING.md` served six readers, `architecture.md` two subjects,
