@@ -265,6 +265,13 @@ with AHI 6.6; 4.x is expected to work, not checked). How the parts fit together:
   includes a third-party header and reads its structures must use the same configuration macros as the file that
   builds it: otherwise the structures' layout differs, without a warning. What each decoder needs from its
   caller: [decoders](docs/development/architecture.md#decoders).
+- **Size and complexity**, measured by [lizard](https://github.com/terryyin/lizard) on the C sources of `src/`,
+  `tests/` and `tools/amiga/`, but `third_party/` and the generated `bench_*.c`:
+  - per function: a cyclomatic complexity of 15 at most, 60 lines of code and 6 parameters. The complexity is
+    lizard's `-m` count: a whole `switch` counts once, so that a flat list of cases is not taken for a complex
+    function;
+  - per file: 800 lines of code, the tests' files excepted;
+  - lines of code are lizard's NLOC: neither comments nor blank lines.
 
 ### Stack and memory
 
