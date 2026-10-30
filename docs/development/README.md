@@ -125,7 +125,8 @@ The rest agreed with the user on 2026-10-30, in this order, then a light review 
   project's history, in all the code. Also the CI's host compiler: gcc 14 named (from tools-13). Done on
   2026-10-30.
 - **After the 0.8 reviews** (player-18): response headers up to 4 KB, as squeezelite; dr_flac's `assert()` off on
-  the Amiga; the track queue when full; two tests; comments and documents that say something false.
+  the Amiga; the track queue when full (16 tracks, one more refused); two tests; comments and documents that said
+  something false. Done on 2026-10-30.
 - **The window from Exchange** (player-19): Show and Hide open and close the message window. The start stays as
   it is: the window, unless `QUIET`.
 - **A readable architecture page** (publish-7): `architecture.md` rewritten from a sample the user accepts first;
@@ -187,7 +188,7 @@ The rest agreed with the user on 2026-10-30, in this order, then a light review 
 | player-15 The task priority (`PRI`) | ✅ 2026-10-29: on the host, in WinUAE and on the A1200 |
 | player-16 A receive that never blocks | ✅ 2026-10-29: on the host, in WinUAE and on the A1200 with AmiNetXDuo |
 | player-17 Hardening after the 0.8 review | ✅ 2026-10-29 (version 0.8) |
-| player-18 Hardening after the 0.8 light review | ⬜ version 0.9 |
+| player-18 Hardening after the 0.8 light review | ✅ 2026-10-30 (version 0.9) |
 | player-19 The window shown and hidden from Exchange | ⬜ version 0.9 |
 | remote-0 Study (common interface, Music Assistant feasibility, name) | ⬜ before any amilms code |
 | remote-1 to remote-7 LMS | ⬜ |

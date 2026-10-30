@@ -1265,27 +1265,15 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   to how third-party code is built, with no defect found); and the items of the 0.8 review already planned for
   0.9 (the 88.2 kHz rate code, the ignored `strm s` fields, the 2 KB of headers).
 
-## player-18 Hardening after the 0.8 light review ⬜ (version 0.9)
+## player-18 Hardening after the 0.8 light review ✅ (2026-10-30, version 0.9)
 
-- **Goal**: what is left of the 50 lists of the [0.8 review](reviews/0.8.md) and of the
-  [light review](reviews/0.8-light.md), sorted with the user on 2026-10-30 (what is left out: the plan's
-  [0.9](README.md#09)).
-- **Content**, one commit per item:
-  - the response headers up to 4 KB, as squeezelite, instead of 2 KB: a radio whose answer is longer than 2 KB
-    fails today (`stream: response headers too long`); the buffer stays off the stack;
-  - dr_flac's `assert()` off in the Amiga build: one that fired would quit without closing AHI;
-  - the queue of tracks when full (`stream.c`, "forget the oldest"): the forgotten track would be decoded by the
-    previous track's decoder. Read in LMS and Music Assistant whether a server may send more than one track
-    ahead. If not, the comment says why; if so, a fix and its test;
-  - tests: `PLAYER_FAIL` for a server not found and for `ahi.device` (the `QUIET` window depends on it); the byte
-    0x7F in the `VERBOSE` dump of a `strm s` request;
-  - comments and documents that say something false: `amiga.c`'s stack sizes of dr_flac and minimp3; the comment
-    above `test_strm_request_shown`; the guide's "said once per connection" for the `stream:` line;
-    "8 servers answered" when nine answer; `player_bench`'s return value; `slimproto.c` on CR and LF in the
-    request; the plan's player-17 (the test of a stream that cannot be opened, `MAXRATE` too large listed as
-    code).
-- **Criterion**: each new test seen failing with its guard removed, in a throwaway copy; `make test` green; in
-  WinUAE, a real radio through LMS still plays. The user guide and `CHANGELOG.md` for the headers' limit.
+- What was left of the 50 lists of the [0.8 review](reviews/0.8.md) and of the
+  [light review](reviews/0.8-light.md): response headers up to 4 KB, as squeezelite; dr_flac's `assert()` off in
+  the Amiga build; tests of two start-up failures and of the byte 0x7F; comments and documents that said something
+  false.
+- The queue of tracks: LMS (a radio that drops) and Music Assistant (its queue changed) can send more than one
+  track ahead, so it holds 16 tracks and refuses one more, rather than forgetting the oldest (agreed with the user
+  on 2026-10-30).
 
 ## player-19 The window shown and hidden from Exchange ⬜ (version 0.9)
 
