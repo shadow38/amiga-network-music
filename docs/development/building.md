@@ -131,7 +131,7 @@ most, ASCII, LF. `make test` checks it too.
 - nothing left under "Unreleased".
 
 It also refuses a file that is not ASCII with LF line endings
-([Text for the Amiga](code-rules.md#the-rules)): a text file of the archive (`LICENSE`, the README, the
+([Text for the Amiga](code-rules.md#messages-and-text)): a text file of the archive (`LICENSE`, the README, the
 changelog, the user guide), a source of amisqueeze or of `tools/amiga/`. `make test` checks them too.
 
 **For a release**:

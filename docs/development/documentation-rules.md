@@ -52,4 +52,4 @@ belongs, with a link.
   reached.
 
 Text that ships in the archives (the README, the user guide) also follows
-[Text for the Amiga](code-rules.md#the-rules).
+[Text for the Amiga](code-rules.md#messages-and-text).
