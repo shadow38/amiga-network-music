@@ -113,14 +113,14 @@ longer kept up to date.
 | H1 | Code only `ahi.device` features of AHI 4 (CONTRIBUTING.md, Code rules) | rule | review | review; a run on AHI 4.x | – | checked with AHI 6.6 only (H8) |
 | H2 | Chain a request (`ahir_Link`) only to one already playing: at most two requests with the device (architecture.md, AHI) | limit (AHI 6.0 source) | test: `stub_audio_bad`, checked 17 times in `tests/test_core.c` | as is | – | seen failing: not recorded (A4) |
 | H3 | Abort the playing request first, it takes the linked one along (architecture.md, AHI) | limit (AHI 6.0 source) | test: `stub_audio_bad`; seen failing (0.3..0.4 §4, planted) | as is | – | – |
-| H4 | `CMD_STOP` does not pause what is playing: pause = abort, then send the rest again (architecture.md, AHI) | limit (AHI) | review (`amiga.c` is not in the host tests) | review | – | – |
+| H4 | `CMD_STOP` does not pause what is playing: pause = abort, then send the rest again (architecture.md, AHI) | limit (AHI) | review (`amiga_ahi.c` is not in the host tests) | review | – | – |
 | H5 | A non-real-time mode ("Filesave") on a device unit writes only silence (architecture.md, AHI) | limit (AHI) | test: `test_ahi_mode`, `test_start_mode` (the warning) | as is | 0.3..0.4 R3 | – |
-| H6 | Never send `ahir_Volume` below full: the core scales the samples (architecture.md, AHI; CONTRIBUTING.md, Code rules; CLAUDE.md, Never) | rule | review (`amiga.c:434`, a constant) | script **publish-5d** (the only assignment of `ahir_Volume` is `0x10000`) | – | – |
+| H6 | Never send `ahir_Volume` below full: the core scales the samples (architecture.md, AHI; CONTRIBUTING.md, Code rules; CLAUDE.md, Never) | rule | review (`amiga_ahi.c`, a constant) | script **publish-5d** (the only assignment of `ahir_Volume` is `0x10000`) | – | – |
 | H7 | Paula needs `SWAP` in WinUAE (CONTRIBUTING.md, Checks the host tests cannot make) | limit (WinUAE) | manual | manual | – | stated only inside a status sentence |
 
 | ID | Measurement | Date | Commit | How measured | Depends on | Remarks |
 |---|---|---|---|---|---|---|
-| H8 | tested with AHI 6.6 (CONTRIBUTING.md, Code rules) | 2026-10-18 | `e67cf69` | WinUAE, `paula.audio` and Toccata | `amiga.c` AHI calls, `audio.c` | – |
+| H8 | tested with AHI 6.6 (CONTRIBUTING.md, Code rules) | 2026-10-18 | `e67cf69` | WinUAE, `paula.audio` and Toccata | `amiga_ahi.c`, `audio.c` | – |
 
 ## S. Stack and memory
 

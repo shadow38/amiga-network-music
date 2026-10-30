@@ -69,8 +69,8 @@ Note that in the `amigadev/crosstools` image, `gcc` is the Amiga cross-compiler:
 src/<prog>/           C sources, one directory per program -> out/<prog>; code shared between programs will go
                       in src/common/ (with amilms, none yet)
 src/amisqueeze/       portable core (player, slimproto, stream, icy, ring, audio, decoders: decoder, flac, mp3,
-                      bench), system services behind platform.h: amiga.c (AmigaOS, Amiga build only), posix.c
-                      (Linux/POSIX, host build only)
+                      bench), system services behind platform.h: amiga.c and amiga_ahi.c (AmigaOS, Amiga build
+                      only), posix.c (Linux/POSIX, host build only)
 tests/                unit tests of the core (test_core.c on stub_platform.c), fake server (fake_server.py),
                       test files (data/: FLAC and MP3 made from the signals of flac_data.py)
 third_party/          decoders by others, unmodified, with their version and licence: dr_flac, minimp3
@@ -185,9 +185,9 @@ makes no sense, look at the generated assembly.
 ## Host build and tests
 
 amisqueeze is split into a **portable core** in standard C (no Amiga headers) and a thin **platform layer**
-(`platform.h`): `amiga.c` on AmigaOS, `posix.c` on Linux and other POSIX systems. The same core therefore also
-runs on the build machine, where it is fast to test (how the core and the platform layer fit together:
-[architecture](docs/development/architecture.md)):
+(`platform.h`): `amiga.c` and `amiga_ahi.c` on AmigaOS, `posix.c` on Linux and other POSIX systems. The same core
+therefore also runs on the build machine, where it is fast to test (how the core and the platform layer fit
+together: [architecture](docs/development/architecture.md)):
 
 ```sh
 make host                         # out-host/amisqueeze, with AddressSanitizer and UBSan
@@ -241,7 +241,7 @@ PiStorm32-lite FPGA firmware, HDMI with a Pi 4). The code uses only the `ahi.dev
 with AHI 6.6; 4.x is expected to work, not checked). How the parts fit together:
 [architecture](docs/development/architecture.md).
 
-- **Portable core**: every file of `src/amisqueeze/` but `amiga.c` and `posix.c` is standard C (`<stdint.h>`, no
+- **Portable core**: every file of `src/amisqueeze/` but `amiga*.c` and `posix.c` is standard C (`<stdint.h>`, no
   Amiga or POSIX header: `tools/check-core.py`, run by `make test`, accepts only the C library's headers, the
   program's own and the third-party ones); everything system-related goes through `platform.h`. Keep the core
   free of system calls and the platform layers thin; the main loop (timeouts, reconnection) lives in the core.

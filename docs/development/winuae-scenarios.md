@@ -276,7 +276,7 @@ and scales the samples itself. **This scenario does not catch that defect if it 
 2026-10-23 with `ahir_Volume` following the volume again (0.0 % at the resume, after LMS's fade), `commands-pcm`
 passed, the free memory and its largest block unchanged to the byte (JIT + FPU profile; in step player-6 the defect
 showed after an hour's run, then in a short sequence on a freshly started WinUAE). What guards against it is the
-constant full volume in `plat_audio_send()` (`amiga.c`) and its comment. The volume 50 checks that LMS's volume
+constant full volume in `plat_audio_send()` (`amiga_ahi.c`) and its comment. The volume 50 checks that LMS's volume
 reaches amisqueeze (`audg`) and that the pause works with scaled samples; the fade comes with any volume.
 
 ### output-compare

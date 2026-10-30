@@ -1,16 +1,17 @@
 #!/usr/bin/env python3
 """Checks that the portable core of a program includes no system header: every file of src/<prog>/ but its
-platform layers (amiga.c, posix.c) includes only the C library's headers, the program's own and the third-party
+platform layers (amiga*.c, posix.c) includes only the C library's headers, the program's own and the third-party
 ones (third_party/*/). Everything system-related goes through platform.h: see CONTRIBUTING.md, Code rules.
 
 Usage: check-core.py <prog>   -> exit code 1 if a file of the core includes another header.
 """
+import fnmatch
 import glob
 import os
 import re
 import sys
 
-PLATFORM = ("amiga.c", "posix.c")
+PLATFORM = ("amiga*.c", "posix.c")   # as the Makefile: amiga*.c built for the Amiga only
 # The headers of the C library (ISO C99 and C11): nothing of POSIX, nor of AmigaOS
 C_LIBRARY = {f"{h}.h" for h in ("assert", "complex", "ctype", "errno", "fenv", "float", "inttypes", "iso646",
                                 "limits", "locale", "math", "setjmp", "signal", "stdalign", "stdarg", "stdatomic",
@@ -23,7 +24,7 @@ def problems(prog):
     own = {os.path.basename(p) for p in glob.glob(f"src/{prog}/*.h") + glob.glob("third_party/*/*.h")}
     found = []
     for path in sorted(glob.glob(f"src/{prog}/*.[ch]")):
-        if os.path.basename(path) in PLATFORM:
+        if any(fnmatch.fnmatch(os.path.basename(path), p) for p in PLATFORM):
             continue
         with open(path, encoding="latin-1") as f:
             for n, line in enumerate(f, 1):

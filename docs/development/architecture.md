@@ -6,7 +6,7 @@ was is in the [plan](README.md). The code comments give the details; this page g
 
 ## Portable core and platform layer
 
-Every file of `src/amisqueeze/` but `amiga.c` and `posix.c` is the **portable core**: standard C, no Amiga or
+Every file of `src/amisqueeze/` but `amiga*.c` and `posix.c` is the **portable core**: standard C, no Amiga or
 POSIX header. Whatever touches the system (sockets, clock, files, the audio device, the wait) goes through
 `platform.h`.
 
@@ -23,8 +23,8 @@ POSIX header. Whatever touches the system (sockets, clock, files, the audio devi
 
 `platform.h` has three implementations:
 
-- `amiga.c`: bsdsocket.library (`WaitSelect()`), timer.device, dos.library, ahi.device; also the entry point
-  (`ReadArgs`, `ENV:amisqueeze.prefs`, Workbench start and ToolTypes, `LOG`, the commodity);
+- `amiga.c`: bsdsocket.library (`WaitSelect()`), timer.device, dos.library; also the entry point (`ReadArgs`,
+  `ENV:amisqueeze.prefs`, Workbench start and ToolTypes, `LOG`, the commodity); with `amiga_ahi.c`: ahi.device;
 - `posix.c`: the host build, for tests and debugging; no audio device: its entry point never asks for the audio
   output (`UNIT`, `NOAUDIO`, `SWAP` accepted and ignored), so always the virtual output;
 - `tests/stub_platform.c`: the unit tests (`tests/test_core.c`), with a simulated clock and sockets, and a fake
@@ -66,7 +66,7 @@ flowchart LR
     virt["virtual output (paced at the PCM rate)"]
     file["OUTPUT file"]
     blocks["audio.c: 3 blocks (16-bit, volume, SWAP)"]
-    ahi["amiga.c: ahi.device"]
+    ahi["amiga_ahi.c: ahi.device"]
 
     server -->|"strm, cont, audg, setd"| slim
     slim -->|"STAT, RESP, DSCO, META, SETD"| server
@@ -131,7 +131,7 @@ What each third-party decoder needs from its caller:
 
 ## AHI
 
-`audio.c` (portable) fills the blocks; the `ahi.device` calls are in `amiga.c`. Rules learnt from the source of
+`audio.c` (portable) fills the blocks; the `ahi.device` calls are in `amiga_ahi.c`. Rules learnt from the source of
 `ahi.device` (AHI 6.0), which the code keeps:
 
 - chain a request (`ahir_Link`) only to one already **playing**: linked to a waiting one, it never plays nor ends;

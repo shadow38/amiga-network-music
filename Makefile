@@ -1,8 +1,8 @@
 # Cross-compilation for AmigaOS: m68k-amigaos-gcc must be in the PATH (otherwise use tools/amiga-make.sh, which
 # finds the available toolchain; see CONTRIBUTING.md).
 #
-# One program per directory: src/<prog>/*.c -> out/<prog>. In a program directory, amiga.c is only built for
-# the Amiga and posix.c only for the host.
+# One program per directory: src/<prog>/*.c -> out/<prog>. In a program directory, amiga*.c (amiga.c,
+# amiga_ahi.c) are only built for the Amiga and posix.c only for the host.
 #
 #   make [all]    Amiga build (out/): out/amisqueeze, and out/amisqueeze.fpu (68881 FPU code)
 #   make host     host build of the programs listed in HOST_PROGS (out-host/), native compiler $(HOSTCC)
@@ -66,7 +66,7 @@ HOST_CFLAGS  := -O1 -g -Wall -Wextra -Werror=format -fno-omit-frame-pointer $(SA
 HOST_LDFLAGS := $(SANITIZE)
 
 amiga_srcs = $(filter-out src/$(1)/posix.c,$(wildcard src/$(1)/*.c))
-host_srcs  = $(filter-out src/$(1)/amiga.c,$(wildcard src/$(1)/*.c))
+host_srcs  = $(filter-out src/$(1)/amiga%.c,$(wildcard src/$(1)/*.c))
 
 # Headers copied into .sdk/ for the editor's IntelliSense (VS Code, on the host). Deferred (=): evaluated only
 # by the sdk target, so the host build does not need the Amiga compiler.
