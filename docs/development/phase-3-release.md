@@ -215,3 +215,14 @@ Back to the [plan](README.md).
 - **Criterion**: the user reads each rewritten document and accepts it. No fact is lost: what leaves a document is
   already elsewhere (the CHANGELOG, a review report, another document), or is listed in the commit. No script
   checks the rules.
+
+## publish-7 A readable architecture page ⬜ (version 0.9)
+
+- **Why**: `architecture.md` is too dense to read: long paragraphs full of code names, and what the code does,
+  why, and how it was measured, all mixed (the user, on 2026-10-30). It was never rewritten to the rules of
+  publish-6.
+- **Content**, after player-18 and player-19, which change what it describes:
+  - `architecture.md`: a new outline and one section rewritten as a sample, which the user accepts before the
+    rest is rewritten. Measurements and history go to the plan or the commits;
+  - then the user guide: a detailed reading, which gives a list of remarks for the user to sort.
+- **Criterion**: as publish-6. The user reads each rewritten document and accepts it, and no fact is lost.

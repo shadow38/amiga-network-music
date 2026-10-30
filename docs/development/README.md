@@ -52,8 +52,8 @@ agreed with the user.
 |---|---|---|---|
 | 0.1 to 0.7 | the player for LMS and Music Assistant: PCM, FLAC, MP3, start from the Workbench, the `.lha`, releases built by the CI | player-1 to player-8d, player-7b, part of player-10, tools-10 (LMS), publish-2 (`.lha`), publish-3 | ✅ 2026-10-19 to 2026-10-23, see the [changelog](../../CHANGELOG.md) |
 | 0.8 | what the real machine shows; a lower rate asked of the server; automatic server discovery; hardening; the writing rules applied to the documentation | player-9, player-10 (discovery), player-12, player-13, player-14, player-15, player-16, player-17, tools-11, tools-13, publish-6 | ✅ 2026-10-29, see the [changelog](../../CHANGELOG.md) |
-| 0.9 | internet radios' metadata (ICY) | player-10 (end) | ⬜ |
-| 1.0 | setup guides, a full audit, the upload to Aminet | publish-4, publish-5, tools-10 (Music Assistant), publish-2 (Aminet) | ⬜ |
+| 0.9 | internet radios' metadata (ICY); the window shown and hidden from Exchange; finishing touches after the 0.8 reviews; the code's size and complexity checked; a readable architecture page | player-10 (end), tools-14, player-18, player-19, publish-7 | ⬜ |
+| 1.0 | `stream.c` and the unit tests split; setup guides, a full audit, the upload to Aminet | publish-4, publish-5, tools-10 (Music Assistant), publish-2 (Aminet) | ⬜ |
 | none yet | ideas: direct Paula output, source-level debugging | player-11, tools-8 | ⬜ |
 | none | reference documents on AmigaOS for contributors, committed when ready (agreed with the user on 2026-10-24) | tools-12 | ⬜ |
 
@@ -118,9 +118,30 @@ Agreed with the user on 2026-10-26.
   - the 88.2 kHz rate code is refused as an unsupported format;
   - the polarity and output channel flags, transitions and replay gain are ignored, without a line in the guide.
 
+The rest agreed with the user on 2026-10-30, in this order, then a light review (publish-5):
+
+- **The code's size and complexity** (tools-14): limits per function and per file, checked by `make test` with
+  lizard; today's excesses listed and never to grow. Also the CI's host compiler pinned (from tools-13).
+- **After the 0.8 reviews** (player-18): response headers up to 4 KB, as squeezelite; dr_flac's `assert()` off on
+  the Amiga; the track queue when full; two tests; comments and documents that say something false.
+- **The window from Exchange** (player-19): Show and Hide open and close the message window. The start stays as
+  it is: the window, unless `QUIET`.
+- **A readable architecture page** (publish-7): `architecture.md` rewritten from a sample the user accepts first;
+  then a detailed reading of the user guide.
+- **Before the release**: Music Assistant on the A1200, since each of its tracks now waits for `cont`.
+- **Left out**:
+  - from the 0.8 reviews' 50 lists: the blind spots of `check-saves.py`, a test of a socket refused
+    non-blocking, a script against `printf` in the core, `quiet_hold`, `send_all` with nothing to send;
+    `amisqueeze.fpu`'s stack, measured again only in a WinUAE run with a real TCP/IP stack;
+  - the 68040 and 68060 instructions: still an open point (see below);
+  - a time limit on `cont`: Music Assistant never sends it at some rates, a defect of its own, which squeezelite
+    meets too. The user's fix of Music Assistant removes it.
+
 ### 1.0
 
-- **Before it**: the setup guides (publish-4), a full audit (publish-5), the Music Assistant scenario in WinUAE
+- **Before it**: `stream.c` and `tests/test_core.c` split, the former into smaller modules (its stream, its queue
+  of tracks, its output), the latter by module (agreed with the user on 2026-10-30); then the setup guides
+  (publish-4), a full audit (publish-5), which checks the split, the Music Assistant scenario in WinUAE
   (tools-10).
 - **Then**: the upload to Aminet (publish-2), once the `Author:` and `Uploader:` of the `.readme` are corrected.
 - **Perhaps**: an attestation of the archives' provenance (`actions/attest-build-provenance`). Left for 1.0 by the
@@ -143,6 +164,7 @@ Agreed with the user on 2026-10-26.
 | tools-11 A real TCP/IP stack in WinUAE (AmiNetXDuo, PCMCIA card) | ✅ 2026-10-24 |
 | tools-12 Amiga reference documents (`docs/amiga/`) | ⬜ agreed with the user on 2026-10-24; tools-12a (AHI, network) first |
 | tools-13 Safety nets from the 0.8 review | ✅ 2026-10-29 (version 0.8) |
+| tools-14 The code's size and complexity | ⬜ version 0.9 |
 | player-1 Control connection | ✅ 2026-10-18 |
 | player-1b Default options (`ENV:amisqueeze.prefs`) | ✅ 2026-10-18 |
 | player-2 Receiving the stream (virtual output) | ✅ 2026-10-18 |
@@ -163,6 +185,8 @@ Agreed with the user on 2026-10-26.
 | player-15 The task priority (`PRI`) | ✅ 2026-10-29: on the host, in WinUAE and on the A1200 |
 | player-16 A receive that never blocks | ✅ 2026-10-29: on the host, in WinUAE and on the A1200 with AmiNetXDuo |
 | player-17 Hardening after the 0.8 review | ✅ 2026-10-29 (version 0.8) |
+| player-18 Hardening after the 0.8 light review | ⬜ version 0.9 |
+| player-19 The window shown and hidden from Exchange | ⬜ version 0.9 |
 | remote-0 Study (common interface, Music Assistant feasibility, name) | ⬜ before any amilms code |
 | remote-1 to remote-7 LMS | ⬜ |
 | remote-8 to remote-11 Music Assistant | ⬜ |
@@ -173,6 +197,7 @@ Agreed with the user on 2026-10-26.
 | publish-4 Setup guides: minimal server, the Amiga on the network | ⬜ before 1.0 |
 | publish-5 Review before each release | ✅ 2026-10-20; reviews since: [0.6](reviews/0.6.md), [0.7](reviews/0.7.md) |
 | publish-6 Writing rules for the documentation | ✅ 2026-10-24: the rules, the plan and the user guide; `docs/development/` later, where the user finds it worth it (closed on 2026-10-29) |
+| publish-7 A readable architecture page | ⬜ version 0.9 |
 
 Phase 0 moves forward as needed: a tooling step is done when a step of phase 1 or 2 needs it. Phases 1 and 2 can
 progress in parallel.
@@ -193,11 +218,8 @@ Neither planned nor dropped for good. Each is taken up only by the user's decisi
 
   Likely fix: GCC's `-m68020-40` or `-m68020-60`, code still valid on a 68020; `BENCH` on a 68020 in WinUAE checks
   for a slowdown. Earlier, the multiplies were left alone (agreed with the user on 2026-10-19): no 68060 among the
-  target machines, and `AUTO` measures the speed. Seen again on 2026-10-29, proposed for 0.9; a report from a
-  68040 or 68060 owner would settle it.
-- From the outside review of 2026-10-20, no known failure: `stream.c` is the first module to split when it grows.
-  ICY adds a small module of its own and leaves the rest in place (agreed with the user on 2026-10-27). Its other
-  points went to player-12 (agreed with the user on 2026-10-27).
+  target machines, and `AUTO` measures the speed. Seen again on 2026-10-29, not taken for 0.9 (agreed with the
+  user on 2026-10-30); a report from a 68040 or 68060 owner would settle it.
 - **LMS's `body` frame**: for a playlist address played directly, LMS asks the player to send the body back.
   amisqueeze shows it as "not handled" (agreed with the user on 2026-10-27).
 

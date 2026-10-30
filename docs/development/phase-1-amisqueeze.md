@@ -1264,3 +1264,43 @@ belongs to the task that opened it; packets serialised field by field; buffers a
 - **Left for 0.9** (agreed with the user on 2026-10-29): dr_flac's `assert()` active in the Amiga build (a change
   to how third-party code is built, with no defect found); and the items of the 0.8 review already planned for
   0.9 (the 88.2 kHz rate code, the ignored `strm s` fields, the 2 KB of headers).
+
+## player-18 Hardening after the 0.8 light review ⬜ (version 0.9)
+
+- **Goal**: what is left of the 50 lists of the [0.8 review](reviews/0.8.md) and of the
+  [light review](reviews/0.8-light.md), sorted with the user on 2026-10-30 (what is left out: the plan's
+  [0.9](README.md#09)).
+- **Content**, one commit per item:
+  - the response headers up to 4 KB, as squeezelite, instead of 2 KB: a radio whose answer is longer than 2 KB
+    fails today (`stream: response headers too long`); the buffer stays off the stack;
+  - dr_flac's `assert()` off in the Amiga build: one that fired would quit without closing AHI;
+  - the queue of tracks when full (`stream.c`, "forget the oldest"): the forgotten track would be decoded by the
+    previous track's decoder. Read in LMS and Music Assistant whether a server may send more than one track
+    ahead. If not, the comment says why; if so, a fix and its test;
+  - tests: `PLAYER_FAIL` for a server not found and for `ahi.device` (the `QUIET` window depends on it); the byte
+    0x7F in the `VERBOSE` dump of a `strm s` request;
+  - comments and documents that say something false: `amiga.c`'s stack sizes of dr_flac and minimp3; the comment
+    above `test_strm_request_shown`; the guide's "said once per connection" for the `stream:` line;
+    "8 servers answered" when nine answer; `player_bench`'s return value; `slimproto.c` on CR and LF in the
+    request; the plan's player-17 (the test of a stream that cannot be opened, `MAXRATE` too large listed as
+    code).
+- **Criterion**: each new test seen failing with its guard removed, in a throwaway copy; `make test` green; in
+  WinUAE, a real radio through LMS still plays. The user guide and `CHANGELOG.md` for the headers' limit.
+
+## player-19 The window shown and hidden from Exchange ⬜ (version 0.9)
+
+- **Goal**: started from the Workbench, amisqueeze's message window opens and closes from Exchange (Show
+  Interface, Hide Interface), as a commodity's window does (agreed with the user on 2026-10-30). Today both
+  buttons are greyed.
+- **Content**:
+  - the commodity says it has a window (`COF_SHOW_HIDE`) when started from the Workbench;
+  - Show opens the window and shows the last messages again, a few KB kept; Hide closes it. The messages still go
+    to the `LOG` file;
+  - the window's close gadget hides it: the music goes on, and the window no longer opens again at the next
+    message (`AUTO` today);
+  - the start stays as it is: the window opens, unless `QUIET` (agreed with the user on 2026-10-30);
+  - from a Shell, both buttons stay greyed: the messages go to that Shell;
+  - in `amiga.c` only, in functions of their own; no hot key.
+- **Criterion**: in WinUAE, through Exchange: Show and Hide, the close gadget, a start with `QUIET` then Show (the
+  start's messages shown), the music never interrupted; from a Shell, the buttons greyed. The user guide (Exchange)
+  and `CHANGELOG.md`.
