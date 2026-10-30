@@ -118,7 +118,7 @@ enum output_state {
     OUTPUT_PAUSED
 };
 
-#define MAX_TRACKS 4
+#define MAX_TRACKS 16                   /* tracks waiting in the buffer; one more strm s is refused (stream.c) */
 
 #define OUT_START_UNKNOWN UINT64_MAX
 

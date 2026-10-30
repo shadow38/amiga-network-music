@@ -174,9 +174,14 @@ filled plays at the end of the current track (at most about 0.6 s). With nothing
 This was the `strm f` defect fixed in 0.7.
 
 **LMS drops every status after a `strm s` until `STMc`** (its stream start). A `strm s` refused at once (a format
-this build does not decode, a request over 1 KB) is therefore answered `STMf`, `STMc`, then `STMn`
+this build does not decode, a request over 1 KB, 16 tracks already waiting) is therefore answered `STMf`, `STMc`, then `STMn`
 (`slim_send_refusal()`), as by a player whose decoder fails once the stream has started; LMS then moves on to the
 next track. Music Assistant ignores `STMn`.
+
+**At most 16 tracks wait in the ring** after the one playing (`MAX_TRACKS`). LMS sends its second song only after
+the first one's `STMs`, but it fetches a radio that drops again at once, with a new `strm s` each time. Music
+Assistant sends another track at each change of its queue, once the waiting one has fully arrived. One more is
+refused: forgetting the oldest would leave its data to the decoder of the track before it.
 
 ## What of slimproto is handled
 

@@ -616,6 +616,7 @@ rows say what comes next.
 | `stream: connection lost before the response headers`, `stream: send: error N` | the stream broke before any music came |
 | `stream: recv: error N` | the stream broke during a track: what was received plays, then the next track follows |
 | `stream: request too long (N bytes)` | the stream's request exceeds 1 KB; LMS moves on to the next track |
+| `stream: 16 tracks already waiting, this one skipped` | the server sent the next track while 16 were still waiting to play: possible only with an internet radio that keeps dropping, or a Music Assistant queue changed many times during one track. The tracks waiting play; LMS moves on to the next track, Music Assistant stops after them |
 | `stream: response headers too long` | the server's answer exceeds 4 KB |
 | `stream: HTTP status N, nothing played from this address` | the stream's server answered with an error instead of the music: 404 for an address not found. With LMS, an internet radio's redirection (a status from 300 to 399) is normal: LMS then sends the new address |
 | `stream: no HTTP status in the response, nothing played` | the stream's server does not answer in HTTP |

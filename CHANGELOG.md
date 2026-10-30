@@ -22,6 +22,10 @@ are previews, until 1.0.
 
 - A stream whose server answered with more than 2 KB of headers failed with `stream: response headers too long`:
   up to 4 KB are now accepted, as by squeezelite.
+- With more than 4 tracks waiting to play, the oldest one was played by the decoder of the track before it (a
+  WAV header could play as noise): up to 16 now wait, and one more is skipped, with
+  `stream: 16 tracks already waiting, this one skipped`. Possible only with a radio that keeps dropping, or a
+  Music Assistant queue changed many times during one track.
 - Raw PCM at 88.2 kHz was refused as `stream format p not supported`: it is now played, as 96 kHz already was.
 - A stream whose server answered with an error, or with a redirection, was played as sound: nothing is played now,
   with `stream: HTTP status N, nothing played from this address`. LMS follows a radio's redirection itself.

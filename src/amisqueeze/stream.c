@@ -14,7 +14,8 @@
  *   buffer empty: STMo while still streaming, STMu once everything was played;
  *   strm f (LMS: the next track removed, moved or reshuffled) drops the track being streamed, not the one playing:
  *     its stream is closed without DSCO, its data dropped, and the next strm s follows the track playing;
- *   strm s refused (format not decoded, request too long) -> STMc + STMn: the server moves on to the next track.
+ *   strm s refused (format not decoded, request too long, queue of tracks full) -> STMc + STMn: the server moves on
+ *     to the next track.
  * The ring buffer holds the stream as received; the decoder of each track (decoder.h; raw PCM is copied as is)
  * turns it into PCM for a sink: the platform's audio output (AHI, blocks managed by audio.c), or the virtual
  * output, which consumes it at the PCM rate like a sound card (host build, NOAUDIO, OUTPUT); with the OUTPUT
@@ -120,17 +121,29 @@ static void stream_fail(struct player *p, int reason)
     slim_send_dsco(p, reason);
 }
 
+/* A strm s refused before anything changes, the tracks in the buffer going on: STMc + STMn. The queue is full only
+ * when the server keeps sending tracks before the one waiting has started (architecture.md, A track's life);
+ * forgetting the oldest instead would leave its data to the decoder of the track before it. */
+static int start_refused(struct player *p, int request_len)
+{
+    if (request_len > (int)sizeof(p->stream.request))
+        msg("amisqueeze: stream: request too long (%d bytes)\n", request_len);
+    else if (p->out.queued == MAX_TRACKS && p->out.state != OUTPUT_STOPPED)
+        msg("amisqueeze: stream: %d tracks already waiting, this one skipped\n", MAX_TRACKS);
+    else
+        return 0;
+    slim_send_refusal(p);
+    return 1;
+}
+
 void stream_start(struct player *p, uint32_t ip, uint16_t port, const uint8_t *request, int request_len,
                   uint32_t threshold, int autostart, const struct pcm_format *fmt, const struct decoder_ops *ops)
 {
     struct stream *s = &p->stream;
     struct output *o = &p->out;
 
-    if (request_len > (int)sizeof(s->request)) {
-        msg("amisqueeze: stream: request too long (%d bytes)\n", request_len);
-        slim_send_refusal(p);           /* the track playing, if any, goes on */
+    if (start_refused(p, request_len))
         return;
-    }
     stream_close(p);                    /* a stream still running is abandoned */
     if (o->state == OUTPUT_STOPPED)     /* nothing playing: start from an empty buffer */
         output_reset(p);
@@ -147,12 +160,6 @@ void stream_start(struct player *p, uint32_t ip, uint16_t port, const uint8_t *r
     s->again_said = 0;
     icy_start(&s->icy, 0);              /* blocks only once a cont asks for them */
 
-    /* Full only with tracks so short that more than MAX_TRACKS fit in the buffer (a server sends the next track once
-     * a stream has ended): the oldest is forgotten, its start then never said (one STMs fewer) */
-    if (o->queued == MAX_TRACKS) {
-        memmove(o->queue, o->queue + 1, (MAX_TRACKS - 1) * sizeof(o->queue[0]));
-        o->queued--;
-    }
     o->queue[o->queued].start = p->ring.total_in;
     o->queue[o->queued].fmt = *fmt;
     o->queue[o->queued].ops = ops;

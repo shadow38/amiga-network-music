@@ -3064,6 +3064,62 @@ static void test_request_too_long_playing(void)
     teardown(&p);
 }
 
+/* A track queued after the one playing: strm s, its 20000 bytes, end of its stream */
+#define QUEUED_LEN 20000
+static uint8_t queued_tracks[MAX_TRACKS * QUEUED_LEN];
+
+static void queue_track(struct player *p, int i)
+{
+    open_stream(p, '1', 1);
+    stub_feed_stream(queued_tracks + i * QUEUED_LEN, QUEUED_LEN);
+    drain_stream(p);
+    stub_stream_end();
+    stream_io(p, PLAT_READ);
+}
+
+/* A strm s while MAX_TRACKS tracks wait after the one playing: refused, the buffer untouched; each track waiting
+ * then plays and starts with its STMs */
+static void test_queue_full(void)
+{
+    struct player p;
+    uint32_t n = 50000, used;
+    const char *t;
+    int i, starts = 0;
+
+    fill(track_a, sizeof(track_a), 34);
+    fill(queued_tracks, sizeof(queued_tracks), 35);
+    setup_file(&p);
+    open_stream(&p, '1', 1);
+    stub_feed_stream(track_a, (int)n);
+    drain_stream(&p);
+    stub_stream_end();
+    stream_io(&p, PLAT_READ);
+    play_for(&p, 100);
+    for (i = 0; i < MAX_TRACKS; i++)
+        queue_track(&p, i);
+    CHECK(p.out.queued == MAX_TRACKS);
+    used = ring_used(&p.ring);
+    clear_tx();
+    strm_pcm(&p, '1', 1);
+    CHECK(!strcmp(trace(), "STAT:STMf STAT:STMc STAT:STMn") && !stub_stream_open);
+    CHECK(strstr(stub_out, "amisqueeze: stream: 16 tracks already waiting, this one skipped\n") != NULL);
+    CHECK(p.out.queued == MAX_TRACKS && ring_used(&p.ring) == used);
+    clear_tx();
+    play_for(&p, 3000);
+    for (t = trace(); (t = strstr(t, "STAT:STMs")) != NULL; t++)
+        starts++;
+    CHECK(p.out.state == OUTPUT_STOPPED && starts == MAX_TRACKS && strstr(trace(), "STAT:STMu") != NULL);
+    CHECK(stub_file_len == (int)(n + sizeof(queued_tracks)) && !memcmp(stub_file, track_a, n) &&
+          !memcmp(stub_file + n, queued_tracks, sizeof(queued_tracks)));
+    teardown(&p);
+}
+
+static void test_refused_playing(void)
+{
+    test_request_too_long_playing();
+    test_queue_full();
+}
+
 /* strm f with nothing playing yet (the only track is the one dropped), and strm f then q (Music Assistant, before
  * each new track): a stop */
 static void test_flush_stop(void)
@@ -3848,7 +3904,7 @@ int main(void)
     test_flush_audio();
     test_flush_audio_reached();
     test_flush_current();
-    test_request_too_long_playing();
+    test_refused_playing();
     test_flush_stop();
     test_flush_loaded();
     test_ahi_mode();
