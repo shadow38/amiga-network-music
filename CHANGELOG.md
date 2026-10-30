@@ -15,6 +15,8 @@ are previews, until 1.0.
 
 ### Changed
 
+- With several servers on the network, the message is now `N servers found: ...`: it counts the servers shown (8
+  at most), where `N servers answered` said 8 when more answered.
 - User guide: a known limit for LMS's player settings amisqueeze ignores (fade-in, crossfade, output channel mode,
   replay gain).
 

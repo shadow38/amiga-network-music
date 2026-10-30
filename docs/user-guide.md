@@ -545,7 +545,7 @@ with `amisqueeze: `, left out below. `N` stands for a number, `...` for a name o
 |---|---|
 | `player "..." (xx:xx:xx:xx:xx:xx), server ... port ...` | at every start: the player's name and MAC address as the server sees them, and the server it connects to; without `SERVER`, `looking for a server on the local network, port ...` instead |
 | `server "..." found at ...` | a server answered, with its name and address; each byte of the name outside plain ASCII shows as `?` |
-| `N servers answered: connecting to the first, SERVER=<address> chooses another` | several servers answered: give the address of the one to play from |
+| `N servers found: connecting to the first, SERVER=<address> chooses another` | several servers answered (the first 8 are shown and counted): give the address of the one to play from |
 | `no server answered on port N: still looking (Ctrl-C stops)` | no server answered: amisqueeze asks again every few seconds (see [troubleshooting](#troubleshooting)) |
 | `FLAC: level 8 decoded at ...x real time: FLAC decoded here` (or `converted to PCM by the server`) | the start-up measure of `FLAC=AUTO` |
 | `MP3: 320 kbit/s decoded at ...x real time: ...` | the same for MP3 (`MP3=AUTO`, `amisqueeze.fpu`) |
@@ -669,7 +669,7 @@ rows say what comes next.
 | `<- strm ...`, `-> STAT ...`, `-> DSCO ...`, `<- audg ...`, `<- aude ...`, `<- cont ...` | the messages exchanged with the server |
 | `discovery: a packet that is no reply ignored (N bytes)` | while looking for a server, something else than a server's answer came in |
 | `<- vers ignored (N bytes)`, the same for `grfb`, `grfe`, `codc` | messages amisqueeze does not need: Music Assistant sends them |
-| `control: reported readable, nothing to read yet` (or `stream: ...`) | the TCP/IP stack said data had come, but none could be read yet (AmiNetXDuo, after a packet was lost): amisqueeze waits for it. Said once per connection |
+| `control: reported readable, nothing to read yet` (or `stream: ...`) | the TCP/IP stack said data had come, but none could be read yet (AmiNetXDuo, after a packet was lost): amisqueeze waits for it. Said once per connection to the server (`control:`), once per track (`stream:`) |
 | `stream: title: ...` | the title an internet radio sends with its sound, also passed on to LMS, which shows it; `?` stands for each character outside plain ASCII |
 | other `stream: ...` messages | the stream's events: parameters, connection, headers received, WAV header, end of the track's data |
 | other `output: ...` messages | the output's events: track started, buffer empty, end of playback, `OUTPUT` file opened and bytes written to it |

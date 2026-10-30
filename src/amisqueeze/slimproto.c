@@ -203,8 +203,8 @@ static int send_setd_name(struct player *p)
 
 /* ---- incoming packets (pkt = opcode + data, len = total length) ---- */
 
-/* Bytes from the server shown in ASCII, as the player name from setd: printable ones and line feeds as they are, CR
- * left out, any other byte '?' */
+/* Bytes from the server shown in ASCII, on several lines: printable ones and line feeds as they are, CR left out,
+ * any other byte '?' (the setd name, on one line, shows both as '?') */
 static void show_ascii(const uint8_t *b, int len)
 {
     char out[64];
@@ -618,7 +618,7 @@ int slim_discover(struct player *p)
     if (count == 0)
         return 0;
     if (count > 1)
-        msg("%d servers answered: connecting to the first, SERVER=<address> chooses another\n", count);
+        msg("%d servers found: connecting to the first, SERVER=<address> chooses another\n", count);
     p->server_ip = found[0];
     return 1;
 }

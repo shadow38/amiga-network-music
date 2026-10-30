@@ -1260,7 +1260,7 @@ def scenario_discovery():
     check('server "ab" found at' in out, "a NAME past the packet's end: read up to the end")
     check('server "Second" found at 127.0.0.2' in out, "the second server shown")
     check("Same" not in out, "the same server's second reply ignored")
-    check("2 servers answered: connecting to the first" in out, "the choice said")
+    check("2 servers found: connecting to the first" in out, "the choice said")
     check("a packet that is no reply ignored (12 bytes)" in out, "a packet that is no reply ignored (VERBOSE)")
 
     print("-- discovery: no server answers, Ctrl-C while waiting for replies and between requests")

@@ -57,8 +57,8 @@ void __fpucheck(void)
 }
 #endif
 
-/* The decoders need more than the Shell's 4 KB: dr_flac about 5 KB (4.6 KB to open a stream), minimp3 about
- * 17 KB of work space. libnix's start-up code (__stkinit, linked in by the Makefile) gives the program a stack of
+/* The decoders need more than the Shell's 4 KB: dr_flac about 5.5 KB (4.6 KB in drflac_open alone), minimp3 about
+ * 17.5 KB (most of it in mp3dec_decode_frame). libnix's start-up code (__stkinit, linked in by the Makefile) gives the program a stack of
  * this size when the Shell's is smaller */
 #ifdef AMISQUEEZE_MP3
 unsigned long __stack = 32768;

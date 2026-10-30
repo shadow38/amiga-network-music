@@ -1235,8 +1235,9 @@ belongs to the task that opened it; packets serialised field by field; buffers a
     - "no news" at 35 s while the control socket is reported readable with nothing to read (R5);
     - the discovery table's cap, with nine servers answering (R6);
     - `MAXRATE=AHI` and `AHISTD` with a known AHI mode (R7);
-    - the checks of `flac.c`: not a FLAC stream, no STREAMINFO, more than 2 channels, a stream that cannot be
-      opened;
+    - the checks of `flac.c`: not a FLAC stream, no STREAMINFO, more than 2 channels (a stream that cannot be
+      opened left out, in the 50 list);
+    - a `MAXRATE` too large refused, instead of wrapping to a valid rate (the guard was already there);
     - a stream stopping in the middle of an MP3 frame;
     - a receive with nothing to read in a packet's body and in the headers;
     - "said once per connection": the resets at each connection and stream;
@@ -1245,7 +1246,6 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   - code:
     - with `QUIET`, the window also opens for the start-up errors the core checks: `PORT`, `UNIT`, `PRI`, `MAC`,
       `OUTPUT`, a server not found, `ahi.device` (R2);
-    - a `MAXRATE` too large refused, instead of wrapping to a valid rate;
     - a failed send taken as a lost connection;
     - a socket the stack refuses to make non-blocking: said, and taken as a failed connection;
     - the `VERBOSE` dump of a `strm s` request shown in ASCII, as the `setd` name;

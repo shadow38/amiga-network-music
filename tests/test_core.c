@@ -671,7 +671,6 @@ static void test_headers_limit(void)
     test_headers_long();
 }
 
-/* A whole track: strm s, connection, headers, body, end of data, end of playback */
 /* VERBOSE shows the strm s request in ASCII: no CR, a control byte (0x1B, 0x7F) or a byte of UTF-8 as '?' (it could
  * act on the Amiga's console); past 64 bytes too */
 static void test_strm_request_shown(void)
@@ -691,6 +690,7 @@ static void test_strm_request_shown(void)
     teardown(&p);
 }
 
+/* A whole track: strm s, connection, headers, body, end of data, end of playback */
 static void test_stream_sequence(void)
 {
     struct player p;
@@ -3862,7 +3862,7 @@ static void test_discovery_nine(void)
     CHECK(strstr(stub_out, "server \"A\" found at 127.0.0.2\n") &&
           strstr(stub_out, "server \"H\" found at 127.0.0.9\n"));
     CHECK(!strstr(stub_out, "127.0.0.10") && !strstr(stub_out, "error"));
-    CHECK(strstr(stub_out, "8 servers answered: connecting to the first") != NULL);
+    CHECK(strstr(stub_out, "8 servers found: connecting to the first") != NULL);
 }
 
 int main(void)
