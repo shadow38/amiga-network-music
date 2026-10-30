@@ -129,7 +129,7 @@ The rest agreed with the user, in this order, then a light review (publish-5):
 - **A readable architecture page** (publish-7): `architecture.md` rewritten from a sample the user accepts first;
   then a detailed reading of the user guide. Done.
 - **The technical documentation organised** (publish-8), after an outside reading: a map of the documents, one
-  page per reader, `protocol.md` with a glossary, and the facts it found missing (agreed with the user).
+  page per reader, `protocol.md` with a glossary, and the facts it found missing (agreed with the user). Done.
 - **Before the release**: Music Assistant on the A1200, since each of its tracks now waits for `cont`; there too,
   with Kickstart 3.1, the window of player-19 (its close gadget in RAW mode, its text kept without `SMART`, Show
   and Hide). Done on the A1200 (Kickstart 3.1 with Workbench 47.2 files, AHI 4.180, AmiNetXDuo):
@@ -204,7 +204,7 @@ The rest agreed with the user, in this order, then a light review (publish-5):
 | publish-5 Review before each release | ✅ reviews since: [0.6](reviews/0.6.md), [0.7](reviews/0.7.md) |
 | publish-6 Writing rules for the documentation | ✅ the rules, the plan and the user guide; `docs/development/` later, where the user finds it worth it (closed) |
 | publish-7 A readable architecture page | ✅ version 0.9 |
-| publish-8 The technical documentation organised | 🔶 version 0.9: written; the user's reading left |
+| publish-8 The technical documentation organised | ✅ version 0.9 |
 
 Phase 0 moves forward as needed: a tooling step is done when a step of phase 1 or 2 needs it. Phases 1 and 2 can
 progress in parallel.

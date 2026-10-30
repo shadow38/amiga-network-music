@@ -222,21 +222,11 @@ Back to the [plan](README.md).
 then a detailed reading of the user guide, whose remarks the user sorted. Paula's settings heard on the A1200
 were left out of the guide: an open point.
 
-## publish-8 The technical documentation organised (agreed with the user) 🔶
+## publish-8 The technical documentation organised ✅ (version 0.9)
 
-- **Why**: an outside reading of the technical documentation found its content good, but nothing to
-  show which page answers which question. `CONTRIBUTING.md` served six readers, `architecture.md` two subjects,
-  and some facts were missing: a glossary, what amisqueeze trusts, its time-outs and limits, its memory.
-- **Content**:
-  - a map of the documentation and a quick start at the top of `CONTRIBUTING.md`, which keeps proposing a change;
-    the rest goes to pages of `docs/development/`, one reader each: building, code rules, testing (WinUAE and the
-    host tests together), releasing, pitfalls, writing documentation;
-  - `protocol.md`: the second half of `architecture.md` (the messages, a track's life, formats, radios,
-    discovery, Music Assistant), with a glossary, what amisqueeze trusts, and what it does not handle;
-  - in `architecture.md`: state diagrams (the connection, the stream, the output), the time-outs and limits, the
-    memory, what a platform layer provides;
-  - the review tooling (`.claude/`) reads the rules in the pages `CONTRIBUTING.md` lists as holding rules (agreed
-    with the user).
-- **Left as they are**: the plan, where the review reports link; the review reports; `rules.md`, frozen.
-- **Criterion**: no fact lost (each paragraph moved is found again, or named in the commit); every link and anchor
-  resolves; `make test` passes; the user reads the new pages and accepts them.
+After an outside reading (agreed with the user): `CONTRIBUTING.md` reduced to a map of the documents, a quick
+start and proposing a change; one page per reader in `docs/development/` (building, code rules, testing,
+releasing, pitfalls, documentation rules), each rewritten to the writing rules; `protocol.md` with a glossary,
+what amisqueeze trusts and what it does not handle; in `architecture.md`, the states, the time-outs and limits, the
+memory and the platform layer. The review tooling reads the rules in the pages `CONTRIBUTING.md` lists; the
+documents carry no dates (agreed with the user).
