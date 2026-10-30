@@ -82,7 +82,7 @@ flowchart LR
   format and a threshold. `stream_start()` queues a track at the ring's write position and connects without
   blocking; the response headers go back to the server in `RESP`.
 - **The ring buffer** holds the stream as received, several tracks back to back (gapless). The stream socket is
-  read only once 8 KB of it are free (`READ_MIN_SPACE`, a quarter of a smaller ring), 2 KB for the response
+  read only once 8 KB of it are free (`READ_MIN_SPACE`, a quarter of a smaller ring), 4 KB for the response
   headers: reading the few hundred bytes the output frees at each turn kept the loop awake (40 % of a 68020 at
   28 MHz with `NOAUDIO`, 4.6 % since). When it is full, TCP slows the server down. The single buffer is reported
   in `STAT` as both the stream buffer and the output buffer.

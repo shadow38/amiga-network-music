@@ -624,7 +624,7 @@ static void test_strm_autostart(void)
 static void test_headers_too_long(void)
 {
     struct player p;
-    static char headers[2100];
+    static char headers[4200];
 
     setup(&p, "Amiga");
     CHECK(slim_connect(&p, 0));
@@ -638,6 +638,37 @@ static void test_headers_too_long(void)
     CHECK(!strcmp(trace(), "DSCO:1"));
     CHECK(p.stream.state == STREAM_IDLE && !stub_stream_open);
     teardown(&p);
+}
+
+/* Response headers of 4000 bytes (a radio's long answer): passed on whole in RESP, the body read */
+static void test_headers_long(void)
+{
+    static const char status[] = "HTTP/1.0 200 OK\r\nX-Pad: ";
+    static char headers[4000];
+    struct player p;
+    int len = (int)sizeof(headers);
+
+    memcpy(headers, status, strlen(status));
+    memset(headers + strlen(status), 'x', len - strlen(status) - 4);
+    memcpy(headers + len - 4, "\r\n\r\n", 4);
+    setup(&p, "Amiga");
+    CHECK(slim_connect(&p, 0));
+    strm_pcm(&p, '1', 1);
+    stream_io(&p, PLAT_WRITE);
+    clear_tx();
+    stub_feed_stream(headers, len);
+    stub_feed_stream(pcm, 100);
+    drain_stream(&p);
+    CHECK(!strcmp(trace(), "RESP"));
+    CHECK(be32(stub_tx + 4) == (uint32_t)len && !memcmp(stub_tx + 8, headers, len));
+    CHECK(p.stream.state == STREAM_BODY && ring_used(&p.ring) == 100);
+    teardown(&p);
+}
+
+static void test_headers_limit(void)
+{
+    test_headers_too_long();
+    test_headers_long();
 }
 
 /* A whole track: strm s, connection, headers, body, end of data, end of playback */
@@ -3762,7 +3793,7 @@ int main(void)
     test_strm_pcm_fields();
     test_strm_pcm_rates();
     test_strm_autostart();
-    test_headers_too_long();
+    test_headers_limit();
     test_strm_request_shown();
     test_stream_sequence();
     test_read_min_space();

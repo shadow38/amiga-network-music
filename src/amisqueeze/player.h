@@ -92,7 +92,7 @@ struct stream {
     uint16_t port;
     uint8_t  request[1024];             /* HTTP request from strm s, sent as is */
     int      request_len;
-    char     headers[2048];             /* HTTP response headers, passed on in RESP */
+    char     headers[4096];             /* HTTP response headers, passed on in RESP; as long as squeezelite's */
     int      headers_len;               /* bytes in headers; in STREAM_CONT, body bytes follow headers_end */
     int      headers_end;
     uint64_t bytes;                     /* bytes of sound received (the metadata blocks left out) */
