@@ -72,7 +72,8 @@ would move it up or down.
 
 Only findings at 75 or more go in the main list. A finding that breaks an explicit rule of `CLAUDE.md` or
 `CONTRIBUTING.md` is at least 75 by definition, even when it looks minor, with two exceptions: a stale or wrong
-statement in the internal documents (`CLAUDE.md`, the plan and the rest of `docs/development/`) is 50 at most,
+statement in the internal documents (`CLAUDE.md`, the plan and the rest of `docs/development/`, but the pages
+`CONTRIBUTING.md` lists under "Where the rules are") is 50 at most,
 unless a reader acting on it would do something wrong (break a rule, skip a needed check, ship a wrong release);
 and a broken rule with no failure scenario is 50 at most, like any finding (see "Finding format").
 
