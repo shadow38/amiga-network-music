@@ -237,6 +237,19 @@ Neither planned nor dropped for good. Each is taken up only by the user's decisi
   makes the advice clear (agreed with the user).
 - **LMS's `body` frame**: for a playlist address played directly, LMS asks the player to send the body back.
   amisqueeze shows it as "not handled" (agreed with the user).
+- **Two programs in one repository** (once the remote starts): to settle in a step of its own, just before
+  remote-1, the documents of amisqueeze moved first and alone. Proposed:
+  - **the documents in three levels**: the project at the root (README, CONTRIBUTING's map, CLAUDE.md); each
+    program in `docs/<program>/` (its README for the archive, user guide, CHANGELOG, architecture, protocol, its
+    WinUAE scenarios); what both share in `docs/development/` (building, code rules with a section per program,
+    testing, releasing, pitfalls, documentation rules, the plan). `make-dist.py`, `check-version.py`,
+    `release.yml` and the review agents follow;
+  - **`main` becomes the working branch**, `dev` goes, and the tags `<program>-<version>` mark the releases.
+    With two programs on one branch, `main` as "the last release" would carry one program's unreleased work at
+    the other's release. Each archive holds its guide, and the README links each program's latest release and
+    its guide at the tag. This replaces the branch model of 0.8;
+  - **one repository**, not two: the shared code (`src/common/`), the whole tooling (build, checks, CI, WinUAE,
+    review) and the trials of the remote driving amisqueeze outweigh what two repositories would simplify.
 
 ## Ideas outside the phases
 
