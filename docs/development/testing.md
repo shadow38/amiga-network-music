@@ -16,7 +16,7 @@ portable core by `make test`, a change to the Amiga side in WinUAE too.
 | Checks of the Amiga build | `tools/check-saves.py` on the assembly, `tools/check-stack.py` on the linker map | the compiler's register bug; the stack's set-up | how much stack is used |
 | Scenarios in WinUAE | `python3 tools/winuae/run-scenarios.py`, with LMS ([winuae-scenarios.md](winuae-scenarios.md)) | the Amiga build with a real LMS: a test tone through AHI, LMS's commands, the `OUTPUT` file compared with the source | Music Assistant; a real TCP/IP stack (unless the profile [Real network](#real-network)); listening |
 | By hand in WinUAE | the [checks the host tests cannot make](#checks-the-host-tests-cannot-make), and what no scenario covers yet | the stack, the speed, the memory, the sound; Music Assistant, the window and Exchange | the speed of a real machine |
-| On the real machines | listening and measures, at the end of a phase and when a change needs it (the plan's [method](README.md#method)) | the sound, the CPU load, a real network card and TCP/IP stack | |
+| On the real machines | listening and measures, at the end of each phase (the plan's [method](README.md#method)) | the sound, the CPU load, a real network card and TCP/IP stack | |
 
 ## Host build and tests
 

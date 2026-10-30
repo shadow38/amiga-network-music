@@ -169,7 +169,7 @@ stateDiagram-v2
     HEADERS --> IDLE: outside 2xx with autostart 0 or 1, lost, too long (DSCO 2 or 1)
     CONT --> BODY: cont
     REFUSED --> IDLE: cont (DSCO 2)
-    BODY --> DONE: end of the body (DSCO 0, or 2 on an error; STMd)
+    BODY --> DONE: end of the body (DSCO 0, or 2 on an error, then STMd)
 ```
 
 **The output**. It starts once the threshold of the first track queued is received, or the whole track, and

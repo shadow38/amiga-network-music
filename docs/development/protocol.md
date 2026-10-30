@@ -256,5 +256,7 @@ Besides the messages left out ([Slimproto: the messages](#slimproto-the-messages
   check still runs: no news from the server for 35 s, and amisqueeze connects again.
 - **The control connection's `connect()` blocks**, as long as the TCP/IP stack tries. Ctrl-C ends it.
 - **A body sent in chunks** (`Transfer-Encoding: chunked`) is played as it comes, the chunks' sizes in it.
-  amisqueeze sends the server's request as is; LMS's asks for HTTP/1.0, which a web server answers without chunks.
+  amisqueeze sends the server's request as is. Both servers ask for HTTP/1.0, which a web server answers without
+  chunks: LMS 9.1.1 (`Slim/Player/Protocols/HTTP.pm`, `requestString`) and Music Assistant (aioslimproto's
+  `client.py`).
 - **HTTPS, redirects**: see [What amisqueeze trusts](#what-amisqueeze-trusts).
