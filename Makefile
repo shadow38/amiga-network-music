@@ -51,6 +51,9 @@ THIRD_PARTY := dr_flac minimp3
 $(foreach t,$(THIRD_PARTY),$(eval obj/amisqueeze/$(t).o: CFLAGS += -w -O2))
 $(foreach t,$(THIRD_PARTY),$(eval obj/amisqueeze-fpu/$(t).o: CFLAGS += -w -O2))
 $(foreach t,$(THIRD_PARTY),$(eval obj-host/amisqueeze/$(t).o: HOST_CFLAGS += -w))
+# dr_flac's assert() off on the Amiga: one that fired would end the program without closing ahi.device. The host
+# build keeps it, for the tests.
+obj/amisqueeze/dr_flac.o obj/amisqueeze-fpu/dr_flac.o: CFLAGS += -DNDEBUG
 
 # Host build: the portable core with posix.c, for tests on the developer's machine. AddressSanitizer and
 # UndefinedBehaviorSanitizer stop the program at the first memory error or undefined behaviour (UBSan alone would
