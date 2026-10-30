@@ -41,7 +41,7 @@ For contributors who are stuck: what has already gone wrong, and how to debug. H
 - **The commodity**: amisqueeze is a commodity ("Remove" in Exchange = Ctrl-C), one at a time (`CBERR_DUP`); a
   second start does nothing to the running one. Show and Hide (`COF_SHOW_HIDE`) only with a window of its own.
 - **LMS drops every status after a `strm s` until `STMc`**: a refusal must come after a `STMc`, or LMS waits for
-  that track forever ([a track's life](architecture.md#a-tracks-life-the-statuses)).
+  that track forever ([a track's life](protocol.md#a-tracks-life-the-statuses)).
 
 ## Debugging
 

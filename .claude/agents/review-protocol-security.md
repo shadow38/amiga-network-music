@@ -16,7 +16,8 @@ The method (skill `review-method`) is loaded for you; if it is not, read `.claud
 (the path you are given if it differs). Then read the `CLAUDE.md` and `CONTRIBUTING.md` of the tree under review, and
 the pages `CONTRIBUTING.md` lists under "Where the rules are":
 they are your rules (they are not given to you otherwise). Read its `docs/development/architecture.md` too: how the
-core works (data path, the two kinds of position, statuses, what of slimproto is handled), not rules. Apply the method exactly: scoring, finding format, compliance table, experiments only in a throwaway worktree, your report's layout.
+core works (data path, the two kinds of position, the states), and `docs/development/protocol.md`: the statuses, what
+of slimproto is handled, what amisqueeze trusts and does not handle; not rules. Apply the method exactly: scoring, finding format, compliance table, experiments only in a throwaway worktree, your report's layout.
 You are given the commit under review, the release range (`<previous tag>..<commit>`), the repository root, and how
 to run `make test` on this machine. Read nothing beyond the commit under review. The reference implementations
 named in the project's documentation (squeezelite, LMS) are GPL: use them only as a catalogue of what a server may

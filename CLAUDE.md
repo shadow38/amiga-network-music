@@ -54,7 +54,7 @@ One line each; the pointer says where it is explained.
 - Nothing but ASCII and LF line endings in what the Amiga shows or reads, the README and the user guide included
   (`code-rules.md`, Text for the Amiga).
 - No refusal (`STMn`) of a `strm s` before its `STMc`: LMS drops every status after a `strm s` until `STMc`, and
-  then waits for that track forever (`architecture.md`, A track's life).
+  then waits for that track forever (`protocol.md`, A track's life).
 - No measurement on the server's web page: through its CLI (`testing.md`, Checks the host tests cannot make).
 - No Kickstart ROM in the repository (licensed).
 - No work committed to `main`: it is the last release, moved forward only at a release; work on `dev`
@@ -65,7 +65,7 @@ One line each; the pointer says where it is explained.
 | Before touching | Read |
 |---|---|
 | the portable core (`src/amisqueeze/` but `amiga*.c`, `posix.c`) | `architecture.md`; `code-rules.md` |
-| `stream.c`, `slimproto.c` (statuses, `strm`) | `architecture.md`, A track's life and Slimproto: the messages |
+| `stream.c`, `slimproto.c`, `icy.c` (statuses, `strm`, `cont`) | `protocol.md`; `architecture.md`, The states |
 | `decoder.c`, `flac.c`, `mp3.c`, `third_party/` | `architecture.md`, Decoders; `code-rules.md` |
 | `audio.c`, `amiga_ahi.c` | `architecture.md`, AHI |
 | the start-up of `amiga.c`, `__stack`, libnix | `architecture.md`, The Amiga side; `code-rules.md`, Stack and memory; `pitfalls.md` |

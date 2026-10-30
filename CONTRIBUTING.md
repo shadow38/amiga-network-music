@@ -11,6 +11,7 @@ the [user guide](docs/user-guide.md).
 | Which rules does the code follow? How much stack and memory may it use? | [code-rules.md](docs/development/code-rules.md) |
 | Which test covers what? How do I run the tests, on the host and in WinUAE? | [testing.md](docs/development/testing.md), [winuae-scenarios.md](docs/development/winuae-scenarios.md) |
 | How does amisqueeze work, and why this way? | [architecture.md](docs/development/architecture.md) |
+| What do the servers send, what does amisqueeze answer, what does it trust? What does `STMs` mean? | [protocol.md](docs/development/protocol.md) |
 | Something makes no sense: what has already gone wrong? How do I debug? | [pitfalls.md](docs/development/pitfalls.md) |
 | How do I write documentation for this project? | [documentation-rules.md](docs/development/documentation-rules.md) |
 | How is a version checked and published? | [releasing.md](docs/development/releasing.md) |
@@ -57,4 +58,4 @@ The project's rules are on this page and on the pages that hold rules: [building
 [testing.md](docs/development/testing.md) (the tests and the checks on the Amiga),
 [releasing.md](docs/development/releasing.md) and [documentation-rules.md](docs/development/documentation-rules.md).
 [architecture.md](docs/development/architecture.md) explains the reasons behind several of them: AHI's, the two
-kinds of position, the statuses of a track's life.
+kinds of position; [protocol.md](docs/development/protocol.md), those of a track's statuses.

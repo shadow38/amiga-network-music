@@ -122,7 +122,7 @@ static void stream_fail(struct player *p, int reason)
 }
 
 /* A strm s refused before anything changes, the tracks in the buffer going on: STMc + STMn. The queue is full only
- * when the server keeps sending tracks before the one waiting has started (architecture.md, A track's life);
+ * when the server keeps sending tracks before the one waiting has started (protocol.md, A track's life);
  * forgetting the oldest instead would leave its data to the decoder of the track before it. */
 static int start_refused(struct player *p, int request_len)
 {
