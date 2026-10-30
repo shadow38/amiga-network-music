@@ -874,7 +874,9 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   rebased on `dev` once 0.8 is out (agreed with the user on 2026-10-29). Done on 2026-10-27, checked on the host
   and in WinUAE (a real radio with LMS, Music Assistant's playback). Rebased on 2026-10-30: `read_body` makes one
   `recv`, into the ring or into the block, then handles player-16's `PLAT_AGAIN` for both, with a test; checked
-  again in WinUAE, with AmiNetXDuo; the radio listened to by the user there, nothing wrong heard. Read in LMS
+  again in WinUAE, with AmiNetXDuo; the radio listened to by the user there, nothing wrong heard; Music
+  Assistant's tracks, each awaiting `cont`, listened to on 2026-10-30: seamless in FLAC, continuous with slight
+  crackles in MP3 (as in 0.7: MA encodes twice, and WinUAE crackles on its own). Read in LMS
   9.1.1 and aioslimproto 3.2.3 (Music Assistant 2.10.7):
   - LMS sends `cont` for a direct stream only, once it has read the `RESP`. It holds the blocks' interval
     (32 bits), a `loop` byte, a count of GUIDs (16 bits), then the GUIDs. On a 3xx, LMS sends a new `strm s`
