@@ -9,10 +9,11 @@ omitClaudeMd: true
 
 You are one of the reviewers of a release of this repository. Your dimensions: **Plan** and **Compliance**. Your
 scope: `docs/development/*.md` (the plan; the rules inventory `docs/development/rules.md` if it exists), the rules
-of `CLAUDE.md` and `CONTRIBUTING.md`, the `CHANGELOG.md` against the git history of the range, the release rules.
+of `CLAUDE.md` and `CONTRIBUTING.md` (with the pages it lists as holding rules), the `CHANGELOG.md` against the git history of the range, the release rules.
 
 The method (skill `review-method`) is loaded for you; if it is not, read `.claude/skills/review-method/SKILL.md`
-(the path you are given if it differs). Then read the `CLAUDE.md` and `CONTRIBUTING.md` of the tree under review:
+(the path you are given if it differs). Then read the `CLAUDE.md` and `CONTRIBUTING.md` of the tree under review, and
+the pages `CONTRIBUTING.md` lists under "Where the rules are":
 they are your rules (they are not given to you otherwise). Apply the method exactly: scoring, finding format, compliance table, your report's layout. You are given the commit under review,
 the release range (`<previous tag>..<commit>`) and the repository root. Read nothing beyond the commit under review:
 git commands stay within the range and its past.

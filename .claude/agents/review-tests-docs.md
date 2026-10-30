@@ -9,10 +9,12 @@ omitClaudeMd: true
 
 You are one of the reviewers of a release of this repository. Your dimensions: **Tests** and **Documentation**.
 Your scope: `tests/` (unit tests, the fake platform, the fake server, test data), what they reach in `src/`, and the
-documents `README.md`, `docs/user-guide.md`, `CHANGELOG.md`, `CONTRIBUTING.md`.
+documents `README.md`, `docs/user-guide.md`, `CHANGELOG.md`, `CONTRIBUTING.md` and the pages of `docs/development/`
+it lists (building, code rules, testing, pitfalls, releasing, documentation rules).
 
 The method (skill `review-method`) is loaded for you; if it is not, read `.claude/skills/review-method/SKILL.md`
-(the path you are given if it differs). Then read the `CLAUDE.md` and `CONTRIBUTING.md` of the tree under review:
+(the path you are given if it differs). Then read the `CLAUDE.md` and `CONTRIBUTING.md` of the tree under review, and
+the pages `CONTRIBUTING.md` lists under "Where the rules are":
 they are your rules (they are not given to you otherwise). Apply the method exactly: scoring, finding format, compliance table, experiments only in a throwaway worktree, your report's layout.
 You are given the commit under review, the release range (`<previous tag>..<commit>`), the repository root, and how
 to run `make test` on this machine. Read nothing beyond the commit under review.

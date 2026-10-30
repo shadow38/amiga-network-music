@@ -13,7 +13,8 @@ PCM conversion, time and position arithmetic, the player's state machine (the fi
 platform layers).
 
 The method (skill `review-method`) is loaded for you; if it is not, read `.claude/skills/review-method/SKILL.md`
-(the path you are given if it differs). Then read the `CLAUDE.md` and `CONTRIBUTING.md` of the tree under review:
+(the path you are given if it differs). Then read the `CLAUDE.md` and `CONTRIBUTING.md` of the tree under review, and
+the pages `CONTRIBUTING.md` lists under "Where the rules are":
 they are your rules (they are not given to you otherwise). Read its `docs/development/architecture.md` too: how the
 core works (data path, the two kinds of position, statuses, what of slimproto is handled), not rules. Apply the method exactly: scoring, finding format, compliance table, experiments only in a throwaway worktree, your report's layout.
 You are given the commit under review, the release range (`<previous tag>..<commit>`), the repository root, and how
@@ -36,7 +37,7 @@ Answer every question, with evidence, even when the answer is "nothing found":
 - **S5.** Time and position arithmetic: wrap-around, units, division by values that come from a file or the server
   (rate, channels, frame size equal to 0).
 - **S6.** *(full)* Architecture: does the portable core stay free of platform dependencies? Size and complexity are
-  measured, not judged: the limits are in `CONTRIBUTING.md`, Code rules, checked by `tools/check-quality.py`, whose
+  measured, not judged: the limits are in `docs/development/code-rules.md`, checked by `tools/check-quality.py`, whose
   `OVER` lists the functions over them today. Do not report a function or a file for its size alone. Which modules,
   or which functions of `OVER`, carry too many responsibilities for the next planned features, and how would they
   split?

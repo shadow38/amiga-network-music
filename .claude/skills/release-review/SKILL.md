@@ -24,7 +24,7 @@ Read `.claude/skills/review-method/SKILL.md` first: it is the method you apply i
   checked out at that commit, next to the repository (`git worktree add ../<repo>-review-<tag> <SHA>`), and give
   that path as the root. Nothing later than the commit may be read: no `HEAD`, `main`, `--all` or later tag in the
   agents' git commands.
-- Note how `make test` and the Amiga build run on this machine (`CONTRIBUTING.md`, plus any local notes the user
+- Note how `make test` and the Amiga build run on this machine (`docs/development/building.md` and `testing.md`, plus any local notes the user
   keeps outside the repository): the agents need it, and it is not in the repository's generic files.
 
 ## 2. Run the agents in parallel

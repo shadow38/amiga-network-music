@@ -39,6 +39,8 @@ wrong.
 
 - The project's `CLAUDE.md` and `CONTRIBUTING.md` take precedence. A finding cites the rule it relies on
   (file:line), or the principle above that applies.
+- Throughout this method, `CONTRIBUTING.md` means that file and the pages it lists under "Where the rules are"
+  (`docs/development/building.md`, `code-rules.md`, `testing.md`, `releasing.md`, `documentation-rules.md`).
 - The release diff (the range you are given) is reviewed line by line. Architecture, security and tests are
   reviewed on the whole repository at the commit under review in a full audit; in a light review, what the diff
   adds or changes and the code, tests and documents it reaches (see Levels).
