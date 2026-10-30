@@ -39,6 +39,7 @@ extern int      stub_wait_advances;     /* 1: each plat_wait() moves stub_now on
 extern int      stub_waits_without_control;  /* plat_wait() calls that left the control connection out */
 extern int      stub_again;             /* the next stub_again plat_recv() on the control connection: PLAT_AGAIN */
 extern int      stub_connect_interrupted;    /* 1: plat_connect() fails as interrupted by a Ctrl-C (EINTR) */
+extern int      stub_resolve_fails;     /* 1: plat_resolve() finds no address (reset by stub_reset()) */
 extern int      stub_send_fail_in;      /* n > 0: the n-th plat_send() on the control connection from now fails */
 extern int      stub_send_interrupted;  /* 1: that send fails as interrupted by a Ctrl-C (EINTR) */
 extern int      stub_recv_interrupted;  /* 1: the next plat_recv() on the control connection, the same */

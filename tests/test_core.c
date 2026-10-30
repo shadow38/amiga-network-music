@@ -672,11 +672,11 @@ static void test_headers_limit(void)
 }
 
 /* A whole track: strm s, connection, headers, body, end of data, end of playback */
-/* VERBOSE shows the strm s request in ASCII: no CR, a control byte or a byte of UTF-8 as '?' (it could act on the
- * Amiga's console); past 64 bytes too */
+/* VERBOSE shows the strm s request in ASCII: no CR, a control byte (0x1B, 0x7F) or a byte of UTF-8 as '?' (it could
+ * act on the Amiga's console); past 64 bytes too */
 static void test_strm_request_shown(void)
 {
-    static const char req[] = "GET /\033[2J\303\251_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa HTTP/1.0\r\n\r\n";
+    static const char req[] = "GET /\033[2J\303\251\177_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa HTTP/1.0\r\n\r\n";
     char fmt[7] = { '1', 'p', '1', '3', '2', '1', 1 };
     struct player p;
 
@@ -686,8 +686,8 @@ static void test_strm_request_shown(void)
     stub_out[0] = '\0';
     feed_strm('s', fmt, 0, 9000, 0, req);
     drain(&p);
-    CHECK(strstr(stub_out, "GET /?[2J??_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa HTTP/1.0\n\n") != NULL);
-    CHECK(strchr(stub_out, '\r') == NULL && strchr(stub_out, '\033') == NULL);
+    CHECK(strstr(stub_out, "GET /?[2J???_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa HTTP/1.0\n\n") != NULL);
+    CHECK(strchr(stub_out, '\r') == NULL && strchr(stub_out, '\033') == NULL && strchr(stub_out, '\177') == NULL);
     teardown(&p);
 }
 
@@ -3373,6 +3373,33 @@ static void test_priority(void)
     CHECK(player_main(&p, &o) == PLAYER_FAIL && stub_priority == STUB_PRI_NONE);
 }
 
+/* A server not found and ahi.device that cannot be opened: PLAYER_FAIL with the message (with QUIET, the window
+ * opens for it), before any connection */
+static void test_start_fail(void)
+{
+    struct player p;
+    struct options o;
+
+    memset(&o, 0, sizeof(o));
+    o.server = "nowhere";
+    o.port = SLIMPROTO_PORT;
+    o.flac = o.mp3 = DECODE_OFF;
+    stub_reset();
+    stub_resolve_fails = 1;
+    memset(&p, 0, sizeof(p));
+    CHECK(player_main(&p, &o) == PLAYER_FAIL && strstr(stub_out, "amisqueeze: server nowhere not found\n") != NULL);
+    CHECK(stub_tx_len == 0);
+
+    o.server = "127.0.0.1";
+    o.audio = 1;
+    stub_reset();
+    stub_audio_fails = 1;
+    memset(&p, 0, sizeof(p));
+    CHECK(player_main(&p, &o) == PLAYER_FAIL && strstr(stub_out, "cannot open ahi.device unit 0") != NULL);
+    CHECK(stub_tx_len == 0 && !stub_audio_open);
+    stub_audio_fails = 0;
+}
+
 /* The player's start-up with the audio output: the unit's mode printed with VERBOSE, the warning for a mode that
  * cannot play stereo right; nothing but the unit when the platform cannot tell the mode (plat_wait() of the stub
  * returns at once, as for a Ctrl-C) */
@@ -3446,6 +3473,15 @@ static void test_start_maxrate(void)
     CHECK(player_main(&p, &o) == PLAYER_OK && helo_caps_have(",MaxSampleRate=24000,"));
     CHECK(strstr(stub_out, "MAXRATE: at most 24000 Hz asked of the server (AHI unit 0 at 27429 Hz)\n") != NULL);
     stub_audio_mode_known = 0;
+}
+
+/* The player's start-up: the AHI mode, MAXRATE, PRI, the errors */
+static void test_start(void)
+{
+    test_start_mode();
+    test_start_maxrate();
+    test_priority();
+    test_start_fail();
 }
 
 /* The main loop (run(), through player_main()) when a strm s replaces a stream still connecting, in the turn where
@@ -3908,9 +3944,7 @@ int main(void)
     test_flush_stop();
     test_flush_loaded();
     test_ahi_mode();
-    test_start_mode();
-    test_start_maxrate();
-    test_priority();
+    test_start();
     test_run_stale_ready();
     test_run_again();
     test_run_again_no_news();

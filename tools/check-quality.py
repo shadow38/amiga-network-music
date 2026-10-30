@@ -47,7 +47,7 @@ OVER = {
     ("tests/test_core.c", "wav"): {"parameters": 8},
     ("tests/test_core.c", "test_lame_header"): {"complexity": 20},
     ("tests/test_core.c", "lame_frame"): {"parameters": 8},
-    ("tests/test_core.c", "main"): {"lines": 99},
+    ("tests/test_core.c", "main"): {"lines": 97},
 }
 
 # All the code, the C and what builds and tests it; the documents (docs/, *.md) and the review tooling (.claude/)

@@ -28,6 +28,7 @@ int      stub_wait_advances;
 int      stub_waits_without_control;
 int      stub_again;
 int      stub_connect_interrupted;
+int      stub_resolve_fails;
 int      stub_udp_replies;
 int      stub_send_fail_in;
 int      stub_send_interrupted;
@@ -73,6 +74,7 @@ void stub_reset(void)
     stub_waits_without_control = 0;
     stub_again = 0;
     stub_connect_interrupted = 0;
+    stub_resolve_fails = 0;
     stub_udp_replies = 0;
     udp_given = 0;
     stub_send_fail_in = 0;
@@ -158,6 +160,8 @@ void plat_set_priority(int pri)
 int plat_resolve(const char *host, uint32_t *ip)
 {
     (void)host;
+    if (stub_resolve_fails)
+        return 0;
     *ip = 0x7f000001;
     return 1;
 }
