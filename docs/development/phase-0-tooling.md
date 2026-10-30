@@ -326,6 +326,12 @@ phase 1; the figures below are those of 0.6.
     development tool, not in the program). Today's excesses are listed with their values: a listed function may
     not grow, and leaves the list once it fits. Raising a value needs the user's agreement, with the reason in
     the commit;
+  - comments that explain the code, without pointing to the project's history: no step name, no "plan step", no
+    review or version, no "decided with the user". The reason in a sentence, or a link to `architecture.md`. A
+    rule in `CONTRIBUTING.md`, Code rules, for all the code: C, Python, `Makefile`, the CI's workflows, the files
+    of `tests/data/`. `tools/check-quality.py` fails on a step name or "plan step"; the 40 found on 2026-10-30
+    removed in the same commit, their useful facts kept ("seen in WinUAE"). Commit messages keep the step names
+    (agreed with the user on 2026-10-30);
   - question S6 of `review-protocol-security` points to the limits and the list (the user's decision, taken on
     2026-10-30);
   - the CI's host compiler pinned (left from tools-13).
@@ -333,5 +339,5 @@ phase 1; the figures below are those of 0.6.
   `main` of `amiga.c` (35), `read_header` of `flac.c` (34), `player_main` (33); 9 above 60 lines; `stream_start`
   with 9 parameters; `stream.c` 745 lines of code in functions, `test_core.c` 3176.
 - **Criterion**: each check seen failing on a planted defect (a function past each limit, a listed function grown,
-  a file too long), then green; `make test` and the CI green. Lizard in the local build container only with the
+  a file too long, a step name in a comment), then green; `make test` and the CI green. Lizard in the local build container only with the
   user's agreement. Not user-visible: no `CHANGELOG.md` line.
