@@ -48,7 +48,8 @@ Two ways to get the toolchain:
   (the size and complexity check): `pip install --require-hashes -r tools/requirements.txt`, in a virtual
   environment if the system's Python refuses it.
 
-Tested with gcc 14 on Linux. The CI uses the default `cc` of GitHub's `ubuntu-24.04` runner, gcc 13. clang, macOS
+Tested with gcc 14 on Linux. The CI uses gcc 14 too (`HOSTCC=gcc-14` on GitHub's `ubuntu-24.04` runner, whose
+default `cc` is gcc 13), and prints its version. clang, macOS
 and other POSIX systems should work but have not been tried.
 
 Note that in the `amigadev/crosstools` image, `gcc` is the Amiga cross-compiler: use another environment, or set
