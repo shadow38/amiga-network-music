@@ -79,8 +79,6 @@ without an FPU, it says so. `BENCH` needs no server, prints its measures and qui
   about a PiStorm's speed.
 - A 68030, 68040 or 68060 has not been tried yet. A format that `BENCH` leaves to the server needs that server's
   settings of the Slow row; `MAXRATE` and `PRI` only if the sound has gaps.
-- The `MAXRATE` rules name the player by its MAC address, which comes from its name: after a change of `NAME`,
-  put the new address in them (see [`MAXRATE`](#maxrate)).
 - With Paula, see also [with Paula](#with-paula).
 
 To keep the options for every start: [keeping the options](#keeping-the-options).
@@ -132,9 +130,7 @@ Paula is the Amiga's own sound chip, driven by AHI's `paula.audio`. AHI then con
 CPU.
 
 - **Add [`SWAP`](#options)**: `paula.audio` swaps left and right.
-- **Fix the volume at 100** on the server, and turn the amplifier down instead. Below 100, amisqueeze scales every
-  sample, which costs CPU and brings out a crackle. With LMS, a setting fixes it (see [volume](#volume)); with
-  Music Assistant, set the player's volume to 100 and leave it there.
+- **Fix the volume at 100** on the server, and turn the amplifier down instead (see [volume](#volume)).
 - **To save CPU**: `Paula:8 bit stereo++` takes a little less than the 14-bit mode, at a lower quality. The "HiFi"
   modes take more.
 - **The power LED dims** while amisqueeze runs: `paula.audio` turns Paula's filter off, which the LED shows. This
@@ -305,7 +301,8 @@ NAME=Amiga`, a test setup). Without `VERBOSE`, nothing more is printed while it 
 #### With the Amiga
 
 - **From the Workbench**: copy the program and its icon into `SYS:WBStartup`. The Workbench starts it at every
-  boot. With the ToolTypes `QUIET` and `LOG`, it plays in the background without a window.
+  boot. With the ToolTypes `QUIET` and `LOG`, it plays in the background without a window, which Exchange can
+  open (see [its window](#its-window)).
 - **From a script**: add `Run >NIL: amisqueeze` to `S:User-Startup`, after the line that starts the TCP/IP stack.
   It then runs without a window, which Exchange can open (see [its window](#its-window)).
 
@@ -729,8 +726,7 @@ rows say what comes next.
     [`MAXRATE`](#maxrate) asks for less.
 - **The sound has gaps while the Amiga works** (files copied, windows moved), and plays well otherwise. On a slow
   Amiga, amisqueeze needs most of the CPU and shares it with the other programs. Give it `PRI=1`: the sound then
-  goes first, and the Workbench gets slower. Tried on an A1200 at 26 MHz, copying files and moving windows: gaps
-  without `PRI`, clean with `PRI=1`, the Workbench slow but usable; at 5, very slow. With
+  goes first, and the Workbench gets slower. A higher priority makes the Workbench very slow. With
   [`MAXRATE`](#maxrate), the Workbench keeps more of the CPU.
 - **An internet radio does not play with LMS and `amisqueeze.fpu`, with `body not handled`.** The radio's address
   leads to a playlist (see [known limits](#known-limits)). In the player's settings in LMS (*Settings*, the
@@ -785,10 +781,14 @@ rows say what comes next.
 What the README names but this section does not is expected to work, not checked.
 
 **On a real A1200**: an ACA1221lc accelerator (68EC020 at 26.67 MHz, no FPU), AmigaOS 3.1,
-Paula through AHI 4.18, a Xircom CE3-10/100 PCMCIA card with a fixed `xircomce2.device`:
+Paula through AHI 4.180, a Xircom CE3-10/100 PCMCIA card with a fixed `xircomce2.device`:
 
 - with LMS 9.1.1: playback and its CPU load (see [`MAXRATE`](#maxrate)), the commands, a server restart, a short
   network cut, an hour of playback, the Workbench;
+- `PRI` while files were copied and windows moved: gaps without it, clean with `PRI=1`, the Workbench slow but
+  usable; at `PRI=5`, very slow;
+- with Music Assistant 2.10.7 and its codec `wav`: five tracks in a row, the next track, stop;
+- the window and Exchange: Show, Hide, Remove, the close gadget, `QUIET`, text copied;
 - a network cut of 13 s with AmiNetXDuo: `no news from the server` about 35 s after the cut, then a reconnection,
   and LMS played the track again from its beginning;
 - the server discovery, with LMS and Music Assistant 2.10.7, through AmiNetXDuo, Miami 3.2b and the demo of

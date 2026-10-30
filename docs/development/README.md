@@ -204,7 +204,7 @@ The rest agreed with the user on 2026-10-30, in this order, then a light review 
 | publish-4 Setup guides: minimal server, the Amiga on the network | ⬜ before 1.0 |
 | publish-5 Review before each release | ✅ 2026-10-20; reviews since: [0.6](reviews/0.6.md), [0.7](reviews/0.7.md) |
 | publish-6 Writing rules for the documentation | ✅ 2026-10-24: the rules, the plan and the user guide; `docs/development/` later, where the user finds it worth it (closed on 2026-10-29) |
-| publish-7 A readable architecture page | ⬜ version 0.9 |
+| publish-7 A readable architecture page | ✅ 2026-10-30 (version 0.9) |
 
 Phase 0 moves forward as needed: a tooling step is done when a step of phase 1 or 2 needs it. Phases 1 and 2 can
 progress in parallel.
@@ -231,6 +231,11 @@ Neither planned nor dropped for good. Each is taken up only by the user's decisi
   holds the one task for 0.3 s (opening the window at Show, player-19) already stops the sound. More blocks, or
   bigger ones, would cost memory and delay the server's commands (pause, volume) (agreed with the user on
   2026-10-30).
+- **Paula's settings in the user guide**: heard on the A1200 on 2026-10-30 (AHI 4.180, Music Assistant with
+  the lower rates patched in): the uncalibrated `14 bit stereo++` mode sounds grainy, `Fast 14 bit stereo++
+  calibrated` clearly better; at Paula's highest rate, 27,429 Hz, a 32 kHz stream sounded best; `HiFi` brought
+  nothing heard. `MAXRATE=AHI` with LMS (a 27,429 Hz stream) was not heard. Left out of the guide until more use
+  makes the advice clear (agreed with the user on 2026-10-30).
 - **LMS's `body` frame**: for a playlist address played directly, LMS asks the player to send the body back.
   amisqueeze shows it as "not handled" (agreed with the user on 2026-10-27).
 

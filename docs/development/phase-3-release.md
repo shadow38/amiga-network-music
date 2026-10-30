@@ -216,17 +216,8 @@ Back to the [plan](README.md).
   already elsewhere (the CHANGELOG, a review report, another document), or is listed in the commit. No script
   checks the rules.
 
-## publish-7 A readable architecture page ⬜ (version 0.9)
+## publish-7 A readable architecture page ✅ (2026-10-30, version 0.9)
 
-- **Why**: `architecture.md` is too dense to read: long paragraphs full of code names, and what the code does,
-  why, and how it was measured, all mixed (the user, on 2026-10-30). It was never rewritten to the rules of
-  publish-6.
-- **Content**, after player-18 and player-19, which change what it describes:
-  - `architecture.md`: a new outline and one section rewritten as a sample, which the user accepts before the
-    rest is rewritten. Measurements and history go to the plan or the commits;
-  - then the user guide: a detailed reading, which gives a list of remarks for the user to sort. Among them,
-    heard on the A1200 on 2026-10-30 (AHI 4.180, Music Assistant): Paula's uncalibrated `14 bit stereo++` mode
-    sounds grainy, the `Fast 14 bit stereo++ calibrated` one clearly better; at Paula's highest rate (27,429
-    Hz), a 32 kHz stream sounded best (better than 24 kHz, which `MAXRATE=AHI` asks, and than 44.1 kHz); `HiFi`
-    brought nothing heard. The guide says "the name may end with calibrated".
-- **Criterion**: as publish-6. The user reads each rewritten document and accepts it, and no fact is lost.
+`architecture.md` rewritten to the rules of publish-6: one question per section, what the code does, then why;
+then a detailed reading of the user guide, whose remarks the user sorted. Paula's settings heard on the A1200
+were left out of the guide: an open point.
