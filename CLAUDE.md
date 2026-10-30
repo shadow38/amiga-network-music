@@ -64,10 +64,10 @@ One line each; the pointer says where it is explained.
 | Before touching | Read |
 |---|---|
 | the portable core (`src/amisqueeze/` but `amiga*.c`, `posix.c`) | `architecture.md`; `CONTRIBUTING.md`, Code rules |
-| `stream.c`, `slimproto.c` (statuses, `strm`) | `architecture.md`, A track's life and What of slimproto is handled |
+| `stream.c`, `slimproto.c` (statuses, `strm`) | `architecture.md`, A track's life and Slimproto: the messages |
 | `decoder.c`, `flac.c`, `mp3.c`, `third_party/` | `architecture.md`, Decoders; `CONTRIBUTING.md`, Code rules and Stack and memory |
 | `audio.c`, `amiga_ahi.c` | `architecture.md`, AHI |
-| the start-up of `amiga.c`, `__stack`, libnix | `CONTRIBUTING.md`, Stack and memory and Pitfalls |
+| the start-up of `amiga.c`, `__stack`, libnix | `architecture.md`, The Amiga side; `CONTRIBUTING.md`, Stack and memory and Pitfalls |
 | `Makefile`, `tools/check-saves.py`, `tools/check-stack.py`, `tools/amiga-make.sh` | `CONTRIBUTING.md`, Requirements, Building, and Stack and memory |
 | `tests/`, `.github/workflows/` | `CONTRIBUTING.md`, Host build and tests |
 | the version number, `CHANGELOG.md`, `make dist`, a release | `CONTRIBUTING.md`, Releasing |

@@ -505,26 +505,22 @@ Tasks (`.vscode/tasks.json`, calling `tools/amiga-make.sh`, through WSL on Windo
   each release.
 - **Workbench start and libnix**: started from the Workbench, libnix opens the console named by `__stdiowin`
   before `main()`; `amiga.c` sets it to NULL and opens its own once it has read the icon (`WINDOW`, `QUIET`).
-  While the window is closed there is no output (`msg()` checks `Output()`), or `NIL:` from `Run >NIL:`. With
-  `QUIET` or `NIL:`, a message opens the window up to `bsdsocket.library`; the last 512 bytes of messages are kept
-  (`struct history`), and shown again when the window opens: by Exchange's Show, or when `player_main()` returns
-  `PLAYER_FAIL`, which it does only for an error at start-up (`PORT`, `MAC`, server not found, `ahi.device`...).
-- **The message window** (`CON:`, tried in WinUAE on 2026-10-30 with AmigaOS 3.2.3; `ACTION_FORCE` and `WAIT`
-  also with Kickstart 3.1, without Workbench):
-  - in the usual (cooked) mode, a key typed without Return holds every write until Return, and the one task with
-    it: the window is in RAW mode, with an asynchronous read always pending (keys ignored);
-  - the close gadget does not close the window: without `AUTO`, its click is kept for the next read, an EOF in
-    cooked mode, in RAW mode the event `CSI 11;...|` (asked for with `CSI 11{`; AmigaOS 3.2 sends it unasked;
-    not tried with Kickstart 3.1);
-  - `Close()` with a read pending never gets the read back: `ACTION_FORCE` (2001, not in the NDK) puts a byte
-    into the input first, which ends the read; `ACTION_STACK` and `ACTION_QUEUE` do not;
-  - `WAIT` does not hold `Close()`: the window outlives the handle, so a window with `WAIT` cannot be hidden.
-    `AUTO` and `WAIT` are taken out of `WINDOW`, and amisqueeze waits itself for its window to be closed at the end;
+  While the window is closed there is no output (`msg()` checks `Output()`), or `NIL:` from `Run >NIL:`. When the
+  window opens, and what it shows:
+  [architecture](docs/development/architecture.md#the-amiga-side-start-up-window-commodity).
+- **The message window** (`CON:`): how it works and why, in the
+  [architecture](docs/development/architecture.md#the-amiga-side-start-up-window-commodity). Tried in WinUAE on
+  2026-10-30 with AmigaOS 3.2.3; `ACTION_FORCE` and `WAIT` also with Kickstart 3.1, without Workbench:
+  - the close gadget does not close the window. Without `AUTO`, its click is kept for the next read: an EOF in
+    cooked mode, the event `CSI 11;...|` in RAW mode. `CSI 11{` asks for that event, which AmigaOS 3.2 sends
+    unasked (not tried with Kickstart 3.1);
+  - `ACTION_FORCE` (2001) is not in the NDK. `ACTION_STACK` and `ACTION_QUEUE` do not end a pending read;
+  - `WAIT` does not hold `Close()`: the window outlives the handle;
   - `SMART` prevents selecting and copying the text. Without it, the text was kept when uncovered on AmigaOS 3.2.3
     (2026-10-30), contrary to what was seen on 2026-10-20; not tried with Kickstart 3.1;
   - showing the window costs the one task about 0.2 s to open it, and 0.2 to 0.3 ms a byte of text, on a slow
-    68020 with Paula: with 3 audio blocks, the sound stops for a moment, also with `PRI=1` (hence 512 bytes kept,
-    about a window's worth; the window has no scroll back).
+    68020 with Paula. With 3 audio blocks, the sound stops for a moment, also with `PRI=1`. The window has no
+    scroll back.
 - **The commodity**: amisqueeze is a commodity ("Remove" in Exchange = Ctrl-C), one at a time (`CBERR_DUP`); a
   second start does nothing to the running one. Show and Hide (`COF_SHOW_HIDE`) only with a window of its own.
 - **LMS drops every status after a `strm s` until `STMc`**: a refusal must come after a `STMc`, or LMS waits for
