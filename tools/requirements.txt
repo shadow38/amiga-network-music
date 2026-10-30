@@ -1,0 +1,5 @@
+# Python packages of the checks run by make test, pinned with their hashes (lizard, for tools/check-quality.py, and
+# what it needs). Install: pip install --require-hashes -r tools/requirements.txt
+lizard==1.24.3 --hash=sha256:f7fccd909719170e323a240cc6927bfea65984d77a8f9c0e6405be582e9861db
+pathspec==1.1.1 --hash=sha256:a00ce642f577bf7f473932318056212bc4f8bfdf53128c78bbd5af0b9b20b189
+pygments==2.21.0 --hash=sha256:2363c69b61c4a97c838da3b130dcd6468f4848992b21a82f2a63ec34377137d9

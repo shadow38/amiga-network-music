@@ -123,11 +123,13 @@ out-host/amisqueeze-nomp3: $(patsubst src/%.c,obj-host/nomp3/%.o,$(call host_src
 # with --release: no -dev version, the CHANGELOG section and its date); make-dist.py --check-readme: the Aminet
 # readme made from dist/amisqueeze.readme follows Aminet's rules (make dist checks it again); tests/check-saves.s:
 # the assembly safeguard must name each _bad_ function there, and no _good_ one; tools/check-core.py: the portable
-# core includes no header of the system
+# core includes no header of the system; tools/check-quality.py: the C code's size and complexity (lizard, pinned in
+# tools/requirements.txt)
 SAVES_BAD := _bad_dbra _bad_fpu _bad_plain _bad_postinc _bad_predec _bad_tst_postinc
 test: host out-host/test_core out-host/amisqueeze-nomp3
 	python3 tools/check-version.py
 	python3 tools/check-core.py amisqueeze
+	python3 tools/check-quality.py
 	python3 tools/make-dist.py --check-readme amisqueeze
 	python3 tools/make-dist.py --check-text amisqueeze
 	python3 -c 'import ast, sys; [ast.parse(open(f, encoding="utf-8").read(), f) for f in sys.argv[1:]]' \

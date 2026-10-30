@@ -1,6 +1,6 @@
 # On each push and pull request (plan step publish-3):
 # - host: the portable core built natively with AddressSanitizer and UBSan, its unit tests, then the fake server's
-#   scenarios against the host build ("make test" in CONTRIBUTING.md);
+#   scenarios against the host build, and the C code's size and complexity ("make test" in CONTRIBUTING.md);
 # - amiga: both Amiga executables (with tools/check-saves.py on their assembly), the developer tool cpucount (never
 #   released) and the release archives in their development form, built through tools/amiga-make.sh, which finds neither the toolchain nor a local script on the
 #   runner and so takes its Docker way, the one documented for a new contributor, with the image pinned there;
@@ -26,6 +26,14 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           persist-credentials: false   # no git push here
+      # lizard for tools/check-quality.py, at the versions and hashes of tools/requirements.txt, in a virtual
+      # environment (the runner's Python may refuse packages installed outside one), put first in the PATH so that
+      # make test's python3 is the environment's
+      - name: lizard (tools/requirements.txt)
+        run: |
+          python3 -m venv "$RUNNER_TEMP/venv"
+          "$RUNNER_TEMP/venv/bin/pip" install --require-hashes -r tools/requirements.txt
+          echo "$RUNNER_TEMP/venv/bin" >> "$GITHUB_PATH"
       - name: Host build, unit tests, fake server scenarios
         run: make test
 
