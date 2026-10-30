@@ -71,7 +71,7 @@ One line each; the pointer says where it is explained.
 | the start-up of `amiga.c`, `__stack`, libnix | `architecture.md`, The Amiga side; `code-rules.md`, Stack and memory; `pitfalls.md` |
 | `Makefile`, `tools/check-saves.py`, `tools/check-stack.py`, `tools/amiga-make.sh` | `building.md`; `code-rules.md`, Stack and memory |
 | `tests/`, `.github/workflows/` | `testing.md`, What tests what and Host build and tests; `building.md`, Builds made by GitHub |
-| the version number, `CHANGELOG.md`, `make dist`, a release | `releasing.md`; `building.md`, Building |
+| the version number, `CHANGELOG.md`, `make dist`, a release | `releasing.md`; `building.md`, The archives |
 | anything tried in WinUAE | `testing.md`, Testing in WinUAE and Checks the host tests cannot make; `winuae-scenarios.md` |
 | options, messages | `docs/user-guide.md` |
 | any documentation (`*.md`, the plan included) | `documentation-rules.md` |

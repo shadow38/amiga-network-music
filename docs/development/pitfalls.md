@@ -7,7 +7,7 @@ For contributors who are stuck: what has already gone wrong, and how to debug. H
   https://github.com/ralph-irving/squeezelite) and LMS (`Slim/Networking/Slimproto.pm`). They are GPL: read to
   understand the protocol's behaviour (message layouts, when to send which status), never copied (the project is
   MIT).
-- **The compiler**: gcc 16.1.1b generated wrong code, hence the safeguard of [Building](building.md#building).
+- **The compiler**: gcc 16.1.1b generated wrong code, hence [the safeguard](building.md#the-safeguard-against-a-compiler-bug).
 - **vamos** (shipped with the `amigadev/crosstools` image) runs command-line tools that only use dos.library: it
   crashes on `printf` (libnix), has no windows and no real `bsdsocket.library` (its stub makes amisqueeze retry
   forever: kill it). Run 68020 programs with `vamos -C 68020` (otherwise alert `00068020`). Its `GetVar` ignores

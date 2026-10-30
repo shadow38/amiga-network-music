@@ -1,7 +1,7 @@
 # Releasing
 
 For the maintainer: how a version is numbered, checked and published. Building the archives is in
-[building.md](building.md#building).
+[building.md](building.md#the-archives-make-dist).
 
 **Versions**: 0.x until the main feature works; 1.0 is the first really usable version, tried on the real machine.
 The version changes only for a published release. Between releases the number reads `<next>-dev`, so that a build
@@ -14,7 +14,7 @@ guide; `tools/check-version.py` checks that they agree (see [testing.md](testing
 "Unreleased" as it is made; at the release, that part gets the version number and the date.
 
 **A release** is a Git tag `amisqueeze-<version>` and a GitHub Release with the zip and the `.lha` (the same
-files: see `make dist` in [building.md](building.md#building)), the `.sha256` of each, the Aminet `.readme`, and
+files: see [the archives](building.md#the-archives-make-dist)), the `.sha256` of each, the Aminet `.readme`, and
 short notes holding each archive's SHA-256.
 
 **Before the tag**, on the build to be tagged:
