@@ -15,7 +15,7 @@ wrong.
   building; its tests confirm its code. Challenge them.
 - **A2. A claim without proof is not a fact.** The plan, the CHANGELOG, the user guide and the code comments make
   claims ("tested on X", "done", "handles Y", "measured Z"). Each one needs a proof you can open: file:line, a test
-  function, a fake-server scenario, or a dated measurement. A claim that cannot be traced to a proof is a finding.
+  function, a fake-server scenario, or a measurement with the version it was made on. A claim that cannot be traced to a proof is a finding.
   Code comments are claims too: a comment that states a size, a unit, a range, an invariant, an order or which
   part of the program does something must match the code.
 - **A3. A measurement expires when what it measures changes.** For each limit or measurement recorded in

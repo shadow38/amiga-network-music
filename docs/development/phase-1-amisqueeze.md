@@ -9,7 +9,7 @@ audio stream, audio output through AHI. Protocol references: squeezelite (`slimp
 Design choices: one task and one loop around `WaitSelect()` (sockets, AHI signals, Ctrl-C), because a `SocketBase`
 belongs to the task that opened it; packets serialised field by field; buffers allocated (not on the stack).
 
-## player-1 Control connection ✅ (2026-10-18)
+## player-1 Control connection ✅
 
 - **Content**: TCP connection to the server, `HELO` (capabilities: `pcm`, 48 kHz max), `STAT` replies (`STMt`
   every 5 s, `STMf`…), player name (`setd`/`SETD`), automatic reconnection; streams refused (`STMn`) but their
@@ -20,7 +20,7 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   stereo, **little-endian**, stream at the control connection's address,
   `GET /stream.mp3?player=<mac> HTTP/1.0`.
 
-## player-1b Default options ✅ (2026-10-18)
+## player-1b Default options ✅
 
 - **Goal**: run amisqueeze without retyping its options.
 - **Content**: default options in the global variable `ENV:amisqueeze.prefs` (kept across reboots by a copy in
@@ -39,7 +39,7 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   return code 20; no server anywhere → "no server", return code 20; after a reboot, `amisqueeze` alone connects
   as "Amiga" (prefs restored from `ENVARC:`).
 
-## player-2 Receiving the stream, without playing it ✅ (2026-10-18)
+## player-2 Receiving the stream, without playing it ✅
 
 - **Goal**: receive the stream and keep the server informed like a real player, without producing sound yet.
 - **Content**:
@@ -50,7 +50,7 @@ belongs to the task that opened it; packets serialised field by field; buffers a
     that later steps replace with a file (player-3) and AHI (player-4); byte counters;
   - states: `STMc` (connected), `STMs` (playback started), `STMd` (end of data), `STMu` (buffer empty), buffer
     fullness and elapsed time in `STAT`;
-  - `strm q`: stop; `strm f`: flush (0.7, 2026-10-21: drops only the track being streamed, the playing one goes
+  - `strm q`: stop; `strm f`: flush (since 0.7: drops only the track being streamed, the playing one goes
     on; until then a stop); autostart 2 and 3 (wait for `cont`, radio metadata) played as 0 and 1; `cont`
     itself ignored ("not handled"): internet radios' metadata (ICY) is planned for 0.9.
 - **Criterion**, measured on the server through its CLI, not on the web page (its progress bar animates by itself
@@ -79,7 +79,7 @@ belongs to the task that opened it; packets serialised field by field; buffers a
 - The `BUFFER` option mentioned in Content did not come with player-6: an open point of the
   [plan](README.md#open-points).
 
-## player-3 Output to a file ✅ (2026-10-18)
+## player-3 Output to a file ✅
 
 - **Goal**: check the received data byte by byte before listening to anything.
 - **Content**: an `OUTPUT=<file>` option (command line and default options) that writes what the virtual output
@@ -110,7 +110,7 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   that frame. A reference decoded from the whole file is then one frame too long: decode the file without its
   ID3v1 tag, or use test MP3s without one (`lame --id3v2-only`).
 
-## player-4 AHI audio output ✅ (2026-10-19)
+## player-4 AHI audio output ✅
 
 - **Goal**: hear the sound, and hear it right.
 - **Content**: `ahi.device`, double-buffered `CMD_WRITE`, `AHIST_S16S`; byte swapping when the stream is
@@ -120,7 +120,7 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   it (44.1 kHz for LMS) to avoid resampling; a warning at start-up if the unit's mode cannot pan (to check:
   reading the unit's mode through the device API).
 - **Prerequisite**: tools-5 (AHI in the emulated Amiga) ✅.
-- **Design** (agreed 2026-10-18):
+- **Design** (agreed):
   - an output ("sink") interface in the core: how many bytes it can take now, take these bytes, how many bytes
     were really played. The virtual output (clock) stays for the host build, the tests and `NOAUDIO`; AHI is the
     other sink. Elapsed time, `STMs` at a track boundary and `STMu` follow the bytes **played**, not the bytes
@@ -137,10 +137,10 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   boundary, played time, `STMs`/`STMu`, stop, pause) and a command scenario against LMS; player-4c listening
   (Toccata, then Paula; test tones from LMS, a whole track), LMS timing criteria of player-2, no leak, 2 KB stack, and
   CPU load with Paula on a slow 68020 profile of WinUAE (created then, see tools-4).
-- **player-4a done** (2026-10-18): sink interface, played positions, track format kept from `strm s`; no change of
+- **player-4a done**: sink interface, played positions, track format kept from `strm s`; no change of
   behaviour (`make test`, `OUTPUT` comparisons against LMS on both builds).
-- **player-4b done** (2026-10-18): `audio.c` (portable: blocks, conversion, played bytes, pause), `ahi.device` calls in
-  `amiga.c`, options `UNIT`, `NOAUDIO`, `SWAP`; `OUTPUT` keeps the virtual output (decided 2026-10-18: the file
+- **player-4b done**: `audio.c` (portable: blocks, conversion, played bytes, pause), `ahi.device` calls in
+  `amiga.c`, options `UNIT`, `NOAUDIO`, `SWAP`; `OUTPUT` keeps the virtual output (decided: the file
   holds exactly what was played). What `ahi.device` taught (its source, AHI 6.0):
   - a request is chained (`ahir_Link`) only to one **already playing**: a request linked to one that is itself
     waiting is never played nor ended (the first version hung on the third block). So at most two blocks are
@@ -157,7 +157,7 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   against LMS 9.1.1, Toccata (unit 1) and Paula (unit 0): play (`time ?` +3.00 s in 3 s), pause (time frozen),
   resume (+3.01 s in 3 s), stop, a 10 s track played to its end in 10.3 s, clean exit; `OUTPUT` on the Amiga
   build keeps the virtual output and its file stays identical to the counter pattern (twice, 7,056,000 bytes).
-- **player-4c, test tones heard** (2026-10-19, WinUAE, LMS 9.1.1, `tone-440`, `tone-left`, `tone-right` in one
+- **player-4c, test tones heard** (WinUAE, LMS 9.1.1, `tone-440`, `tone-left`, `tone-right` in one
   playlist, 20.5 s for 20 s of audio, no `STMo`): Toccata (unit 1) right, sides in place; Paula 14-bit (unit 0)
   sides swapped without `SWAP`, in place with `SWAP`. Occasional crackle with Paula, also heard with the AHI test
   tone played without amisqueeze: it comes from the emulation or `paula.audio`, not from amisqueeze (to check on
@@ -167,7 +167,7 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   the rate of the **source file**, even when its conversion rule resamples; LMS's own `ogg pcm` rule (`sox -r
   44100`) therefore makes a 48 kHz source play 9 % too fast on any PCM-only player (our test `mp3 pcm` rule had
   copied it, fixed).
-- **player-4c, the rest** (2026-10-19, measured without the user):
+- **player-4c, the rest** (measured without the user):
   - LMS timing criteria of player-2 with the AHI output (Paula, `SWAP`): time +60.01 s in 60.02 s, pause frozen,
     resume, seek, next track, end of the playlist, stop: all as with the virtual output;
   - stack: `Stack 2048` (checked with `Status FULL`: amisqueeze gets 2048), three rounds of the command scenario
@@ -178,13 +178,13 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   - CPU load on the slow profile (68020 without FPU, WinUAE approximate mode at 4 x 7.09 = 28.4 MHz, as a
     typical A1200 accelerator; free CPU counted by a priority -128 loop, load = 1 - count while playing / count
     when idle, 10 s windows): through AHI and Paula, **66-68 % in 14 bits** (unit 0) and **61-65 % in 8 bits** (unit 2), for
-    44.1 and 48 kHz streams, no `STMo`, LMS time exact; with `NOAUDIO`, 2-5 % (true until step player-8a, see player-9,
-    2026-10-22). So nearly all of it is the sound
+    44.1 and 48 kHz streams, no `STMo`, LMS time exact; with `NOAUDIO`, 2-5 % (true until step player-8a, see player-9).
+    So nearly all of it is the sound
     output: AHI resampling and mixing for Paula (27,429 Hz), plus the byte swap into the AHI blocks (not measured
     apart; estimated at a few percent). Limits of the figure: WinUAE's networking runs TCP/IP on the host (a real
     stack, Roadshow, adds its own load) and its Zorro II fast RAM is not the accelerator's own RAM. About a third
     of the CPU is left on such a machine: to keep in mind for local FLAC decoding (player-8).
-- **Validated with the user** (2026-10-19): Paula's crackles left to the real machine (player-9); the CPU load accepted
+- **Validated with the user**: Paula's crackles left to the real machine (player-9); the CPU load accepted
   for now (lighter AHI settings to look at in player-8 if decoding does not fit); `SWAP` stays a manual option until
   the real machine shows whether its channels are swapped too (player-9). Not done then: the start-up warning for a mode
   that cannot pan (Content above), done
@@ -194,24 +194,24 @@ belongs to the task that opened it; packets serialised field by field; buffers a
 - **Test**: WinUAE with both AHI drivers of step tools-5, Paula first (Amiga chipset, the output of Amigas without a
   sound card) and Toccata (16-bit reference), then the real machines (player-9).
 
-## player-5 Commands and volume ✅ (2026-10-19)
+## player-5 Commands and volume ✅
 
 - **Content**: pause and resume (`strm p`/`u`, `STMp`/`STMr`), stop, flush, skip; volume (`audg`, 16.16 gain to
   AHI volume); exact elapsed time in `STAT` (based on what was actually played).
 - **Criterion**: every command from the LMS UI acts on the Amiga; the displayed progress stays right after pause
   and resume.
 - **Already done in player-4**: pause, resume, stop, flush, seek and next track, elapsed time from the bytes played.
-- **Design** (agreed 2026-10-19; the AHI volume replaced by scaling the samples in player-6, see there): the 16.16 gain
+- **Design** (agreed; the AHI volume replaced by scaling the samples in player-6, see there): the 16.16 gain
   of `audg` is kept by the audio output and sent with each block
   (`ahir_Volume`): blocks already with the device keep theirs, so a change is heard 0.2 to 0.4 s later, at no CPU
   cost (scaling the samples ourselves would act at once but cost about a tenth of a 28 MHz 68020); the louder of
   left and right (LMS sends the same value, or a balance: no balance through AHI for now), never above 1.0 (AHI
   does not amplify); `adjust` 0 (fixed volume) = full; ignored without the audio output (`OUTPUT` stays
   byte-exact); with `VERBOSE`, `volume: n.n % of full amplitude` when it changes. Replay gain (`strm s`) left out.
-- **Done** (2026-10-19): `audio_set_volume()` (`audio.c`), `plat_audio_send()` takes the volume; unit tests (262
+- **Done**: `audio_set_volume()` (`audio.c`), `plat_audio_send()` takes the volume; unit tests (262
   checks: volume per block, the next block only, louder side, at most full, mute, fixed volume, kept across a
   pause) and the fake server (`audg` in the session scenario).
-- **Validated** (2026-10-19, WinUAE, LMS 9.1.1, Paula): every command sent through LMS's CLI (volume 100, 25, 50,
+- **Validated** (WinUAE, LMS 9.1.1, Paula): every command sent through LMS's CLI (volume 100, 25, 50,
   +10, mute and unmute, pause and resume, next, seek, previous, track chosen in the playlist, stop) acts as
   expected, no `STMo`; heard by the user (100, 25, mute, unmute, 50): each change clear, no click. Learnt from LMS
   (`Slim/Player/Squeezebox2.pm`, `Player.pm`): its volume curve gives 50 = 0x0F00 (about -25 dB), 25 = 0x039E;
@@ -220,22 +220,22 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   `adjust` 0 to amisqueeze then; since player-10 (version 0.4) amisqueeze advertises `HasDigitalOut=1` and handles
   it (fixed volume).
 
-## player-6 Robustness ✅ (2026-10-19)
+## player-6 Robustness ✅
 
 - **Content**: buffer underrun (slow network) then recovery; server dropping during playback; Ctrl-C at any time
   (AHI requests aborted, sockets closed); long playback.
 - **Criterion**: one hour of playback without crash or memory leak (`Avail` before/after); Ctrl-C always returns
   cleanly.
-- **Plan** (agreed 2026-10-19): player-6a scenarios of the fake server (`make test`); player-6b the same against the real LMS
+- **Plan** (agreed): player-6a scenarios of the fake server (`make test`); player-6b the same against the real LMS
   in WinUAE, through a local TCP relay between the emulated Amiga and LMS that can slow the stream down, hold it
   or reset it, and a server restart; player-6c Ctrl-C at every moment; player-6d one hour on the slow profile (Paula). When
   the server goes, playback stops at once (kept: the server decides what follows when it is back).
-- **player-6a done** (2026-10-19): the fake server's HTTP side can hold the stream (`stall_at`, `stall`) or reset it
+- **player-6a done**: the fake server's HTTP side can hold the stream (`stall_at`, `stall`) or reset it
   (`cut_at`, RST). Scenarios: stream held 3 s after 1.5 s of audio (`STMo` once, playback resumes, 4 s played in
   5.4 s, `OUTPUT` file identical to the data sent); stream reset after 1.5 s (`DSCO 2`, what arrived is played to
   the end, byte for byte); control connection lost during playback (stream closed, reconnection, nothing playing
   afterwards). Unit test of a buffer running dry with the AHI output (`STMo` once, nothing lost). 
-- **player-6b, against LMS 9.1.1** (2026-10-19, WinUAE, Paula):
+- **player-6b, against LMS 9.1.1** (WinUAE, Paula):
   - stream held 10 s (more than the ~6 s buffer): `STMo` once, playback resumes, LMS time right before and after;
   - stream slowed to 68 % of the CD rate for 40 s: LMS handles it itself: on `STMo` it pauses the player (`strm
     p`), waits for the buffer to fill again, then resumes (`strm u`); so playback goes on in long stretches with
@@ -248,10 +248,10 @@ belongs to the task that opened it; packets serialised field by field; buffers a
     amisqueeze reconnected without waiting. **Fixed**: a connection lost less than 10 s after it was made is no real session: wait 5 s
     before the next attempt, as after a refused connection ("retrying in 5 s"); after a real session, reconnect at
     once (fake server: 5.0 s, then 0.0 s).
-- **player-6c** (2026-10-19, WinUAE): `Break` while waiting to reconnect, connected and idle, waiting for the stream's
+- **player-6c** (WinUAE): `Break` while waiting to reconnect, connected and idle, waiting for the stream's
   headers, playing, paused, with an empty buffer, after the end of playback, and twice in a row: always a clean
   stop (`stopped`), AHI opens again on the next run; memory: the 1,064-byte system steps of player-4c only.
-- **player-6d** (2026-10-19, slow profile, Paula, two tracks of 44.1 and 48 kHz in a loop): one hour without any `STMo`,
+- **player-6d** (slow profile, Paula, two tracks of 44.1 and 48 kHz in a loop): one hour without any `STMo`,
   still playing, pause and resume still working at the end. LMS time lagged behind the clock by 16 s over the
   hour (-0.44 %). Measured minute by minute: the lag comes in jumps (1 s once, 6.5 s once), with the music
   following the clock in between and even catching up a little afterwards (+0.15 %); the protocol is clean (every
@@ -259,7 +259,7 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   0.04 s; on the fast profile, -1.0 s in 20 min. So the slow profile's emulation (approximate CPU at real speed)
   falls behind now and then and catches up; amisqueeze counts the bytes actually played. To check on the real
   machine (player-9).
-- **Found at the end of the hour: AHI corrupts memory** (2026-10-19). Twice amisqueeze vanished after a stop
+- **Found at the end of the hour: AHI corrupts memory**. Twice amisqueeze vanished after a stop
   without printing `stopped`, the system slowed down for seconds, and about 7 KB were lost (AHI and the sockets
   not closed). Reproduced on a freshly started WinUAE with: playback, pause, resume, stop. The largest free block
   (`Avail`) shows it: intact while paused, broken right after the resume (5.7 MB down to 0.5 MB, or a bogus 537
@@ -273,7 +273,7 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   pause included. Sequence replayed twice: memory intact, clean stop. Cost on the slow profile: none at volume
   100; at 50, Paula 14-bit 65 % to 88 % (8-bit 60 % to 84 %); a first version with one 32-bit multiplication per
   sample (about 43 cycles on a 68020) reached 100 %, two 256-entry tables (sample = high byte * 256 + low byte)
-  brought it down. User guide: on a slow Amiga, leave LMS at 100 (agreed 2026-10-19); later possibilities: a
+  brought it down. User guide: on a slow Amiga, leave LMS at 100 (agreed); later possibilities: a
   `FIXED` volume mode (player-10), a faster loop. Final build, one hour on the slow profile at volume 50 (88 % load):
   no `STMo`, 20 tracks, pause, resume and stop clean, largest free block unchanged. While WinUAE's window was
   minimised, the emulated machine fell behind real time (2.5 min in 10 min), the music following the Amiga's own
@@ -281,23 +281,23 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   memory. Test configuration: `win32.iconified_pause=false`, `win32.inactive_pause=false` (an emulation paused
   by a stray key had stopped an earlier run).
 
-## player-7 Other PCM formats and Music Assistant 🔶 (player-7a done, player-7b first test, WAV header validated, `mp3` and `aac` tried 2026-10-21)
+## player-7 Other PCM formats and Music Assistant 🔶 (player-7a done, player-7b first test, WAV header validated, `mp3` and `aac` tried)
 
 - **Content**: WAV and AIFF headers (format `?` + header parsing, or explicit values); 48 kHz; mono; 8 and 24 bits
   if the server sends them. Music Assistant: the player's `wav` output codec (MA offers no raw PCM); check what MA
   sends in `strm`.
 - **Criterion**: test tones pass in each format; the player works with Music Assistant.
-- **Split** (decided 2026-10-19): **player-7a** the formats, tested with LMS (now); **player-7b** Music Assistant, after
+- **Split** (decided): **player-7a** the formats, tested with LMS (now); **player-7b** Music Assistant, after
   version 0.2, with the test server of step tools-9.
-- **player-7a, what LMS 9.1.1 sends** (observed 2026-10-19 with the host build, test tones in each format): always
+- **player-7a, what LMS 9.1.1 sends** (observed with the host build, test tones in each format): always
   format `p` with explicit values, the samples only: **LMS strips the WAV and AIFF headers itself**, so no header
   parsing is needed with LMS (maybe with Music Assistant, player-7b). 16-bit FLAC/WAV: size `1`, little-endian; 24-bit
   FLAC/WAV: size `2` (3 bytes per sample), little-endian; 8-bit WAV: size `0`, **unsigned** (centred on 0x80);
   AIFF: endianness `0` (big-endian); mono: channels `1`. A 96 kHz FLAC is not played at all: amisqueeze
   advertises 48 kHz at most and LMS cannot lower the rate when it makes PCM ("Couldn't create command line for
-  flc playback"); left as it is (decided 2026-10-19): with FLAC decoding (player-8), LMS can send a FLAC resampled to
+  flc playback"); left as it is (decided): with FLAC decoding (player-8), LMS can send a FLAC resampled to
   48 kHz (its `flc flc` rule resamples).
-- **player-7a done** (2026-10-19): the audio output takes 8, 16, 24 and 32-bit samples and converts them to 16-bit
+- **player-7a done**: the audio output takes 8, 16, 24 and 32-bit samples and converts them to 16-bit
   big-endian when a block is sent (24 and 32 bits: the two most significant bytes; 8 bits: unsigned to signed,
   converted from the end of the block since they double in size, so an 8-bit block is filled to half); AHI always
   gets 16 bits (AHI 4). The bytes played are counted in bytes of the stream (each block knows its sample size), so
@@ -307,7 +307,7 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   first block, a pause in a 24-bit block, a gapless 16-bit to 24-bit boundary (328 checks). WinUAE (Paula):
   seven test tones (WAV 16, FLAC 24, FLAC mono, WAV 24, WAV 8, AIFF, FLAC 16) in one playlist, 70 s in 70.4 s,
   no `STMo`; heard by the user: same pitch and level, boundaries not noticeable.
-- **player-7b, first test** (2026-10-21, amisqueeze 0.6, Music Assistant 2.10.7 with its Squeezelite provider, test
+- **player-7b, first test** (amisqueeze 0.6, Music Assistant 2.10.7 with its Squeezelite provider, test
   server of tools-9; WinUAE JIT + FPU, `amisqueeze.fpu`, Toccata; playback started from the web UI; read alongside its
   slimproto library, aioslimproto). No code changed.
   - **Output codec `flac` (the default): works.** The player shows up (model `squeezeplay`, model name
@@ -334,10 +334,10 @@ belongs to the task that opened it; packets serialised field by field; buffers a
     `MaxSampleRate`), and `codc` comes from the content type, without parameters, so its 16 bits / 44.1 kHz are
     defaults. Hence: **amisqueeze must read a WAV header at the start of a PCM stream** (as squeezelite does),
     the "header parsing" foreseen in the content of player-7; the 24-bit conversion already exists (player-7a). In version
-    0.7 (decided with the user on 2026-10-21), designed with the user first.
+    0.7 (decided with the user), designed with the user first.
   - Not tried: output codecs `mp3` and `aac`, radios, groups of players, an MA server elsewhere than the test
     one.
-- **player-7b, the WAV header** (design agreed with the user on 2026-10-21, version 0.7). Read alongside: aioslimproto
+- **player-7b, the WAV header** (design agreed with the user, version 0.7). Read alongside: aioslimproto
   (for `wav`, `strm s` gets format `p` with the defaults of a content type without parameters: 16 bits, 44.1 kHz,
   stereo, little-endian; each stream, after a seek and for the next track too, begins with its header) and
   squeezelite's `pcm.c` (it reads the header only with its `-W` option, off by default; the header then wins).
@@ -363,13 +363,13 @@ belongs to the task that opened it; packets serialised field by field; buffers a
     time at 6 bytes per frame), each seen failing without its code; in WinUAE, the slow 68020 profile without JIT,
     `amisqueeze` (not `.fpu`), Paula, MA's `wav` codec: heard by the user (playback, pause, seek, two gapless
     tracks), CPU load measured, no `STMo`.
-  - Code and host tests done on 2026-10-21 (`decoder.c`, `ring_peek`; `test_wav_header`, `test_wav_limited`,
+  - Code and host tests done (`decoder.c`, `ring_peek`; `test_wav_header`, `test_wav_limited`,
     `test_wav_refused`, `test_wav_audio_8bit`, `scenario_wav`), each test seen failing without its code in a
     throwaway copy (nine changes planted: no header read, header and data in one call, which ASan reports as an
     AHI block overrun, no pad byte, no data limit, no wait for a header cut short, two `ring_peek` faults, no check
     of a rate of 0, none of a missing format chunk, which UBSan reports as a division by zero). The
-    header captured from MA on 2026-10-21 has the layout the tests build.
-  - **Validated in WinUAE on 2026-10-21**: slow 68020 profile without JIT, `amisqueeze`, Paula (unit 0, `SWAP`),
+    header captured from MA has the layout the tests build.
+  - **Validated in WinUAE**: slow 68020 profile without JIT, `amisqueeze`, Paula (unit 0, `SWAP`),
     MA 2.10.7 with the `wav` codec. 32 streams in the session (tracks started from the web UI, pauses, seeks, each
     a new stream with its header), all read: 24 bits at 44.1 or 48 kHz; no `STMo`, no `wav:` message. Two gapless
     boundaries (MA appends the next track after `STMd` with autostart 3; the second one after a seek 15 s before
@@ -377,7 +377,7 @@ belongs to the task that opened it; packets serialised field by field; buffers a
     without a gap at the boundaries. CPU load while playing 24 bits at 48 kHz: 75 % (`cpucount`, 2046 rounds in
     10 s against 8204 idle; 61-68 % in player-4c, 16 bits at 44.1 kHz). Not tried: `mp3`, `aac` codecs (next item of
     0.7).
-- **player-7b, the `mp3` and `aac` codecs** (2026-10-21, amisqueeze 0.7-dev, MA 2.10.7; WinUAE JIT + FPU,
+- **player-7b, the `mp3` and `aac` codecs** (amisqueeze 0.7-dev, MA 2.10.7; WinUAE JIT + FPU,
   `amisqueeze.fpu`, Toccata). No code changed; the user guide gained a table of MA's output codecs.
   - **MA always transcodes** (read in `controllers/streams/controller.py`, `serve_queue_item_stream`): each track is
     decoded to PCM, then a last ffmpeg encodes it to the player's codec (`mp3` at 320 kbit/s), even an MP3 file.
@@ -396,13 +396,13 @@ belongs to the task that opened it; packets serialised field by field; buffers a
     stops it. LMS, by contrast, moves on to the next track on `STMn` (`playerStreamingFailed`), but only after
     `STMc`: it drops any status between a `strm s` and `STMc`, and amisqueeze sent `STMn` before it, so LMS
     ignored it too (found later the same day in LMS's sources; fixed in 0.7: `STMc`, then `STMn`, agreed with the
-    user on 2026-10-27). Not changed
-    (decided with the user on 2026-10-21, when LMS was thought to move on already): sending `STMu` after `STMn`
+    user). Not changed
+    (decided with the user, when LMS was thought to move on already): sending `STMu` after `STMn`
     would make MA move on, but LMS could then skip twice; an idea for later, per server at best. `amisqueeze` (no
     FPU) gets MA's `mp3` the same way (format `m` refused).
   - **Seen once, MA's side**: two requests for the same track were answered with 44 bytes (an ID3 tag, no audio);
     amisqueeze skipped the track (`no MP3 frame found`, `STMu`); the third try played. Nothing in MA's log.
-- **player-7b, the user guide part** (2026-10-21): in "Server setup", what Music Assistant needs for amisqueeze: the
+- **player-7b, the user guide part**: in "Server setup", what Music Assistant needs for amisqueeze: the
   Squeezelite provider, ports 3483 and 8097, the "Published IP address" when MA's own address cannot be reached
   from the Amiga, the volume of 20 given to a new player; setting labels read in MA 2.10.7 (`translations/en.json`,
   frontend). Left out (decided with the user): installing the servers, LMS and MA on the same computer (a
@@ -429,7 +429,7 @@ belongs to the task that opened it; packets serialised field by field; buffers a
     with a clear message without an FPU). `mpega.library` is opened at run time, never linked or shipped; its
     per-CPU versions are its own business; its licence is to be checked.
   - **Other variants only on measured gain**: `-m68040 -m68881` (emits `fdmul`/`fdadd`, 040/060 only) or
-    `-m68060` (`___muldi3` instead of the 64-bit `muls.l`). Facts checked with the toolchain (2026-10-18):
+    `-m68060` (`___muldi3` instead of the 64-bit `muls.l`). Facts checked with the toolchain:
     `-m68030` and `-m68040` generate the same integer code as `-m68020` and link the same `libm020`; `-m68040`
     alone stays **soft-float** (`___muldf3`): the FPU needs `-m68881`; multilibs are 68000, 68020, 68020+68881
     and 68060.
@@ -448,7 +448,7 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   sample) need a 68040 (25 MHz borderline, 40 MHz comfortable) or a 68060; FLAC levels 0–2 (fixed predictors, no
   multiply) are within reach of a 50 MHz 68030; MP3 with minimp3 needs an FPU and roughly a 68040 at 50 MHz or
   better, with little margin. Reference point: the MiSTer Minimig pipelined AP68040 core in development
-  (2026-10-17, SysInfo 4.4: 42.04 MIPS, 13.15 MFLOPS; xsysinfo 0.12.0: 45 MIPS, 8.99 MFLOPS; figures from
+  (SysInfo 4.4: 42.04 MIPS, 13.15 MFLOPS; xsysinfo 0.12.0: 45 MIPS, 8.99 MFLOPS; figures from
   different tools are not comparable).
 - **Measurement**: a decode-only benchmark (file in, PCM discarded, time and real-time factor printed), run on
   the host, in WinUAE in 68020/68030 cycle-exact mode (faithful timings; 040/060 timings are not), then on real
@@ -456,7 +456,7 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   least twice real time (margin for the network stack and AHI).
 - **Criterion**: direct playback of a FLAC and an MP3 file without conversion; acceptable CPU load on the target;
   benchmark figures recorded here for each variant and machine tested.
-- **Design** (agreed 2026-10-19):
+- **Design** (agreed):
   - **How LMS chooses**: the player lists in `HELO` the formats it decodes; for each track LMS sends the file as
     is if its format is listed, otherwise converts it with a rule of `convert.conf` (default rules: `flc pcm`,
     `wav pcm`, `aif pcm`; no `mp3 pcm`), otherwise refuses it. So amisqueeze decides once, at connection, what
@@ -480,7 +480,7 @@ belongs to the task that opened it; packets serialised field by field; buffers a
     benchmark in WinUAE (68020 cycle-exact for faithful timings, then the fast profile), start-up measurement and
     `HELO`, listening; **player-8c** MP3: `amisqueeze.fpu` with minimp3, tests, benchmark, listening. Then the real
     machine (player-9) and possibly release 0.2.
-- **player-8a done** (2026-10-19, branch `decoding`): `decoder.h` (operations `start`, `run`, `input_for`,
+- **player-8a done** (branch `decoding`): `decoder.h` (operations `start`, `run`, `input_for`,
   `buffered`; state in the output, never on the stack) and `decoder.c` (raw PCM, copied as is: one copy, ring to
   block, as before). Each track knows its decoder, the format it produces and where its decoded PCM starts in the
   output (`out_start`, known once the reading reaches the track and the decoder holds nothing more of the
@@ -492,7 +492,7 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   virtual output with `OUTPUT` (359 checks); using a ring position on the output side on purpose makes three of
   them fail. WinUAE: command scenario, five formats, `stop-repro` (memory intact), CPU load on the slow profile
   unchanged (65 % at volume 100).
-- **player-8b done** (2026-10-19, branch `decoding`): dr_flac 0.13.4 in `third_party/dr_flac` (commit `dfe8377`,
+- **player-8b done** (branch `decoding`): dr_flac 0.13.4 in `third_party/dr_flac` (commit `dfe8377`,
   public domain or MIT-0), built by `dr_flac.c` without our warnings and at `-O2` (no gain measured over `-Os`);
   the Amiga link drops unused sections (`-ffunction-sections`, `--gc-sections`): dr_flac's float output needs
   soft-float helpers libnix does not provide. `flac.c` reads the FLAC header as it arrives (STREAMINFO kept, every
@@ -512,7 +512,7 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   the code yet: the start-up measure is pessimistic on such CPUs, never optimistic). There, LMS sends FLAC as is
   and five test tones (16 and 24 bits, mono, 48 and 96 kHz: LMS lowers 96 kHz to 48 in FLAC) play without
   `STMo`; heard by the user: a 48 kHz song and the 96 kHz tone, right. Executable: 114 KB. Next: player-8c (MP3).
-  **Fixed on 2026-10-20** (found while taking the user guide's captures, never tested before): a seek in a FLAC
+  **Fixed** (found while taking the user guide's captures, never tested before): a seek in a FLAC
   decoded here skipped the track (`not a FLAC stream`). For a seek, and when it resumes a track after the player
   reconnects, LMS sends the file from a frame boundary (`findFrameBoundaries`) without its header (unlike MP3, no
   `getInitialAudioBlock` for FLAC). `flac.c` now makes up a STREAMINFO from that first frame's header (rate,
@@ -521,7 +521,7 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   looks for the next sync code (the first frame lost), and without CRC checks (`DR_FLAC_NO_CRC`) a sync inside the
   audio data could be taken for a frame. Tests: five files sent from a frame in the middle, the rest of the track
   byte for byte; in WinUAE, `time 60` and `time 150` play on, and so does a resume after a restart of amisqueeze.
-- **player-8c done** (2026-10-19, branch `decoding`), in three parts:
+- **player-8c done** (branch `decoding`), in three parts:
   - **`amisqueeze.fpu`**: the same sources built with `-m68881` (`AMISQUEEZE_FPU`, objects in
     `obj/amisqueeze-fpu/`), both executables in the release archive; `amisqueeze` is unchanged. It checks
     `AttnFlags` and explains that it needs an FPU; libnix's own check, linked in by `-m68881`, showed an alert and
@@ -555,7 +555,7 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   - **For player-9**: the synthesis uses `fintrz` and `fmovecr` (from `-m68881`), emulated by the CPU library on a real
     68040 or 68060 (one trap per sample: slow); fine on a 68881/68882, Emu68 to check. `MP3=AUTO` would measure it.
 
-## player-8d MP3 without gaps between tracks ✅ (2026-10-20, version 0.4)
+## player-8d MP3 without gaps between tracks ✅ version 0.4
 
 - **Why**: an MP3 file begins with the encoder's delay and, from LAME, a header frame (Xing/Info) decoded as
   silence; it ends with padding. Played as they are (player-8c), two tracks meant to follow each other without a pause
@@ -568,7 +568,7 @@ belongs to the task that opened it; packets serialised field by field; buffers a
 - **Criterion**: on the host, the decoded test files line up with their signal from the first sample (delay 0
   instead of 1105 or 2257 frames) and keep its length; two MP3 tracks back to back without gap, byte for byte;
   heard by the user on a track that flows into the next one.
-- **Done** (2026-10-20): `read_lame_header()` (since renamed `mp3_lame_header()`) in `mp3.c` reads the first frame
+- **Done**: `read_lame_header()` (since renamed `mp3_lame_header()`) in `mp3.c` reads the first frame
   found: "Xing" or "Info" after the side information (17 or 32 bytes for MPEG-1, 9 or 17 for MPEG-2, plus 2 with a
   CRC), the frame count, then the encoder's extension (delay and padding, 12 bits each, 21 bytes into it), the
   layout minimp3's `minimp3_ex.h` reads (read to check, not copied). That frame is not played; the delay plus the
@@ -583,25 +583,25 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   by the user in WinUAE (68020 + 68882, JIT, Toccata): a 12 s glide cut into three MP3s, with mini gaps from 0.3
   (12.9 s) and seamless now (12.3 s).
 
-## player-9 Real machine ✅ (2026-10-29, version 0.8: the A1200; a PiStorm when one is at hand)
+## player-9 Real machine ✅ (version 0.8: the A1200; a PiStorm when one is at hand)
 
 - **Content**: both kinds of target with a TCP/IP stack (AmiNetXDuo or Roadshow) and an LMS server reachable
-  from the local network, then a Music Assistant server (decided 2026-10-21: one session for both servers): a PiStorm with Emu68, sound through its own AHI outputs (I2S DAC of the PiStorm32-lite
+  from the local network, then a Music Assistant server (decided: one session for both servers): a PiStorm with Emu68, sound through its own AHI outputs (I2S DAC of the PiStorm32-lite
   FPGA firmware, announced, to check; HDMI with `emu68-hdmi-audio` on a Pi 4) or Paula; a 68020 accelerator
   without FPU, sound through Paula.
 - **Criterion**: the criteria of player-4 to player-6 met on the real machine.
-- **First machine** (2026-10-20): an A1200 with an ACA1221lc (68EC020 at 26.67 MHz, no FPU, 32-bit fast memory on
+- **First machine**: an A1200 with an ACA1221lc (68EC020 at 26.67 MHz, no FPU, 32-bit fast memory on
   the card), a PCMCIA Ethernet card, Paula. The slow WinUAE profile (68020 at about 28 MHz) is close to it, but
   WinUAE's network costs the Amiga nothing: the real TCP/IP stack and the PCMCIA card (the CPU copies every byte
   received) are the unknown. Without an FPU it runs `amisqueeze`, FLAC is left to the server: everything comes as
   raw PCM, about 176 KB/s at CD quality, the hardest case for that card. A first estimate in WinUAE (tools-11,
-  2026-10-24, AmiNetXDuo, the stack planned for this machine, on an emulated NE2000 card; this machine's card is a
+  AmiNetXDuo, the stack planned for this machine, on an emulated NE2000 card; this machine's card is a
   Xircom, `xircomce2.device`): on the slow profile, raw PCM at CD quality costs about 45 % of the CPU with
   `NOAUDIO` instead of 4.5 % with WinUAE's emulated network, and 92 % through Paula instead of 53 %. An order of
   magnitude only (another driver and card, PCMCIA accesses not cycle-exact, 4 MB of Zorro II memory, some of the
   playback in chip memory): what to watch here, with the memory the stack takes (about 1.3 MB of fast memory in
   WinUAE).
-- **First playback on that machine** (2026-10-24, version 0.7, before the protocol below): Kickstart 3.1, Miami
+- **First playback on that machine** (version 0.7, before the protocol below): Kickstart 3.1, Miami
   3.2b then AmiNetXDuo 1.0.0-rc2, `xircomce2.device`, AHI 4.18 with `paula.audio`, LMS on the local network.
   amisqueeze plays.
   - **Left and right swapped** in `Paula:14 bit stereo++` at 27,429 Hz: the left tone comes out on the right, the
@@ -626,8 +626,8 @@ belongs to the task that opened it; packets serialised field by field; buffers a
     amisqueeze, is clean on its own. It crackles the same while amisqueeze receives a stream with `NOAUDIO`. So the
     network reception disturbs Paula's output, not amisqueeze: probably the card's driver delaying the interrupt
     with which Paula asks for its next block, AHI's Paula buffer being short. The `xircomce2.device` that
-    AmiNetXDuo ships is the same file (1.1, 2024-12-22).
-  - **Strategy against the crackles** (agreed with the user on 2026-10-24), in this order:
+    AmiNetXDuo ships is the same file (1.1).
+  - **Strategy against the crackles** (agreed with the user), in this order:
     1. confirm the mechanism, without code: the same `AUDIO:` excerpt while AmiNetXDuo's `iperf` receives at
        several rates; do the crackles follow the rate, and from which rate are they heard?
     2. the driver: read its code; does AmiNetXDuo's own `anxnet.device` take this card (`CheckNetDevice`)?
@@ -636,7 +636,7 @@ belongs to the task that opened it; packets serialised field by field; buffers a
     5. the direct Paula output (player-11): large buffers in chip RAM, read by Paula alone, would not mind a late
        interrupt, and AHI's mixing would go too.
     Then the choice between 3 and 5, by what 1 shows.
-  - **Step 1 done** (2026-10-24): the `AUDIO:` excerpt while the PC sends a steady stream to `nc` on the Amiga
+  - **Step 1 done**: the `AUDIO:` excerpt while the PC sends a steady stream to `nc` on the Amiga
     stays clean at 44 and 88 KB/s, crackles once at 176 KB/s and all the time at 330 KB/s. So the bursts count,
     not the mean rate: LMS sends at full speed whenever amisqueeze frees room. A remedy without code: AmiNetXDuo's
     `RXBUFFER`, set in the interface file, caps the TCP window, so the bursts. With amisqueeze, Paula 14 bit
@@ -652,11 +652,11 @@ belongs to the task that opened it; packets serialised field by field; buffers a
     8192 leaves about 10 % of the CPU. Why a small window costs 17 points is open: more acknowledgments, or
     amisqueeze receiving in smaller pieces, which amisqueeze itself could fix. Steps 3 and 5 would win the margin
     back; at 88 KB/s (step 3) nothing crackled even without `RXBUFFER`.
-  - **Step 2, the driver read** (2026-10-24, `xircomce2.device` 1.1, GPL, sources on Aminet; the card is a Xircom
+  - **Step 2, the driver read** (`xircomce2.device` 1.1, GPL, sources on Aminet; the card is a Xircom
     CE3-10/100). The receive work runs in a software interrupt, `RXInt`, at priority 0. It loops until the card
     holds no frame, so a large burst keeps it busy long, and a software interrupt of the same priority waits. That
-    fits the measures: `paula.audio` fills its next block in a software interrupt at priority 0 (checked on
-    2026-10-25 in 4.23, 4.30 and 4.33). Each
+    fits the measures: `paula.audio` fills its next block in a software interrupt at priority 0 (checked
+    in 4.23, 4.30 and 4.33). Each
     frame is read 2 bytes at a time, each read preceded by a write of the position: a workaround in the driver.
     A faster path reads CE3 cards through their shared memory, but only when no system memory covers the PCMCIA
     range $600000-$9FFFFF. On this machine the accelerator's memory does, so the slow path is used. Asking the
@@ -664,7 +664,7 @@ belongs to the task that opened it; packets serialised field by field; buffers a
     second time, as free memory. Never leave a machine like that. Leads in the driver: handle a few frames per
     pass in `RXInt` and cause it again, so that AHI gets its turn and a larger window becomes possible; then the
     copy itself. `anxnet.device` remains to be tried.
-  - **The same driver rebuilt** (2026-10-24): `xircomce2.device` 1.1 cross-compiled with GCC 16, sources
+  - **The same driver rebuilt**: `xircomce2.device` 1.1 cross-compiled with GCC 16, sources
     unchanged, kept apart from this project (GPL). It costs about 12 points less at `RXBUFFER=8192` and plays
     clean at 10240. Same protocol as the table above (Paula 14 bit stereo++, `SWAP`, LMS volume 100, three
     10 s windows), both drivers swapped without a reboot; idle count 13,508 to 13,539 before and after:
@@ -679,23 +679,23 @@ belongs to the task that opened it; packets serialised field by field; buffers a
 
     No `STMo` in any run. A larger window brings the rebuilt driver almost nothing (80 to 79 %), unlike Aminet's
     (92 to 81 %).
-  - **The driver fixed** (2026-10-25): `RXInt` handles at most 4 frames per pass, then causes itself again (2
+  - **The driver fixed**: `RXInt` handles at most 4 frames per pass, then causes itself again (2
     gave the same results). Same protocol, one session: clean without `RXBUFFER` at 77 %, and at 16384 at 79 %,
     where the rebuilt 1.1 driver crackles a lot. File transfers keep their speed. `RXBUFFER` is no longer needed
     on this machine.
-  - **Roadshow** (2026-10-25): its 1.15 demo, run without installing it, with the fixed driver, same protocol and
+  - **Roadshow**: its 1.15 demo, run without installing it, with the fixed driver, same protocol and
     same day. 86 % while playing, against 77 % with AmiNetXDuo; transfers about a fifth slower in, a quarter
     slower out. No `STMo`. The demo ships only the 68000 build of its stack; the commercial build, tuned for 68020
     and better, was not measured. AmiNetXDuo stays the stack for this machine.
-  - **Optimization roadmap for this machine** (agreed with the user on 2026-10-24): the most modest machine first,
+  - **Optimization roadmap for this machine** (agreed with the user): the most modest machine first,
     so that the others benefit. Today: clean playback at about 77 % of the CPU, with the fixed driver and no
     `RXBUFFER` (above). In this order:
     1. the cheap measures: a lighter system (a trimmed install, MapROM), AHI 6 (step 4 of the strategy); a few
        points each, estimated. Why a small TCP window costs 17 points no longer matters: the window need not be
        capped any more;
-    2. less to receive: a lower rate asked of the server (player-13). Done on 2026-10-26: 62 % at
+    2. less to receive: a lower rate asked of the server (player-13). Done: 62 % at
        32 kHz, 50 % at 22.05 kHz (below);
-    3. the driver: a few frames per pass in `RXInt`. Done on 2026-10-25 (above): 77 %, against 73 % estimated;
+    3. the driver: a few frames per pass in `RXInt`. Done (above): 77 %, against 73 % estimated;
     4. the direct Paula output (player-11), if the margin is still short after 1 to 3: AHI's mixing gone (a good
        share of the 25 to 30 points playback costs, estimated), and large buffers that do not mind a late
        interrupt.
@@ -703,27 +703,27 @@ belongs to the task that opened it; packets serialised field by field; buffers a
     A 68030 card (twice the CPU, and the PCMCIA range free for the driver's faster path) is the user's own choice,
     outside this plan.
   - **Later: a stock A1200** (68EC020 at 14 MHz) with the user's trapdoor fast memory card instead of the
-    accelerator (noted with the user on 2026-10-26, when is the user's decision). Its jumper gives 8 MB, which
+    accelerator (noted with the user, when is the user's decision). Its jumper gives 8 MB, which
     should cover the PCMCIA range (the driver's slower path, if the card is still seen), or 4 MB, which leaves it
     free (its shared-memory path, the driver's issue #2). In each position: the memory list and `card.resource`,
     the idle count, 2 MB transfers both ways, then amisqueeze with LMS and its rules, the AHI unit at 22050 Hz and
     `MAXRATE=AHI`, lower if needed (16000, 11025, Paula's 8-bit mode): load, `STMo`, crackles. Then how responsive
-    the Amiga stays while it plays (added with the user on 2026-10-27: it may play, yet be too slow to use): the
+    the Amiga stays while it plays (added with the user: it may play, yet be too slow to use): the
     time of a known Shell command (`List` of a drawer), a Workbench window opened, a window moved; with amisqueeze
     at its usual priority, then a higher one. Estimated from the measures above, not measured: about twice the
     load at 14 MHz, less the gain of the shared-memory path, so 60 to 85 % at 22.05 kHz; the direct Paula output
     (player-11) would matter most there.
-- **Protocol** (agreed 2026-10-20), with an LMS server on the local network (ports 3483 and its web port), and
+- **Protocol** (agreed), with an LMS server on the local network (ports 3483 and its web port), and
   a computer reaching its CLI to read the elapsed time:
   1. the machine: `Version FULL`, `Avail` (with its `Largest` column), `BENCH`; the CPU left when idle;
   2. connection (player-1): the player shows up, renaming it from LMS, a server restart;
   3. sound (player-4): the 440 Hz tone, left then right (with `SWAP` if needed: WinUAE swapped them), a whole track
      without crackles; with Paula, the power LED dims while playing (`paula.audio` turns the LED filter off, bit 1
-     of CIA-A `$BFE001` at 1, and back on afterwards: seen in WinUAE on 2026-10-23);
+     of CIA-A `$BFE001` at 1, and back on afterwards: seen in WinUAE);
   4. load, the key point: LMS's fixed volume, a 44.1 kHz FLAC for 5 minutes with `VERBOSE` and `LOG`, the CPU
      left while playing (an idle-loop counter at the lowest priority, as in player-4c), the `STMo` of the log (the
      buffer ran empty: a gap) and the gaps heard. If there are some, again with, in this order: Paula's "Fast"
-     14-bit stereo++ mode (lighter mixing, added with the user on 2026-10-24), Paula's 8-bit mode, a lower AHI
+     14-bit stereo++ mode (lighter mixing, added with the user), Paula's 8-bit mode, a lower AHI
      frequency (22 kHz: duller treble, to judge by ear). Then the same while the Amiga works: files
      copied on the disk, Workbench windows moved: AHI holds only about 0.6 s of audio, so amisqueeze kept from the
      CPU longer than that by busier tasks would make a gap;
@@ -733,10 +733,10 @@ belongs to the task that opened it; packets serialised field by field; buffers a
      connection, while playing, in pause; one hour of playback with `Avail` before and after;
   7. the Workbench: the icon, `QUIET` with `LOG` (no window), a wrong ToolType (the window opens), Exchange's
      Remove, `SYS:WBStartup`;
-  8. server discovery (player-10, added with the user on 2026-10-27): without `SERVER`, LMS found, then Music
+  8. server discovery (player-10, added with the user): without `SERVER`, LMS found, then Music
      Assistant, then no server (the message, Ctrl-C while it waits); with each TCP/IP stack at hand, since their
      support of broadcasts varies, each followed by about 30 s of playback through that stack (agreed with the
-     user on 2026-10-27; a lower `MAXRATE` where the stack leaves too little CPU); and a start from the icon as
+     user; a lower `MAXRATE` where the stack leaves too little CPU); and a start from the icon as
      shipped (its `SERVER` disabled), without `ENV:amisqueeze.prefs` giving one: the server found, its messages in
      the window.
 
@@ -745,7 +745,7 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   log, then the `STMo` lines and the clean stop; the logs on a disk, not in `RAM:`. The rest is by hand. If the
   load does not fit: in 0.8, a lower rate asked of the server (`MaxSampleRate` in `HELO`, if LMS resamples for
   it: to check), or the direct Paula output (player-11).
-- **The protocol on the A1200, with LMS** (2026-10-27, 0.8-dev at `860eda6`): AmiNetXDuo with the fixed
+- **The protocol on the A1200, with LMS** (0.8-dev at `860eda6`): AmiNetXDuo with the fixed
   `xircomce2.device`, AHI 4.18 with `paula.audio` 4.23, Paula 14 bit stereo++ at 27,429 Hz with `SWAP`. Every
   step is done but `SYS:WBStartup` (step 7). Two defects found there are fixed: the missing `STMo` (player-14) and
   the gaps while the Amiga works (player-15, to check here).
@@ -768,17 +768,17 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   |---|---|---|---|
   | AmiNetXDuo 1.0.0-rc2 | 44.1 kHz | 77 % | clean |
   | Miami 3.2b | 22.05 kHz | 71 % (AmiNetXDuo: 50 %) | many crackles; probably Aminet's driver, without the fix (not checked) |
-  | Roadshow 1.15 demo | 44.1 kHz | about 95 % (one early window; 86 % on 2026-10-25) | clean |
+  | Roadshow 1.15 demo | 44.1 kHz | about 95 % (one early window; 86 %) | clean |
 
-  Left, split with the user on 2026-10-28 while the A1200 is away:
-  - in WinUAE, not checked again on the A1200, since the result does not depend on the machine. Done on
-    2026-10-28 (below);
+  Left, split with the user while the A1200 is away:
+  - in WinUAE, not checked again on the A1200, since the result does not depend on the machine. Done
+    (below);
   - on the A1200: `PRI=1` against the gaps (player-15); the cable pulled, Ctrl-C with AmiNetXDuo and the missing
     "no news from the server" (player-16). The load with Music Assistant only if it sent another format than
-    LMS's raw PCM: it does not (below). Done on 2026-10-29 (player-15, player-16).
+    LMS's raw PCM: it does not (below). Done (player-15, player-16).
 
-  The step is done for the A1200; the PiStorm target waits for a machine (agreed with the user on 2026-10-29).
-- **The rest in WinUAE** (2026-10-28, `main` at `1b2d040`, Music Assistant 2.10.7 without the local fix, volume
+  The step is done for the A1200; the PiStorm target waits for a machine (agreed with the user).
+- **The rest in WinUAE** (`main` at `1b2d040`, Music Assistant 2.10.7 without the local fix, volume
   normalization off, codec `wav`):
 
   | Check | Result |
@@ -788,12 +788,12 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   | Load, Music Assistant against LMS | slow profile with AmiNetXDuo, the same session. Through Paula: about 99 % with both, saturated. With `NOAUDIO`: 42.6 % with LMS, 44.0 % with Music Assistant. So about 78 to 79 % expected on the A1200 instead of 77 % |
   | Memory | same profile, fast memory taken while playing through AHI: 1.72 MB at the first start, AHI loaded with it (1.69 MB on the A1200); 1.52 MB at the second; 1.27 MB with `NOAUDIO`. AHI keeps about 0.2 MB once loaded; nothing else stays. The user guide said 1.1 MB: now about 1.7 MB |
   | `SYS:WBStartup` | slow profile, AmiNetXDuo started from `S:User-Startup`, an icon with `SERVER` and `DONOTWAIT`: connected at the first try, plays, "stopped" on Ctrl-C |
-- **Load of the lighter AHI settings, measured in WinUAE** (2026-10-22, 0.7-dev at `60a14fa`), to know which one
+- **Load of the lighter AHI settings, measured in WinUAE** (0.7-dev at `60a14fa`), to know which one
   to try first in step 4: slow profile (68020, about 28 MHz, no FPU, as the ACA1221lc), LMS 9.1.1, a 156 s song
   resampled to a 44.1 kHz 16-bit FLAC, sent as raw PCM by the server (`FLAC=AUTO` leaves FLAC to it on this
   profile: `stream: format p, size 1, rate 3`), `amisqueeze` with `SWAP` and `VERBOSE`, LMS volume 100. Method of
-  player-4c: free CPU counted by `cpucount` (in the repository since 2026-10-22, `make cpucount`, never released;
-  agreed with the user on 2026-10-27) at priority -128, load = 1 - count while playing / count when idle, three
+  player-4c: free CPU counted by `cpucount` (in the repository, `make cpucount`, never released;
+  agreed with the user) at priority -128, load = 1 - count while playing / count when idle, three
   10 s windows per setting, the first 15 s after `play`; idle measured before and after the series (8,258 to
   8,334, mean 8,288). Mode and frequency as read from `ENV:Sys/ahi.prefs` and printed by `VERBOSE`
   (`output: AHI unit ...`); the 22 kHz rows coming out lower confirm AHI used them. No `STMo` in any run.
@@ -824,14 +824,14 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   since player-8a (the copy, the decoder calls), and every turn reads the clock (`plat_now_ms()`, `ReadEClock` and a
   64-bit division, already so before player-8a): a counter build with one more such call per turn went up to 95 %, a
   hint that it is costly, not a measure of it. Why player-8a tipped the loop into this rhythm is not understood; the
-  cause common to both is removed instead. **Fixed** (2026-10-22, decided with the user for 0.7, so that `NOAUDIO` can
+  cause common to both is removed instead. **Fixed** (decided with the user for 0.7, so that `NOAUDIO` can
   isolate the network's cost on the real machine): during the body, the stream is read only once 8 KB of the ring
   are free (at most a quarter of it; `READ_MIN_SPACE` in `stream.c`, unit test `test_read_min_space`). Measured in
   the same way: `NOAUDIO` 4.6 % (three windows), 18 turns and 9 reads of about 20 KB a second; AHI unit 0
   65.3 %, its counters unchanged. Not counted, as in player-4c: the real network (TCP/IP stack such as Roadshow, the
   PCMCIA card whose bytes the CPU copies), which WinUAE's emulated `bsdsocket.library` runs on the host; and
   WinUAE's fast RAM is not the accelerator's own.
-- **Elapsed time after a seek, in WinUAE** (2026-10-22, while checking the fix above): on the slow profile, LMS's
+- **Elapsed time after a seek, in WinUAE** (while checking the fix above): on the slow profile, LMS's
   `time ?` is wrong for a while after a seek or a new start: 156 s (the track's length) 3 s after a seek to 146 s,
   about 20 s instead of 5 s just after a new start; the same with `8ecb2cf` (player-4c), with AHI and `NOAUDIO`, with
   an MP3 and a FLAC. Not amisqueeze's: its elapsed time is right (a throwaway build printing every `STAT`: 0 at
@@ -845,12 +845,12 @@ belongs to the task that opened it; packets serialised field by field; buffers a
 
 ## player-10 Finishing touches ✅ (versions 0.4 to 0.9)
 
-- **Split** (decided 2026-10-20, see the [plan](README.md)): **0.4** the volume modes (`LMS` and `FIXED`, done
+- **Split** (decided, see the [plan](README.md)): **0.4** the volume modes (`LMS` and `FIXED`, done
   as LMS's own setting, see below; `MIXER` left for later) and the AHI mode warning; **0.5** `LOG=<file>` and
-  the start from the Workbench; **0.8** the automatic server discovery (agreed with the user on 2026-10-27: its
+  the start from the Workbench; **0.8** the automatic server discovery (agreed with the user: its
   last check needs the real machine, in the same session as player-9); **0.9** the internet radios' metadata.
   The `BUFFER` option only if player-9 shows a need. Each part is designed with the user when it starts.
-- **Automatic server discovery** (designed with the user on 2026-10-27, version 0.8). Done on 2026-10-27, checked
+- **Automatic server discovery** (designed with the user, version 0.8). Done, checked
   on the host, in WinUAE (LMS and Music Assistant found) and on the A1200 with three TCP/IP stacks:
   - Only when no `SERVER` is given: not on the command line, in `ENV:amisqueeze.prefs` or in the ToolTypes. No
     new option.
@@ -870,12 +870,12 @@ belongs to the task that opened it; packets serialised field by field; buffers a
     server found through a UDP relay on the PC, if the broadcast gets there; on the A1200, step 8 of the
     player-9 protocol. A test server the broadcast does not reach directly (in a container, for instance) needs a
     UDP relay.
-- **Internet radios' metadata** (ICY; designed with the user on 2026-10-27, version 0.9). Coded in a branch,
-  rebased on `dev` once 0.8 is out (agreed with the user on 2026-10-29). Done on 2026-10-27, checked on the host
-  and in WinUAE (a real radio with LMS, Music Assistant's playback). Rebased on 2026-10-30: `read_body` makes one
+- **Internet radios' metadata** (ICY; designed with the user, version 0.9). Coded in a branch,
+  rebased on `dev` once 0.8 is out (agreed with the user). Done, checked on the host
+  and in WinUAE (a real radio with LMS, Music Assistant's playback). Rebased: `read_body` makes one
   `recv`, into the ring or into the block, then handles player-16's `PLAT_AGAIN` for both, with a test; checked
   again in WinUAE, with AmiNetXDuo; the radio listened to by the user there, nothing wrong heard; Music
-  Assistant's tracks, each awaiting `cont`, listened to on 2026-10-30: seamless in FLAC, continuous with slight
+  Assistant's tracks, each awaiting `cont`, listened to: seamless in FLAC, continuous with slight
   crackles in MP3 (as in 0.7: MA encodes twice, and WinUAE crackles on its own). Read in LMS
   9.1.1 and aioslimproto 3.2.3 (Music Assistant 2.10.7):
   - LMS sends `cont` for a direct stream only, once it has read the `RESP`. It holds the blocks' interval
@@ -928,14 +928,14 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   `LOG=<file>` option: every message written both to the console and to the file (AmigaDOS has no `tee`; today a
   redirection `>file` sends the messages to the file only), appended and flushed after each message like the
   console, usable from the default options too.
-- **`LOG=<file>` done** (2026-10-20, version 0.5, design agreed with the user): `LOG/K` in both platform layers;
+- **`LOG=<file>` done** (version 0.5, design agreed with the user): `LOG/K` in both platform layers;
   `msg()` and `msg_raw()` also write to the file. On the Amiga: `MODE_READWRITE` then `Seek` to the end (created if
   missing, a shared lock: `Type` reads it while amisqueeze runs), a start line with `DateStamp` and `DateToStr`
   (`--- amisqueeze 0.5-dev (20.10.2026), started 20-Oct-26 01:24:25`), the file closed at the end. A log that cannot
   be opened is said and amisqueeze goes on; a write error closes it, said in the window only. Fake server: two runs
   appended to one file, the console without the start line, a log in a missing directory. WinUAE: two runs into
   `RAM:amisqueeze.log`, read with `Type` while running, `RAM:nodir/...` (error 205) without stopping.
-- **Workbench start done** (2026-10-20, version 0.5, design agreed with the user; the user chose a commodity, the
+- **Workbench start done** (version 0.5, design agreed with the user; the user chose a commodity, the
   standard way, over a double-click toggle first proposed here, and that a second start does nothing):
   - libnix's start-up code sets `_WBenchMsg` and would open the console named by `__stdiowin` before `main()`;
     `amiga.c` sets it to NULL and opens its own once the icon is read (`icon.library` `GetDiskObject`). The
@@ -957,7 +957,7 @@ belongs to the task that opened it; packets serialised field by field; buffers a
     `LOG` (no window, the log fills, player named by the icon), a second double-click while running (nothing
     changes), a bad ToolType (`PORT=abc`: the error in a window that stays), `WINDOW` and `UNIT=1` taken, a second
     start from a Shell refused.
-- **Volume modes** (noted 2026-10-19, to decide when the step starts): an option such as `VOLUME=LMS|FIXED|MIXER`.
+- **Volume modes** (noted, to decide when the step starts): an option such as `VOLUME=LMS|FIXED|MIXER`.
   `LMS` (default, as now): the gain sent by the server (`audg`) scales the samples, at a CPU cost on a slow 68020
   (player-6). `FIXED`: `audg` ignored, full output, no scaling; advertise `HasDigitalOut` in `HELO` so that LMS accepts
   its "fixed volume" setting and greys its slider instead of showing one that does nothing; the volume is set on
@@ -968,7 +968,7 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   amisqueeze itself (an ARexx port, for instance), not only to LMS. Also heard in player-8c: with Paula through AHI
   (14 bits), samples scaled down to a low volume bring out Paula's noise (a crackle at LMS volume 50, gone at 100);
   a volume set after the conversion (the output's own, or Paula's 0 to 64) would keep the full resolution.
-  **Done for `FIXED`, without an option** (2026-10-20, design agreed with the user): LMS's code (`Player.pm`,
+  **Done for `FIXED`, without an option** (design agreed with the user): LMS's code (`Player.pm`,
   `Settings/Player/Audio.pm`, `Squeezebox2.pm`, `Queries.pm`) shows its per-player "Volume Control" setting only to
   a player advertising `HasDigitalOut=1`; "Output level is fixed at 100%" (`digitalVolumeControl` 0) then sends
   `audg` with `adjust` 0, which amisqueeze already took as full volume (player-5), and reports `use_volume_control 0`,
@@ -979,9 +979,9 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   again), `HasDigitalOut=1` in the fake server's `HELO` check. WinUAE with LMS 9.1.1, through its CLI: volume 40
   applied (3.1 %), fixed (`use_volume_control:0`, "fixed at 100 %"), volume 20 asked while fixed (nothing changes),
   adjustable again (0.6 %); the player's Audio page shows the setting. `MIXER` stays an idea for later.
-- **AHI mode warning** (from player-4, decided 2026-10-19): a warning at start-up when the unit's mode cannot pan (a
+- **AHI mode warning** (from player-4, decided): a warning at start-up when the unit's mode cannot pan (a
   plain "stereo" mode plays a stereo stream on one side only); first check what AHI tells about a unit's mode.
-  **Done** (2026-10-20, design agreed with the user): `ahi.device` reads its units' modes from `ENV:Sys/ahi.prefs`
+  **Done** (design agreed with the user): `ahi.device` reads its units' modes from `ENV:Sys/ahi.prefs`
   (IFF FORM PREF, one `AHIU` chunk per unit: `struct AHIUnitPrefs`, mode ID and frequency; unit 255 is the
   "Music" unit). `ahi_prefs_unit()` in the core finds the unit's chunk (host-tested on the real file of the test
   Amiga, and on a file cut short); `plat_audio_mode()` in `amiga.c` reads the file and asks AHI about the mode
@@ -989,12 +989,12 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   mode that cannot pan or a mono mode, and amisqueeze plays anyway; `VERBOSE` prints the mode and frequency. No
   preferences for the unit: nothing said, as before. WinUAE: unit 3 (Toccata:16 bit stereo) warns, unit 0
   (Paula:14 bit stereo++ calibrated, 27429 Hz) does not. 371 unit checks.
-- **`BUFFER` option** (from player-2, decided 2026-10-19): only if the real machines (player-9) show a need for another
+- **`BUFFER` option** (from player-2, decided): only if the real machines (player-9) show a need for another
   size than 1 MB.
 - **Criterion**: started without arguments, the player finds the server and shows up under the chosen name; with
   `LOG=<file>`, the messages appear in the Shell window and, at the same time, in the file.
 
-## player-11 Direct Paula output (idea, noted 2026-10-19) ⬜
+## player-11 Direct Paula output (idea) ⬜
 
 - **Why**: on the slow profile, playing through AHI and `paula.audio` costs 61-68 % of the CPU, almost all of it in
   AHI (player-4c), and up to 88 % with the volume scaled in the core (player-6). A second audio sink that drives Paula through
@@ -1008,13 +1008,13 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   channel (or 14 bits with two channels per side and a calibration table: twice the DMA and more CPU), blocks in
   chip RAM, double buffering with `BeginIO` (never `DoIO`: it clears `io_Flags`, `ADIOF_PERVOL` is lost, volume 0,
   see tools-5). Volume: Paula's own (0 to 64 per channel) costs no CPU, which also fits the volume modes of player-10.
-  Heard through AHI on the A1200 on 2026-10-30 (the same music, `paula.audio` of AHI 4.180): Paula at 27,429 Hz
+  Heard through AHI on the A1200 (the same music, `paula.audio` of AHI 4.180): Paula at 27,429 Hz
   with a 32 kHz stream sounded best; at 22,050 Hz with 44.1 kHz (an exact half) and at 24,000 Hz with 24 kHz (no
   conversion), worse. Halving the rate may not be enough: Paula's highest rate matters.
 - **Sides**: channels 0 and 3 left, 1 and 2 right (`WT:paula-lr`, correct in WinUAE, unlike Paula through AHI, see
   tools-5). `paula.audio` swaps them, on the real A1200 too (player-9). Until this step, the user guide has Paula
   users add `SWAP`; the sides are handled here, and a `SWAP` by default for `paula.audio` is to weigh only if AHI
-  stays Paula's output (agreed with the user on 2026-10-27).
+  stays Paula's output (agreed with the user).
 - **Shape**: an option such as `AUDIO=AHI|PAULA`, behind the same sink interface as `audio.c` (blocks, played
   bytes, pause), the Amiga calls in `amiga.c`; the conversion and the lower rate in the portable core, tested on the
   host bit for bit like the rest.
@@ -1022,16 +1022,16 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   player-4 to player-6, sides in place without `SWAP`, at a CPU load clearly below AHI's (measured with `cpucount`, as in
   player-4c); then heard on the real 68020 machine (player-9).
 
-## player-12 Hardening ✅ (2026-10-27, version 0.8)
+## player-12 Hardening ✅ version 0.8
 
 - **Done**: the 50 list of the [0.7 review](reviews/0.7.md#5-the-50-list), but the items of 0.9 and those of the
-  real machine (the `aac` row, the free memory: player-9), each item agreed with the user on 2026-10-27, one
+  real machine (the `aac` row, the free memory: player-9), each item agreed with the user, one
   commit each. Safety nets: every exit code in `fake_server.py`, fp2-fp7 in `check-saves.py`, the texts and
   sources ASCII, `check-stack.py`, a test for each check of the server's input, `strm f` and a refused stream,
   the build without MP3, the scripts' syntax, `cpucount` in the CI. Code: `PORT` and `UNIT` ranges, the `setd`
   name shown in ASCII, the stream's readiness after a new socket, `cpucount`'s clock, `gethostbyname()` without
   an address, an `ENV:amisqueeze.prefs` too long. The plan's statuses and decisions brought up to date.
-- **Kept as they are** (agreed with the user on 2026-10-27): the track queue that forgets the oldest track when
+- **Kept as they are** (agreed with the user): the track queue that forgets the oldest track when
   full (neither LMS 9.1 nor Music Assistant sends a third track ahead); `release.yml` without the tests (the
   release is a draft published by hand, and `tests.yml` runs on the tag); the advice on `NODE_EXTRA_CA_CERTS` in
   `CONTRIBUTING.md` (generic, no machine named).
@@ -1039,9 +1039,9 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   check only; the sound would show it only between two tracks of the same decoder (FLAC, MP3) on the audio
   output, which the host tests do not have.
 
-## player-13 A lower rate asked of the server ✅ (2026-10-26, version 0.8)
+## player-13 A lower rate asked of the server ✅ version 0.8
 
-- **On the A1200** (2026-10-26, 0.8-dev, AmiNetXDuo with the fixed `xircomce2.device`, Paula 14 bit stereo++
+- **On the A1200** (0.8-dev, AmiNetXDuo with the fixed `xircomce2.device`, Paula 14 bit stereo++
   at 27,429 Hz, `SWAP`, volume 100, `song-44k.flac`; method of player-9). LMS with the guide's rules for its MAC;
   Music Assistant 2.10.7 with the local fix below, output codec `wav`:
 
@@ -1066,8 +1066,8 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   floats (so do crossfade and DSP), and the output takes the deepest the player accepts, 24 bits
   (`get_output_format`). Half of `MAXRATE`'s gain is lost, since amisqueeze keeps 16 bits for AHI. With
   normalization disabled, a 16-bit file comes as 16 bits: on the A1200 with `MAXRATE=AHI`, WAV 16 bits at
-  32 kHz, 62 % as with LMS (2026-10-26); the user guide says so. A 24-bit file stays 24 bits, and
-  slimproto has no way to ask for 16. A lead, the user's decision (noted on 2026-10-26): Music Assistant honouring
+  32 kHz, 62 % as with LMS; the user guide says so. A 24-bit file stays 24 bits, and
+  slimproto has no way to ask for 16. A lead, the user's decision: Music Assistant honouring
   the player's own "sample rates" setting for Squeezelite players, as it does for Sonos and Raumfeld.
 
 - **Why**: amisqueeze always declares `MaxSampleRate=48000` in `HELO`, so the server keeps the source's rate. On
@@ -1076,7 +1076,7 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   14-bit at 27429 Hz): 99 % at 44.1 kHz, 86.5 % at 32 kHz, 74 % at 22.05 kHz. A 24-bit source also arrives as
   24-bit PCM, 50 % more traffic than 16 bits. With Paula, nothing above about 13.7 kHz comes out: 32 kHz loses
   nothing audible.
-- **What the servers do** (checked on 2026-10-26, LMS 9.1.1 and Music Assistant 2.10.7):
+- **What the servers do** (checked, LMS 9.1.1 and Music Assistant 2.10.7):
   - LMS keeps a `MaxSampleRate` below the source's rate only through a conversion rule with the `D` (resample)
     capability. None of its rules to `pcm` has it, so it refuses the track of a player that takes PCM only, as
     the A1200 does. Its rules to `flc` have it: a FLAC-decoding player gets a resampled FLAC;
@@ -1085,10 +1085,10 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   - no capability asks for 16 bits: the rule does it;
   - Music Assistant offers 44.1 kHz and up only: below, its list of rates is empty and the stream fails with a
     server error (tried with 2.10.7, `MAXRATE=32000`).
-- **Content** (agreed with the user on 2026-10-26):
+- **Content** (agreed with the user):
   - a `MAXRATE` option, `AHI`, `AHISTD` or a rate in Hz, also as a ToolType and in the default options. `AHI`
     takes the AHI unit's rate as it is, `AHISTD` the standard slimproto rate at or below it, for a server that
-    makes only those, as LMS re-encoding MP3 (27429 Hz gives 24000; both agreed with the user on 2026-10-26,
+    makes only those, as LMS re-encoding MP3 (27429 Hz gives 24000; both agreed with the user,
     after the sweep, instead of rounding up). Without it, 48000 as before. The user guide advises the unit at
     22050 Hz for any server, or Paula at 27429 Hz with `MAXRATE=AHI` and LMS;
   - the user guide: the option; for LMS, a rule per source format in `custom-convert.conf`, for the player's MAC,
@@ -1099,19 +1099,19 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   `32000`: the WAV header at that rate in 16 bits, the CLI's elapsed time right at 30 s and after a seek; without
   the option, `HELO` unchanged. Then `MAXRATE=AHI` on the A1200, load and listening (player-9).
 - **After it**: Music Assistant, an issue and a fix upstream for rates below 44.1 kHz. LMS upstream would need `D`
-  on its rules to `pcm` and `strm` giving the resampled rate (agreed with the user on 2026-10-26).
-- **The Music Assistant fix, tried locally** (2026-10-26, 2.10.7): every slimproto rate up to the player's
+  on its rules to `pcm` and `strm` giving the resampled rate (agreed with the user).
+- **The Music Assistant fix, tried locally** (2.10.7): every slimproto rate up to the player's
   `MaxSampleRate` in its Squeezelite provider, an empty list of rates no longer fatal, and aioslimproto's rate table
   fixed (11025, 22050, 32000). Then amisqueeze plays every rate from 8000 to 32000 Hz, as `wav` and `flac`. Without
   the table fix, a WAV at 11025, 22050 or 32000 Hz stops aioslimproto before `codc` and `cont`: amisqueeze plays
   anyway, a real squeezelite waits forever. Publishing it upstream is the user's decision. Once it is in Music
   Assistant, the user guide can advise the AHI unit at 24000 Hz with `MAXRATE=AHI` for it: it sends the highest
   offered rate below the source's, 24000 Hz for a 44.1 kHz file, where LMS keeps the file's family (22050 Hz).
-  Not measured on the A1200 (agreed with the user on 2026-10-26).
+  Not measured on the A1200 (agreed with the user).
 
-## player-14 The buffer running dry in the middle of a frame ✅ (2026-10-27, version 0.8)
+## player-14 The buffer running dry in the middle of a frame ✅ version 0.8
 
-- **Found on the A1200** (2026-10-27, player-9 step 6, LMS, PCM): the network cable pulled for 10 s while
+- **Found on the A1200** (player-9 step 6, LMS, PCM): the network cable pulled for 10 s while
   playing. Each time the sound stopped about 6 s later, when the buffer ran dry. Sometimes amisqueeze sent `STMo`,
   LMS paused the player (`strm p`), then resumed it once the data came back (`strm u`), as in player-6b.
   Sometimes no `STMo` came: the sound came back without that pause, or never when the stream's connection was lost
@@ -1121,9 +1121,9 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   frame (a sample of 4 bytes, or a FLAC or MP3 frame of several KB) leaves the start of that frame in the ring.
   The decoder cannot use it, so the output has nothing to play, yet the ring is not empty. With `amisqueeze.fpu`
   decoding FLAC or MP3, a stall almost always falls in the middle of a frame.
-- **Fixed** (agreed with the user on 2026-10-27): when the decoder produces nothing and takes nothing while its
+- **Fixed** (agreed with the user): when the decoder produces nothing and takes nothing while its
   track is still arriving, the output is empty, whatever the ring still holds (`stream.c`, both outputs). Narrowed
-  on 2026-10-28 (`31bab90`): for a complete track, such a call only ends its decoding, since the next track may
+  (`31bab90`): for a complete track, such a call only ends its decoding, since the next track may
   already be in the ring; the output is then empty only when the ring is. A partial frame at the end of a track was
   already dropped: `STMu` was not affected.
 - **Tests**: the fake server's stall scenario stops the PCM stream after a whole frame, then 2 bytes into one; a
@@ -1131,15 +1131,15 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   bytes, then after 40002. Each new case fails without the fix (no `STMo`), and passes with it. With the FLAC
   scenario's first threshold of 16 KB, below its largest frame (about 15 KB after the metadata), the output started
   with nothing to play and now says so (`STMo` at once); the servers ask for 200 KB or more.
-- **On the A1200** (2026-10-27, LMS, PCM): the cable pulled twice with the fix. Both times `STMo` came when the
+- **On the A1200** (LMS, PCM): the cable pulled twice with the fix. Both times `STMo` came when the
   sound stopped. Put back after 8 s: LMS paused the player, then resumed it about 1 s after the cable was back.
   Put back after 13 s: the test setup's relay had dropped both connections meanwhile, so the player stayed
   stopped. Without `STMo`, amisqueeze did not say "no news from the server" either, over more than 3 minutes:
   see player-16.
 
-## player-15 The task priority ✅ (2026-10-29, version 0.8)
+## player-15 The task priority ✅ version 0.8
 
-- **Found on the A1200** (2026-10-27, player-9 step 4, LMS, raw PCM at 44.1 kHz, about 77 % of the CPU): the
+- **Found on the A1200** (player-9 step 4, LMS, raw PCM at 44.1 kHz, about 77 % of the CPU): the
   sound has gaps as soon as the Amiga works, at amisqueeze's priority 0, without any `STMo` (the buffer never runs
   dry: AHI is not fed in time). Raised with `ChangeTaskPri`:
 
@@ -1153,7 +1153,7 @@ belongs to the task that opened it; packets serialised field by field; buffers a
 
   More AHI blocks would only help with short bursts: a long copy at the same priority leaves amisqueeze about
   half of the CPU, when it needs three quarters.
-- **Agreed with the user on 2026-10-28**: a `PRI` option (command line, ToolTypes, `ENV:amisqueeze.prefs`),
+- **Agreed with the user**: a `PRI` option (command line, ToolTypes, `ENV:amisqueeze.prefs`),
   -10 to 10, 0 by default: on a fast Amiga amisqueeze takes little CPU, and a higher default would slow the
   Workbench of a slow one without an obvious reason, where a gap is plain to hear. The user guide's
   troubleshooting says when to give `PRI=1`.
@@ -1161,21 +1161,21 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   given (`plat_set_priority`), and set back at the end on the Amiga: started from a Shell, amisqueeze runs in the
   Shell's own process. Tests: `test_priority` (not given, -10, 0, 10, then 11 and -11 refused), the fake server's
   arguments scenario (`PRI=11`, `PRI=-11`).
-- **In WinUAE**, not checked again on the A1200 (agreed with the user on 2026-10-28): `PRI` read from the
+- **In WinUAE**, not checked again on the A1200 (agreed with the user): `PRI` read from the
   command line, the ToolTypes and `ENV:amisqueeze.prefs`; the priority unchanged without it; the Shell's priority
-  back after amisqueeze ends. Done on 2026-10-28: 5 from the command line and from a ToolType, -3 from
+  back after amisqueeze ends. Done: 5 from the command line and from a ToolType, -3 from
   `ENV:amisqueeze.prefs`; a Shell at 2 stays at 2 without `PRI` and comes back to 2 after; `PRI=11` refused from
   `ENV:` and from a ToolType, with its message.
-- **On the A1200** (2026-10-29, `dev` at `ae71a6e`, raw PCM at 44.1 kHz, a 2.6 MB file copied in a loop for 60 s
+- **On the A1200** (`dev` at `ae71a6e`, raw PCM at 44.1 kHz, a 2.6 MB file copied in a loop for 60 s
   and windows moved): `PRI=1` clean, the Workbench slower but usable, a copy in 29 to 56 s. Without `PRI`: gaps,
   the Workbench smooth, a copy in 8 to 11 s. No `STMo` in either.
 
-## player-16 A receive that never blocks ✅ (2026-10-29, version 0.8)
+## player-16 A receive that never blocks ✅ version 0.8
 
-- **Found on the A1200** (2026-10-27, player-9 step 6, AmiNetXDuo 1.0.0-rc2): the cable pulled for 13 s left
+- **Found on the A1200** (player-9 step 6, AmiNetXDuo 1.0.0-rc2): the cable pulled for 13 s left
   half-open connections. amisqueeze never said "no news from the server", over more than 3 minutes. Ctrl-C then
   showed "recv: error 4" (EINTR) and "cannot connect: error 4", then a retry, before "stopped".
-- **Cause** (read in AmiNetXDuo's source, 2026-10-28): amisqueeze was blocked in a `recv()` on the control
+- **Cause** (read in AmiNetXDuo's source): amisqueeze was blocked in a `recv()` on the control
   connection, which `WaitSelect()` had reported readable.
   - AmiNetXDuo reports a TCP socket readable as soon as its receive queue holds a segment, out-of-order ones
     included. `recv()` returns none of them until the gap is filled.
@@ -1185,7 +1185,7 @@ belongs to the task that opened it; packets serialised field by field; buffers a
 
   The most likely cause when found. The A1200 run below shows its first part: the socket reported readable with
   nothing to read. The segment out of order is still read from the source, not seen.
-- **Content** (agreed with the user on 2026-10-28):
+- **Content** (agreed with the user):
   1. both sockets non-blocking once connected. Today the control one is blocking, and the stream one goes back to
      blocking once connected. A receive with nothing to read means "nothing yet", not an error: a portable code
      in `platform.h`, mapped in `amiga.c` and `posix.c`;
@@ -1206,18 +1206,18 @@ belongs to the task that opened it; packets serialised field by field; buffers a
     reconnection; Ctrl-C and Exchange's Remove: "stopped" alone; the Workbench usable meanwhile. The load as in
     player-9 (77 %).
 - **Upstream**: AmiNetXDuo's readiness is not ours to fix. Reporting it is the user's decision.
-- **Done** (2026-10-28): `PLAT_AGAIN` and `plat_interrupted()` in `platform.h`; the sockets non-blocking once
+- **Done**: `PLAT_AGAIN` and `plat_interrupted()` in `platform.h`; the sockets non-blocking once
   connected in `amiga.c` and `posix.c`, EINTR recorded as the stop request (`WaitSelect()`'s too: AmiNetXDuo
   returns it for a Ctrl-C pressed before the wait, without the signal); `AGAIN_WAIT_MS` in `run()` for the
   control connection and in `stream_events()` for the stream. Tests: `test_run_again`, `test_run_interrupted`,
   `test_stream_again`, the fake server's `silent_server` scenario.
-- **In WinUAE** (2026-10-28, slow profile with AmiNetXDuo 1.0.0-rc2 on the emulated NE2000 card, LMS):
+- **In WinUAE** (slow profile with AmiNetXDuo 1.0.0-rc2 on the emulated NE2000 card, LMS):
   - a connection to an address that does not answer blocks for over a minute. Ctrl-C then gives "stopped" alone;
     the build before this step gave "cannot connect: error 4" and "retrying in 5 s" first;
   - Ctrl-C idle, three times while playing through AHI, and in pause: "stopped" alone each time;
   - the load with `NOAUDIO`, raw PCM at 44.1 kHz, the builds before and after in turn (six 10 s windows each):
     42.4 % before, 42.8 % after, within the spread of the windows (about 1 %). Unchanged.
-- **On the A1200** (2026-10-29, `dev` at `ae71a6e`, AmiNetXDuo 1.0.0-rc2 with the fixed `xircomce2.device`, LMS,
+- **On the A1200** (`dev` at `ae71a6e`, AmiNetXDuo 1.0.0-rc2 with the fixed `xircomce2.device`, LMS,
   raw PCM at 44.1 kHz):
   - the cable pulled for 13 s while playing. The sound stopped, then came back after the cable, the Workbench
     usable throughout. Then the `VERBOSE` line "control: reported readable, nothing to read yet", and the server's
@@ -1227,10 +1227,10 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   - Ctrl-C and Exchange's Remove while playing: "stopped" alone;
   - the load 77 % (counts 3,090 to 3,154, idle about 13,520), as in player-9; no `STMo`.
 
-## player-17 Hardening after the 0.8 review ✅ (2026-10-29, version 0.8)
+## player-17 Hardening after the 0.8 review ✅ version 0.8
 
 - **Goal**: a 0.8 closer to 1.0: the findings of the [0.8 review](reviews/0.8.md) at 75, and most of its 50 list
-  (agreed with the user on 2026-10-29). The safety nets are in tools-13; R1 is settled by the A1200 session of
+  (agreed with the user). The safety nets are in tools-13; R1 is settled by the A1200 session of
   player-16.
 - **Content**, one commit per item:
   - tests for what no test sees removed:
@@ -1261,27 +1261,27 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   - in WinUAE: MP3 tracks back to back, then raw PCM, with `amisqueeze.fpu` (`31bab90` on an Amiga); an icon with
     `QUIET` and `PRI=11`: the window opens with the message;
   - on the A1200, in the session of player-15 and player-16: the stack measured again with AmiNetXDuo
-    (`CONTRIBUTING.md`, Stack and memory). Done on 2026-10-29: at most 5688 of 16384 bytes, against 5600 in 0.7;
+    (`CONTRIBUTING.md`, Stack and memory). Done: at most 5688 of 16384 bytes, against 5600 in 0.7;
   - then a light review of `6d1f562..` (publish-5): its findings at 75 fixed or accepted, its 50 list left to 0.9,
     without another round.
-- **Left for 0.9** (agreed with the user on 2026-10-29): dr_flac's `assert()` active in the Amiga build (a change
+- **Left for 0.9** (agreed with the user): dr_flac's `assert()` active in the Amiga build (a change
   to how third-party code is built, with no defect found); and the items of the 0.8 review already planned for
   0.9 (the 88.2 kHz rate code, the ignored `strm s` fields, the 2 KB of headers).
 
-## player-18 Hardening after the 0.8 light review ✅ (2026-10-30, version 0.9)
+## player-18 Hardening after the 0.8 light review ✅ version 0.9
 
 - What was left of the 50 lists of the [0.8 review](reviews/0.8.md) and of the
   [light review](reviews/0.8-light.md): response headers up to 4 KB, as squeezelite; dr_flac's `assert()` off in
   the Amiga build; tests of two start-up failures and of the byte 0x7F; comments and documents that said something
   false.
 - The queue of tracks: LMS (a radio that drops) and Music Assistant (its queue changed) can send more than one
-  track ahead, so it holds 16 tracks and refuses one more, rather than forgetting the oldest (agreed with the user
-  on 2026-10-30).
+  track ahead, so it holds 16 tracks and refuses one more, rather than forgetting the oldest (agreed with
+  the user).
 
-## player-19 The window shown and hidden from Exchange ✅ (2026-10-30, version 0.9)
+## player-19 The window shown and hidden from Exchange ✅ version 0.9
 
 - **Goal**: started from the Workbench, amisqueeze's message window opens and closes from Exchange (Show
-  Interface, Hide Interface), as a commodity's window does (agreed with the user on 2026-10-30). Today both
+  Interface, Hide Interface), as a commodity's window does (agreed with the user). Today both
   buttons are greyed.
 - **Content**:
   - the commodity says it has a window (`COF_SHOW_HIDE`) when started from the Workbench;
@@ -1289,15 +1289,15 @@ belongs to the task that opened it; packets serialised field by field; buffers a
     to the `LOG` file;
   - the window's close gadget hides it: the music goes on, and the window no longer opens again at the next
     message (`AUTO` today);
-  - the start stays as it is: the window opens, unless `QUIET` (agreed with the user on 2026-10-30);
+  - the start stays as it is: the window opens, unless `QUIET` (agreed with the user);
   - from a Shell, both buttons stay greyed: the messages go to that Shell. But a Shell start whose output is
     `NIL:` (`Run >NIL: amisqueeze` in `S:User-Startup`) is a start without a window: Show and Hide work as with
-    `QUIET`, the default window (agreed with the user on 2026-10-30);
+    `QUIET`, the default window (agreed with the user);
   - in `amiga.c`, in functions of their own, the parts with no system call in the core (host-tested); no hot key.
     `amiga.c` would pass the 800 lines of a file: the `ahi.device` calls move to `amiga_ahi.c` first, as they are
-    (agreed with the user on 2026-10-30).
+    (agreed with the user).
 - **How** (tried in WinUAE with AmigaOS 3.2.3, `ACTION_FORCE` and `WAIT` also with Kickstart 3.1; agreed with the
-  user on 2026-10-30; the details in `pitfalls.md`):
+  user; the details in `pitfalls.md`):
   - an asynchronous read always waits on the window, which is in RAW mode: in the usual mode, a key typed without
     Return held every write until Return, and amisqueeze with it (0.8 has the same code; seen in a Shell too).
     The close gadget comes as a RAW event (`CSI 11;`), which hides the window;
@@ -1311,5 +1311,5 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   - `images/exchange.png` taken again.
 - **Criterion**: in WinUAE, through Exchange: Show and Hide, the close gadget, a start with `QUIET` then Show (the
   start's messages shown), a key typed in the window, the music never interrupted in the JIT profile; in the slow
-  profile, the stop at Show measured and said in the guide (agreed with the user on 2026-10-30); from a Shell, the
+  profile, the stop at Show measured and said in the guide (agreed with the user); from a Shell, the
   buttons greyed. The user guide (Exchange) and `CHANGELOG.md`.

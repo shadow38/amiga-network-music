@@ -23,7 +23,7 @@ Answer every question, with evidence, even when the answer is "nothing found":
 - **C1.** Every step marked done: one proof per stated criterion (compliance table).
 - **C2.** Every status, "Not done", open point and "Done" list against the CHANGELOG and git history: anything
   delivered but still shown as to do, open or missing?
-- **C3.** Every deviation from the plan's planned approach: is it recorded, dated, and marked as agreed with the
+- **C3.** Every deviation from the plan's planned approach: is it recorded, and marked as agreed with the
   user?
 - **C4.** Every rule of `CLAUDE.md` and `CONTRIBUTING.md` (from the rules inventory if it exists, otherwise from
   the two files themselves), checked one by one: version strings and dates, release archive content, licences, no

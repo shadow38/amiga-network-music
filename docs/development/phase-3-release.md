@@ -4,7 +4,7 @@ Back to the [plan](README.md).
 
 ## publish-1 Licence and user documentation 🔶
 
-- **Done**: licence chosen, MIT (2026-10-18). Third-party code must be MIT-compatible (no GPL code, e.g. from
+- **Done**: licence chosen, MIT. Third-party code must be MIT-compatible (no GPL code, e.g. from
   squeezelite or libmad). User guide started: [docs/user-guide.md](../user-guide.md), kept up to date with each
   step.
 - **Content**: user guide (Amiga-side requirements: TCP/IP stack, AHI; server side: ports,
@@ -15,7 +15,7 @@ Back to the [plan](README.md).
 
 - **Content**: `.lha` archive (executables, icons, AmigaGuide or text documentation), Aminet-format `.readme`,
   version numbers (`$VER:`).
-- **In two parts** (decided with the user on 2026-10-22):
+- **In two parts** (decided with the user):
   - **with 0.7**: `make dist` also builds `out/<prog>-<version>.lha` (the same files as the zip) with its
     `.sha256`, and the Aminet `.readme` (`Short:`, `Author:`, `Uploader:`, `Type: mus/play`, `Version:`,
     `Architecture:`, `Requires:`, then the description), all attached to the GitHub Release. `Author:` and
@@ -23,12 +23,12 @@ Back to the [plan](README.md).
     decide when designing it, proposed: the archive made by `lha` (jca02266/lha, built in the build environment;
     `lhasa` only extracts), the user guide shipped as text as it is (AmigaGuide later, if needed);
   - **with 1.0**: the upload to Aminet (`.lha` and `.readme`), by the user or at their explicit request. Before
-    it (decided with the user on 2026-10-23): the files renamed without the version, `amisqueeze.lha` and
+    it (decided with the user): the files renamed without the version, `amisqueeze.lha` and
     `amisqueeze.readme` (Aminet: "Version numbers should be part of the readme file, not part of the filename";
     an update is uploaded again under the same name; the content, so the SHA-256, unchanged); a drawer icon for
     the archive's directory, which the Workbench does not show without one (in the zip too, `tools/make-icon.py`
     to extend); `Uploader:` with an e-mail address, which Aminet requires.
-- **Done with 0.7** (2026-10-23, decided with the user that day): `make dist` builds `out/<prog>-<version>.lha`
+- **Done with 0.7** (decided with the user): `make dist` builds `out/<prog>-<version>.lha`
   with `lha` of the image `amigadev/crosstools` (LHa for UNIX 1.14i, jca02266: nothing to build), method `-lh5-`
   and header level 1 (the default of LhA 2.15 on the Amiga), from the same files as the zip copied with fixed
   modes (755 for the executables, 644 for the rest); it tests it (`lha t`), compares its files and sizes with the
@@ -40,13 +40,13 @@ Back to the [plan](README.md).
   `----rwed`, both executables started from there: `Version`, `BENCH`), by `lhasa` 0.4.0 on Linux and by
   Windows' `tar`, each time the twelve files identical to the sources; the executables extracted on the Amiga
   put in `NM:`, and the WinUAE scenarios (tools-10) all OK on them.
-- **When to try it again on the Amiga** (decided with the user on 2026-10-23): not at every release, whose
+- **When to try it again on the Amiga** (decided with the user): not at every release, whose
   archives `make dist` checks (`lha t`, the files and sizes against the zip's, the readme, the SHA-256) and whose
   executables the scenarios test; only when the making of the archive changes (another image or version of
   `lha`, other options in `make-dist.py`, a new kind of file such as the drawer icon), and once before the Aminet
   upload, on the archive to be uploaded: LhA in a system that has none, extraction into `RAM:`, protection bits,
   `Version` and `BENCH` from there, the files compared with the sources, the scenarios on the extracted
-  executables. At a release (decided with the user on 2026-10-23, from the 0.7 review's R2), on the draft's own
+  executables. At a release (decided with the user, from the 0.7 review's R2), on the draft's own
   `.lha`, made by the CI from the tag, before the draft is published: the archive that ships, not a local double
   of it (the same executables, but other dates in the archive); a lighter trial, since the executables are those
   tried before the tag (the build is reproducible): extraction into `RAM:`, protection bits, the executables'
@@ -58,47 +58,47 @@ Back to the [plan](README.md).
 
 - **Content**: Git version tags, release notes, public repository up to date.
 - **Criterion**: each published version matches a tag and release notes.
-- **Done**: amisqueeze 0.1 and 0.2 (2026-10-19), each a tag `amisqueeze-<version>` and a GitHub release (marked
+- **Done**: amisqueeze 0.1 and 0.2, each a tag `amisqueeze-<version>` and a GitHub release (marked
   as a pre-release) holding the zip of `make dist` (`tools/make-dist.py`: the executables, `LICENSE`, the README
   and the user guide) and short notes approved by the user; between releases the version reads `<next>-dev`.
-  amisqueeze 0.3 (2026-10-20): the zip holds both executables (`amisqueeze`, `amisqueeze.fpu`), `CHANGELOG.md`
+  amisqueeze 0.3: the zip holds both executables (`amisqueeze`, `amisqueeze.fpu`), `CHANGELOG.md`
   (Keep a Changelog, at the root, since 0.3) and the user guide's images; the release notes end with a link to the
-  changelog. amisqueeze 0.4 and 0.5 (2026-10-20): the same; since 0.5 the zip also holds the Workbench icons.
-  amisqueeze 0.6 (2026-10-21): the same, and the zip's SHA-256 in the notes and in a `.sha256` file, computed by
-  hand; since 0.7 (2026-10-21) `make dist` writes that file (format of `sha256sum`, checked with `sha256sum -c`)
+  changelog. amisqueeze 0.4 and 0.5: the same; since 0.5 the zip also holds the Workbench icons.
+  amisqueeze 0.6: the same, and the zip's SHA-256 in the notes and in a `.sha256` file, computed by
+  hand; since 0.7 `make dist` writes that file (format of `sha256sum`, checked with `sha256sum -c`)
   and prints the line for the notes: the zip, its `.sha256` and the notes come from the same run.
-  amisqueeze 0.7 (2026-10-23): the zip and the `.lha` with the same files, each with its `.sha256`, and the Aminet
+  amisqueeze 0.7: the zip and the `.lha` with the same files, each with its `.sha256`, and the Aminet
   `.readme`, made by the CI from the tag as a draft, its `.lha` tried in WinUAE before the user publishes it.
-  amisqueeze 0.8 (2026-10-29): the same, the tag on `dev` and `main` moved forward to it once published.
-- **Branches** (agreed with the user on 2026-10-28): `main` holds the last published version, so that the
+  amisqueeze 0.8: the same, the tag on `dev` and `main` moved forward to it once published.
+- **Branches** (agreed with the user): `main` holds the last published version, so that the
   repository's page, its README and the user guide describe what can be downloaded. The work goes on in `dev`. At
   a release, `main` moves forward to the tagged commit. From the 0.8 release on: until then, `main` keeps the 0.8
-  work done before 2026-10-28, without rewriting its history. A GitHub ruleset on `main` (agreed with the user on
-  2026-10-28): no deletion, no force push, and the CI's `host` and `amiga` jobs passed on a commit before it can
+  work done before the move to `dev`, without rewriting its history. A GitHub ruleset on `main` (agreed with the user):
+  no deletion, no force push, and the CI's `host` and `amiga` jobs passed on a commit before it can
   enter `main`.
-- **Scenarios in WinUAE** (decided with the user on 2026-10-23, from step tools-10): before each tag, besides the
+- **Scenarios in WinUAE** (decided with the user, from step tools-10): before each tag, besides the
   review (publish-5), `python3 tools/winuae/run-scenarios.py` all OK on the build to be tagged, in the JIT profile with
   a 68882 and `compfpu` ([winuae-scenarios.md](winuae-scenarios.md)); first for 0.7.
-- **Continuous integration** (decided 2026-10-19): GitHub Actions, in two parts. First, done before 0.3: on each
+- **Continuous integration** (decided): GitHub Actions, in two parts. First, done before 0.3: on each
   push, `make test` (host build, unit tests, fake server) on GitHub's Linux machine; the badge or the run's page
   tells whether a commit passes. Then, before 1.0: the Amiga build (the `amigadev/crosstools` image, the Docker mode of
-  `tools/amiga-make.sh`; ✅ done on 2026-10-23, brought forward to 0.7 by the user after an outside reading: a second
+  `tools/amiga-make.sh`; ✅ done, brought forward to 0.7 by the user after an outside reading: a second
   job runs `sh tools/amiga-make.sh all dist DEV=1`, with the image pinned by its digest, then prints the
-  executables' SHA-256; its `.lha` and `.zip` kept 14 days as the run's artifacts, each on its own and not wrapped in a zip, decided with the user on 2026-10-23 for
+  executables' SHA-256; its `.lha` and `.zip` kept 14 days as the run's artifacts, each on its own and not wrapped in a zip, decided with the user for
   0.7 after an outside reading, so that a development build can be tried without building it) and the release
-  archive made by GitHub from a tag (✅ done on 2026-10-23, brought forward to 0.7 by the user: `release.yml`,
+  archive made by GitHub from a tag (✅ done, brought forward to 0.7 by the user: `release.yml`,
   on a tag `amisqueeze-*`, makes a draft pre-release with the archives of `make dist`, their `.sha256` and the
   readme; the user writes the notes, compares the executables' SHA-256 with the build tried in WinUAE and
   publishes; run by hand, a trial in a draft to delete). From an outside reading the same day: the actions pinned
   by commit SHA, the checkout without a token (`persist-credentials: false`, the build's container mounts the
-  repository), agreed with the user on 2026-10-27; an attestation of provenance left for 1.0.
+  repository), agreed with the user; an attestation of provenance left for 1.0.
 
-## publish-4 Setup guides: server and network (noted 2026-10-19) ⬜
+## publish-4 Setup guides: server and network ⬜
 
 - **Why**: amisqueeze is useless without a server, and many Amiga users have never installed LMS; putting the
   Amiga on the network is often the real obstacle. Without these guides few users will get as far as the player,
   whatever its quality. Before 1.0.
-- **Where** (decided 2026-10-19): everything in `docs/`, not in a GitHub wiki: one place that moves with the code
+- **Where** (decided): everything in `docs/`, not in a GitHub wiki: one place that moves with the code
   (versioned, reviewed by commit, in the release archive), and GitHub renders Mermaid diagrams in the repository's
   Markdown files too. A summary page `docs/README.md` links the guides, short pages linked to each other, so that
   `docs/` reads like a small site (GitHub Pages could later publish it as is, without copying anything).
@@ -117,7 +117,7 @@ Back to the [plan](README.md).
 - **Criterion**: a user who does not know the project goes, with the guides alone, from a fresh server and a
   networked Amiga without amisqueeze to music playing; checked at least once in WinUAE on a clean installation.
 
-## publish-5 Review before each release (decided 2026-10-20) ✅
+## publish-5 Review before each release (decided) ✅
 
 - **Why**: an outside review of version 0.4 (a fresh Claude session, reading only) found defects the
   development sessions had not seen: a stack measurement made before dr_flac came in and never redone, a sanitizer
@@ -128,7 +128,7 @@ Back to the [plan](README.md).
   proof that can be opened (file:line, test, scenario, dated measurement); a measurement expires when what it
   measures changes; a safety net is only real once seen failing on a planted defect; a rule a script can check
   becomes a script; everything a server sends is untrusted; "not supported yet" has consequences for users.
-- **When** (decided with the user on 2026-10-20): before **every** release tag, a review of the range since the
+- **When** (decided with the user): before **every** release tag, a review of the range since the
   previous tag, light or full as "Two levels" says below; findings scored 75 or more are fixed, or accepted by
   the user with the reason written in the report. Releases follow the plan's milestones, not single steps, so
   that reviews stay few. Exception: an urgent fix may ship after a review of its own diff only; the next
@@ -146,12 +146,12 @@ Back to the [plan](README.md).
   - **publish-5b** acceptance test: the review of `amisqueeze-0.3..amisqueeze-0.4` in a worktree, compared with the
     outside review of 0.4; each item missed sharpens a question of the method, and the review is replayed until
     it finds it. Since the development session knows that review's findings, the tooling is also judged on what
-    it finds beyond them, on `0.4..0.5` and on HEAD. First run on 2026-10-20
+    it finds beyond them, on `0.4..0.5` and on HEAD. First run
     ([report](reviews/acceptance-0.3-0.4.md)): of the points the outside review lists as done before 0.5, all
     found at 75 or more except a frame count of 0 (seen, scored 50, not run); missed: `gethostbyname()`'s result
     unchecked, the CI workflow's `permissions:`, two false comments; found in part: what `make dist` checks, the
     malformed-input tests; found beyond it: step player-2's claim on `cont`, a FLAC rate of 0 stalling a track, gaps in
-    `check-saves.py`. The seven method questions (section 10) decided with the user on 2026-10-20 and the method
+    `check-saves.py`. The seven method questions (section 10) decided with the user and the method
     and agents changed; a first replay the same day ran the old agent definitions (loaded when the session starts),
     so it tested the method changes only (section 11): the pointer rule and the false-comment rule worked, the
     frame count of 0 was not found in that run; found beyond: `strm f` stops the playing track. A second replay
@@ -159,7 +159,7 @@ Back to the [plan](README.md).
     `review-protocol-security` (section 12): `permissions:`, what `make dist` checks (75), the false comments and
     the malformed-input tests found; `gethostbyname()` reached but listed at "25-50", off the scale (counted as
     found by the user; the method now asks for one score, never a range); the frame count of 0 and `strm f` not
-    found in that run. Review of `0.4..0.5` on 2026-10-20, the four agents, blind
+    found in that run. Review of `0.4..0.5`, the four agents, blind
     ([report](reviews/acceptance-0.4-0.5.md)): eleven findings at 75, six beyond the outside review and the
     earlier passes (a decoder that cannot start leaves a NULL state, proven on the host; QUIET with LOG loses the
     start-up errors; the 0.5 seek fix's rejection side never runs; workstation references; the icon's `WINDOW`
@@ -170,30 +170,30 @@ Back to the [plan](README.md).
     `0.5..0.6`, is the tooling's last judge;
   - **publish-5c** the rules inventory: every rule, limit and measurement of `CLAUDE.md` and `CONTRIBUTING.md`, how it
     is enforced today (script, test, review, nothing), how it should be, and for a measurement its date, commit
-    and what it depends on. Done on 2026-10-20 ([rules.md](rules.md)): 88 entries in ten groups, with the findings of
+    and what it depends on. Done ([rules.md](rules.md)): 88 entries in ten groups, with the findings of
     the two acceptance reports linked to them; twelve candidates for publish-5d; twelve remarks (stale figures and
     names, the scope of the ASCII rule, the `msg()` exception) left for the user to decide;
   - **publish-5d** mechanical checks run by `make test`, proposed one by one (first candidates: version strings, every
     message in the user guide, ASCII-only sources, nothing specific to the developer's workstation). Each check:
     proposed, accepted, written, seen failing on planted defects in a throwaway worktree, seen passing on the
-    repository. Done: (1) the version strings, `tools/check-version.py` (2026-10-20; `rules.md` V4 to V7, V9):
+    repository. Done: (1) the version strings, `tools/check-version.py` (`rules.md` V4 to V7, V9):
     run by `make test`, and with `--release` by `make dist` through `make-dist.py`; accepted the 0.3, 0.4 and 0.5
     tags as releases, refused 17 planted defects and HEAD itself with `--release`, also through `make test` and
-    `make dist` themselves. Closed there on 2026-10-20 (decided with the user: the step was turning into
+    `make dist` themselves. Closed there (decided with the user: the step was turning into
     over-quality); the other candidates of `rules.md` stay as ideas, not planned;
-  - **publish-5e** the release rule in `CLAUDE.md` (done on 2026-10-20; in `CONTRIBUTING.md`, Releasing, since
-    2026-10-23). The agents and the method read
+  - **publish-5e** the release rule in `CLAUDE.md` (done; in `releasing.md` today).
+    The agents and the method read
     [rules.md](rules.md) and name a rule by its ID (`rules.md C12`). The review of HEAD planned here was dropped
-    (decided with the user on 2026-10-20: since 0.5, HEAD changed only documentation and review tooling): the next
+    (decided with the user: since 0.5, HEAD changed only documentation and review tooling): the next
     review is the one before the 0.6 tag, `/release-review amisqueeze-0.5`, whose launch prompt adds "no `HEAD`
     in git commands" and "logs in your own worktree" ([decided](reviews/acceptance-0.4-0.5.md#8-decisions)). The
     remarks of `rules.md` stay written, undecided; that review reports those that matter. The findings of the two
     acceptance reports still open are fixed in one batch, listed with the user.
-- **Stop** (decided with the user on 2026-10-20): step publish-5 is over. From now on each release gets its review and
+- **Stop** (decided with the user): step publish-5 is over. From now on each release gets its review and
   nothing more; the tooling (method, agents, checks) changes only when a review misses a real defect, never for its
-  own sake, or by the user's decision (as on 2026-10-23, the steps renamed and the rules moved to
+  own sake, or by the user's decision (as, the steps renamed and the rules moved to
   `CONTRIBUTING.md`).
-- **Two levels** (decided with the user on 2026-10-20, after the 0.6 fixes: a full review costs about 10-20 $ and
+- **Two levels** (decided with the user, after the 0.6 fixes: a full review costs about 10-20 $ and
   1 h 30 for each release, and repeats the same whole-repository inventories): a light review for each release
   (`/release-review <previous tag>`: three agents, limited to the diff and what it reaches, the questions marked
   *(full)* skipped, the plan's statuses checked by `review-tests-docs`), a full audit at milestones only (`full`:
@@ -202,7 +202,7 @@ Back to the [plan](README.md).
 - **Criterion**: on `0.3..0.4` the review finds what the outside review found at 75 or more (met); on `0.4..0.5`
   it finds defects beyond the outside review (met: six).
 
-## publish-6 Writing rules for the documentation (agreed with the user on 2026-10-24) ✅ (2026-10-24, closed on 2026-10-29: `docs/development/` later)
+## publish-6 Writing rules for the documentation (agreed with the user) ✅ (closed: `docs/development/` later)
 
 - **Why**: the README reads well, but the other documents are hard to read. Each fact comes with all its
   exceptions, sentences pile up clauses, and the plan had become a log of past work. The user guide is too long.
@@ -216,15 +216,15 @@ Back to the [plan](README.md).
   already elsewhere (the CHANGELOG, a review report, another document), or is listed in the commit. No script
   checks the rules.
 
-## publish-7 A readable architecture page ✅ (2026-10-30, version 0.9)
+## publish-7 A readable architecture page ✅ version 0.9
 
 `architecture.md` rewritten to the rules of publish-6: one question per section, what the code does, then why;
 then a detailed reading of the user guide, whose remarks the user sorted. Paula's settings heard on the A1200
 were left out of the guide: an open point.
 
-## publish-8 The technical documentation organised (agreed with the user on 2026-10-30) 🔶
+## publish-8 The technical documentation organised (agreed with the user) 🔶
 
-- **Why**: an outside reading of the technical documentation (2026-10-30) found its content good, but nothing to
+- **Why**: an outside reading of the technical documentation found its content good, but nothing to
   show which page answers which question. `CONTRIBUTING.md` served six readers, `architecture.md` two subjects,
   and some facts were missing: a glossary, what amisqueeze trusts, its time-outs and limits, its memory.
 - **Content**:
@@ -236,7 +236,7 @@ were left out of the guide: an open point.
   - in `architecture.md`: state diagrams (the connection, the stream, the output), the time-outs and limits, the
     memory, what a platform layer provides;
   - the review tooling (`.claude/`) reads the rules in the pages `CONTRIBUTING.md` lists as holding rules (agreed
-    with the user on 2026-10-30).
+    with the user).
 - **Left as they are**: the plan, where the review reports link; the review reports; `rules.md`, frozen.
 - **Criterion**: no fact lost (each paragraph moved is found again, or named in the commit); every link and anchor
   resolves; `make test` passes; the user reads the new pages and accepts them.

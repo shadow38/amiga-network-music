@@ -126,10 +126,10 @@ After each link, `tools/check-stack.py` reads the linker map (`obj/<prog>.map`).
 [Checks the host tests cannot make](testing.md#checks-the-host-tests-cannot-make), from a script with
 `Stack 4096`:
 
-| Executable | Date, version, machine | Used |
+| Executable | Version, machine | Used |
 |---|---|---|
-| `amisqueeze` | 2026-10-29, 0.8-dev, an A1200 with AmiNetXDuo | 5688 of 16384 bytes with the server discovery, raw PCM and a seek; 5632 with FLAC and a seek |
-| `amisqueeze.fpu` | 2026-10-23, 0.7, WinUAE | 17544 of 32768 bytes with FLAC and MP3 |
+| `amisqueeze` | 0.8-dev, an A1200 with AmiNetXDuo | 5688 of 16384 bytes with the server discovery, raw PCM and a seek; 5632 with FLAC and a seek |
+| `amisqueeze.fpu` | 0.7, WinUAE | 17544 of 32768 bytes with FLAC and MP3 |
 
 **When to measure again**: when `-fstack-usage` shows the deepest path growing by more than 1 KB, or when a new
 decoder, library or start-up path is linked. A few bytes more do not call for it.

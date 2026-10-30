@@ -12,10 +12,10 @@ in English.
 ## Working with the maintainer
 
 - Work proceeds in testable steps, named `tools-<n>`, `player-<n>`, `remote-<n>`, `publish-<n>` (never a number
-  that reads as a version; until 2026-10-23 `<phase>.<n>`, kept in older review reports and commits). The content
+  that reads as a version; up to version 0.7 `<phase>.<n>`, kept in older review reports and commits). The content
   and success criterion of a step are agreed with the user **before** any code. A finished step: criterion checked,
   documentation up to date, one commit (one per item when a step gathers independent items). Decisions are
-  recorded in the plan, once, briefly and dated ("agreed with the user on <date>"); how a step was checked goes in
+  recorded in the plan, once, briefly, without a date ("agreed with the user"); how a step was checked goes in
   its commit message, not in the plan.
 - Which version brings which steps, and where each step stands: "Roadmap" and "Where we are" in
   `docs/development/README.md`, the only place they are kept; keep the statuses up to date.

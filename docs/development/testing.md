@@ -216,8 +216,8 @@ tests use:
 - A "Filesave" mode on a unit plays nothing (it is not real time): the bytes amisqueeze plays are checked with
   its `OUTPUT` option instead.
 - The AHI preferences are read from `ENV:Sys/ahi.prefs`: a test can change a unit for the session by writing that
-  file (lost at the next start, `ENV:` being copied from `ENVARC:`), then `Avail FLUSH` (as the tests of
-  2026-10-22 did). With `VERBOSE`, amisqueeze prints the mode and frequency it reads there.
+  file (lost at the next start, `ENV:` being copied from `ENVARC:`), then `Avail FLUSH`.
+  With `VERBOSE`, amisqueeze prints the mode and frequency it reads there.
 
 ### Driving the Amiga from the host
 

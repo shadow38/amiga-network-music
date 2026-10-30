@@ -9,9 +9,9 @@ is no longer LMS only; the name is decided by the study (remote-0), and the file
 - **LMS**: the text CLI (TCP 9090): one command per line, a one-line reply, URL-encoded parameters (`%20`…),
   `key:value` pairs (steps remote-1 to remote-7).
 - **Music Assistant**: its API, JSON messages over a WebSocket, with an access token (steps remote-8 to remote-11).
-- **MPD** (idea, noted 2026-10-19): a third back end for the Music Player Daemon (step remote-12).
+- **MPD** (idea): a third back end for the Music Player Daemon (step remote-12).
 
-## Organisation (decided 2026-10-19)
+## Organisation (decided)
 
 As in amisqueeze: a **portable core** in standard C, tested on the host, and thin layers around it.
 
@@ -61,7 +61,7 @@ reach). So it covers basic control of amisqueeze under Music Assistant, while se
 - **Content**: connect to `<server>:9090`, send `version ?`, read and decode the reply.
 - **Criterion**: `amilms SERVER=<ip>` prints the server version.
 - **Test**: test server; on the host, reply parsing (`%xx` decoding, splitting into pairs).
-- **Documentation** (agreed with the user on 2026-10-24): with the first amilms page, one guide per program;
+- **Documentation** (agreed with the user): with the first amilms page, one guide per program;
   amisqueeze's stays one file in two parts, using it then a reference. To adapt with it: `tools/check-version.py`
   (the state line), `tools/make-dist.py` (the zip), the links and anchors (README, CONTRIBUTING, `CLAUDE.md`, the
   plan, `rules.md`, `amiga.c`), and the review agent `review-tests-docs` (the user's decision, as for any change of
@@ -137,9 +137,9 @@ remote.
 
 - **Criterion**: the GUI of remote-6 works the same with both servers; same features on the real machine.
 
-## remote-12 MPD back end (idea, noted 2026-10-19) ⬜
+## remote-12 MPD back end (idea) ⬜
 
-- **Why**: no MPD client was found for AmigaOS (search of 2026-10-19: Aminet, OS4, MorphOS). MPD plays the music
+- **Why**: no MPD client was found for AmigaOS (search: Aminet, OS4, MorphOS). MPD plays the music
   itself, on the machine it runs on: on the Amiga this is a remote control, so it belongs here, not in amisqueeze.
   Probably the easiest back end: a text protocol over TCP 6600 (one command per line, `key: value` replies ending
   with `OK` or `ACK`), no TLS, an optional password; `idle` for the notifications (like LMS `listen`).

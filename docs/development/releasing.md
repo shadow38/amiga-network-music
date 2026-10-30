@@ -69,7 +69,7 @@ The archives are made by GitHub from the tag (`.github/workflows/release.yml`, s
   lines and a place for the rest.
 
 **The notes** describe this version only, its known limits as plain facts. Nothing about later versions (agreed
-with the maintainer on 2026-10-23; the roadmap stays in the plan).
+with the maintainer; the roadmap stays in the plan).
 
 **The executables' SHA-256** are in the job's summary. The build is reproducible: they must be those of the build
 tried in WinUAE before the tag.

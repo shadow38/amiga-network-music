@@ -2,7 +2,7 @@
 
 Back to the [plan](README.md).
 
-## tools-1 Toolchain ✅ (2026-10-18)
+## tools-1 Toolchain ✅
 
 - **Goal**: build several programs from one repository, whatever the developer's machine.
 - **Content**: multi-program `Makefile` (`src/<prog>/` → `out/<prog>`), header dependencies, the
@@ -10,9 +10,9 @@ Back to the [plan](README.md).
   toolchain in the `PATH`, local script, Docker), VS Code tasks.
 - **Criterion**: `make clean all` produces `out/amisqueeze`; touching a `.h` rebuilds the `.c` files that include
   it.
-- **Docker mode**: tested since 2026-10-23, the CI's Amiga build takes it (publish-3).
+- **Docker mode**: tested, the CI's Amiga build takes it (publish-3).
 
-## tools-2 Test LMS server ✅ (2026-10-18)
+## tools-2 Test LMS server ✅
 
 - **Goal**: a Lyrion Music Server reachable from the emulated Amiga, with a small library.
 - **Content**: any LMS will do (Docker image `lmscommunity/lyrionmusicserver`, distribution package, NAS…).
@@ -36,7 +36,7 @@ Back to the [plan](README.md).
 - **Criterion**: web UI reachable, CLI answering `version ?`, library scanned.
 - **Validated with**: LMS 9.1.1.
 
-## tools-3 Reference player ✅ (2026-10-18)
+## tools-3 Reference player ✅
 
 - **Goal**: a known-good player to validate the server and compare amisqueeze's behaviour.
 - **Content**: squeezelite (Windows builds on SourceForge, `lmsclients` project):
@@ -49,32 +49,32 @@ Back to the [plan](README.md).
 - **Done (provisional)**: a local configuration, 68020 running AmigaOS 3.2, CPU at maximum speed,
   `bsdsocket_emu=true`, build output mounted as an Amiga volume. Enough for networking (step player-1).
 - **To do**:
-  - two profiles (decided 2026-10-18): **fast**, close to a PiStorm with Emu68 (68040 with FPU, 32-bit
+  - two profiles (decided): **fast**, close to a PiStorm with Emu68 (68040 with FPU, 32-bit
     addressing, Zorro III memory, tens of MB); **slow**, a 68020 accelerator without FPU at its real speed (not
     "as fast as possible", so that CPU load can be measured: Paula mixing, later the decoders);
   - a versioned configuration template in `winuae/`, with machine-specific paths kept in a local, unversioned file
-    (done on 2026-10-22, see "Template, versioned" below).
-- **Slow profile, local** (2026-10-19, for step player-4c): the provisional configuration started with the CPU
+    (done, see "Template, versioned" below).
+- **Slow profile, local** (for step player-4c): the provisional configuration started with the CPU
   settings overridden (`-s cpu_compatible=true -s cpu_speed=real -s cpu_multiplier=4`, a 68020 at about
-  28 MHz, as a typical A1200 accelerator); an override of the versioned template since 2026-10-22.
-- **Fast profile, local** (2026-10-19, for steps player-8b and player-8c): not a 68040 (its CPU library is missing from the
+  28 MHz, as a typical A1200 accelerator); an override of the versioned template.
+- **Fast profile, local** (for steps player-8b and player-8c): not a 68040 (its CPU library is missing from the
   test installation) but a 68020 with WinUAE's JIT compiler, 32-bit addressing
   and no cycle-exact emulation (`cpu_24bit_addressing=false`, `cachesize=16384`, `cycle_exact=false`,
   `cpu_compatible=false`, `cpu_speed=max`): about 230 times the slow profile, the order of a PiStorm. For
   `amisqueeze.fpu`, a 68882 (`fpu_model=68882`) and the JIT's FPU compiler (`compfpu=true`; without it FPU
   instructions are interpreted: MP3 at 1.8x real time instead of 74x). Speeds measured there are not those of a
   real machine (player-9). No versioned template yet.
-- **Template, versioned** (2026-10-22, decided with the user): `winuae/amisqueeze-test.uae`, with placeholders
+- **Template, versioned** (decided with the user): `winuae/amisqueeze-test.uae`, with placeholders
   for the machine-specific paths, and the profiles as command-line overrides, described in
   [testing.md](testing.md) with the rest of the test setup. Still open: a 68040 profile (its CPU library in the
   test system).
 - **Criterion**: the configuration boots, `bsdsocket.library` is available, amisqueeze connects to the server.
 
-## tools-5 AHI in the emulated Amiga ✅ (2026-10-18)
+## tools-5 AHI in the emulated Amiga ✅
 
 - **Goal**: be able to test audio output (step player-4) in WinUAE.
 - **Content**: the AHI package (Aminet) installed in the emulated Amiga, AHI mode set in the preferences; notes for
-  the real outputs. Two drivers, both kept for the tests (decided 2026-10-18), Paula first:
+  the real outputs. Two drivers, both kept for the tests (decided), Paula first:
   - **Paula** (`paula.audio`, Amiga chipset): what an Amiga without a sound card plays; 8 bits per channel
     (14 bits with AHI's combined modes), about 28 kHz at most with a 15 kHz screen mode (AHI resamples 44.1 kHz
     down), mixing done by the CPU;
@@ -98,7 +98,7 @@ Back to the [plan](README.md).
   - Paula through AHI (14 bit and 8 bit stereo++ at 27,429 Hz, the maximum with a 15 kHz screen mode): correct
     sound, **left and right swapped**; Paula played directly through `audio.device` (channels 0 and 3 left, 1 and
     2 right) is correct, so the swap comes from `paula.audio`, not from the emulation: seen on a real Amiga too
-    (player-9, 2026-10-24);
+    (player-9);
   - "stereo" modes without "++" put each sound entirely on one side: a stereo stream sent at the centre plays one
     channel only, on one side. amisqueeze needs a **stereo++** mode (player-4).
   - The `filesave.audio` driver ("Filesave" modes) writes what AHI plays to a file (WAV, AIFF…), but only for
@@ -106,7 +106,7 @@ Back to the [plan](README.md).
     the "Music" unit, and an `ahi.device` unit set to one by hand writes silence (tried in player-4b).
 - **Prerequisite of**: player-4.
 
-## tools-6 Host-side tests ✅ (2026-10-18)
+## tools-6 Host-side tests ✅
 
 Since then, the core grew (stream, ring buffer, audio output, decoders) and the tests with it, at each step of
 phase 1; the figures below are those of 0.6.
@@ -127,23 +127,23 @@ phase 1; the figures below are those of 0.6.
   Amiga build replayed the player-1/player-1b cases in WinUAE with the same messages as before the split, and the host
   build connects to a real LMS 9.1.1 with the same MAC as the Amiga build.
 
-## tools-7 Logging and automated runs in WinUAE ✅ (2026-10-22)
+## tools-7 Logging and automated runs in WinUAE ✅
 
 - **Goal**: run a test in WinUAE and read its result from the host, without manual steps.
-- **Done (2026-10-18, local setup)**: a **serial shell**. WinUAE connects the Amiga's serial port to a local TCP
+- **Done (local setup)**: a **serial shell**. WinUAE connects the Amiga's serial port to a local TCP
   socket (`win32.serial_port=TCP://127.0.0.1:<port>`; the `win32.` prefix is required, otherwise WinUAE logs
   "unknown config entry"); `S:User-Startup` runs `Mount AUX:` and `Run >NIL: NewShell AUX:`; a host script sends a
   command line and reads the output up to the next prompt. Validated: commands, starting amisqueeze in the
   background (`Run NM:amisqueeze >T:log …`), `Status`, `Break <n>`, reading the log. Pitfalls: send one character at
   a time (no flow control, characters get lost otherwise); the console wraps the prompt in control sequences
   (`CSI 20h`, `SI`) to filter out.
-- **Done since, local setup only** (2026-10-19): a script that restarts WinUAE in a given profile and waits for the
+- **Done since, local setup only**: a script that restarts WinUAE in a given profile and waits for the
   shell; scripted scenarios for the steps (commands through LMS's CLI, robustness through a TCP relay, `OUTPUT`
   comparisons, listening runs), all outside the repository.
-- **Documented** (2026-10-22, [testing.md](testing.md)): the serial shell and the rules its client must follow,
-  amiagent (an optional server in the Amiga, used through its MCP server since 2026-10-19), the measures on the
+- **Documented** ([testing.md](testing.md)): the serial shell and the rules its client must follow,
+  amiagent (an optional server in the Amiga, used through its MCP server), the measures on the
   server and the CPU load; the test sounds made by `tools/make-test-audio.sh`.
-- **Done** (2026-10-22, designed with the user): `tools/winuae/`, Python 3 with the standard library only, described
+- **Done** (designed with the user): `tools/winuae/`, Python 3 with the standard library only, described
   in [winuae-scenarios.md](winuae-scenarios.md): a serial shell client following the rules of
   [testing.md](testing.md), an LMS CLI client, and one scenario, `play-tone.py` (amisqueeze on an AHI unit plays
   `tone-440.flac`; checks the output used, LMS's play mode, the elapsed time as an interval, the track's length by
@@ -162,7 +162,7 @@ phase 1; the figures below are those of 0.6.
   `m68k-amigaos-gdb` (`target remote …:2345`) driven by VS Code (cpptools); build with `-g`.
 - **Criterion**: stops on a breakpoint in a function of amisqueeze (e.g. in `player.c`), variables readable.
 
-## tools-9 Test Music Assistant server 🔶 (players side done 2026-10-21; API token not yet)
+## tools-9 Test Music Assistant server 🔶 (players side done; API token not yet)
 
 - **Goal**: a Music Assistant server reachable from the emulated Amiga, for the Music Assistant back end of the
   remote (remote-8 to remote-11) and for amisqueeze as a Music Assistant player (player-7b).
@@ -172,7 +172,7 @@ phase 1; the figures below are those of 0.6.
   addresses, or one server at a time).
 - **Criterion**: web UI reachable, API answering with the token, squeezelite (tools-3) playing a track from it.
 - **Prerequisite of**: player-7b, remote-8.
-- **Done** (2026-10-21): Music Assistant 2.10.7 (official image `ghcr.io/music-assistant/server`) with the LMS
+- **Done**: Music Assistant 2.10.7 (official image `ghcr.io/music-assistant/server`) with the LMS
   test library. Its slimproto port is moved on the host side, so both servers run at once (amisqueeze `PORT=`).
   By default the stream server publishes its own address in `strm`, which the emulated Amiga cannot reach: set
   the published IP (Settings > System > Streams, advanced; `publish_ip`) to the address the Amiga reaches. Players
@@ -180,11 +180,11 @@ phase 1; the figures below are those of 0.6.
   start a library track: playback was started from the web UI. amisqueeze was tried instead of squeezelite (player-7b).
   Not done: an API token (needed by remote-8).
 
-## tools-10 Regression scenarios in WinUAE 🔶 (LMS part done 2026-10-23; Music Assistant before 1.0)
+## tools-10 Regression scenarios in WinUAE 🔶 (LMS part done; Music Assistant before 1.0)
 
 - **Goal**: before a release, replay in WinUAE what `make test` cannot check: the Amiga platform layer (AHI,
   bsdsocket, `Break`), the real servers (LMS, Music Assistant) and the 68k build, so that a release is validated
-  on a solid base (decided with the user on 2026-10-22, before the release of 0.7).
+  on a solid base (decided with the user, before the release of 0.7).
 - **Content**: a few scenarios in `tools/winuae/` on the model of `play-tone.py` (tools-7,
   [winuae-scenarios.md](winuae-scenarios.md)), to design with the user before writing them. Proposed: LMS's
   commands through AHI (pause, resume, seek, stop, two tracks in a row, the `Largest` column of `Avail` before and
@@ -194,7 +194,7 @@ phase 1; the figures below are those of 0.6.
   Not in it: the measures (CPU load, long runs, the slow relay) and the old ROMs, which stay manual.
 - **Criterion**: one command runs the scenarios, each in less than 2 minutes, and prints OK or the reason of each
   failure.
-- **Design** (agreed with the user on 2026-10-22): one profile for all, the JIT and a 68882 with `compfpu`
+- **Design** (agreed with the user): one profile for all, the JIT and a 68882 with `compfpu`
   (decoding on the Amiga at least twice real time, `amisqueeze.fpu`), checked by the runner with `BENCH`, which
   then warms AHI up once; what the scenarios share in `scenario.py` (`play-tone.py` moved onto it); every scenario
   checks that the stream came in the format it tests (`stream: format` in the log) and that the fast memory and
@@ -206,7 +206,7 @@ phase 1; the figures below are those of 0.6.
   the content proposed above (decided with the user): its floating point gives a few samples off by one from any
   other decoder, so it is checked against the tones it holds (exact length, the sine fitted on each side, at least
   60 dB of signal-to-noise ratio).
-- **Done** (2026-10-23): `tools/winuae/run-scenarios.py` and six scenarios, described in
+- **Done**: `tools/winuae/run-scenarios.py` and six scenarios, described in
   [winuae-scenarios.md](winuae-scenarios.md): `play-tone`, `commands-pcm`, `commands-flac`, `output-pcm`,
   `output-flac`, `output-mp3`; all OK in about 4 minutes from a fresh boot with LMS 9.1.1 (each from 18 to 50 s),
   failures checked (a track missing: exit code 2; the memory check: 1, amisqueeze stopped all the same; the MP3
@@ -215,17 +215,17 @@ phase 1; the figures below are those of 0.6.
   followed on the same line by the output of the program started, which made the serial shell client wait 30 s
   (`RUN_DONE`); the first AHI run after a boot keeps about 12 KB (AHI's, hence the warm-up), and `Run` itself
   sometimes 1,064 bytes (under the 16 KB of tolerance). The measured values: MP3 at 72 and 77 dB, 0.475 of full
-  scale. A mutation test (decided with the user on 2026-10-23): `ahir_Volume` made to follow the volume again, as
+  scale. A mutation test (decided with the user): `ahir_Volume` made to follow the volume again, as
   before the fix of step player-6; `commands-pcm` still passed, memory unchanged to the byte although the resume came
   at 0.0 %: the defect does not show in this profile and this short run, so the scenarios do not guard against
   it (the constant full volume in `amiga.c` does); code put back, `git diff src/` empty, checked again. Left: the
   Music Assistant scenario, before 1.0.
 
-## tools-11 A real TCP/IP stack in WinUAE ✅ (2026-10-24)
+## tools-11 A real TCP/IP stack in WinUAE ✅
 
 - **Goal**: an estimate of what the network costs the CPU of the A1200 (player-9) before the real machine: with
   `bsdsocket_emu`, WinUAE runs the TCP/IP stack on the host and the Amiga pays nothing for it (decided with the
-  user on 2026-10-24, for 0.8).
+  user, for 0.8).
 - **Content**: a "real network" profile ([testing.md](testing.md), Real network): the slow profile (a 68020 at
   28.4 MHz) without `bsdsocket_emu`, with WinUAE's NE2000-compatible PCMCIA card on its slirp NAT and 4 MB of fast
   memory (more covers the PCMCIA space at `$600000`, and the Kickstart's `card.resource` does not start, as on a
@@ -234,7 +234,7 @@ phase 1; the figures below are those of 0.6.
   68020 or better, the one the A1200 will run), started only when WinUAE provides no `bsdsocket.library`, so the
   other profiles are unchanged. The server on the host is reached at slirp's gateway address (10.0.2.2, LMS
   only); amiagent through a slirp port redirection.
-- **Driver** (changed with the user on 2026-10-24): AmiNetXDuo's own `anxnet.device`, first agreed, does not open
+- **Driver** (changed with the user): AmiNetXDuo's own `anxnet.device`, first agreed, does not open
   on WinUAE's emulated card ("unit 0 did not open": WinUAE's log shows it never writes the card's configuration
   register, so it refuses the card while reading its CIS, which is minimal there). `cnet.device` 1.9 instead
   (Aminet `driver/net/cnetdevice`, public domain, 68020 version), the driver AmiNetXDuo's own tests use with that
@@ -251,7 +251,7 @@ phase 1; the figures below are those of 0.6.
   measures for real.
 - **Criterion**: amisqueeze plays from LMS through AmiNetXDuo in the "real network" profile; the loads measured
   and written under player-9, with the limits above.
-- **Done** (2026-10-24): amisqueeze 0.7 played `song-44k.flac` from LMS 9.1.1 through AmiNetXDuo and
+- **Done**: amisqueeze 0.7 played `song-44k.flac` from LMS 9.1.1 through AmiNetXDuo and
   `cnet.device` (DHCP from slirp, 10.0.2.15), with `NOAUDIO` and through Paula (AHI unit 0), no `STMo`. Rounds of
   `cpucount` in 10 s, three windows each; each column in its own session, with its own idle reference:
 
@@ -272,7 +272,7 @@ phase 1; the figures below are those of 0.6.
 ## tools-12 Amiga reference documents ⬜ (outside the versions)
 
 - **Goal**: what AmigaOS does on the points amisqueeze depends on, written once with its source instead of
-  scattered through the steps' findings; for contributors, and for amilms (decided with the user on 2026-10-24).
+  scattered through the steps' findings; for contributors, and for amilms (decided with the user).
 - **Where**: `docs/amiga/`, one document per subject and an index (`README.md`). Developer reference: how
   `ahi.device` or `bsdsocket.library` behave, not how to set them up, which is the user's side (publish-4); the
   two link to each other without repeating. Nothing moved out of `architecture.md`, `testing.md` or
@@ -293,10 +293,10 @@ phase 1; the figures below are those of 0.6.
   place; `building.md` (Repository layout), the "Before touching X, read Y" table of `CLAUDE.md` and "Where
   we are" updated. Not user-visible: no `CHANGELOG.md` line.
 
-## tools-13 Safety nets from the 0.8 review ✅ (2026-10-29, version 0.8)
+## tools-13 Safety nets from the 0.8 review ✅ version 0.8
 
 - **Goal**: rules of `CONTRIBUTING.md` checked by a script rather than by a review, from the
-  [0.8 review](reviews/0.8.md) (agreed with the user on 2026-10-29).
+  [0.8 review](reviews/0.8.md) (agreed with the user).
 - **Content**, one commit each:
   - `make test` fails when the portable core includes a header other than the C library's, `platform.h`, its own
     and the third-party ones;
@@ -305,20 +305,19 @@ phase 1; the figures below are those of 0.6.
   - `release.yml`: the draft's first line without "tested in WinUAE only" (R3);
   - `CONTRIBUTING.md`: what `check-saves.py` sees, and the host compiler as the CI has it;
   - `CONTRIBUTING.md`, Releasing: the draft published only once `tests.yml` is green on the tag.
-- **Kept**: `release.yml` does not wait for the tests (decided on 2026-10-27 in player-12, confirmed with the user
-  on 2026-10-29).
+- **Kept**: `release.yml` does not wait for the tests (decided in player-12, confirmed with
+  the user).
 - **Criterion**: each new check seen failing on a planted defect, then green; `make test` and the CI green. Not
   user-visible but R3: no `CHANGELOG.md` line.
-- **Left for 0.9** (agreed with the user on 2026-10-29): the blind spots of `check-saves.py` (a `movem` or
+- **Left for 0.9** (agreed with the user): the blind spots of `check-saves.py` (a `movem` or
   `fmovem` load from memory, a `(sp)+` pop), which the compiler does not emit today; the CI's compiler, not
   pinned (gcc 14 named in tools-14).
 
-## tools-14 The code's size and complexity ✅ (2026-10-30, version 0.9)
+## tools-14 The code's size and complexity ✅ version 0.9
 
 - Limits per function and per file in `code-rules.md`, checked by `tools/check-quality.py` in
-  `make test` and the CI (lizard pinned with its hashes in `tools/requirements.txt`); the 20 functions over them on
-  2026-10-30 listed there, never to grow. Comments without pointers to the project's history, step names checked
-  by the same script. Question S6 of `review-protocol-security` points to the limits (agreed with the user on
-  2026-10-30).
+  `make test` and the CI (lizard pinned with its hashes in `tools/requirements.txt`); the 20 functions over them
+  listed there, never to grow. Comments without pointers to the project's history, step names checked
+  by the same script. Question S6 of `review-protocol-security` points to the limits (agreed with the user).
 - The CI's host compiler: gcc 14 named, its exact version printed, rather than a container pinned by digest (the
-  user's choice, 2026-10-30).
+  user's choice).

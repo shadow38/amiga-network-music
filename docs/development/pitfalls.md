@@ -43,8 +43,8 @@ For contributors who are stuck: what has already gone wrong, and how to debug. H
   second start does nothing to the running one. Show and Hide (`COF_SHOW_HIDE`) only with a window of its own.
 
 **The message window** (`CON:`): how it works and why is in the
-[architecture](architecture.md#the-amiga-side-start-up-window-commodity). What was tried in WinUAE on
-2026-10-30 with AmigaOS 3.2.3, and `ACTION_FORCE` and `WAIT` also with Kickstart 3.1, without Workbench:
+[architecture](architecture.md#the-amiga-side-start-up-window-commodity). What was tried in WinUAE
+with AmigaOS 3.2.3, and `ACTION_FORCE` and `WAIT` also with Kickstart 3.1, without Workbench:
 
 - **the close gadget** does not close the window. Without `AUTO`, its click is kept for the next read:
   - an EOF in cooked mode;
@@ -53,7 +53,7 @@ For contributors who are stuck: what has already gone wrong, and how to debug. H
 - **`ACTION_FORCE`** (2001) is not in the NDK. `ACTION_STACK` and `ACTION_QUEUE` do not end a pending read;
 - **`WAIT`** does not hold `Close()`: the window outlives the handle;
 - **`SMART`** prevents selecting and copying the text. Without it, the text was kept when uncovered on AmigaOS
-  3.2.3 (2026-10-30), contrary to what was seen on 2026-10-20; not tried with Kickstart 3.1;
+  3.2.3, contrary to what was seen; not tried with Kickstart 3.1;
 - **showing the window** costs the one task about 0.2 s to open it, and 0.2 to 0.3 ms a byte of text, on a slow
   68020 with Paula. With 3 audio blocks, the sound stops for a moment, also with `PRI=1`;
 - the window has no scroll back.

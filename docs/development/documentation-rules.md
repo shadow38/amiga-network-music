@@ -45,11 +45,12 @@ belongs, with a link.
 **History**
 
 - A document describes the present. The past lives in the CHANGELOG, the review reports and the commits.
-- A finished step shrinks in the plan to its status, its date and one line. How it was checked goes in the commit
+- A finished step shrinks in the plan to its status, its version and one line. How it was checked goes in the commit
   message.
 - A published version is one row of the roadmap, with a link to the CHANGELOG.
-- A decision is written once, briefly, with its date: "(agreed with the user on 2026-10-23)". Not how it was
-  reached.
+- A decision is written once, briefly, marked as the user's: "(agreed with the user)". Not how it was reached.
+- No dates: where things stand, not since when. A status, a measure or an observation names its version, or the
+  build it was made on. When something happened is in the history: the commits, `git log -S "<phrase>"`.
 
 Text that ships in the archives (the README, the user guide) also follows
 [Text for the Amiga](code-rules.md#messages-and-text).

@@ -16,13 +16,13 @@ versions that bring them. Each step has a goal, an **observable** success criter
 
 Steps are named after their phase: `tools-<n>` (phase 0), `player-<n>` (1), `remote-<n>` (2), `publish-<n>` (3),
 with a letter for a part (`player-7b`). A step name never reads as a version: 0.7 is a version, `tools-7` a step.
-Review reports and commits before 2026-10-23 use the old numbers, `<phase>.<n>` (`1.7b` for `player-7b`).
+Review reports and commits up to version 0.7 use the old numbers, `<phase>.<n>` (`1.7b` for `player-7b`).
 
 ## Method
 
 - **One step at a time.** The content and success criterion of a step are agreed **before** writing code. A
   finished step: criterion checked, documentation up to date, one commit; one per item when a step gathers
-  independent items (agreed with the user on 2026-10-27).
+  independent items (agreed with the user).
 - **Observable criteria.** "It compiles" is not a criterion. The player shows up in LMS, the progress bar moves,
   the test tone sounds right: these are.
 - **Three test levels**, from the most automated to the most manual:
@@ -39,7 +39,7 @@ Review reports and commits before 2026-10-23 use the old numbers, `<phase>.<n>` 
 
 | Symbol | Meaning |
 |---|---|
-| ✅ | done and validated (date) |
+| ✅ | done and validated (in which version, when it matters) |
 | 🔶 | partly done, or done provisionally |
 | ⬜ | to do |
 | ⏸ | out of scope for now |
@@ -47,98 +47,92 @@ Review reports and commits before 2026-10-23 use the old numbers, `<phase>.<n>` 
 ## Roadmap
 
 Which version of amisqueeze brings which steps. What can be tested from the development machine comes first; what
-needs the real Amiga and a home network comes last (agreed with the user on 2026-10-20). Each version's content is
+needs the real Amiga and a home network comes last (agreed with the user). Each version's content is
 agreed with the user.
 
 | Version | Brings | Steps | Status |
 |---|---|---|---|
-| 0.1 to 0.7 | the player for LMS and Music Assistant: PCM, FLAC, MP3, start from the Workbench, the `.lha`, releases built by the CI | player-1 to player-8d, player-7b, part of player-10, tools-10 (LMS), publish-2 (`.lha`), publish-3 | ✅ 2026-10-19 to 2026-10-23, see the [changelog](../../CHANGELOG.md) |
-| 0.8 | what the real machine shows; a lower rate asked of the server; automatic server discovery; hardening; the writing rules applied to the documentation | player-9, player-10 (discovery), player-12, player-13, player-14, player-15, player-16, player-17, tools-11, tools-13, publish-6 | ✅ 2026-10-29, see the [changelog](../../CHANGELOG.md) |
+| 0.1 to 0.7 | the player for LMS and Music Assistant: PCM, FLAC, MP3, start from the Workbench, the `.lha`, releases built by the CI | player-1 to player-8d, player-7b, part of player-10, tools-10 (LMS), publish-2 (`.lha`), publish-3 | ✅, see the [changelog](../../CHANGELOG.md) |
+| 0.8 | what the real machine shows; a lower rate asked of the server; automatic server discovery; hardening; the writing rules applied to the documentation | player-9, player-10 (discovery), player-12, player-13, player-14, player-15, player-16, player-17, tools-11, tools-13, publish-6 | ✅, see the [changelog](../../CHANGELOG.md) |
 | 0.9 | internet radios' metadata (ICY); the window shown and hidden from Exchange; finishing touches after the 0.8 reviews; the code's size and complexity checked; a readable architecture page; the technical documentation organised | player-10 (end), tools-14, player-18, player-19, publish-7, publish-8 | ⬜ |
 | 1.0 | `stream.c` and the unit tests split; setup guides, a full audit, the upload to Aminet | publish-4, publish-5, tools-10 (Music Assistant), publish-2 (Aminet) | ⬜ |
 | none yet | ideas: direct Paula output, source-level debugging | player-11, tools-8 | ⬜ |
-| none | reference documents on AmigaOS for contributors, committed when ready (agreed with the user on 2026-10-24) | tools-12 | ⬜ |
+| none | reference documents on AmigaOS for contributors, committed when ready (agreed with the user) | tools-12 | ⬜ |
 
 The remote (remote-0 to remote-12) will have versions of its own, its name chosen by its study (remote-0). It
 comes after these releases, or alongside if the user wants it.
 
 ### 0.8
 
-Agreed with the user on 2026-10-26.
+Agreed with the user.
 
 - **The real machine** (player-9): the step's whole protocol on the A1200, with LMS, then with Music Assistant.
   Only if it shows gaps: more AHI blocks, or a higher task priority. The same session also checks:
   - Paula's LED filter (protocol step 3): the user guide says that `paula.audio` turns it off, once the real
-    machine confirms it (seen in WinUAE on 2026-10-23; agreed with the user on 2026-10-23). Done on 2026-10-28:
-    on the A1200 it stays off as long as amisqueeze runs, not only while playing (agreed with the user on
-    2026-10-28);
+    machine confirms it (seen in WinUAE; agreed with the user). Done:
+    on the A1200 it stays off as long as amisqueeze runs, not only while playing (agreed with the user);
   - Ctrl-C with a real TCP/IP stack (protocol step 6): player-16;
-  - the `aac` row of the user guide, with Music Assistant. Done in WinUAE on 2026-10-28;
-  - the free memory the user guide asks for, from `Avail` (protocol step 1). Done in WinUAE on 2026-10-28: about
+  - the `aac` row of the user guide, with Music Assistant. Done in WinUAE;
+  - the free memory the user guide asks for, from `Avail` (protocol step 1). Done in WinUAE: about
     1.7 MB, not 1.1 MB;
-  - the automatic server discovery, with LMS, Music Assistant and no server (protocol step 8). Done on
-    2026-10-27.
+  - the automatic server discovery, with LMS, Music Assistant and no server (protocol step 8). Done.
 - **A lower rate asked of the server** (player-13): a `MAXRATE` option, with a conversion rule on LMS.
 - **Automatic server discovery** (player-10): moved from 0.9, since its last check needs the same session on the
-  real machine (agreed with the user on 2026-10-27). Done on 2026-10-27, checked on the host, in WinUAE and on the
+  real machine (agreed with the user). Done, checked on the host, in WinUAE and on the
   A1200 with AmiNetXDuo, Miami and Roadshow.
-- **Paula's swapped sides**: a note in the user guide for `paula.audio`, done on 2026-10-27. No `SWAP` by
+- **Paula's swapped sides**: a note in the user guide for `paula.audio`, done. No `SWAP` by
   default: the sides are left to the direct Paula output (player-11).
 - **The messages Music Assistant sends and amisqueeze ignores** (`vers`, `grfb`, `grfe`, `codc`, `cont`): shown
-  with `VERBOSE` only, since they read as errors. An unknown message is still shown. Done on 2026-10-27. `cont`
+  with `VERBOSE` only, since they read as errors. An unknown message is still shown. Done. `cont`
   itself is handled in 0.9 (ICY).
 - **Hardening** (player-12): the 50 list of the [0.7 review](reviews/0.7.md#5-the-50-list), except the items of
-  0.9 below. Done on 2026-10-27.
+  0.9 below. Done.
 - **The buffer running dry in the middle of a frame** (player-14): no `STMo` when the stream stopped there, found
-  on the A1200 with the network cable pulled (agreed with the user on 2026-10-27). Done on 2026-10-27.
+  on the A1200 with the network cable pulled (agreed with the user). Done.
 - **The task priority** (player-15): a `PRI` option, 0 by default, and a line in the user guide's
-  troubleshooting, since the A1200 plays with gaps while it works at priority 0 (agreed with the user on
-  2026-10-28). Coded and tested on the host and in WinUAE on 2026-10-28; on the A1200 on 2026-10-29.
+  troubleshooting, since the A1200 plays with gaps while it works at priority 0 (agreed with the user).
+  Coded and tested on the host and in WinUAE; on the A1200.
 - **A receive that never blocks** (player-16): non-blocking sockets, and Ctrl-C's EINTR taken as a stop. With
   AmiNetXDuo, a blocking receive could wait forever, so neither "no news from the server" nor a clean Ctrl-C
-  came (agreed with the user on 2026-10-28). Done on 2026-10-28, checked on the host and in WinUAE with
-  AmiNetXDuo, and on the A1200 on 2026-10-29.
-- **The writing rules** (publish-6): the plan and the user guide done on 2026-10-24. The step is closed for 0.8;
-  `docs/development/` comes later, one document at a time, where the user finds it worth it (agreed with the user
-  on 2026-10-29).
+  came (agreed with the user). Done, checked on the host and in WinUAE with
+  AmiNetXDuo, and on the A1200.
+- **The writing rules** (publish-6): the plan and the user guide done. The step is closed for 0.8;
+  `docs/development/` comes later, one document at a time, where the user finds it worth it (agreed with the
+  user).
 - **After the 0.8 review** (player-17, tools-13): its findings at 75 and most of its 50 list, for a version close
-  to 1.0; then a light review of what they change (agreed with the user on 2026-10-29). Until the release, the
-  documentation changes only for them, for the A1200 session and for real errors (agreed with the user on
-  2026-10-29).
+  to 1.0; then a light review of what they change (agreed with the user). Until the release, the
+  documentation changes only for them, for the A1200 session and for real errors (agreed with the user).
 
 ### 0.9
 
-- **Internet radios' metadata** (ICY, player-10), designed with the user on 2026-10-27 (see
+- **Internet radios' metadata** (ICY, player-10), designed with the user (see
   [player-10](phase-1-amisqueeze.md)). For a radio played directly by `amisqueeze.fpu`, LMS asks the radio for
   `Icy-MetaData: 1`, then sends the blocks' interval in `cont`. amisqueeze waits for `cont`, removes the blocks
-  and sends their titles back to LMS. Done on 2026-10-27 in a branch; rebased on `dev` and checked again on
-  2026-10-30.
-- **From the 0.7 review's 50 list** (agreed with the user on 2026-10-23), in the same branch, done with it:
+  and sends their titles back to LMS. Done in a branch; rebased on `dev` and checked again.
+- **From the 0.7 review's 50 list** (agreed with the user), in the same branch, done with it:
   - the HTTP status line is never checked (with ICY);
   - the body of a direct stream plays before LMS's `cont`, so a redirect or an error page plays as a track (with
     ICY);
   - the 88.2 kHz rate code is refused as an unsupported format;
   - the polarity and output channel flags, transitions and replay gain are ignored, without a line in the guide.
 
-The rest agreed with the user on 2026-10-30, in this order, then a light review (publish-5):
+The rest agreed with the user, in this order, then a light review (publish-5):
 
 - **The code's size and complexity** (tools-14): limits per function and per file, checked by `make test` with
   lizard; today's excesses listed and never to grow. Comments without step names or other pointers to the
-  project's history, in all the code. Also the CI's host compiler: gcc 14 named (from tools-13). Done on
-  2026-10-30.
+  project's history, in all the code. Also the CI's host compiler: gcc 14 named (from tools-13). Done.
 - **After the 0.8 reviews** (player-18): response headers up to 4 KB, as squeezelite; dr_flac's `assert()` off on
   the Amiga; the track queue when full (16 tracks, one more refused); two tests; comments and documents that said
-  something false. Done on 2026-10-30.
+  something false. Done.
 - **The window from Exchange** (player-19): Show and Hide open and close the message window. The start stays as
-  it is: the window, unless `QUIET`. A key typed in it no longer stops amisqueeze (RAW mode). Done on 2026-10-30.
+  it is: the window, unless `QUIET`. A key typed in it no longer stops amisqueeze (RAW mode). Done.
 - **A readable architecture page** (publish-7): `architecture.md` rewritten from a sample the user accepts first;
-  then a detailed reading of the user guide. Done on 2026-10-30.
+  then a detailed reading of the user guide. Done.
 - **The technical documentation organised** (publish-8), after an outside reading: a map of the documents, one
-  page per reader, `protocol.md` with a glossary, and the facts it found missing (agreed with the user on
-  2026-10-30).
+  page per reader, `protocol.md` with a glossary, and the facts it found missing (agreed with the user).
 - **Before the release**: Music Assistant on the A1200, since each of its tracks now waits for `cont`; there too,
   with Kickstart 3.1, the window of player-19 (its close gadget in RAW mode, its text kept without `SMART`, Show
-  and Hide). Done on 2026-10-30 on the A1200 (Kickstart 3.1 with Workbench 47.2 files, AHI 4.180, AmiNetXDuo):
+  and Hide). Done on the A1200 (Kickstart 3.1 with Workbench 47.2 files, AHI 4.180, AmiNetXDuo):
   five tracks from Music Assistant, each waiting for `cont`, next and stop; the window as in WinUAE. Left:
   `images/exchange.png` taken again with the release's build.
 - **Left out**:
@@ -152,65 +146,65 @@ The rest agreed with the user on 2026-10-30, in this order, then a light review 
 ### 1.0
 
 - **Before it**: `stream.c` and `tests/test_core.c` split, the former into smaller modules (its stream, its queue
-  of tracks, its output), the latter by module (agreed with the user on 2026-10-30); then the setup guides
+  of tracks, its output), the latter by module (agreed with the user); then the setup guides
   (publish-4), a full audit (publish-5), which checks the split, the Music Assistant scenario in WinUAE
   (tools-10).
 - **Then**: the upload to Aminet (publish-2), once the `Author:` and `Uploader:` of the `.readme` are corrected.
 - **Perhaps**: an attestation of the archives' provenance (`actions/attest-build-provenance`). Left for 1.0 by the
-  user on 2026-10-23: of little use to Amiga users, since the reproducible build already lets anyone check.
+  user: of little use to Amiga users, since the reproducible build already lets anyone check.
 
 ## Where we are
 
 | Step | Status |
 |---|---|
-| tools-1 Toolchain | ✅ 2026-10-18 |
-| tools-2 Test LMS server | ✅ 2026-10-18 |
-| tools-3 Reference player | ✅ 2026-10-18 |
-| tools-4 WinUAE test configuration | 🔶 2026-10-22: the template and its slow and JIT profiles ([testing.md](testing.md)); a 68040 profile still open |
-| tools-5 AHI in the emulated Amiga (Paula, Toccata) | ✅ 2026-10-18 |
-| tools-6 Host-side tests (`make test`) | ✅ 2026-10-18 |
-| tools-7 Automated runs in WinUAE | ✅ 2026-10-22 |
+| tools-1 Toolchain | ✅ |
+| tools-2 Test LMS server | ✅ |
+| tools-3 Reference player | ✅ |
+| tools-4 WinUAE test configuration | 🔶 the template and its slow and JIT profiles ([testing.md](testing.md)); a 68040 profile still open |
+| tools-5 AHI in the emulated Amiga (Paula, Toccata) | ✅ |
+| tools-6 Host-side tests (`make test`) | ✅ |
+| tools-7 Automated runs in WinUAE | ✅ |
 | tools-8 Source-level debugging (optional) | ⬜ |
-| tools-9 Test Music Assistant server | 🔶 2026-10-21: the players side; the API token with remote-8 |
-| tools-10 Regression scenarios in WinUAE | 🔶 2026-10-23: the LMS scenarios ([winuae-scenarios.md](winuae-scenarios.md)); Music Assistant before 1.0 |
-| tools-11 A real TCP/IP stack in WinUAE (AmiNetXDuo, PCMCIA card) | ✅ 2026-10-24 |
-| tools-12 Amiga reference documents (`docs/amiga/`) | ⬜ agreed with the user on 2026-10-24; tools-12a (AHI, network) first |
-| tools-13 Safety nets from the 0.8 review | ✅ 2026-10-29 (version 0.8) |
-| tools-14 The code's size and complexity | ✅ 2026-10-30 (version 0.9) |
-| player-1 Control connection | ✅ 2026-10-18 |
-| player-1b Default options (`ENV:amisqueeze.prefs`) | ✅ 2026-10-18 |
-| player-2 Receiving the stream (virtual output) | ✅ 2026-10-18 |
-| player-3 Output to a file | ✅ 2026-10-18 |
-| player-4 AHI audio output | ✅ 2026-10-19 |
-| player-5 Commands and volume | ✅ 2026-10-19 |
-| player-6 Robustness | ✅ 2026-10-19 |
-| player-7a Other PCM formats (LMS) | ✅ 2026-10-19 |
-| player-7b Music Assistant | ✅ 2026-10-23 |
-| player-8 Local decoding (FLAC, then MP3) | ✅ 2026-10-19 |
-| player-8d MP3 without gaps between tracks | ✅ 2026-10-20 |
-| player-9 Real machine | ✅ 2026-10-29: the protocol on the A1200 with LMS; `SYS:WBStartup`, Music Assistant and the memory in WinUAE; a PiStorm when one is at hand |
-| player-10 Finishing touches | ✅ 2026-10-30: the parts of 0.4 and 0.5; server discovery 2026-10-27 (0.8), on the A1200 with three stacks; ICY 2026-10-27 (0.9), on the host and in WinUAE, again after the rebase on `dev` on 2026-10-30 |
+| tools-9 Test Music Assistant server | 🔶 the players side; the API token with remote-8 |
+| tools-10 Regression scenarios in WinUAE | 🔶 the LMS scenarios ([winuae-scenarios.md](winuae-scenarios.md)); Music Assistant before 1.0 |
+| tools-11 A real TCP/IP stack in WinUAE (AmiNetXDuo, PCMCIA card) | ✅ |
+| tools-12 Amiga reference documents (`docs/amiga/`) | ⬜ agreed with the user; tools-12a (AHI, network) first |
+| tools-13 Safety nets from the 0.8 review | ✅ version 0.8 |
+| tools-14 The code's size and complexity | ✅ version 0.9 |
+| player-1 Control connection | ✅ |
+| player-1b Default options (`ENV:amisqueeze.prefs`) | ✅ |
+| player-2 Receiving the stream (virtual output) | ✅ |
+| player-3 Output to a file | ✅ |
+| player-4 AHI audio output | ✅ |
+| player-5 Commands and volume | ✅ |
+| player-6 Robustness | ✅ |
+| player-7a Other PCM formats (LMS) | ✅ |
+| player-7b Music Assistant | ✅ |
+| player-8 Local decoding (FLAC, then MP3) | ✅ |
+| player-8d MP3 without gaps between tracks | ✅ |
+| player-9 Real machine | ✅ the protocol on the A1200 with LMS; `SYS:WBStartup`, Music Assistant and the memory in WinUAE; a PiStorm when one is at hand |
+| player-10 Finishing touches | ✅ the parts of 0.4 and 0.5; server discovery (0.8), on the A1200 with three stacks; ICY (0.9), on the host and in WinUAE, again after the rebase on `dev` |
 | player-11 Direct Paula output, without AHI | ⬜ idea (CPU load on a slow 68020; crackles with a PCMCIA network card, player-9) |
-| player-12 Hardening (the 0.7 review's 50 list) | ✅ 2026-10-27 (version 0.8) |
-| player-13 A lower rate asked of the server | ✅ 2026-10-26: `MAXRATE` and the LMS rules; on the A1200, 62 % of the CPU at 32 kHz against 77 %; Music Assistant upstream: the user's decision |
-| player-14 The buffer running dry in the middle of a frame | ✅ 2026-10-27: on the host and the A1200 |
-| player-15 The task priority (`PRI`) | ✅ 2026-10-29: on the host, in WinUAE and on the A1200 |
-| player-16 A receive that never blocks | ✅ 2026-10-29: on the host, in WinUAE and on the A1200 with AmiNetXDuo |
-| player-17 Hardening after the 0.8 review | ✅ 2026-10-29 (version 0.8) |
-| player-18 Hardening after the 0.8 light review | ✅ 2026-10-30 (version 0.9) |
-| player-19 The window shown and hidden from Exchange | ✅ 2026-10-30 (version 0.9) |
+| player-12 Hardening (the 0.7 review's 50 list) | ✅ version 0.8 |
+| player-13 A lower rate asked of the server | ✅ `MAXRATE` and the LMS rules; on the A1200, 62 % of the CPU at 32 kHz against 77 %; Music Assistant upstream: the user's decision |
+| player-14 The buffer running dry in the middle of a frame | ✅ on the host and the A1200 |
+| player-15 The task priority (`PRI`) | ✅ on the host, in WinUAE and on the A1200 |
+| player-16 A receive that never blocks | ✅ on the host, in WinUAE and on the A1200 with AmiNetXDuo |
+| player-17 Hardening after the 0.8 review | ✅ version 0.8 |
+| player-18 Hardening after the 0.8 light review | ✅ version 0.9 |
+| player-19 The window shown and hidden from Exchange | ✅ version 0.9 |
 | remote-0 Study (common interface, Music Assistant feasibility, name) | ⬜ before any amilms code |
 | remote-1 to remote-7 LMS | ⬜ |
 | remote-8 to remote-11 Music Assistant | ⬜ |
 | remote-12 MPD | ⬜ idea, after Music Assistant |
 | publish-1 Licence and user documentation | 🔶 MIT licence; the user guide kept up to date |
-| publish-2 Aminet archive | 🔶 2026-10-23: the `.lha` and its Aminet `.readme`; the upload with 1.0 |
+| publish-2 Aminet archive | 🔶 the `.lha` and its Aminet `.readme`; the upload with 1.0 |
 | publish-3 Public versions | 🔶 0.1 to 0.7 published; the CI tests, builds and drafts the release from a tag |
 | publish-4 Setup guides: minimal server, the Amiga on the network | ⬜ before 1.0 |
-| publish-5 Review before each release | ✅ 2026-10-20; reviews since: [0.6](reviews/0.6.md), [0.7](reviews/0.7.md) |
-| publish-6 Writing rules for the documentation | ✅ 2026-10-24: the rules, the plan and the user guide; `docs/development/` later, where the user finds it worth it (closed on 2026-10-29) |
-| publish-7 A readable architecture page | ✅ 2026-10-30 (version 0.9) |
-| publish-8 The technical documentation organised | 🔶 2026-10-30 (version 0.9): written; the user's reading left |
+| publish-5 Review before each release | ✅ reviews since: [0.6](reviews/0.6.md), [0.7](reviews/0.7.md) |
+| publish-6 Writing rules for the documentation | ✅ the rules, the plan and the user guide; `docs/development/` later, where the user finds it worth it (closed) |
+| publish-7 A readable architecture page | ✅ version 0.9 |
+| publish-8 The technical documentation organised | 🔶 version 0.9: written; the user's reading left |
 
 Phase 0 moves forward as needed: a tooling step is done when a step of phase 1 or 2 needs it. Phases 1 and 2 can
 progress in parallel.
@@ -220,9 +214,9 @@ progress in parallel.
 Neither planned nor dropped for good. Each is taken up only by the user's decision.
 
 - **`BUFFER` option**: the 1 MB stream buffer is fixed. Only if the real machines show a need (player-9: memory on
-  a small Amiga, Wi-Fi), then in player-10 (agreed with the user on 2026-10-19).
+  a small Amiga, Wi-Fi), then in player-10 (agreed with the user).
 - **Instructions a 68040 or 68060 emulates**: built for the 68020, the code holds some that their CPU libraries
-  emulate, hundreds of cycles each. Found in the assembly on 2026-10-29:
+  emulate, hundreds of cycles each. Found in the assembly:
   - dr_flac: about 470 64-bit multiplies (`muls.l` into a register pair), emulated on a 68060. dr_flac takes that
     path when bits per sample, precision and log2(order) add up to more than 32, likely for CD-quality FLAC at
     level 8;
@@ -230,24 +224,23 @@ Neither planned nor dropped for good. Each is taken up only by the user's decisi
     once per sample.
 
   Likely fix: GCC's `-m68020-40` or `-m68020-60`, code still valid on a 68020; `BENCH` on a 68020 in WinUAE checks
-  for a slowdown. Earlier, the multiplies were left alone (agreed with the user on 2026-10-19): no 68060 among the
-  target machines, and `AUTO` measures the speed. Seen again on 2026-10-29, not taken for 0.9 (agreed with the
-  user on 2026-10-30); a report from a 68040 or 68060 owner would settle it.
+  for a slowdown. Earlier, the multiplies were left alone (agreed with the user): no 68060 among the
+  target machines, and `AUTO` measures the speed. Seen again, not taken for 0.9 (agreed with the
+  user); a report from a 68040 or 68060 owner would settle it.
 - **More sound ahead in AHI**: 3 blocks of 32 KB, about 0.19 s each at 44.1 kHz. On a slow Amiga, a call that
   holds the one task for 0.3 s (opening the window at Show, player-19) already stops the sound. More blocks, or
-  bigger ones, would cost memory and delay the server's commands (pause, volume) (agreed with the user on
-  2026-10-30).
-- **Paula's settings in the user guide**: heard on the A1200 on 2026-10-30 (AHI 4.180, Music Assistant with
+  bigger ones, would cost memory and delay the server's commands (pause, volume) (agreed with the user).
+- **Paula's settings in the user guide**: heard on the A1200 (AHI 4.180, Music Assistant with
   the lower rates patched in): the uncalibrated `14 bit stereo++` mode sounds grainy, `Fast 14 bit stereo++
   calibrated` clearly better; at Paula's highest rate, 27,429 Hz, a 32 kHz stream sounded best; `HiFi` brought
   nothing heard. `MAXRATE=AHI` with LMS (a 27,429 Hz stream) was not heard. Left out of the guide until more use
-  makes the advice clear (agreed with the user on 2026-10-30).
+  makes the advice clear (agreed with the user).
 - **LMS's `body` frame**: for a playlist address played directly, LMS asks the player to send the body back.
-  amisqueeze shows it as "not handled" (agreed with the user on 2026-10-27).
+  amisqueeze shows it as "not handled" (agreed with the user).
 
 ## Ideas outside the phases
 
-Related projects, not planned (noted on 2026-10-19). Each would be studied first, starting with whether it already
+Related projects, not planned. Each would be studied first, starting with whether it already
 exists.
 
 - **Amiga modules in the server**: tracker music (MOD, MED) played through LMS or Music Assistant on every player
@@ -257,7 +250,7 @@ exists.
   Paula directly.
 - **A GitHub wiki for users' contributions**: a compatibility list, `BENCH` figures, a FAQ. The documentation
   itself stays in `docs/` (publish-4). To decide after 1.0, from the feedback.
-- **amisqueeze on AmigaOS 4, MorphOS and AROS**: none of them has a Squeezebox player (checked on 2026-10-19). They
+- **amisqueeze on AmigaOS 4, MorphOS and AROS**: none of them has a Squeezebox player (checked). They
   share `ahi.device` and `bsdsocket.library`, and the core is standard C. Cheapest first try: AROS 68k, which runs
   the current executables. A little-endian AROS needs the byte swaps checked. A player for PCs is ruled out:
   squeezelite exists everywhere.

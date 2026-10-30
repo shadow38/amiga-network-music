@@ -7,7 +7,7 @@ scenario also runs on its own. The machine, its profiles, its AHI units and the 
 [testing.md](testing.md); the plan's steps behind these tools: tools-7 and tools-10 of
 [phase-0-tooling.md](phase-0-tooling.md).
 
-Python 3, standard library only. All six scenarios take about 4 minutes (2026-10-23, JIT + FPU profile).
+Python 3, standard library only. All six scenarios take about 4 minutes (JIT + FPU profile).
 
 | Scenario | What it checks | Time |
 |---|---|---|
@@ -222,7 +222,7 @@ LMS would start again with the next run of amisqueeze ([The server side](testing
 `Avail FLUSH` expunges the libraries and devices no longer open, then gives the free memory; the scenario compares
 the fast memory's `Available` and `Largest` columns before the start and after the stop. A corrupted free memory
 list shows first in `Largest`: it is how step player-6 found the AHI defect of a low `ahir_Volume` (see
-`lms-commands`). What was seen while setting the tolerance (2026-10-22, JIT + FPU profile):
+`lms-commands`). What was seen while setting the tolerance (JIT + FPU profile):
 
 - **The first AHI run after a boot** keeps about 12 KB that `Avail FLUSH` never gives back (AHI's, not
   amisqueeze's: a run without sound keeps nothing, the next AHI runs give everything back); in the middle of the
@@ -272,8 +272,8 @@ set back afterwards to what it was.
 The pause and resume matter beyond LMS's commands: in step player-6, LMS's fade to 0 before a pause made the requests
 AHI got again on resume carry a near-zero `ahir_Volume`, and `paula.audio` then corrupted the free memory list
 (the largest block fell from 5.7 MB to 0.5 MB right after the resume). amisqueeze now always gives AHI full volume
-and scales the samples itself. **This scenario does not catch that defect if it came back**: tried on
-2026-10-23 with `ahir_Volume` following the volume again (0.0 % at the resume, after LMS's fade), `commands-pcm`
+and scales the samples itself. **This scenario does not catch that defect if it came back**: tried
+with `ahir_Volume` following the volume again (0.0 % at the resume, after LMS's fade), `commands-pcm`
 passed, the free memory and its largest block unchanged to the byte (JIT + FPU profile; in step player-6 the defect
 showed after an hour's run, then in a short sequence on a freshly started WinUAE). What guards against it is the
 constant full volume in `plat_audio_send()` (`amiga_ahi.c`) and its comment. The volume 50 checks that LMS's volume
@@ -300,7 +300,7 @@ the tracks' length + 30 s, then amisqueeze stopped, `bytes written` awaited in t
   decoder, which keeps the encoder's delay. So the file must have the exact length of the two tracks (2 x 882,000
   frames: the gapless trim leaves each track its signal's length), and each side of each track must be its tone
   (440 Hz on the left, 660 Hz on the right): the sine that fits it best (amplitude, phase and offset free) must
-  be at 0.4 to 0.6 of full scale, with a signal-to-noise ratio of at least 60 dB. Measured on 2026-10-22: 0.475 of
+  be at 0.4 to 0.6 of full scale, with a signal-to-noise ratio of at least 60 dB. Measured: 0.475 of
   full scale, 72 and 77 dB; the server's `sox` decoding, untrimmed, gives 26 dB over the same span (its delay is
   silence where the sine is expected), 56 to 61 dB once its delay is skipped. A side swapped, a wrong rate, a gap,
   a missing or extra frame or a corrupted decoding fails.
