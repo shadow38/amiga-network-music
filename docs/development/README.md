@@ -52,7 +52,7 @@ agreed with the user.
 |---|---|---|---|
 | 0.1 to 0.7 | the player for LMS and Music Assistant: PCM, FLAC, MP3, start from the Workbench, the `.lha`, releases built by the CI | player-1 to player-8d, player-7b, part of player-10, tools-10 (LMS), publish-2 (`.lha`), publish-3 | ✅ 2026-10-19 to 2026-10-23, see the [changelog](../../CHANGELOG.md) |
 | 0.8 | what the real machine shows; a lower rate asked of the server; automatic server discovery; hardening; the writing rules applied to the documentation | player-9, player-10 (discovery), player-12, player-13, player-14, player-15, player-16, player-17, tools-11, tools-13, publish-6 | ✅ 2026-10-29, see the [changelog](../../CHANGELOG.md) |
-| 0.9 | internet radios' metadata (ICY); the window shown and hidden from Exchange; finishing touches after the 0.8 reviews; the code's size and complexity checked; a readable architecture page | player-10 (end), tools-14, player-18, player-19, publish-7 | ⬜ |
+| 0.9 | internet radios' metadata (ICY); the window shown and hidden from Exchange; finishing touches after the 0.8 reviews; the code's size and complexity checked; a readable architecture page; the technical documentation organised | player-10 (end), tools-14, player-18, player-19, publish-7, publish-8 | ⬜ |
 | 1.0 | `stream.c` and the unit tests split; setup guides, a full audit, the upload to Aminet | publish-4, publish-5, tools-10 (Music Assistant), publish-2 (Aminet) | ⬜ |
 | none yet | ideas: direct Paula output, source-level debugging | player-11, tools-8 | ⬜ |
 | none | reference documents on AmigaOS for contributors, committed when ready (agreed with the user on 2026-10-24) | tools-12 | ⬜ |
@@ -130,7 +130,10 @@ The rest agreed with the user on 2026-10-30, in this order, then a light review 
 - **The window from Exchange** (player-19): Show and Hide open and close the message window. The start stays as
   it is: the window, unless `QUIET`. A key typed in it no longer stops amisqueeze (RAW mode). Done on 2026-10-30.
 - **A readable architecture page** (publish-7): `architecture.md` rewritten from a sample the user accepts first;
-  then a detailed reading of the user guide.
+  then a detailed reading of the user guide. Done on 2026-10-30.
+- **The technical documentation organised** (publish-8), after an outside reading: a map of the documents, one
+  page per reader, `protocol.md` with a glossary, and the facts it found missing (agreed with the user on
+  2026-10-30).
 - **Before the release**: Music Assistant on the A1200, since each of its tracks now waits for `cont`; there too,
   with Kickstart 3.1, the window of player-19 (its close gadget in RAW mode, its text kept without `SMART`, Show
   and Hide). Done on 2026-10-30 on the A1200 (Kickstart 3.1 with Workbench 47.2 files, AHI 4.180, AmiNetXDuo):
@@ -205,6 +208,7 @@ The rest agreed with the user on 2026-10-30, in this order, then a light review 
 | publish-5 Review before each release | ✅ 2026-10-20; reviews since: [0.6](reviews/0.6.md), [0.7](reviews/0.7.md) |
 | publish-6 Writing rules for the documentation | ✅ 2026-10-24: the rules, the plan and the user guide; `docs/development/` later, where the user finds it worth it (closed on 2026-10-29) |
 | publish-7 A readable architecture page | ✅ 2026-10-30 (version 0.9) |
+| publish-8 The technical documentation organised | ⬜ version 0.9 |
 
 Phase 0 moves forward as needed: a tooling step is done when a step of phase 1 or 2 needs it. Phases 1 and 2 can
 progress in parallel.
