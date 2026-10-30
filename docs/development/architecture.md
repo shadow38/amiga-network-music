@@ -180,8 +180,9 @@ next track. Music Assistant ignores `STMn`.
 
 **At most 16 tracks wait in the ring** after the one playing (`MAX_TRACKS`). LMS sends its second song only after
 the first one's `STMs`, but it fetches a radio that drops again at once, with a new `strm s` each time. Music
-Assistant sends another track at each change of its queue, once the waiting one has fully arrived. One more is
-refused: forgetting the oldest would leave its data to the decoder of the track before it.
+Assistant sends another track each time the one after the track playing changes in its queue (or crossfade is
+switched), once the waiting one has fully arrived. One more is refused: forgetting the oldest would leave its data
+to the decoder of the track before it.
 
 ## What of slimproto is handled
 
