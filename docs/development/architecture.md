@@ -45,7 +45,7 @@ device, the wait.
 | File | Role |
 |---|---|
 | `player.c` | set-up from the options, the main loop, reconnection, the FLAC and MP3 decision at start-up; the parts of the Amiga start-up that need no system (ToolTypes, window specification, message history, close gadget's event), so that the unit tests reach them |
-| `slimproto.c` | the control connection: framing, incoming packets, `HELO`, `STAT`, `RESP`, `DSCO`, `SETD` |
+| `slimproto.c` | the control connection: framing; the packets received (`strm`, `cont`, `audg`, `setd`...) and sent (`HELO`, `STAT`, `RESP`, `DSCO`, `META`, `SETD`); server discovery |
 | `stream.c` | the HTTP stream, the queue of tracks, the output (which decoder runs, track boundaries, elapsed time, statuses), the virtual output |
 | `icy.c` | an internet radio's parts that need no system: the HTTP status line, the metadata blocks taken out of the sound, the title in them |
 | `ring.c` | the 1 MB ring buffer of stream bytes |
