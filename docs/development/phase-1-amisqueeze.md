@@ -1008,6 +1008,9 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   channel (or 14 bits with two channels per side and a calibration table: twice the DMA and more CPU), blocks in
   chip RAM, double buffering with `BeginIO` (never `DoIO`: it clears `io_Flags`, `ADIOF_PERVOL` is lost, volume 0,
   see tools-5). Volume: Paula's own (0 to 64 per channel) costs no CPU, which also fits the volume modes of player-10.
+  Heard through AHI on the A1200 on 2026-10-30 (the same music, `paula.audio` of AHI 4.180): Paula at 27,429 Hz
+  with a 32 kHz stream sounded best; at 22,050 Hz with 44.1 kHz (an exact half) and at 24,000 Hz with 24 kHz (no
+  conversion), worse. Halving the rate may not be enough: Paula's highest rate matters.
 - **Sides**: channels 0 and 3 left, 1 and 2 right (`WT:paula-lr`, correct in WinUAE, unlike Paula through AHI, see
   tools-5). `paula.audio` swaps them, on the real A1200 too (player-9). Until this step, the user guide has Paula
   users add `SWAP`; the sides are handled here, and a `SWAP` by default for `paula.audio` is to weigh only if AHI

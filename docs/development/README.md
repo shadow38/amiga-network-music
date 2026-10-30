@@ -133,7 +133,9 @@ The rest agreed with the user on 2026-10-30, in this order, then a light review 
   then a detailed reading of the user guide.
 - **Before the release**: Music Assistant on the A1200, since each of its tracks now waits for `cont`; there too,
   with Kickstart 3.1, the window of player-19 (its close gadget in RAW mode, its text kept without `SMART`, Show
-  and Hide); `images/exchange.png` taken again with the release's build.
+  and Hide). Done on 2026-10-30 on the A1200 (Kickstart 3.1 with Workbench 47.2 files, AHI 4.180, AmiNetXDuo):
+  five tracks from Music Assistant, each waiting for `cont`, next and stop; the window as in WinUAE. Left:
+  `images/exchange.png` taken again with the release's build.
 - **Left out**:
   - from the 0.8 reviews' 50 lists: the blind spots of `check-saves.py`, a test of a socket refused
     non-blocking, a script against `printf` in the core, `quiet_hold`, `send_all` with nothing to send;
