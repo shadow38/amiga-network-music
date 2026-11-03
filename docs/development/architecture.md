@@ -309,7 +309,7 @@ messages of the [user guide](../user-guide.md) or in [protocol.md](protocol.md#w
 | room in the ring before the stream socket is read | 8 KB, 4 KB while the headers come | `READ_MIN_SPACE` |
 | a control packet | 4 KB | `rx_buf` |
 | the HTTP request of `strm s` | 1 KB | `stream.request` |
-| the response headers | 4 KB, as squeezelite | `stream.headers` |
+| the response headers | 4095 bytes (4 KB with the NUL ending them), about as squeezelite | `stream.headers` |
 | tracks waiting after the one playing | 16 | `MAX_TRACKS` |
 | a radio's metadata block | 4,080 bytes | `ICY_BLOCK_MAX` |
 | the audio output | 3 blocks of 32 KB, 2 of them with the device | `AUDIO_BLOCKS`, `AUDIO_BLOCK_SIZE` |

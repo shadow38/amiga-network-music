@@ -144,7 +144,7 @@ void slim_send_stat(struct player *p, const char *event, uint32_t server_ts)
     send_all(p, pkt, (int)(b - pkt));
 }
 
-/* A strm s refused (format not decoded, request too long): STMn, so that the server moves on to the next track.
+/* A strm s refused (format not decoded, request too long, queue of tracks full): STMn, so that the server moves on to the next track.
  * LMS drops every status after a strm s until STMc (its stream start), so STMc comes first, as from a player
  * whose decoder fails once the stream has started. */
 void slim_send_refusal(struct player *p)

@@ -218,7 +218,7 @@ uint32_t pcm_bytes_per_sec(const struct pcm_format *f)
 /* ---- sink: where the output's bytes go (the audio output, or the virtual output) ---- */
 
 /* Bytes the sink takes now. Virtual output: the bytes due since the last tick, at the PCM rate of the data handed
- * over next. */
+ * over next: the rate strm s announced, until the decoder has read the track's header. */
 static uint32_t sink_space(struct player *p, const struct pcm_format *f, uint32_t now)
 {
     struct output *o = &p->out;

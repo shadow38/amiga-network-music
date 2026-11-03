@@ -61,6 +61,13 @@ structures.
   ([AHI](architecture.md#ahi));
 - `setd` id 0: the player name, set or queried. It is answered with `SETD`.
 
+Without a word, even with `VERBOSE`:
+
+- an autostart outside `0` to `3` is taken as `1`;
+- an endianness byte other than `'0'` (big-endian) is taken as little-endian;
+- an `audg` too short for its gains (under 22 bytes, opcode included) is ignored, while a short `strm` or `cont`
+  is said.
+
 **Received and ignored on purpose**:
 
 - `aude` (S/PDIF and DAC on or off): printed with `VERBOSE` only;
@@ -246,7 +253,7 @@ encryption, and amisqueeze adds none.
   instance:
   - a control packet over 4 KB, or of size 0, ends the connection, which is then made again;
   - a `strm s` whose request is over 1 KB is refused (`STMn`), as is one more track when 16 wait;
-  - response headers over 4 KB end the stream (`DSCO` 1);
+  - response headers over 4095 bytes end the stream (`DSCO` 1);
   - a metadata block is 4,080 bytes at most, by its length byte;
   - a title or a server's name is shown in ASCII, any other byte as `?`.
 

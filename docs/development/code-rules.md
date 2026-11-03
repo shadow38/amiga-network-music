@@ -17,8 +17,8 @@ The sound goes through AHI:
 - or another AHI driver: a sound card, or the PiStorm's own outputs (the I2S DAC of the PiStorm32-lite FPGA
   firmware, HDMI with a Pi 4).
 
-The code uses only the `ahi.device` features of AHI 4. It is tested with AHI 6.6; 4.x is expected to work, not
-checked.
+The code uses only the `ahi.device` features of AHI 4. It is tested with AHI 6.6 in WinUAE, and plays with AHI
+4.180 on the A1200.
 
 ## The rules
 

@@ -32,7 +32,7 @@ are previews, until 1.0.
   stopped until Return. Keys typed in its window are now ignored. In a Shell it writes in, the same still happens
   (see the user guide, troubleshooting).
 - A stream whose server answered with more than 2 KB of headers failed with `stream: response headers too long`:
-  up to 4 KB are now accepted, as by squeezelite.
+  up to 4095 bytes are now accepted, about as many as squeezelite.
 - With more than 4 tracks waiting to play, the oldest one was played by the decoder of the track before it (a
   WAV header could play as noise): up to 16 now wait, and one more is skipped, with
   `stream: 16 tracks already waiting, this one skipped`. Possible only with a radio that keeps dropping, or a

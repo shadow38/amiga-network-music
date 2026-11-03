@@ -56,7 +56,9 @@ to a native compiler.
 
 ### What `make test` runs
 
-1. **`tools/check-version.py`**, before the tests:
+In this order, after building `out-host/amisqueeze`, the unit tests and the build without MP3:
+
+1. **`tools/check-version.py`**:
    - the version number is the same in both `$VER:` strings, `Firmware=` and the user guide's state line
      (`Version x.y in development` for `x.y-dev`, `Version x.y,` for a release);
    - both `$VER:` strings are declared as `static char <name>[] = "$VER: ...";`, never const;
@@ -64,8 +66,17 @@ to a native compiler.
    - the commodity's title fits 39 characters.
 
    The README names no version: its badge shows the latest release published on GitHub.
-2. **The unit tests**: the core on a fake platform (`tests/stub_platform.c`).
-3. **The scenarios**: `tests/fake_server.py` plays a slimproto server and its HTTP streams on localhost, against
+2. **`tools/check-core.py`**: the portable core includes no header of the system.
+3. **`tools/check-quality.py`**: the C code within the size and complexity limits of
+   [code-rules.md](code-rules.md), and no step name in the code.
+4. **The archives' texts**: the Aminet readme made from `dist/amisqueeze.readme` follows Aminet's rules, and the
+   texts that go into the archives are ASCII (`tools/make-dist.py --check-readme`, `--check-text`).
+5. **The scripts' syntax**: every Python and shell script of `tools/` and `tests/`, those run only by hand
+   included.
+6. **The self-test of `check-saves.py`**: on `tests/check-saves.s`, it must name each `_bad_` function, and no
+   `_good_` one.
+7. **The unit tests**: the core on a fake platform (`tests/stub_platform.c`).
+8. **The scenarios**: `tests/fake_server.py` plays a slimproto server and its HTTP streams on localhost, against
    `out-host/amisqueeze`:
    - the session: handshake, renaming, disconnection and reconnection, a server silent for 35 s, Ctrl-C, argument
      errors;
@@ -74,13 +85,9 @@ to a native compiler.
    - an internet radio's metadata blocks, taken out of the sound and sent back;
    - the `OUTPUT` file compared with what was sent;
    - FLAC and MP3 test files decoded from `tests/data/`, whole or from the middle as after a seek, back to back
-     with raw PCM.
-4. **The build without MP3**: amisqueeze built without the MP3 decoder (`out-host/amisqueeze-nomp3`), as
-   `out/amisqueeze` is, and what that build advertises and refuses.
-5. **The scripts' syntax**: every Python and shell script of `tools/` and `tests/`, those run only by hand
-   included.
-6. **`tools/check-quality.py`**: the C code within the size and complexity limits of
-   [code-rules.md](code-rules.md), and no step name in the code.
+     with raw PCM;
+   - the build without the MP3 decoder (`out-host/amisqueeze-nomp3`), as `out/amisqueeze` is: what it
+     advertises and refuses.
 
 ### On GitHub
 
