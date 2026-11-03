@@ -7,6 +7,8 @@ are previews, until 1.0.
 
 ## [Unreleased]
 
+## [0.9] - 2026-11-03
+
 ### Added
 
 - Internet radios that LMS lets `amisqueeze.fpu` fetch itself (MP3 at an `http://` address): the titles the radio
@@ -257,7 +259,8 @@ Lyrion Music Server (LMS) as a player and plays through AHI.
 - Options `SERVER`, `PORT`, `NAME`, `MAC`, `UNIT` (AHI unit), `SWAP`, `NOAUDIO`, `OUTPUT`, `VERBOSE`; default
   options in `ENV:amisqueeze.prefs`.
 
-[Unreleased]: https://github.com/shadow38/amiga-network-music/compare/amisqueeze-0.8...HEAD
+[Unreleased]: https://github.com/shadow38/amiga-network-music/compare/amisqueeze-0.9...HEAD
+[0.9]: https://github.com/shadow38/amiga-network-music/compare/amisqueeze-0.8...amisqueeze-0.9
 [0.8]: https://github.com/shadow38/amiga-network-music/compare/amisqueeze-0.7...amisqueeze-0.8
 [0.7]: https://github.com/shadow38/amiga-network-music/compare/amisqueeze-0.6...amisqueeze-0.7
 [0.6]: https://github.com/shadow38/amiga-network-music/compare/amisqueeze-0.5...amisqueeze-0.6
