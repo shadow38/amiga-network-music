@@ -312,7 +312,8 @@ Started from the Workbench, or from a script with `Run >NIL:`, amisqueeze shows 
 own, which **Exchange** (`SYS:Tools/Commodities/Exchange`) opens and closes: select "amisqueeze", then
 
 - **Show Interface** opens it, with the last messages again (about a window's worth);
-- **Hide Interface** closes it. Its close gadget does the same.
+- **Hide Interface** closes it. Its close gadget does the same. A console that replaces `CON:` may keep it open
+  (see [the window's message](#the-window)).
 
 The music goes on, and the messages still go to the `LOG` file. Once closed, the window opens again only from
 Exchange. From the Workbench, it opens at the first message; with `QUIET`, or `Run >NIL:`, it stays closed, unless
@@ -656,6 +657,12 @@ rows say what comes next.
 |---|---|
 | `strm X not handled`, `strm too short (N)`, `cont too short (N)`, `XXXX not handled (N bytes)`, `packet too short (N)` | the server sent a message amisqueeze does not know, or a malformed one: it is ignored. Worth reporting, with the server's name and version |
 | `invalid packet size (N)` | the same, but amisqueeze closes the connection and reconnects |
+
+#### The window
+
+| Message | Meaning |
+|---|---|
+| `this window cannot be hidden (error N)` | Exchange's **Hide Interface** with a console that refuses to end its pending read (a replacement of `CON:`): the window stays, and the music goes on. Its close gadget still closes it, if that console reports it |
 
 #### Files
 
