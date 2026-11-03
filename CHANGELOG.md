@@ -40,6 +40,10 @@ are previews, until 1.0.
 - Raw PCM at 88.2 kHz was refused as `stream format p not supported`: it is now played, as 96 kHz already was.
 - A stream whose server answered with an error, or with a redirection, was played as sound: nothing is played now,
   with `stream: HTTP status N, nothing played from this address`. LMS follows a radio's redirection itself.
+- A track fully received, waiting to play, was skipped when the server dropped the next one (`strm f`) after that
+  one had failed (an error from its server, or no connection).
+- A next track the server replaced before any of its sound had come (Music Assistant, its queue changed) was still
+  reported to the server as started, and still counted among the 16 tracks waiting.
 
 ## [0.8] - 2026-10-29
 

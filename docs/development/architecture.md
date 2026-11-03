@@ -154,7 +154,8 @@ stateDiagram-v2
 ```
 
 **The stream** of the last track queued. `strm q` and `strm f` close it (`IDLE`); a new `strm s` replaces it
-(`CONNECTING`), whatever its state.
+(`CONNECTING`), whatever its state. A stream that ends before any data of its track, refused, failed or replaced,
+takes that track out of the queue (`stream.in_queue` tells `strm f` it is gone).
 
 ```mermaid
 stateDiagram-v2

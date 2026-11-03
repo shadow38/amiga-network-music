@@ -88,6 +88,8 @@ struct stream {
     int      sock;
     uint32_t closes;                    /* sockets closed so far: a readiness seen before a close is not this one's */
     int      state;                     /* enum stream_state */
+    int      in_queue;                  /* the queue's last entry is the last strm s's track (not dropped as
+                                           refused or failed, not started): the one strm f drops */
     uint32_t ip;
     uint16_t port;
     uint8_t  request[1024];             /* HTTP request from strm s, sent as is */
@@ -307,8 +309,8 @@ void stream_start(struct player *p, uint32_t ip, uint16_t port, const uint8_t *r
 uint32_t pcm_bytes_per_sec(const struct pcm_format *f);
 /* strm q: closes the stream and empties the buffer */
 void stream_stop(struct player *p);
-/* strm f: drops the track being streamed (the last one queued), the track playing goes on; a stop when nothing
- * plays */
+/* strm f: drops the last strm s's track if it is still queued (none when it was refused or failed), the track
+ * playing goes on; a stop when nothing plays */
 void stream_flush(struct player *p);
 /* The stream socket became readable / writable (PLAT_READ, PLAT_WRITE) */
 void stream_io(struct player *p, int ready);

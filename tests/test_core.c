@@ -3114,10 +3114,95 @@ static void test_queue_full(void)
     teardown(&p);
 }
 
+/* A plays, B is received whole, C's strm s is then refused (autostart 3, 404: nothing played) or fails (DSCO 3):
+ * C's track is already gone, so a strm f drops nothing, and B still plays after A, with its STMs */
+static void flush_after_gone(int fail)
+{
+    struct player p;
+    uint32_t na = 50000;
+
+    fill(track_a, sizeof(track_a), 36);
+    fill(queued_tracks, QUEUED_LEN, 37);
+    setup_file(&p);
+    open_stream(&p, '1', 1);
+    stub_feed_stream(track_a, (int)na);
+    drain_stream(&p);
+    stub_stream_end();
+    stream_io(&p, PLAT_READ);
+    play_for(&p, 100);
+    stub_reset();
+    queue_track(&p, 0);
+    stub_reset();
+    if (fail) {
+        stub_connect_fails = 1;
+        strm_pcm(&p, '1', 1);
+        clear_tx();
+        stream_io(&p, PLAT_WRITE);
+        stub_connect_fails = 0;
+        CHECK(!strcmp(trace(), "DSCO:3"));
+    } else {
+        answer_stream(&p, '3', 1, http_404, (int)strlen(http_404));
+        CHECK(!strcmp(trace(), "RESP") && p.stream.state == STREAM_REFUSED);
+    }
+    CHECK(p.out.queued == 1 && !p.stream.in_queue);
+    clear_tx();
+    feed_strm('f', NULL, 0, 0, 0, NULL);
+    drain(&p);
+    CHECK(!strcmp(trace(), "STAT:STMf") && p.out.state == OUTPUT_RUNNING && p.out.queued == 1);
+    clear_tx();
+    play_for(&p, 1000);
+    CHECK(p.out.state == OUTPUT_STOPPED && count_in_trace("STAT:STMs") == 1 && count_in_trace("STAT:STMu") == 1);
+    CHECK(stub_file_len == (int)(na + QUEUED_LEN) && !memcmp(stub_file, track_a, na) &&
+          !memcmp(stub_file + na, queued_tracks, QUEUED_LEN));
+    teardown(&p);
+}
+
+/* A plays; B's strm s is replaced by C's before any data of B: still connecting, or waiting for its cont (Music
+ * Assistant re-queuing). B's track goes with its stream: one STMs (C's) at the end of A, and C plays. */
+static void replaced_before_data(int connected)
+{
+    struct player p;
+    uint32_t na = 50000;
+
+    fill(track_a, sizeof(track_a), 38);
+    fill(queued_tracks, QUEUED_LEN, 39);
+    setup_file(&p);
+    open_stream(&p, '1', 1);
+    stub_feed_stream(track_a, (int)na);
+    drain_stream(&p);
+    stub_stream_end();
+    stream_io(&p, PLAT_READ);
+    play_for(&p, 100);
+    stub_reset();
+    if (connected) {
+        answer_stream(&p, '3', 1, http_ok, (int)strlen(http_ok));
+        CHECK(p.stream.state == STREAM_CONT);
+    } else {
+        strm_pcm(&p, '1', 1);
+        CHECK(p.stream.state == STREAM_CONNECTING);
+    }
+    CHECK(p.out.queued == 1);
+    stub_reset();
+    queue_track(&p, 0);
+    CHECK(!strstr(trace(), "DSCO:1") && !strstr(trace(), "DSCO:2") && !strstr(trace(), "DSCO:3"));
+    CHECK(p.out.queued == 1);
+    clear_tx();
+    play_for(&p, 1000);
+    CHECK(p.out.state == OUTPUT_STOPPED && count_in_trace("STAT:STMs") == 1 && count_in_trace("STAT:STMu") == 1);
+    CHECK(stub_file_len == (int)(na + QUEUED_LEN) && !memcmp(stub_file, track_a, na) &&
+          !memcmp(stub_file + na, queued_tracks, QUEUED_LEN));
+    teardown(&p);
+}
+
+/* The next track refused, failed or replaced while one plays */
 static void test_refused_playing(void)
 {
     test_request_too_long_playing();
     test_queue_full();
+    flush_after_gone(0);
+    flush_after_gone(1);
+    replaced_before_data(0);
+    replaced_before_data(1);
 }
 
 /* strm f with nothing playing yet (the only track is the one dropped), and strm f then q (Music Assistant, before

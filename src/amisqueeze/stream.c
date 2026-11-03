@@ -12,8 +12,10 @@
  *   end of the HTTP body -> DSCO + STMd: the server then sends the next track, appended to the buffer, and
  *     STMs is sent again when the output reaches it (gapless);
  *   buffer empty: STMo while still streaming, STMu once everything was played;
- *   strm f (LMS: the next track removed, moved or reshuffled) drops the track being streamed, not the one playing:
- *     its stream is closed without DSCO, its data dropped, and the next strm s follows the track playing;
+ *   strm f (LMS: the next track removed, moved or reshuffled) drops the last strm s's track, not the one playing:
+ *     its stream is closed without DSCO, its data dropped, and the next strm s follows the track before it; a
+ *     track refused or failed without data is already gone, and strm f then drops nothing;
+ *   strm s while a stream still runs: that stream is closed, its track dropped if no data of it came yet;
  *   strm s refused (format not decoded, request too long, queue of tracks full) -> STMc + STMn: the server moves on
  *     to the next track.
  * The ring buffer holds the stream as received; the decoder of each track (decoder.h; raw PCM is copied as is)
@@ -68,6 +70,7 @@ static void output_reset(struct player *p)
     if (p->audio.enabled)
         audio_reset(p);
     p->out.queued = 0;
+    p->stream.in_queue = 0;
     p->out.cur.start = 0;
     p->out.cur.out_start = 0;
     p->out.carry = 0;
@@ -95,8 +98,9 @@ void stream_flush(struct player *p)
     }
     stream_close(p);                    /* no DSCO: the server does not wait for the end of that stream */
     p->stream.state = STREAM_IDLE;
-    if (o->queued == 0)                 /* the track playing is the one streamed: it plays what it received */
+    if (!p->stream.in_queue || o->queued == 0)  /* playing, it plays what it received; refused or failed, gone */
         return;
+    p->stream.in_queue = 0;
     t = &o->queue[--o->queued];         /* the track the last strm s queued */
     if (o->dec.ops != NULL && o->dec.track == t->start)
         stop_decoder(p);                /* audio output: its first blocks, already filled, end the track playing */
@@ -110,8 +114,10 @@ static void stream_abandon(struct player *p, int state)
 
     stream_close(p);
     p->stream.state = state;
-    if (o->queued > 0 && o->queue[o->queued - 1].start == p->ring.total_in)
+    if (p->stream.in_queue && o->queued > 0 && o->queue[o->queued - 1].start == p->ring.total_in) {
         o->queued--;
+        p->stream.in_queue = 0;
+    }
 }
 
 /* The stream ends early (connection failed, error): DSCO with the reason */
@@ -144,8 +150,9 @@ void stream_start(struct player *p, uint32_t ip, uint16_t port, const uint8_t *r
 
     if (start_refused(p, request_len))
         return;
-    stream_close(p);                    /* a stream still running is abandoned */
-    if (o->state == OUTPUT_STOPPED)     /* nothing playing: start from an empty buffer */
+    if (s->sock >= 0)                   /* a stream still running is abandoned, its track dropped if it has no data */
+        stream_abandon(p, STREAM_IDLE);
+    if (o->state == OUTPUT_STOPPED)    /* nothing playing: start from an empty buffer */
         output_reset(p);
     memcpy(s->request, request, (size_t)request_len);
     s->request_len = request_len;
@@ -166,6 +173,7 @@ void stream_start(struct player *p, uint32_t ip, uint16_t port, const uint8_t *r
     o->queue[o->queued].out_fmt = *fmt;     /* until the decoder says otherwise */
     o->queue[o->queued].out_start = OUT_START_UNKNOWN;
     o->queued++;
+    s->in_queue = 1;
 
     s->sock = plat_connect_start(ip, port);
     if (s->sock < 0) {
@@ -470,6 +478,8 @@ static void next_track(struct player *p)
         o->cur.out_start = o->handed;
     o->queued--;
     memmove(o->queue, o->queue + 1, (size_t)o->queued * sizeof(o->queue[0]));
+    if (o->queued == 0)                 /* the last strm s's track is playing */
+        p->stream.in_queue = 0;
     if (p->verbose)
         msg("output: track started\n");
     slim_send_stat(p, "STMs", 0);

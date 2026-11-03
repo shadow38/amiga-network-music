@@ -100,7 +100,10 @@ end of the decoding as with squeezelite:
 - its stream is closed without `DSCO`, and its data taken back from the ring (`ring_truncate()` at its
   `track.start`);
 - with the audio output, a block of it already filled plays at the end of the current track, at most about 0.6 s;
-- with nothing playing, `strm f` is a stop.
+- with nothing playing, `strm f` is a stop;
+- a track whose stream was refused (a status outside 2xx) or failed before any data is already gone from the
+  queue: `strm f` then drops nothing, and the track before it plays. A track whose stream a new `strm s` replaces
+  before any data is dropped the same way: no `STMs` for it.
 
 Why: with a 1 MB ring, the server's next `strm s` comes while up to 1 MB of the current track is still waiting in
 the same buffer. That is about 6 s of PCM, 9 s of FLAC. When LMS changes its mind about the next track (removed,
