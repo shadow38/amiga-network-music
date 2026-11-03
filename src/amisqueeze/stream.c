@@ -134,7 +134,7 @@ static int start_refused(struct player *p, int request_len)
 {
     if (request_len > (int)sizeof(p->stream.request))
         msg("amisqueeze: stream: request too long (%d bytes)\n", request_len);
-    else if (p->out.queued == MAX_TRACKS && p->out.state != OUTPUT_STOPPED)
+    else if (p->out.queued == MAX_TRACKS)   /* never with the output stopped: a strm s then empties the queue */
         msg("amisqueeze: stream: %d tracks already waiting, this one skipped\n", MAX_TRACKS);
     else
         return 0;
@@ -491,7 +491,7 @@ static void check_start(struct player *p)
     struct stream *s = &p->stream;
     struct output *o = &p->out;
 
-    if (o->state != OUTPUT_STOPPED || o->queued == 0 || s->state == STREAM_CONT)
+    if (o->state != OUTPUT_STOPPED || o->queued == 0)  /* the callers never come in STREAM_CONT */
         return;
     if (s->bytes < s->threshold && s->state != STREAM_DONE)
         return;

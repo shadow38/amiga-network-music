@@ -1244,6 +1244,20 @@ static void test_status_refused(void)
     teardown(&p);
 }
 
+/* A redirection (3xx) is not sound either: LMS follows a radio's redirection itself */
+static void test_status_redirect(void)
+{
+    static const char redirect[] = "HTTP/1.1 302 Found\r\nLocation: http://x/\r\n\r\nxxxx";
+    struct player p;
+
+    setup(&p, "Amiga");
+    CHECK(slim_connect(&p, 0));
+    answer_stream(&p, '3', 1, redirect, (int)strlen(redirect));
+    CHECK(!strcmp(trace(), "RESP") && strstr(stub_out, "HTTP status 302") != NULL);
+    CHECK(p.stream.state == STREAM_REFUSED && p.out.queued == 0 && ring_used(&p.ring) == 0);
+    teardown(&p);
+}
+
 /* The next track refused while one plays: the track playing ends with STMu, without an STMs for the refused one */
 static void test_status_refused_next(void)
 {
@@ -1319,7 +1333,68 @@ static void test_cont_alone(void)
     stub_feed_packet("cont", "\0\0\0", 3);
     drain(&p);
     CHECK(!strcmp(stub_out, "amisqueeze: cont too short (7)\n"));
+    clear_tx();
+    stub_feed_packet("cont", "\0\0\0\0\0\0", 6);       /* no room for the count of GUIDs */
+    drain(&p);
+    CHECK(!strcmp(stub_out, "amisqueeze: cont too short (10)\n"));
+    clear_tx();
+    p.verbose = 0;
+    stub_feed_packet("cont", "\0\0\0\0\0\0\0", 7);     /* the shortest whole cont */
+    drain(&p);
+    CHECK(stub_out[0] == '\0');
     teardown(&p);
+}
+
+/* With VERBOSE, a radio's metadata block without a title is said, and passed on as any other */
+static void test_icy_no_title(void)
+{
+    static const char headers[] = "ICY 200 OK\r\nicy-metaint:16\r\n\r\n";
+    uint8_t body[16 + 1 + 16 + 16];
+    struct player p;
+
+    memcpy(body, pcm, 16);
+    body[16] = 1;                                       /* one block of 16 bytes */
+    memcpy(body + 17, "StreamUrl='x';\0\0", 16);
+    memcpy(body + 33, pcm + 16, 16);
+    setup(&p, "Amiga");
+    CHECK(slim_connect(&p, 0));
+    p.verbose = 1;
+    strm_pcm(&p, '3', 255);
+    stream_io(&p, PLAT_WRITE);
+    stub_feed_stream(headers, (int)strlen(headers));
+    stub_feed_stream(body, (int)sizeof(body));
+    drain_stream(&p);
+    clear_tx();
+    feed_cont(16, 0);
+    drain(&p);
+    CHECK(strstr(stub_out, "stream: metadata without a title (16 bytes)\n") != NULL);
+    CHECK(!strcmp(trace(), "META") && ring_used(&p.ring) == 32);
+    teardown(&p);
+}
+
+/* RESP and META go nowhere once the control connection is closed (the stream may still be read) */
+static void test_send_closed(void)
+{
+    struct player p;
+
+    setup(&p, "Amiga");
+    CHECK(slim_connect(&p, 0));
+    slim_disconnect(&p);
+    clear_tx();
+    slim_send_resp(&p, "x", 1);
+    slim_send_meta(&p, (const uint8_t *)"x", 1);
+    CHECK(stub_tx_len == 0 && !p.send_failed);
+    teardown(&p);
+}
+
+/* What the server sends that is not quite a stream: a cont alone or short, a redirection, a block without a
+ * title, a connection already closed */
+static void test_stream_edges(void)
+{
+    test_cont_alone();
+    test_status_redirect();
+    test_icy_no_title();
+    test_send_closed();
 }
 
 /* ---- OUTPUT file ---- */
@@ -3915,6 +3990,7 @@ static void test_window_spec(void)
     CHECK(window_spec("", spec, sizeof(spec)) && !strcmp(spec, ""));
     CHECK(window_spec("CON:0/0/640/100/t/WAIT", tiny, sizeof(tiny)) && !strcmp(tiny, "CON:0/0/640/100/t"));
     CHECK(!window_spec("CON:0/0/640/100/ti", tiny, sizeof(tiny)));                  /* one too many */
+    CHECK(!window_spec("", tiny, 0) && window_spec("", tiny, 1) && !strcmp(tiny, ""));     /* room for the NUL */
 }
 
 /* The messages kept for the window: in order, and from a line start once the ring went round */
@@ -4063,7 +4139,7 @@ int main(void)
     test_status_refused();
     test_status_refused_next();
     test_cont_next();
-    test_cont_alone();
+    test_stream_edges();
     test_output_file();
     test_output_file_stop();
     test_output_file_errors();
