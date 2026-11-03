@@ -102,8 +102,16 @@ reach). So it covers basic control of amisqueeze under Music Assistant, while se
 
 ## remote-6 Graphical interface ⬜
 
-- **Content**: a window with lists, transport buttons, volume, progress. To decide: ReAction (shipped with
-  AmigaOS 3.2) or MUI.
+- **Content**: a window with lists, transport buttons, volume, progress.
+- **Toolkit**: to decide, ReAction or MUI. Both are closed source.
+  - ReAction comes with AmigaOS 3.2 only and is maintained by Hyperion. On 3.0/3.1 it needs ClassAct, which can no
+    longer be licensed.
+  - MUI covers AmigaOS 3.0 to 3.2, and MorphOS and AROS (Zune). MUI 5 for the 68k sees little activity. AHI 6's
+    preferences need MUI, so most amisqueeze users already have it.
+  - Leaning: the MUI 3.8 API (`muimaster.library` 19), built-in classes only, checked with MUI 3.8 on the real
+    A1200 and with MUI 5. ReAction instead if the GUI may require AmigaOS 3.2; the Shell front end would still run
+    on any 3.x.
+  - The MUI headers come from the toolchain, never copied into the repository.
 - **Criterion**: every feature of remote-2 to remote-5 usable with the mouse.
 
 ## remote-7 Real machine ⬜
