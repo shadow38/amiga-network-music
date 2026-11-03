@@ -15,6 +15,8 @@ are previews, until 1.0.
 - Exchange's **Show Interface** and **Hide Interface** open and close amisqueeze's window, with the last messages
   shown again, when started from the Workbench or with `Run >NIL:`. The window's close gadget closes it too, and
   the music goes on. Its text can now be selected and copied.
+- A track that waits 10 s for the server's `cont` (Music Assistant, an internet radio) is now said, with
+  `stream: no cont from the server after 10 s, still waiting`, instead of staying silent.
 
 ### Changed
 

@@ -1387,11 +1387,40 @@ static void test_send_closed(void)
     teardown(&p);
 }
 
-/* What the server sends that is not quite a stream: a cont alone or short, a redirection, a block without a
- * title, a connection already closed */
+/* A cont that does not come: said once after CONT_SAY_MS, without VERBOSE; the stream still waits, and plays
+ * once it comes */
+static void test_cont_missing(void)
+{
+    struct player p;
+
+    setup(&p, "Amiga");
+    CHECK(slim_connect(&p, 0));
+    answer_stream(&p, '3', 1, http_ok, (int)strlen(http_ok));
+    CHECK(p.stream.state == STREAM_CONT && stub_out[0] == '\0');
+    stub_now += CONT_SAY_MS - 1;
+    output_tick(&p, stub_now);
+    CHECK(stub_out[0] == '\0');
+    stub_now += 1;
+    output_tick(&p, stub_now);
+    CHECK(!strcmp(stub_out, "amisqueeze: stream: no cont from the server after 10 s, still waiting\n"));
+    clear_tx();
+    stub_now += 2 * CONT_SAY_MS;
+    output_tick(&p, stub_now);
+    CHECK(stub_out[0] == '\0' && stub_tx_len == 0 && p.stream.state == STREAM_CONT);
+    feed_cont(0, 0);
+    drain(&p);
+    stub_feed_stream(pcm, 2000);
+    drain_stream(&p);
+    CHECK(p.out.state == OUTPUT_RUNNING && strstr(trace(), "STAT:STMs") != NULL);
+    teardown(&p);
+}
+
+/* What the server sends that is not quite a stream: a cont alone, short or missing, a redirection, a block without
+ * a title, a connection already closed */
 static void test_stream_edges(void)
 {
     test_cont_alone();
+    test_cont_missing();
     test_status_redirect();
     test_icy_no_title();
     test_send_closed();

@@ -89,7 +89,8 @@ What the server expects, as squeezelite behaves (written from the protocol, not 
    2xx, see [internet radios](#internet-radios).
 2. Threshold reached: autostart 1 -> `STMs`; autostart 0 -> `STMl`, then `strm u` -> `STMr` (and `STMs`).
    Autostart 3 and 2 (a direct stream) are the same, but nothing of the body is read before `cont`, not even the
-   bytes that came with the headers. There is no time limit.
+   bytes that came with the headers. There is no time limit; after 10 s, a message says so once
+   (`CONT_SAY_MS`).
 3. While playing: `STMt` every second, and in reply to each `strm t`, its timestamp echoed. `strm p` -> `STMp`,
    `strm u` -> `STMr`.
 4. End of the HTTP body -> `DSCO` 0 + `STMd`. The server then sends the next track's `strm s`. Its data is

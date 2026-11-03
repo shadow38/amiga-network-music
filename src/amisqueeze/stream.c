@@ -630,10 +630,22 @@ static void feed_virtual(struct player *p, uint32_t now)
     }
 }
 
+/* The stream has waited CONT_SAY_MS for cont: said once */
+static void cont_late(struct player *p, uint32_t now)
+{
+    struct stream *s = &p->stream;
+
+    if (s->state != STREAM_CONT || s->cont_said || (uint32_t)(now - s->cont_since) < CONT_SAY_MS)
+        return;
+    s->cont_said = 1;
+    msg("amisqueeze: stream: no cont from the server after %d s, still waiting\n", CONT_SAY_MS / 1000);
+}
+
 void output_tick(struct player *p, uint32_t now)
 {
     struct output *o = &p->out;
 
+    cont_late(p, now);
     if (o->state != OUTPUT_RUNNING) {
         o->last_tick = now;
         return;
@@ -832,6 +844,8 @@ static void read_headers(struct player *p)
     s->headers_end = end;
     if (s->autostart >= 2) {            /* body bytes received with the headers wait in s->headers */
         s->state = STREAM_CONT;
+        s->cont_since = plat_now_ms();
+        s->cont_said = 0;
         if (p->verbose)
             msg("stream: waiting for cont\n");
         return;

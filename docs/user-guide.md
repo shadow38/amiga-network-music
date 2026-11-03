@@ -638,6 +638,7 @@ rows say what comes next.
 | `stream: response headers too long` | the headers of the server's answer exceed 4095 bytes |
 | `stream: HTTP status N, nothing played from this address` | the stream's server answered with an error instead of the music: 404 for an address not found. With LMS, an internet radio's redirection (a status from 300 to 399) is normal: LMS then sends the new address |
 | `stream: no HTTP status in the response, nothing played` | the stream's server does not answer in HTTP |
+| `stream: no cont from the server after 10 s, still waiting` | the server has not sent `cont`, which it must send before the music of a direct stream starts (every Music Assistant track, an LMS internet radio): nothing plays. Music Assistant 2.10 sends none for a track at 11025, 22050 or 32000 Hz, a defect of its slimproto library. amisqueeze goes on waiting, until the next track or a stop |
 | `flac: not a FLAC stream, track skipped` | the stream is not FLAC |
 | `flac: no STREAMINFO block, track skipped`, `flac: cannot open the stream, track skipped` | a damaged FLAC header |
 | `flac: sample rate 0, track skipped` | a FLAC file with a sample rate of 0 |

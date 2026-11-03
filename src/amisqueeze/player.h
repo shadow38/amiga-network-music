@@ -104,12 +104,18 @@ struct stream {
     int      again;                     /* reported readable with nothing to read: left out of the wait until */
     uint32_t again_until;               /* this time (ms) */
     int      again_said;                /* said once for this stream (VERBOSE) */
+    uint32_t cont_since;                /* ms when STREAM_CONT began */
+    int      cont_said;                 /* the wait for cont said once (CONT_SAY_MS) */
     struct icy icy;
 };
 
 /* A socket reported readable with nothing to read is left out of the waits for this long:
  * no busy loop if the TCP/IP stack keeps reporting it */
 #define AGAIN_WAIT_MS 100
+
+/* A stream that waits this long for cont is said, even without VERBOSE: the music would just not start. It goes on
+ * waiting: Music Assistant may send cont late. */
+#define CONT_SAY_MS 10000
 
 /* Output: the buffer's bytes go to a sink, the virtual output (consumed at the PCM rate, as a sound card would;
  * with the OUTPUT option also written to a file, as received) or the platform's audio output (AHI) */
