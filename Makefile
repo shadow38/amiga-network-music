@@ -42,8 +42,10 @@ STACK_PROGS        := amisqueeze
 
 # amisqueeze.fpu: the same sources built for a 68881/68882 FPU (or a 68040/68060 with FPU): floating point in
 # hardware, so it holds the MP3 decoder (AMISQUEEZE_MP3). Objects in obj/amisqueeze-fpu/.
+# With -m68881, gcc links libnix's FPU check (__fpucheck, replaced by an empty one in amiga.c) instead of its CPU
+# check: __cpucheck is linked here, or a 68000 crashes before main() (checked by tools/check-stack.py).
 amisqueeze_fpu_CFLAGS  := $(amisqueeze_CFLAGS) -m68881 -DAMISQUEEZE_FPU -DAMISQUEEZE_MP3
-amisqueeze_fpu_LDFLAGS := $(amisqueeze_LDFLAGS)
+amisqueeze_fpu_LDFLAGS := $(amisqueeze_LDFLAGS) -Wl,-u,___cpucheck
 amisqueeze_fpu_STACK   := 32768
 
 # Third-party code (third_party/): built without our warnings, in a file of its own

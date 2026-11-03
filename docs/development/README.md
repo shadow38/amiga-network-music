@@ -134,7 +134,8 @@ The rest agreed with the user, in this order, then a light review (publish-5):
   refused, failed or replaced; a command-line error under `Run >NIL:` shown in the window; a message in the
   guide. The stack of `amisqueeze` measured again. Done.
 - **From the 0.9 review's 50 list** (player-21): a missing `cont` said after 10 s; tests for the guards no test
-  held; the documents' remarks; the alert `00068020` of a 68000 explained in the user guide. Done.
+  held; the documents' remarks; on a 68000, `amisqueeze.fpu` shows the alert `00068020` as `amisqueeze` does,
+  instead of crashing, and the alert is explained in the user guide. Done.
 - **Before the release**: Music Assistant on the A1200, since each of its tracks now waits for `cont`; there too,
   with Kickstart 3.1, the window of player-19 (its close gadget in RAW mode, its text kept without `SMART`, Show
   and Hide). Done on the A1200 (AmigaOS 3.1, AHI 4.180, AmiNetXDuo):

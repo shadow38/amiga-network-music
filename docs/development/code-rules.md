@@ -119,6 +119,8 @@ them that stack when the Shell's is smaller.
 After each link, `tools/check-stack.py` reads the linker map (`obj/<prog>.map`). The build fails if:
 
 - `__stkinit` is not linked;
+- libnix's CPU check, `__cpucheck`, is not linked (the alert `00068020` on a 68000; see
+  [pitfalls](pitfalls.md));
 - `__stack` is not defined in `amiga.c`;
 - or its value is not the one the `Makefile` expects (`<prog>_STACK`, to change with it).
 

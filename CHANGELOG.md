@@ -46,6 +46,8 @@ are previews, until 1.0.
   one had failed (an error from its server, or no connection).
 - A next track the server replaced before any of its sound had come (Music Assistant, its queue changed) was still
   reported to the server as started, and still counted among the 16 tracks waiting.
+- `amisqueeze.fpu` started on a 68000 or 68010 crashed (Software Failure): it now shows the same alert as
+  `amisqueeze`, `00068020`, and quits. Both need a 68020 or better (see the user guide, troubleshooting).
 
 ## [0.8] - 2026-10-29
 

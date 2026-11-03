@@ -25,6 +25,9 @@ For contributors who are stuck: what has already gone wrong, and how to debug. H
   - its `GetVar` ignores global variables (`ENV:`) and returns 0, so default options cannot be tested with it.
 - **`-m68881` and libnix**: libnix links a start-up check (`__fpucheck`). Without an FPU, it shows an alert and
   quits before `main()`, without a message. `amiga.c` replaces it with an empty one and checks `AttnFlags` itself.
+  It also takes the place of libnix's CPU check (`__cpucheck`, the alert `00068020` on a 68000 or 68010), linked
+  by default without `-m68881`: the `Makefile` links that one in `amisqueeze.fpu` itself, otherwise a 68000
+  crashes before `main()` (Software Failure).
 - **The FPU code on a 68040 or 68060**: the `-m68881` code uses `fintrz` and `fmovecr`, which their CPU library
   emulates, slowly.
 - **The `$VER:` string** stays non-const, in the data hunk (`tools/check-version.py` checks it). Const, it sat in

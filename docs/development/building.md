@@ -213,7 +213,7 @@ CHANGELOG.md          what changed in each release (updated with each one)
 Makefile              build (m68k-amigaos-gcc must be in the PATH; HOSTCC for the host build)
 tools/amiga-make.sh   runs make with whichever toolchain is available (see above)
 tools/check-saves.py  checks the generated assembly (the safeguard against a compiler bug, see above)
-tools/check-stack.py  checks the linker map: libnix's stack swap linked, the stack's size (see code-rules.md)
+tools/check-stack.py  checks the linker map: libnix's stack swap and CPU check linked, the stack's size (see code-rules.md)
 tools/check-core.py   checks that the portable core includes no header of the system (make test, code-rules.md)
 tools/check-quality.py checks the C code's size and complexity with lizard, and that no step name is left in the
                       code (make test, see code-rules.md)

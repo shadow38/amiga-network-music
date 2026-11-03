@@ -7,8 +7,11 @@ object file, -save-temps=obj).
 Without __stkinit, the program builds and starts, then overflows the Shell's stack in the decoders without a
 warning (AmigaOS does not detect it): see docs/development/code-rules.md, Stack and memory.
 
+Also libnix's CPU check, __cpucheck, which runs before main(): on a 68000 or 68010 it shows the alert 00068020 and
+quits; without it, the program crashes there. gcc leaves it out with -m68881 (see the Makefile).
+
 Usage: check-stack.py <map> <object file that defines __stack> <size in bytes>
-       -> exit code 1 if either is missing, or __stack has another size.
+       -> exit code 1 if one is missing, or __stack has another size.
 """
 import os
 import re
@@ -21,6 +24,8 @@ def problems(path, obj, size):
     found = []
     if not re.search(r"^\s+0x[0-9a-f]+\s+__stkinit$", text, re.M):
         found.append("libnix's __stkinit is not linked (-Wl,-u,___stkinit in the Makefile)")
+    if not re.search(r"^\s+0x[0-9a-f]+\s+__cpucheck$", text, re.M):
+        found.append("libnix's __cpucheck is not linked (-Wl,-u,___cpucheck in the Makefile): a 68000 would crash")
     if not re.search(r"^ \.(?:data|bss)\.__stack\s+0x[0-9a-f]+\s+0x[0-9a-f]+ " + re.escape(obj) + "$", text, re.M):
         found.append(f"__stack is not defined in {obj}")
         return found
