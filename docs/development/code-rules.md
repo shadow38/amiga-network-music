@@ -128,6 +128,7 @@ After each link, `tools/check-stack.py` reads the linker map (`obj/<prog>.map`).
 
 | Executable | Version, machine | Used |
 |---|---|---|
+| `amisqueeze` | 0.9-dev, WinUAE | 5724 of 16384 bytes with FLAC, a seek and a pause, started by `Run >NIL:`; 1174 with a command-line error shown in the window |
 | `amisqueeze` | 0.8-dev, an A1200 with AmiNetXDuo | 5688 of 16384 bytes with the server discovery, raw PCM and a seek; 5632 with FLAC and a seek |
 | `amisqueeze.fpu` | 0.7, WinUAE | 17544 of 32768 bytes with FLAC and MP3 |
 

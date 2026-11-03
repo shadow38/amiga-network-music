@@ -1324,3 +1324,15 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   start's messages shown), a key typed in the window, the music never interrupted in the JIT profile; in the slow
   profile, the stop at Show measured and said in the guide (agreed with the user); from a Shell, the
   buttons greyed. The user guide (Exchange) and `CHANGELOG.md`.
+
+## player-20 Fixes after the 0.9 review ✅ version 0.9
+
+- **Goal**: the four findings at 75 of the [0.9 review](reviews/0.9.md) fixed, one commit each (R1 and R2
+  together: the same flag); agreed with the user.
+- **Content**: `strm f` drops nothing when the next track was refused or failed (R1); a `strm s` that replaces a
+  stream without data drops its track (R2); a command-line error under `Run >NIL:` through `msg()`, so the window
+  opens (R3); the message "this window cannot be hidden" in the user guide (R4). The servers' side of R1 and R2
+  not reproduced: the fixes hold whatever they send (agreed with the user).
+- **Criterion**: `make test` green, the new tests seen failing without the fixes; in WinUAE, `Run >NIL:` with a
+  bad argument opens the window with the message; the stack measured again in the same session, `amisqueeze`
+  only (agreed with the user: the margin is wide, `.fpu` left as it is).
