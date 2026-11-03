@@ -54,7 +54,7 @@ agreed with the user.
 |---|---|---|---|
 | 0.1 to 0.7 | the player for LMS and Music Assistant: PCM, FLAC, MP3, start from the Workbench, the `.lha`, releases built by the CI | player-1 to player-8d, player-7b, part of player-10, tools-10 (LMS), publish-2 (`.lha`), publish-3 | ✅, see the [changelog](../../CHANGELOG.md) |
 | 0.8 | what the real machine shows; a lower rate asked of the server; automatic server discovery; hardening; the writing rules applied to the documentation | player-9, player-10 (discovery), player-12, player-13, player-14, player-15, player-16, player-17, tools-11, tools-13, publish-6 | ✅, see the [changelog](../../CHANGELOG.md) |
-| 0.9 | internet radios' metadata (ICY); the window shown and hidden from Exchange; finishing touches after the 0.8 reviews; the code's size and complexity checked; a readable architecture page; the technical documentation organised | player-10 (end), tools-14, player-18, player-19, publish-7, publish-8, player-20 | 🔶 its steps done; the release left |
+| 0.9 | internet radios' metadata (ICY); the window shown and hidden from Exchange; finishing touches after the 0.8 reviews; the code's size and complexity checked; a readable architecture page; the technical documentation organised | player-10 (end), tools-14, player-18, player-19, publish-7, publish-8, player-20, player-21 | 🔶 its steps done; the release left |
 | 1.0 | `stream.c` and the unit tests split; a direct Paula output; setup guides, a full audit, the upload to Aminet | player-11, publish-4, publish-5, tools-10 (Music Assistant), publish-2 (Aminet) | ⬜ |
 | none yet | idea: source-level debugging | tools-8 | ⬜ |
 | none | reference documents on AmigaOS for contributors, committed when ready (agreed with the user) | tools-12 | ⬜ |
@@ -133,6 +133,8 @@ The rest agreed with the user, in this order, then a light review (publish-5):
 - **After the 0.9 review** (player-20): its four findings at 75 fixed: the queue of tracks after a next track
   refused, failed or replaced; a command-line error under `Run >NIL:` shown in the window; a message in the
   guide. The stack of `amisqueeze` measured again. Done.
+- **From the 0.9 review's 50 list** (player-21): a missing `cont` said after 10 s; tests for the guards no test
+  held; the documents' remarks; the alert `00068020` of a 68000 explained in the user guide. Done.
 - **Before the release**: Music Assistant on the A1200, since each of its tracks now waits for `cont`; there too,
   with Kickstart 3.1, the window of player-19 (its close gadget in RAW mode, its text kept without `SMART`, Show
   and Hide). Done on the A1200 (AmigaOS 3.1, AHI 4.180, AmiNetXDuo):
@@ -201,6 +203,7 @@ In this order (agreed with the user):
 | player-18 Hardening after the 0.8 light review | ✅ version 0.9 |
 | player-19 The window shown and hidden from Exchange | ✅ version 0.9 |
 | player-20 Fixes after the 0.9 review | ✅ version 0.9 |
+| player-21 From the 0.9 review's 50 list | ✅ version 0.9 |
 | remote-0 Study (common interface, Music Assistant feasibility, name) | ⬜ before any amilms code |
 | remote-1 to remote-7 LMS | ⬜ |
 | remote-8 to remote-11 Music Assistant | ⬜ |
@@ -235,6 +238,10 @@ Neither planned nor dropped for good. Each is taken up only by the user's decisi
   for a slowdown. Earlier, the multiplies were left alone (agreed with the user): no 68060 among the
   target machines, and `AUTO` measures the speed. Seen again, not taken for 0.9 (agreed with the
   user); a report from a 68040 or 68060 owner would settle it.
+- **A 68000 executable**: for a 68000 Amiga with a fast accelerator, such as an A500 with an ACA500plus (a 68000
+  at about 40 MHz) and a network card. Both executables need a 68020 today; raw PCM would be the aim, FLAC likely
+  too slow (`BENCH` would tell). Not planned: no such machine with a network card at hand, and the configuration
+  may be rare (agreed with the user).
 - **More sound ahead in AHI**: 3 blocks of 32 KB, about 0.19 s each at 44.1 kHz. On a slow Amiga, a call that
   holds the one task for 0.3 s (opening the window at Show, player-19) already stops the sound. More blocks, or
   bigger ones, would cost memory and delay the server's commands (pause, volume) (agreed with the user).

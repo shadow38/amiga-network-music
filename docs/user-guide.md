@@ -598,6 +598,7 @@ amisqueeze stops at once.
 | `FLAC=...: expected AUTO, ON or OFF` (or `MP3=...`) | a wrong value for that option |
 | `MAXRATE=...: expected AHI, AHISTD, or a rate from 8000 to 48000 Hz` | a wrong value for `MAXRATE` |
 | `PORT=...: expected 1 to 65535`, `UNIT=...: expected 0 to 3`, `PRI=...: expected -10 to 10` | a number out of range for that option |
+| `Recoverable Alert. Press left mouse button to continue.` with `Error: 0006 8020` | a 68000 or 68010: both executables need a 68020 or better; after the click, amisqueeze quits (return code 20) |
 | `amisqueeze.fpu needs an FPU (...): use amisqueeze instead` | `amisqueeze.fpu` started on an Amiga without an FPU |
 | `amisqueeze is already running (Exchange lists it and can stop it)` | started from a Shell while another amisqueeze runs; from the Workbench, the new one quits without a word |
 | `bsdsocket.library not found (is a TCP/IP stack running?)` | no TCP/IP stack started |

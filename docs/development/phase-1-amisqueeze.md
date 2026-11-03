@@ -1307,3 +1307,13 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   of `amisqueeze` measured again.
 - Agreed with the user: the servers' side of R1 and R2 not reproduced, since the fixes hold whatever they send;
   `amisqueeze.fpu`'s stack not measured again, its margin being wide.
+
+## player-21 From the 0.9 review's 50 list ✅ version 0.9
+
+- Taken from the [0.9 review](reviews/0.9.md)'s 50 list (agreed with the user): a missing `cont` said once after
+  10 s, without `VERBOSE`, the stream still waiting; a test for each guard the review removed with `make test`
+  still green, and the two dead conditions it found removed; the documents and comments that said something
+  inexact.
+- No 68020 check of our own: libnix's start-up code already shows the alert `00068020` on a 68000 or 68010, then
+  quits with 20, before `main()` (seen in WinUAE on a 68000). The alert is explained in the user guide rather than
+  replaced by a message of ours (agreed with the user).
