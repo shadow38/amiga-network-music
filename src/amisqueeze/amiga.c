@@ -706,12 +706,24 @@ int plat_wait(struct plat_fd *fds, int n, uint32_t timeout_ms)
 
 /* ---- entry point ---- */
 
+/* ReadArgs' error in AmigaDOS's words, through msg(): under Run >NIL: it opens the window (PrintFault would write to
+ * NIL:). where names the line's origin, NULL for the command line. */
+static void say_args_error(LONG error, const char *where)
+{
+    char fault[100];
+
+    Fault(error, NULL, (STRPTR)fault, sizeof(fault));
+    if (where != NULL)
+        msg("amisqueeze: %s: %s\n", where, fault);
+    else
+        msg("amisqueeze: %s\n", fault);
+}
+
 /* Parses a line (ended by a newline) with the command line template into args. Returns the RDArgs to free at the
  * end (FreeArgs, FreeDosObject), or NULL with a message naming where the line came from. */
 static struct RDArgs *parse_line(char *line, LONG args[], const char *where)
 {
     struct RDArgs *rda = AllocDosObject(DOS_RDARGS, NULL);
-    char fault[100];
 
     if (rda == NULL)
         return NULL;
@@ -720,8 +732,7 @@ static struct RDArgs *parse_line(char *line, LONG args[], const char *where)
     rda->RDA_Source.CS_CurChr = 0;
     rda->RDA_Flags |= RDAF_NOPROMPT;
     if (ReadArgs(TEMPLATE, args, rda) == NULL) {
-        Fault(IoErr(), NULL, (STRPTR)fault, sizeof(fault));
-        msg("amisqueeze: %s: %s\n", where, fault);
+        say_args_error(IoErr(), where);
         FreeDosObject(DOS_RDARGS, rda);
         return NULL;
     }
@@ -833,7 +844,7 @@ int main(void)
     if (wb)
         rda = parse_line(tt_line, args, "the icon's ToolTypes");
     else if ((rda = ReadArgs(TEMPLATE, args, NULL)) == NULL)
-        PrintFault(IoErr(), "amisqueeze");
+        say_args_error(IoErr(), NULL);
     if (rda == NULL)
         goto out_prefs;
     /* They win over the prefs; a switch (VERBOSE) set in the prefs cannot be turned off from them */
