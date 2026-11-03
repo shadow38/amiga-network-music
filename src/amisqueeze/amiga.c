@@ -42,9 +42,9 @@
  * at link time (--gc-sections), and Version would find nothing. Not const: in the data hunk. In the code hunk,
  * AmigaOS 3.2's Version read a garbled name ("amiseeze"), though the bytes were right. */
 #ifdef AMISQUEEZE_FPU
-static char version[] = "$VER: amisqueeze.fpu 0.9 (03.11.2026)";
+static char version[] = "$VER: amisqueeze.fpu 1.0-dev (03.11.2026)";
 #else
-static char version[] = "$VER: amisqueeze 0.9 (03.11.2026)";
+static char version[] = "$VER: amisqueeze 1.0-dev (03.11.2026)";
 #endif
 
 #ifdef AMISQUEEZE_FPU
