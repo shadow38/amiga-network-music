@@ -54,7 +54,7 @@ agreed with the user.
 |---|---|---|---|
 | 0.1 to 0.7 | the player for LMS and Music Assistant: PCM, FLAC, MP3, start from the Workbench, the `.lha`, releases built by the CI | player-1 to player-8d, player-7b, part of player-10, tools-10 (LMS), publish-2 (`.lha`), publish-3 | ✅, see the [changelog](../../CHANGELOG.md) |
 | 0.8 | what the real machine shows; a lower rate asked of the server; automatic server discovery; hardening; the writing rules applied to the documentation | player-9, player-10 (discovery), player-12, player-13, player-14, player-15, player-16, player-17, tools-11, tools-13, publish-6 | ✅, see the [changelog](../../CHANGELOG.md) |
-| 0.9 | internet radios' metadata (ICY); the window shown and hidden from Exchange; finishing touches after the 0.8 reviews; the code's size and complexity checked; a readable architecture page; the technical documentation organised | player-10 (end), tools-14, player-18, player-19, publish-7, publish-8, player-20 | ⬜ |
+| 0.9 | internet radios' metadata (ICY); the window shown and hidden from Exchange; finishing touches after the 0.8 reviews; the code's size and complexity checked; a readable architecture page; the technical documentation organised | player-10 (end), tools-14, player-18, player-19, publish-7, publish-8, player-20 | 🔶 its steps done; the release left |
 | 1.0 | `stream.c` and the unit tests split; a direct Paula output; setup guides, a full audit, the upload to Aminet | player-11, publish-4, publish-5, tools-10 (Music Assistant), publish-2 (Aminet) | ⬜ |
 | none yet | idea: source-level debugging | tools-8 | ⬜ |
 | none | reference documents on AmigaOS for contributors, committed when ready (agreed with the user) | tools-12 | ⬜ |
@@ -135,12 +135,12 @@ The rest agreed with the user, in this order, then a light review (publish-5):
   guide. The stack of `amisqueeze` measured again. Done.
 - **Before the release**: Music Assistant on the A1200, since each of its tracks now waits for `cont`; there too,
   with Kickstart 3.1, the window of player-19 (its close gadget in RAW mode, its text kept without `SMART`, Show
-  and Hide). Done on the A1200 (Kickstart 3.1 with Workbench 47.2 files, AHI 4.180, AmiNetXDuo):
+  and Hide). Done on the A1200 (AmigaOS 3.1, AHI 4.180, AmiNetXDuo):
   five tracks from Music Assistant, each waiting for `cont`, next and stop; the window as in WinUAE. Left:
   `images/exchange.png` taken again with the release's build.
 - **Left out**:
   - from the 0.8 reviews' 50 lists: the blind spots of `check-saves.py`, a test of a socket refused
-    non-blocking, a script against `printf` in the core, `quiet_hold`, `send_all` with nothing to send;
+    non-blocking, a script against `printf` in the core, `send_all` with nothing to send;
     `amisqueeze.fpu`'s stack, measured again only in a WinUAE run with a real TCP/IP stack;
   - the 68040 and 68060 instructions: still an open point (see below);
   - a time limit on `cont`: Music Assistant never sends it at some rates, a defect of its own, which squeezelite
@@ -207,9 +207,9 @@ In this order (agreed with the user):
 | remote-12 MPD | ⬜ idea, after Music Assistant |
 | publish-1 Licence and user documentation | 🔶 MIT licence; the user guide kept up to date |
 | publish-2 Aminet archive | 🔶 the `.lha` and its Aminet `.readme`; the upload with 1.0 |
-| publish-3 Public versions | 🔶 0.1 to 0.7 published; the CI tests, builds and drafts the release from a tag |
+| publish-3 Public versions | 🔶 0.1 to 0.8 published; the CI tests, builds and drafts the release from a tag |
 | publish-4 Setup guides: minimal server, the Amiga on the network | ⬜ before 1.0 |
-| publish-5 Review before each release | ✅ reviews since: [0.6](reviews/0.6.md), [0.7](reviews/0.7.md) |
+| publish-5 Review before each release | ✅ reviews since: [0.6](reviews/0.6.md), [0.7](reviews/0.7.md), [0.8](reviews/0.8.md) and its [light review](reviews/0.8-light.md), [0.9](reviews/0.9.md) |
 | publish-6 Writing rules for the documentation | ✅ the rules, the plan and the user guide; `docs/development/` later, where the user finds it worth it (closed) |
 | publish-7 A readable architecture page | ✅ version 0.9 |
 | publish-8 The technical documentation organised | ✅ version 0.9 |

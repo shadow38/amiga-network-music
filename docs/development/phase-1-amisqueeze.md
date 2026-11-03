@@ -1291,48 +1291,19 @@ belongs to the task that opened it; packets serialised field by field; buffers a
 
 ## player-19 The window shown and hidden from Exchange ✅ version 0.9
 
-- **Goal**: started from the Workbench, amisqueeze's message window opens and closes from Exchange (Show
-  Interface, Hide Interface), as a commodity's window does (agreed with the user). Today both
-  buttons are greyed.
-- **Content**:
-  - the commodity says it has a window (`COF_SHOW_HIDE`) when started from the Workbench;
-  - Show opens the window and shows the last messages again, a few KB kept; Hide closes it. The messages still go
-    to the `LOG` file;
-  - the window's close gadget hides it: the music goes on, and the window no longer opens again at the next
-    message (`AUTO` today);
-  - the start stays as it is: the window opens, unless `QUIET` (agreed with the user);
-  - from a Shell, both buttons stay greyed: the messages go to that Shell. But a Shell start whose output is
-    `NIL:` (`Run >NIL: amisqueeze` in `S:User-Startup`) is a start without a window: Show and Hide work as with
-    `QUIET`, the default window (agreed with the user);
-  - in `amiga.c`, in functions of their own, the parts with no system call in the core (host-tested); no hot key.
-    `amiga.c` would pass the 800 lines of a file: the `ahi.device` calls move to `amiga_ahi.c` first, as they are
-    (agreed with the user).
-- **How** (tried in WinUAE with AmigaOS 3.2.3, `ACTION_FORCE` and `WAIT` also with Kickstart 3.1; agreed with the
-  user; the details in `pitfalls.md`):
-  - an asynchronous read always waits on the window, which is in RAW mode: in the usual mode, a key typed without
-    Return held every write until Return, and amisqueeze with it (0.8 has the same code; seen in a Shell too).
-    The close gadget comes as a RAW event (`CSI 11;`), which hides the window;
-  - closing the window with that read pending would never get it back: `ACTION_FORCE` ends it first. A console
-    that refuses it (a replacement of `CON:`) keeps its window, with a message;
-  - `WAIT` and `AUTO` cannot go with a window that hides: taken out of `WINDOW`, and amisqueeze waits itself, at
-    the end, for its window to be closed;
-  - `SMART` dropped: it prevents selecting and copying, and the text was kept without it;
-  - 512 bytes of messages kept, about a window's worth (it has no scroll back): on a slow 68020 with Paula,
-    opening the window (about 0.2 s) already stops the sound for a moment, 2 KB shown again for 0.6 s more;
-  - `images/exchange.png` taken again.
-- **Criterion**: in WinUAE, through Exchange: Show and Hide, the close gadget, a start with `QUIET` then Show (the
-  start's messages shown), a key typed in the window, the music never interrupted in the JIT profile; in the slow
-  profile, the stop at Show measured and said in the guide (agreed with the user); from a Shell, the
-  buttons greyed. The user guide (Exchange) and `CHANGELOG.md`.
+- Exchange's Show and Hide open and close the message window, started from the Workbench or by `Run >NIL:` (a
+  start without a window, as with `QUIET`); from a Shell, both buttons stay greyed. The close gadget hides it too.
+  The window is in RAW mode, so a key typed in it no longer holds amisqueeze. How, and what was tried:
+  [pitfalls](pitfalls.md#the-workbench-start-and-the-window).
+- Agreed with the user: the start stays as it is (the window opens, unless `QUIET`); 512 bytes of messages shown
+  again, about a window's worth, since opening the window on a slow 68020 with Paula already stops the sound for a
+  moment; the `ahi.device` calls moved to `amiga_ahi.c`, so that `amiga.c` stays under 800 lines.
 
 ## player-20 Fixes after the 0.9 review ✅ version 0.9
 
-- **Goal**: the four findings at 75 of the [0.9 review](reviews/0.9.md) fixed, one commit each (R1 and R2
-  together: the same flag); agreed with the user.
-- **Content**: `strm f` drops nothing when the next track was refused or failed (R1); a `strm s` that replaces a
-  stream without data drops its track (R2); a command-line error under `Run >NIL:` through `msg()`, so the window
-  opens (R3); the message "this window cannot be hidden" in the user guide (R4). The servers' side of R1 and R2
-  not reproduced: the fixes hold whatever they send (agreed with the user).
-- **Criterion**: `make test` green, the new tests seen failing without the fixes; in WinUAE, `Run >NIL:` with a
-  bad argument opens the window with the message; the stack measured again in the same session, `amisqueeze`
-  only (agreed with the user: the margin is wide, `.fpu` left as it is).
+- The four findings at 75 of the [0.9 review](reviews/0.9.md): `strm f` after a next track refused or failed, and a
+  stream replaced before any data, keep the queue of tracks right (R1, R2); a command-line error under
+  `Run >NIL:` opens the window (R3); the message "this window cannot be hidden" in the user guide (R4). The stack
+  of `amisqueeze` measured again.
+- Agreed with the user: the servers' side of R1 and R2 not reproduced, since the fixes hold whatever they send;
+  `amisqueeze.fpu`'s stack not measured again, its margin being wide.
