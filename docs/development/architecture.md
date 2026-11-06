@@ -63,7 +63,7 @@ device, the wait.
   `amiga_ahi.c` holds the ahi.device calls;
 - `posix.c`, the host build, for tests and debugging. It has no audio device: its entry point never asks for the
   audio output, so it always uses the virtual output. `UNIT`, `NOAUDIO` and `SWAP` are accepted and ignored;
-- `tests/stub_platform.c`, for the unit tests (`tests/test_core.c`). It simulates the clock and the sockets. Its
+- `tests/stub_platform.c`, for the unit tests (`tests/test_*.c`). It simulates the clock and the sockets. Its
   fake audio device counts the requests ahi.device would mishandle (`stub_audio_bad`).
 
 The same sources give three programs:

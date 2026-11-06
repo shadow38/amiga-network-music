@@ -1327,20 +1327,8 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   `Makefile` links it there and `check-stack.py` checks it. The alert is explained in the user guide rather than
   replaced by a message of ours (agreed with the user).
 
-## player-22 `stream.c` and the unit tests split 🔶 version 1.0
+## player-22 `stream.c` and the unit tests split ✅ version 1.0
 
-- **Why**: `stream.c` holds the stream, the queue of tracks and the output in one file, and `tests/test_core.c`
-  tests the whole core in one file. The direct Paula output (player-11) goes into the output module.
-- **Content** (agreed with the user), two commits:
-  - **the code, `tests/` untouched**: `stream.c` split into three modules. The HTTP stream (start, connection,
-    headers, body, ICY, `cont`); the queue of tracks and the decoders; the output (AHI, the `OUTPUT` file, pause
-    and resume): `stream.c`, `tracks.c` and `output.c` (agreed with the user). The unchanged tests show that
-    nothing else changed;
-  - **the tests, `src/` untouched**: `test_core.c` split by module, with the same tests before and after.
-- **Criterion** (agreed with the user), at each commit:
-  - `make test` green, `check-stack.py` and `check-saves.py` included: functions no longer `static` change what
-    GCC inlines, so the stack;
-  - the exceptions listed in `check-quality.py` not growing;
-  - the stack measured again on the Amiga if `check-stack.py` shows it grew ([code-rules.md](code-rules.md));
-  - the WinUAE scenarios all OK on the new build ([winuae-scenarios.md](winuae-scenarios.md));
-  - the documents that name `stream.c` or `test_core.c` up to date.
+- `stream.c` split into `stream.c` (the HTTP stream), `tracks.c` (the queue of tracks and their decoders) and
+  `output.c` (the output, where the direct Paula output of player-11 goes); `tests/test_core.c` split into one
+  `test_<module>.c` per module, what they share left in `test_core.c` (agreed with the user).

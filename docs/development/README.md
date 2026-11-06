@@ -207,7 +207,7 @@ In this order (agreed with the user):
 | player-19 The window shown and hidden from Exchange | ✅ version 0.9 |
 | player-20 Fixes after the 0.9 review | ✅ version 0.9 |
 | player-21 From the 0.9 review's 50 list | ✅ version 0.9 |
-| player-22 `stream.c` and the unit tests split | 🔶 version 1.0, first: the code split (`stream.c`, `tracks.c`, `output.c`); the tests next |
+| player-22 `stream.c` and the unit tests split | ✅ version 1.0 |
 | remote-0 Study (common interface, Music Assistant feasibility, name) | ⬜ before any amilms code |
 | remote-1 to remote-7 LMS | ⬜ |
 | remote-8 to remote-11 Music Assistant | ⬜ |

@@ -6,7 +6,7 @@
 #
 #   make [all]    Amiga build (out/): out/amisqueeze, and out/amisqueeze.fpu (68881 FPU code)
 #   make host     host build of the programs listed in HOST_PROGS (out-host/), native compiler $(HOSTCC)
-#   make test     host build, unit tests of the portable core (tests/test_core.c), then scenarios against the
+#   make test     host build, unit tests of the portable core (tests/test_*.c), then scenarios against the
 #                 host build of amisqueeze driven by a fake server (tests/fake_server.py, python3), and against
 #                 its build without MP3
 #   make dist     release archives of amisqueeze: out/amisqueeze-<version>.zip and .lha (both executables and their
@@ -109,10 +109,12 @@ out-host/$(1): $(patsubst src/%.c,obj-host/%.o,$(call host_srcs,$(1)))
 endef
 $(foreach p,$(HOST_PROGS),$(eval $(call HOST_template,$(p))))
 
-# Unit tests: the portable core of amisqueeze on a fake platform (tests/stub_platform.c)
+# Unit tests: the portable core of amisqueeze on a fake platform (tests/stub_platform.c); test_core.c holds what
+# the tests share and main(), test_<module>.c the tests of each module
 TEST_CORE := player slimproto stream tracks output icy ring audio decoder flac dr_flac mp3 minimp3 bench \
              bench_flac bench_mp3
-out-host/test_core: obj-host/tests/test_core.o obj-host/tests/stub_platform.o \
+TEST_FILES := $(patsubst tests/%.c,obj-host/tests/%.o,$(wildcard tests/test_*.c))
+out-host/test_core: $(TEST_FILES) obj-host/tests/stub_platform.o \
                     $(patsubst %,obj-host/amisqueeze/%.o,$(TEST_CORE))
 	@mkdir -p $(dir $@)
 	$(HOSTCC) $(HOST_LDFLAGS) -o $@ $^

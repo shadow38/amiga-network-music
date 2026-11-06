@@ -188,11 +188,12 @@ gh api repos/shadow38/amiga-network-music/actions/artifacts/<id>/zip > <file>
 ```
 src/<prog>/           C sources, one directory per program -> out/<prog>; code shared between programs will go
                       in src/common/ (with amilms, none yet)
-src/amisqueeze/       portable core (player, slimproto, stream, icy, ring, audio, decoders: decoder, flac, mp3,
-                      bench), system services behind platform.h: amiga.c and amiga_ahi.c (AmigaOS, Amiga build
-                      only), posix.c (Linux/POSIX, host build only)
-tests/                unit tests of the core (test_core.c on stub_platform.c), fake server (fake_server.py),
-                      test files (data/: FLAC and MP3 made from the signals of flac_data.py)
+src/amisqueeze/       portable core (player, slimproto, stream, tracks, output, icy, ring, audio, decoders:
+                      decoder, flac, mp3, bench), system services behind platform.h: amiga.c and amiga_ahi.c
+                      (AmigaOS, Amiga build only), posix.c (Linux/POSIX, host build only)
+tests/                unit tests of the core on stub_platform.c (test_<module>.c, the tests of each module;
+                      test_core.c, what they share), fake server (fake_server.py), test files (data/: FLAC and
+                      MP3 made from the signals of flac_data.py)
 third_party/          decoders by others, unmodified, with their version and licence: dr_flac, minimp3
 obj/, out/            Amiga objects and executables (generated; obj/amisqueeze-fpu/: amisqueeze.fpu)
 obj-host/, out-host/  host objects and executables (generated)

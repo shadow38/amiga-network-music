@@ -42,12 +42,11 @@ OVER = {
     ("src/amisqueeze/posix.c", "parse_args"): {"complexity": 33, "lines": 64},
     ("src/amisqueeze/slimproto.c", "slim_discover"): {"complexity": 18},
     ("src/amisqueeze/stream.c", "stream_start"): {"parameters": 9},
-    ("tests/test_core.c", "test_stream_sequence"): {"complexity": 16, "lines": 63},
-    ("tests/test_core.c", "test_icy_cuts"): {"complexity": 18},
-    ("tests/test_core.c", "wav"): {"parameters": 8},
-    ("tests/test_core.c", "test_lame_header"): {"complexity": 20},
-    ("tests/test_core.c", "lame_frame"): {"parameters": 8},
-    ("tests/test_core.c", "main"): {"lines": 97},
+    ("tests/test_decoder.c", "wav"): {"parameters": 8},
+    ("tests/test_decoder.c", "test_lame_header"): {"complexity": 20},
+    ("tests/test_decoder.c", "lame_frame"): {"parameters": 8},
+    ("tests/test_icy.c", "test_icy_cuts"): {"complexity": 18},
+    ("tests/test_stream.c", "test_stream_sequence"): {"complexity": 16, "lines": 63},
 }
 
 # All the code, the C and what builds and tests it; the documents (docs/, *.md) and the review tooling (.claude/)
