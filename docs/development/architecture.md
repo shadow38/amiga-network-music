@@ -20,8 +20,8 @@ flowchart LR
     slim["slimproto.c: control connection (TCP 3483)"]
     http["stream.c: HTTP stream"]
     ring["ring.c: ring buffer (stream bytes)"]
-    dec["decoder of the track (pcm, flac, mp3, skip)"]
-    out["stream.c: output (boundaries, elapsed time)"]
+    dec["tracks.c: decoder of the track (pcm, flac, mp3, skip)"]
+    out["output.c: output (boundaries, elapsed time)"]
     virt["virtual output (paced at the PCM rate)"]
     file["OUTPUT file"]
     blocks["audio.c: 3 blocks (16-bit, volume, SWAP)"]
@@ -47,7 +47,9 @@ device, the wait.
 |---|---|
 | `player.c` | set-up from the options, the main loop, reconnection, the FLAC and MP3 decision at start-up; the parts of the Amiga start-up that need no system (ToolTypes, window specification, message history, close gadget's event), so that the unit tests reach them |
 | `slimproto.c` | the control connection: framing; the packets received (`strm`, `cont`, `audg`, `setd`...) and sent (`HELO`, `STAT`, `RESP`, `DSCO`, `META`, `SETD`); server discovery |
-| `stream.c` | the HTTP stream, the queue of tracks, the output (which decoder runs, track boundaries, elapsed time, statuses), the virtual output |
+| `stream.c` | the HTTP stream of the last track queued: connection, response headers, `cont`, the body into the ring buffer; `strm q` and `strm f` |
+| `tracks.c` | the queue of tracks in the ring buffer: which decoder runs on which track, where each track begins in the output, the `skip` decoder |
+| `output.c` | the output: the sink (audio output or virtual output), track boundaries, elapsed time, the statuses of playback, the `OUTPUT` file, pause and resume |
 | `icy.c` | an internet radio's parts that need no system: the HTTP status line, the metadata blocks taken out of the sound, the title in them |
 | `ring.c` | the 1 MB ring buffer of stream bytes |
 | `decoder.c`, `flac.c`, `mp3.c` | the decoders: raw PCM (and a WAV header), FLAC (dr_flac), MP3 (minimp3, `AMISQUEEZE_MP3` only) |
@@ -134,7 +136,7 @@ response headers come, 4 KB must be free, since body bytes may follow them in th
 ## The states
 
 Three state machines drive amisqueeze: the control connection (`run()` in `player.c`), the stream
-(`enum stream_state`) and the output (`enum output_state`, both in `stream.c`). Ctrl-C ends any of them.
+(`enum stream_state`, in `stream.c`) and the output (`enum output_state`, in `output.c`). Ctrl-C ends any of them.
 
 **The control connection**. It is lost when the server closes it, when a send fails, on a packet of an invalid
 size, or after 35 s without a packet.

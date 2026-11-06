@@ -312,7 +312,6 @@ void stream_free(struct player *p);
 /* strm s: starts receiving a track from ip:port with the given HTTP request, decoded by ops */
 void stream_start(struct player *p, uint32_t ip, uint16_t port, const uint8_t *request, int request_len,
                   uint32_t threshold, int autostart, const struct pcm_format *fmt, const struct decoder_ops *ops);
-uint32_t pcm_bytes_per_sec(const struct pcm_format *f);
 /* strm q: closes the stream and empties the buffer */
 void stream_stop(struct player *p);
 /* strm f: drops the last strm s's track if it is still queued (none when it was refused or failed), the track
@@ -325,6 +324,44 @@ void stream_io(struct player *p, int ready);
 void stream_cont(struct player *p, uint32_t interval);
 /* Events wanted on the stream socket (0 = none: idle, or buffer full) */
 int stream_events(const struct player *p);
+/* 1 while the stream may still bring data: connecting, headers, waiting for cont, body */
+int stream_active(const struct player *p);
+/* The stream has waited CONT_SAY_MS for cont: said once */
+void stream_late(struct player *p, uint32_t now);
+/* Offset just after the blank line ending HTTP headers ("\r\n\r\n" or "\n\n"), 0 if not there yet */
+int http_header_end(const char *buf, int len);
+
+/* tracks.c: the queue of tracks in the ring buffer, and the decoder of each */
+/* 1 while the decoder has not handed over everything it took from the buffer */
+int decoding(const struct player *p);
+/* 1 when the output has played everything before the next queued track (its start in the output is known once
+ * the reading has reached it) */
+int next_track_due(struct player *p);
+/* Leaves the track being decoded: the decoder frees its state */
+void stop_decoder(struct player *p);
+/* Track to decode now: the one whose decoder has not finished (its input may be used up already), otherwise the
+ * one at the buffer's read position */
+struct track *decode_track(struct player *p);
+/* Starts the decoder on track t when the decoding reaches it: its first decoded byte is the output position
+ * handed so far. A track the decoder cannot take is skipped (its data dropped). 0 if there is nothing to decode
+ * for now. */
+int prepare_decoder(struct player *p, struct track *t);
+/* Bytes of track t that are in the buffer, and whether that is all of them (the next track follows in the buffer,
+ * or the stream has ended). A track the decoder has not finished, though the reading has passed it, has no input
+ * left. */
+uint32_t track_input(struct player *p, const struct track *t, int *complete);
+
+/* output.c: the output, which hands the decoded PCM over to a sink */
+/* Initial state: stopped, no OUTPUT file */
+void output_init(struct player *p);
+/* Empties the buffer and the sink, forgets the queued tracks: positions start again from 0 */
+void output_reset(struct player *p);
+uint32_t pcm_bytes_per_sec(const struct pcm_format *f);
+/* Bytes of decoded PCM played since the last output_reset(), with an estimate of the audio block playing now.
+ * Virtual output: everything handed over is played at once. */
+uint64_t sink_played(const struct player *p);
+/* Starts the output once enough of the first track is buffered */
+void output_check_start(struct player *p);
 /* OUTPUT file: created (or replaced) before playing anything, closed at the end; 0 if it cannot be created */
 int output_file_open(struct player *p, const char *name);
 void output_file_close(struct player *p);
@@ -369,8 +406,6 @@ struct audio_mode;
 /* Warns when the unit's mode would not play a stereo stream right: a stereo mode that cannot pan (each sound on
  * one side) or a mono mode. Returns 1 if it warned. */
 int audio_check_mode(int unit, const struct audio_mode *m);
-/* Offset just after the blank line ending HTTP headers ("\r\n\r\n" or "\n\n"), 0 if not there yet */
-int http_header_end(const char *buf, int len);
 
 /* icy.c */
 /* The status code of an HTTP response: the three digits after the first space, whatever the protocol ("ICY 200 OK"

@@ -1,5 +1,5 @@
 /*
- * stream.c - portable core: HTTP stream of the current track, ring buffer and virtual output
+ * stream.c - portable core: the HTTP stream of the last track queued, into the ring buffer
  *
  * Behaviour expected by the server (as in squeezelite, rewritten from the protocol description):
  *   strm s -> STMf, non-blocking connection, request sent as is, STMc; response headers -> RESP;
@@ -18,11 +18,8 @@
  *   strm s while a stream still runs: that stream is closed, its track dropped if no data of it came yet;
  *   strm s refused (format not decoded, request too long, queue of tracks full) -> STMc + STMn: the server moves on
  *     to the next track.
- * The ring buffer holds the stream as received; the decoder of each track (decoder.h; raw PCM is copied as is)
- * turns it into PCM for a sink: the platform's audio output (AHI, blocks managed by audio.c), or the virtual
- * output, which consumes it at the PCM rate like a sound card (host build, NOAUDIO, OUTPUT); with the OUTPUT
- * option, the decoded PCM is also written to a file (the tests compare it byte by byte). Track boundaries,
- * elapsed time and the end of playback follow the bytes of decoded PCM the sink has played.
+ * The ring buffer holds the stream as received, several tracks back to back; tracks.c follows the queue of tracks
+ * and the decoder of each, output.c hands the decoded PCM over to a sink.
  */
 #include <string.h>
 
@@ -34,16 +31,12 @@
  * awake (WinUAE, 68020 at 28 MHz: 700 to 900 reads of 200 bytes a second, 40 % of the CPU with NOAUDIO) */
 #define READ_MIN_SPACE (8UL * 1024UL)
 
-static void stop_decoder(struct player *p);
-
 int stream_init(struct player *p)
 {
     memset(&p->stream, 0, sizeof(p->stream));
-    memset(&p->out, 0, sizeof(p->out));
     p->stream.sock = -1;
     p->stream.state = STREAM_IDLE;
-    p->out.state = OUTPUT_STOPPED;
-    p->out.file = -1;
+    output_init(p);
     return ring_init(&p->ring, STREAM_BUFFER_SIZE);
 }
 
@@ -61,21 +54,6 @@ void stream_free(struct player *p)
     stream_close(p);
     stop_decoder(p);
     ring_free(&p->ring);
-}
-
-/* Empties the buffer and the sink, forgets the queued tracks: positions start again from 0 */
-static void output_reset(struct player *p)
-{
-    ring_clear(&p->ring);
-    if (p->audio.enabled)
-        audio_reset(p);
-    p->out.queued = 0;
-    p->stream.in_queue = 0;
-    p->out.cur.start = 0;
-    p->out.cur.out_start = 0;
-    p->out.carry = 0;
-    p->out.handed = 0;
-    stop_decoder(p);                    /* the decoder starts again with the next track */
 }
 
 void stream_stop(struct player *p)
@@ -208,430 +186,14 @@ int stream_events(const struct player *p)
     }
 }
 
-/* ---- output ---- */
-
-uint32_t pcm_bytes_per_sec(const struct pcm_format *f)
-{
-    return f->rate * f->channels * f->sample_bytes;
-}
-
-/* ---- sink: where the output's bytes go (the audio output, or the virtual output) ---- */
-
-/* Bytes the sink takes now. Virtual output: the bytes due since the last tick, at the PCM rate of the data handed
- * over next: the rate strm s announced, until the decoder has read the track's header. */
-static uint32_t sink_space(struct player *p, const struct pcm_format *f, uint32_t now)
-{
-    struct output *o = &p->out;
-    uint64_t want = (uint64_t)(uint32_t)(now - o->last_tick) * pcm_bytes_per_sec(f) + o->carry;
-
-    o->last_tick = now;
-    o->carry = (uint32_t)(want % 1000);
-    return (uint32_t)(want / 1000);
-}
-
-/* Bytes of decoded PCM played since the last output_reset(), with an estimate of the audio block playing now.
- * Virtual output: everything handed over is played at once. */
-static uint64_t sink_played(const struct player *p)
-{
-    if (p->audio.enabled)
-        return audio_played(p, plat_now_ms(), 1);
-    return p->out.handed;
-}
-
-/* 1 when everything handed over was played */
-static int sink_drained(const struct player *p)
-{
-    return !p->audio.enabled || audio_pending(p) == 0;
-}
-
-static int streaming(const struct player *p)
+int stream_active(const struct player *p)
 {
     int s = p->stream.state;
 
     return s == STREAM_CONNECTING || s == STREAM_HEADERS || s == STREAM_CONT || s == STREAM_BODY;
 }
 
-/* 1 while the decoder has not handed over everything it took from the buffer */
-static int decoding(const struct player *p)
-{
-    return p->out.dec.ops != NULL && !p->out.dec.ops->finished(&p->out.dec);
-}
-
-/* Track of the data at the buffer's read position, the next one to decode */
-static struct track *read_track(struct player *p)
-{
-    struct output *o = &p->out;
-    struct track *t = &o->cur;
-    int i;
-
-    for (i = 0; i < o->queued && o->queue[i].start <= p->ring.total_out; i++)
-        t = &o->queue[i];
-    return t;
-}
-
-/* The reading has reached the start of a queued track and the decoder holds nothing more of the previous one:
- * that track's output starts at what has been handed so far */
-static void reach_tracks(struct player *p)
-{
-    struct output *o = &p->out;
-    int i;
-
-    if (decoding(p))
-        return;
-    for (i = 0; i < o->queued && o->queue[i].start <= p->ring.total_out; i++)
-        if (o->queue[i].out_start == OUT_START_UNKNOWN)
-            o->queue[i].out_start = o->handed;
-}
-
-/* 1 when the output has played everything before the next queued track (its start in the output is known once
- * the reading has reached it) */
-static int next_track_due(struct player *p)
-{
-    const struct output *o = &p->out;
-
-    reach_tracks(p);
-    return o->queued > 0 && o->queue[0].out_start != OUT_START_UNKNOWN && sink_played(p) >= o->queue[0].out_start;
-}
-
-/* At most n bytes, stopping where the next track begins (what the sink takes never spans two tracks) */
-static uint32_t until_next_track(const struct player *p, uint32_t n)
-{
-    const struct output *o = &p->out;
-    int i;
-
-    for (i = 0; i < o->queued; i++)
-        if (o->queue[i].start > p->ring.total_out) {
-            if (o->queue[i].start - p->ring.total_out < n)
-                n = (uint32_t)(o->queue[i].start - p->ring.total_out);
-            break;
-        }
-    return n;
-}
-
-/* Leaves the track being decoded: the decoder frees its state */
-static void stop_decoder(struct player *p)
-{
-    struct output *o = &p->out;
-
-    if (o->dec.ops != NULL)
-        o->dec.ops->stop(&o->dec);
-    o->dec.ops = NULL;
-}
-
-/* Track to decode now: the one whose decoder has not finished (its input may be used up already), otherwise the
- * one at the buffer's read position */
-static struct track *decode_track(struct player *p)
-{
-    struct output *o = &p->out;
-    int i;
-
-    if (decoding(p)) {
-        if (o->cur.start == o->dec.track)
-            return &o->cur;
-        for (i = 0; i < o->queued; i++)
-            if (o->queue[i].start == o->dec.track)
-                return &o->queue[i];
-    }
-    return read_track(p);
-}
-
-/* Decoder of a track whose own decoder could not start: drops its data, writes nothing */
-static int skip_start(struct decoder *d, const struct pcm_format *in)
-{
-    (void)d;
-    (void)in;
-    return 1;
-}
-
-static void skip_stop(struct decoder *d)
-{
-    (void)d;
-}
-
-static uint32_t skip_run(struct decoder *d, struct ring *r, uint32_t avail, int complete, uint8_t *out,
-                         uint32_t out_max)
-{
-    (void)d;
-    (void)complete;
-    (void)out;
-    (void)out_max;
-    ring_consume(r, avail);
-    return 0;
-}
-
-static uint32_t skip_none(const struct decoder *d)
-{
-    (void)d;
-    return 0;
-}
-
-static uint32_t skip_input_for(const struct decoder *d, uint32_t out)
-{
-    (void)out;
-    return skip_none(d);
-}
-
-static int skip_finished(const struct decoder *d)
-{
-    (void)d;
-    return 1;
-}
-
-static const struct decoder_ops decoder_skip = { "skip", skip_start, skip_stop, skip_run, skip_input_for,
-                                                 skip_none, skip_finished };
-
-/* Starts the decoder on track t when the decoding reaches it: its first decoded byte is the output position
- * handed so far. A track the decoder cannot take is skipped (its data dropped). 0 if there is nothing to decode
- * for now. */
-static int prepare_decoder(struct player *p, struct track *t)
-{
-    struct output *o = &p->out;
-
-    if (o->dec.ops == t->ops && o->dec.track == t->start)
-        return 1;
-    stop_decoder(p);
-    o->dec.ops = t->ops;
-    o->dec.track = t->start;
-    o->dec.state = NULL;
-    o->dec.verbose = (uint8_t)(p->verbose != 0);
-    if (t->out_start == OUT_START_UNKNOWN)
-        t->out_start = o->handed;
-    if (t->ops->start(&o->dec, &t->fmt)) {
-        t->out_fmt = o->dec.out;
-        return 1;
-    }
-    msg("amisqueeze: %s: cannot decode this track, skipped\n", t->ops->name);
-    ring_consume(&p->ring, until_next_track(p, ring_used(&p->ring)));
-    t->ops = o->dec.ops = &decoder_skip;    /* drops the rest of the track as it comes, without a state */
-    o->dec.out = t->out_fmt;
-    return 0;
-}
-
-/* Bytes of track t that are in the buffer, and whether that is all of them (the next track follows in the buffer,
- * or the stream has ended). A track the decoder has not finished, though the reading has passed it, has no input
- * left. */
-static uint32_t track_input(struct player *p, const struct track *t, int *complete)
-{
-    uint32_t used = ring_used(&p->ring), avail = until_next_track(p, used);
-
-    if (t != read_track(p)) {
-        *complete = 1;
-        return 0;
-    }
-    *complete = avail < used || !streaming(p);
-    return avail;
-}
-
-int output_file_open(struct player *p, const char *name)
-{
-    struct output *o = &p->out;
-
-    o->file = plat_file_create(name);
-    if (o->file < 0) {
-        msg("amisqueeze: cannot create %s: error %d\n", name, plat_error());
-        return 0;
-    }
-    o->file_name = name;
-    o->written = 0;
-    if (p->verbose)
-        msg("output: writing the audio to %s\n", name);
-    return 1;
-}
-
-void output_file_close(struct player *p)
-{
-    struct output *o = &p->out;
-
-    if (o->file < 0)
-        return;
-    plat_file_close(o->file);
-    o->file = -1;
-    if (p->verbose)
-        msg("output: %lu bytes written to %s\n", (unsigned long)o->written, o->file_name);
-}
-
-/* Virtual output: n bytes of decoded PCM played, written to the OUTPUT file if any. A write error closes the file;
- * playback goes on without it. */
-static void hand_over(struct player *p, const uint8_t *d, uint32_t n)
-{
-    struct output *o = &p->out;
-
-    if (o->file >= 0) {
-        int w = plat_file_write(o->file, d, (int)n);
-        if (w > 0)
-            o->written += (uint32_t)w;
-        if (w != (int)n) {
-            msg("amisqueeze: cannot write to %s: error %d, file closed\n", o->file_name, plat_error());
-            output_file_close(p);
-        }
-    }
-    o->handed += n;
-}
-
-/* The output reaches the next queued track: it becomes the current one */
-static void next_track(struct player *p)
-{
-    struct output *o = &p->out;
-
-    o->cur = o->queue[0];
-    if (o->cur.out_start == OUT_START_UNKNOWN)  /* the first track: nothing decoded yet */
-        o->cur.out_start = o->handed;
-    o->queued--;
-    memmove(o->queue, o->queue + 1, (size_t)o->queued * sizeof(o->queue[0]));
-    if (o->queued == 0)                 /* the last strm s's track is playing */
-        p->stream.in_queue = 0;
-    if (p->verbose)
-        msg("output: track started\n");
-    slim_send_stat(p, "STMs", 0);
-}
-
-/* Starts the output once enough of the first track is buffered */
-static void check_start(struct player *p)
-{
-    struct stream *s = &p->stream;
-    struct output *o = &p->out;
-
-    if (o->state != OUTPUT_STOPPED || o->queued == 0)  /* the callers never come in STREAM_CONT */
-        return;
-    if (s->bytes < s->threshold && s->state != STREAM_DONE)
-        return;
-    if (s->autostart & 1) {             /* 1, or 3 once cont has come */
-        o->state = OUTPUT_RUNNING;
-        o->last_tick = o->last_stmt = plat_now_ms();
-        o->carry = 0;
-        o->starved = 0;
-        next_track(p);
-    } else {
-        o->state = OUTPUT_LOADED;
-        if (p->verbose)
-            msg("output: loaded, waiting for strm u\n");
-        slim_send_stat(p, "STMl", 0);
-    }
-}
-
-/* Buffer and sink empty, or nothing in the buffer the decoder can use yet (the start of a frame whose rest has not
- * come): STMo while still streaming (the network is too slow), STMu once everything was played */
-static void output_empty(struct player *p)
-{
-    struct output *o = &p->out;
-
-    o->carry = 0;
-    if (streaming(p)) {
-        if (!o->starved) {
-            o->starved = 1;
-            if (p->verbose)
-                msg("output: buffer empty, waiting for data\n");
-            slim_send_stat(p, "STMo", 0);
-        }
-    } else {
-        o->state = OUTPUT_STOPPED;
-        if (p->verbose)
-            msg("output: end of playback\n");
-        slim_send_stat(p, "STMu", 0);
-    }
-}
-
-/* Audio output: the decoder fills the free blocks. A block holds whole frames of one track; it is sent full, or
- * with what there is when the track's data is complete or when the device is about to run dry (fewer than two
- * blocks queued). 8-bit samples fill half a block: they double in size when converted to 16 bits. */
-static void feed_audio(struct player *p, uint32_t now)
-{
-    struct output *o = &p->out;
-
-    for (;;) {
-        struct track *t;
-        uint32_t frame, n, avail, full;
-        uint64_t before;
-        int b, complete;
-
-        if (next_track_due(p)) {
-            next_track(p);
-            continue;
-        }
-        if (ring_used(&p->ring) == 0 && !decoding(p)) {
-            if (sink_drained(p))
-                output_empty(p);
-            return;
-        }
-        b = audio_free_block(p);
-        if (b < 0)
-            return;
-        t = decode_track(p);
-        if (!prepare_decoder(p, t))
-            continue;
-        frame = (uint32_t)t->out_fmt.channels * t->out_fmt.sample_bytes;
-        full = t->out_fmt.sample_bytes == 1 ? AUDIO_BLOCK_SIZE / 2 : AUDIO_BLOCK_SIZE;
-        full -= full % frame;
-        avail = track_input(p, t, &complete);
-        if (!complete && audio_pending(p) >= 2 && o->dec.ops->buffered(&o->dec) == 0 &&
-            avail < o->dec.ops->input_for(&o->dec, full))
-            return;                         /* more of this track to come: wait to fill a whole block */
-        before = p->ring.total_out;
-        n = o->dec.ops->run(&o->dec, &p->ring, avail, complete, audio_block_data(p, b), full);
-        t->out_fmt = o->dec.out;            /* known once the decoder has read the stream's header */
-        if (n == 0) {
-            if (p->ring.total_out != before)
-                continue;                   /* consumed without output: header, or an end not decodable */
-            /* The decoder waits for data that has not come, maybe the rest of a frame; a complete track only
-             * ends its decoding (the next track may be in the ring already) */
-            if ((!complete || ring_used(&p->ring) == 0) && sink_drained(p))
-                output_empty(p);
-            return;
-        }
-        o->starved = 0;
-        audio_submit(p, b, n, &t->out_fmt, now);
-        o->handed += n;
-    }
-}
-
-/* Virtual output: hands over the bytes due since the last tick, decoded through a small buffer */
-static void feed_virtual(struct player *p, uint32_t now)
-{
-    static uint16_t pcm[2048];              /* 16-bit aligned: decoders write native samples */
-    struct output *o = &p->out;
-    struct track *t = decode_track(p);
-    uint32_t bytes = sink_space(p, &t->out_fmt, now);
-
-    for (;;) {
-        uint32_t n, avail;
-        uint64_t before;
-        int complete;
-
-        if (next_track_due(p)) {
-            next_track(p);
-            continue;
-        }
-        if (bytes == 0)
-            break;
-        if (ring_used(&p->ring) == 0 && !decoding(p)) {
-            output_empty(p);
-            break;
-        }
-        t = decode_track(p);
-        if (!prepare_decoder(p, t))
-            continue;
-        avail = track_input(p, t, &complete);
-        before = p->ring.total_out;
-        n = o->dec.ops->run(&o->dec, &p->ring, avail, complete, (uint8_t *)pcm,
-                            bytes < sizeof(pcm) ? bytes : sizeof(pcm));
-        t->out_fmt = o->dec.out;            /* known once the decoder has read the stream's header */
-        if (n == 0) {
-            if (p->ring.total_out != before)
-                continue;                   /* consumed without output: header, or an end not decodable */
-            if (bytes < (uint32_t)t->out_fmt.channels * t->out_fmt.sample_bytes)
-                o->carry += bytes * 1000;   /* less than a frame due: kept for the next tick */
-            else if (!complete || ring_used(&p->ring) == 0)
-                output_empty(p);            /* the decoder waits for data that has not come (as above) */
-            break;
-        }
-        o->starved = 0;
-        hand_over(p, (const uint8_t *)pcm, n);
-        bytes -= n;
-    }
-}
-
-/* The stream has waited CONT_SAY_MS for cont: said once */
-static void cont_late(struct player *p, uint32_t now)
+void stream_late(struct player *p, uint32_t now)
 {
     struct stream *s = &p->stream;
 
@@ -640,71 +202,6 @@ static void cont_late(struct player *p, uint32_t now)
     s->cont_said = 1;
     msg("amisqueeze: stream: no cont from the server after %d s, still waiting\n", CONT_SAY_MS / 1000);
 }
-
-void output_tick(struct player *p, uint32_t now)
-{
-    struct output *o = &p->out;
-
-    cont_late(p, now);
-    if (o->state != OUTPUT_RUNNING) {
-        o->last_tick = now;
-        return;
-    }
-    if (p->audio.enabled)
-        audio_poll(p, now);
-    /* Track boundaries already played */
-    while (next_track_due(p))
-        next_track(p);
-    if (p->audio.enabled)
-        feed_audio(p, now);
-    else
-        feed_virtual(p, now);
-
-    if (o->state == OUTPUT_RUNNING && (uint32_t)(now - o->last_stmt) >= 1000) {
-        o->last_stmt = now;
-        slim_send_stat(p, "STMt", 0);
-    }
-}
-
-void output_pause(struct player *p)
-{
-    if (p->out.state == OUTPUT_RUNNING) {
-        p->out.state = OUTPUT_PAUSED;
-        if (p->audio.enabled)
-            audio_pause(p, plat_now_ms());  /* the sound stops at once */
-    }
-}
-
-void output_resume(struct player *p)
-{
-    struct output *o = &p->out;
-
-    if (o->state == OUTPUT_PAUSED || o->state == OUTPUT_LOADED) {
-        if (o->state == OUTPUT_PAUSED && p->audio.enabled)
-            audio_resume(p, plat_now_ms());
-        o->state = OUTPUT_RUNNING;
-        o->last_tick = o->last_stmt = plat_now_ms();
-        o->carry = 0;
-    }
-}
-
-uint32_t output_elapsed_ms(const struct player *p)
-{
-    const struct track *t = &p->out.cur;
-    uint32_t bps = pcm_bytes_per_sec(&t->out_fmt);
-    uint64_t played = sink_played(p);
-
-    if (bps == 0 || t->out_start == OUT_START_UNKNOWN || played < t->out_start)
-        return 0;
-    return (uint32_t)((played - t->out_start) * 1000 / bps);
-}
-
-int player_busy(const struct player *p)
-{
-    return p->stream.sock >= 0 || p->out.state == OUTPUT_RUNNING || audio_pending(p) > 0;
-}
-
-/* ---- HTTP stream ---- */
 
 int http_header_end(const char *buf, int len)
 {
@@ -852,7 +349,7 @@ static void read_headers(struct player *p)
     }
     s->state = STREAM_BODY;
     take_held(p);
-    check_start(p);
+    output_check_start(p);
 }
 
 void stream_cont(struct player *p, uint32_t interval)
@@ -872,7 +369,7 @@ void stream_cont(struct player *p, uint32_t interval)
     icy_start(&s->icy, interval);
     s->state = STREAM_BODY;
     take_held(p);
-    check_start(p);
+    output_check_start(p);
 }
 
 /* Each recv stops where the next metadata block begins: the sound goes straight into the ring, the block into its
@@ -905,7 +402,7 @@ static void read_body(struct player *p)
         ring_commit(&p->ring, (uint32_t)n);
         icy_took_sound(&s->icy, (uint32_t)n);
         s->bytes += (uint32_t)n;
-        check_start(p);
+        output_check_start(p);
         return;
     }
     stream_close(p);
@@ -919,7 +416,7 @@ static void read_body(struct player *p)
         slim_send_dsco(p, DSCO_REMOTE);
     }
     slim_send_stat(p, "STMd", 0);
-    check_start(p);                     /* short track: all of it arrived before the threshold */
+    output_check_start(p);              /* short track: all of it arrived before the threshold */
 }
 
 void stream_io(struct player *p, int ready)

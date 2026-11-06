@@ -65,7 +65,7 @@ One line each; the pointer says where it is explained.
 | Before touching | Read |
 |---|---|
 | the portable core (`src/amisqueeze/` but `amiga*.c`, `posix.c`) | `architecture.md`; `code-rules.md` |
-| `stream.c`, `slimproto.c`, `icy.c` (statuses, `strm`, `cont`) | `protocol.md`; `architecture.md`, The states |
+| `stream.c`, `tracks.c`, `output.c`, `slimproto.c`, `icy.c` (statuses, `strm`, `cont`) | `protocol.md`; `architecture.md`, The states |
 | `decoder.c`, `flac.c`, `mp3.c`, `third_party/` | `architecture.md`, Decoders; `code-rules.md` |
 | `audio.c`, `amiga_ahi.c` | `architecture.md`, AHI |
 | the start-up of `amiga.c`, `__stack`, libnix | `architecture.md`, The Amiga side; `code-rules.md`, Stack and memory; `pitfalls.md` |

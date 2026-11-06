@@ -44,7 +44,7 @@ The code uses only the `ahi.device` features of AHI 4. It is tested with AHI 6.6
 - **Positions**: the ring's (bytes of the stream) and the output's (bytes of decoded PCM) are never mixed
   ([two kinds of position](architecture.md#two-kinds-of-position)). Raw PCM cannot reveal a mix-up: the test-only
   "widening" decoder of `tests/test_core.c` can.
-- **`OUTPUT`** writes from `hand_over()` in `stream.c` only, the one place where the output hands PCM over.
+- **`OUTPUT`** writes from `hand_over()` in `output.c` only, the one place where the output hands PCM over.
 
 ### Messages and text
 
