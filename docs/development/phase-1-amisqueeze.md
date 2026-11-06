@@ -996,50 +996,99 @@ belongs to the task that opened it; packets serialised field by field; buffers a
 
 ## player-11 Direct Paula output ⬜ version 1.0
 
-- **Scope for 1.0** (agreed with the user): after the split of `stream.c`, before the setup guides and the audit.
-  - An option, AHI still the default: nothing changes for those who use AHI today. Paula taken by itself when
-    `ahi.device` cannot be opened: to confirm in the study, since it is what lets an Amiga without AHI play.
-  - The rate: with LMS, asked of the server (`MAXRATE`, player-13), so the Amiga converts no rate. With Music
-    Assistant, which cannot lower it yet: AHI, or a plain halving if the measure allows it.
-  - 14 bits uncalibrated if it costs little CPU, otherwise 8 bits. Paula's own volume, the sides in place,
-    double buffering with `BeginIO` in chip RAM.
-  - Left for later: Paula by default, a rate conversion with a real filter, 14 bits calibrated.
-  - A ceiling: if the study finds 8 bits too poor to hear and 14 bits too costly, the step leaves 1.0 rather
-    than grow.
-- **The study** (agreed with the user): at the start of the step, this section is rewritten from an earlier,
-  fuller study (branch `player-11-paula`, plan only, no code). It keeps that study's findings this scope allows:
-  the channels and the volume of the 14 bits, `BeginIO`, the period from the machine's clock, the LED filter, a
-  channel taken by another program, the checks before coding, three sub-steps (host, WinUAE, A1200). Not taken:
-  Paula by default and the rate divided in the core. Then the branch is deleted.
+- **Scope for 1.0** (agreed with the user): an option, AHI still the default, so nothing changes for those who
+  use AHI today.
+  - The rate (agreed with the user): with LMS and its rules, lowered by the server (`MAXRATE`, player-13), so the
+    Amiga converts none. A stream above Paula's highest rate all the same (Music Assistant, LMS without the
+    rules) is divided by the Amiga by a whole number, without interpolation.
+  - Paula's own volume, the sides in place, `BeginIO` with blocks in chip RAM.
+  - Three outputs (agreed with the user): `AUDIO=AHI`, the default; `PAULA`, 14 bits; `PAULA8`, 8 bits with one
+    channel per side left free. Paula is also taken, in 14 bits, when `ahi.device` cannot be opened and `AUDIO`
+    is not given.
+  - Left for later: a rate conversion with a real filter, 14 bits calibrated, and `AUDIO=AUTO` (agreed with the
+    user). `AUTO` would be the default: Paula direct when AHI is missing or the AHI unit's driver is Paula
+    (`AHIDB_Driver`, a tag more in the call `amiga_ahi.c` already makes), AHI otherwise. Little code, but every
+    user of AHI on Paula would change output unasked, so it waits until the A1200 has judged Paula direct (a step
+    after 1.0). Without being the default it would serve no one.
+  - A ceiling: if 8 bits proves too poor to hear and 14 bits too costly, the step leaves 1.0 rather than grow.
+- **Why**: on the slow profile, playing through AHI and `paula.audio` costs 61-68 % of the CPU, almost all of it
+  in AHI (player-4c), and up to 88 % with the volume scaled in the core (player-6). On the A1200, a PCMCIA network
+  card's reception also makes AHI's Paula output crackle (player-9): large buffers read by Paula alone would not
+  mind it. Prior art: MintAMP (Aminet `mus/play`, 68030+) plays internet radio on Paula this way, without AHI;
+  read its documentation only, its licence is not checked.
+- **The design**:
+  - **Through `audio.device`**, not the chip registers. Double buffering: Paula holds the next block's address
+    while one plays, so a late interrupt makes no gap. Requests sent with `BeginIO`, never `DoIO`: it clears
+    `io_Flags`, so `ADIOF_PERVOL` is lost and the volume is 0 (tools-5).
+  - **14 bits**, uncalibrated: two channels per side, the 8 high bits at volume 64 and the next 6 at volume 1.
+    Left: channels 0 (high) and 3 (low); right: 1 and 2 (`WT:paula-lr`, tools-5). All four channels are taken,
+    so every other sound is silent while amisqueeze plays.
+  - **8 bits** (`PAULA8`): the high channels only, 0 and 1. One channel per side stays free, for the system's
+    beep or another program. Its CPU barely differs from the 14 bits' (the split, and two DMA channels more):
+    it is for sharing Paula, and the reference by ear for the uncalibrated 14 bits. Below volume 100, `PAULA`
+    plays these 8 bits anyway.
+  - **The volume is Paula's, never the samples'**, so it costs no CPU. At 100, or fixed by LMS: 64 and 1. Below
+    100: the high channel at the server's volume (1 to 64; 0 only for 0), the low one at 0, that is 8 bits
+    lowered by Paula, its noise going down with the music. Changed at once with `ADCMD_PERVOL`.
+  - **The period from the machine's clock** (3,546,895 Hz PAL, 3,579,545 Hz NTSC), never from the screen mode;
+    the nearest whole period, and the elapsed time computed at the rate it gives.
+  - **The conversion in the portable core** (`output.c`, `audio.c`'s blocks): one pass splits the 16 bits into
+    8 + 6, left and right apart (`SWAP` swaps the destinations), the rate divided, written straight into chip
+    RAM buffers handed out by the platform layer. Tested on the host bit for bit.
+  - **Positions**: the bytes played are still counted in bytes of the stream, so a divided rate counts each
+    sample played for all the samples it groups (`architecture.md`, Two kinds of position).
+  - **Paula's LED filter** off while playing, as `paula.audio` does, and its state restored at every exit,
+    Ctrl-C included.
+  - **A channel taken by another program**: the channels are allocated at a precedence the system's beep cannot
+    take them from. If one is taken all the same: a message and a clean stop; with `PAULA`, the message
+    suggests `PAULA8`. No fall back from 14 to 8 bits by itself.
+  - **The option** `AUDIO=AHI|PAULA|PAULA8`, `AHI` by default, also as a ToolType and in
+    `ENV:amisqueeze.prefs`; accepted and ignored by the host build. Without `AUDIO`, AHI missing gives `PAULA`
+    with a message; `AUDIO=AHI` written out keeps today's error. `NOAUDIO` and `OUTPUT` win over `AUDIO`.
+    `UNIT` is unused with Paula.
+  - **`MAXRATE` with Paula** (agreed with the user): by default Paula's highest rate, so that the server lowers
+    the rate with a better filter than the Amiga's; `AHI` or `AHISTD` give a message and Paula's highest rate
+    instead. `MAXRATE=<Hz>` stays, for instance 22050 for a lighter load. The highest rate is to measure in
+    player-11b: the shortest period gives about 28.6 kHz, but 27,429 Hz sounded best through AHI (below).
+  - **The rate divided** (agreed with the user): a stream above Paula's highest rate is divided by the smallest
+    whole number that brings it under, the grouped samples averaged (a coarse filter). So 44.1 kHz plays at
+    22.05, 48 at 24, 32 at 16, 88.2 and 96 kHz at a quarter. No interpolation: 32 kHz cannot become 24.
+  - **`SWAP` keeps its meaning.** Paula's sides are right with this output; the user guide's advice to add
+    `SWAP` stays for `paula.audio`, and `SWAP` with `PAULA` or `PAULA8` gives a message saying it is not
+    needed.
+- **Sub-steps**, one commit each:
+  - **player-11a, on the host only**: the conversion, the divisor, the server's volume turned into 0 to 64, the
+    bytes played, the period and the elapsed time; a fake Paula device in `tests/stub_platform.c`.
+  - **player-11b**: `plat_paula_*` in `platform.h`, `audio.device` in `amiga.c`, the `AUDIO` option, Paula when
+    AHI is missing, `MAXRATE` with Paula; the checks below first, then WinUAE.
+  - **player-11c**: the A1200.
+- **To check before coding**, in the autodocs or in WinUAE (player-11b):
+  - `CMD_STOP` and `CMD_START` stop and restart a write at once: the pause would then send nothing again;
+  - the four channels started in step;
+  - the longest `ioa_Length`;
+  - how a channel taken by another program is reported (`ADIOERR_CHANNELSTOLEN`), and at which precedence the
+    Sound preferences play the beep;
+  - PAL or NTSC read from `REALLY_PAL` in `GfxBase->DisplayFlags`.
 - **On the A1200** (agreed with the user): the AHI Paula driver 4.33 (Aminet `driver/audio/AHI-Paula`, the
   A1200 has 4.23) tried with its `AHIpaulaBufferLength`, to learn whether a larger AHI buffer stops the crackles
   with a PCMCIA network card.
-
-- **Why**: on the slow profile, playing through AHI and `paula.audio` costs 61-68 % of the CPU, almost all of it in
-  AHI (player-4c), and up to 88 % with the volume scaled in the core (player-6). A second audio sink that drives Paula through
-  `audio.device` itself, without AHI, could leave much more room on a 68020 without FPU. On the real A1200 with
-  a PCMCIA network card (player-9), the network reception also makes AHI's Paula output crackle: large buffers read
-  by Paula alone would not mind it.
-  Prior art: MintAMP (Aminet `mus/play`, 68030+) plays internet radio on Paula this way, without AHI; read its
-  documentation only, its licence is not checked.
-- **To study first**: the work AHI does that would come back to us: the rate (Paula's maximum is about 28 kHz in
-  a PAL or NTSC screen mode, so 44.1 and 48 kHz must be lowered: a cheap integer step, or a simple filter), 8 bits per
-  channel (or 14 bits with two channels per side and a calibration table: twice the DMA and more CPU), blocks in
-  chip RAM, double buffering with `BeginIO` (never `DoIO`: it clears `io_Flags`, `ADIOF_PERVOL` is lost, volume 0,
-  see tools-5). Volume: Paula's own (0 to 64 per channel) costs no CPU, which also fits the volume modes of player-10.
-  Heard through AHI on the A1200 (the same music, `paula.audio` of AHI 4.180): Paula at 27,429 Hz
-  with a 32 kHz stream sounded best; at 22,050 Hz with 44.1 kHz (an exact half) and at 24,000 Hz with 24 kHz (no
-  conversion), worse. Halving the rate may not be enough: Paula's highest rate matters.
-- **Sides**: channels 0 and 3 left, 1 and 2 right (`WT:paula-lr`, correct in WinUAE, unlike Paula through AHI, see
-  tools-5). `paula.audio` swaps them, on the real A1200 too (player-9). Until this step, the user guide has Paula
-  users add `SWAP`; the sides are handled here, and a `SWAP` by default for `paula.audio` is to weigh only if AHI
-  stays Paula's output (agreed with the user).
-- **Shape**: an option such as `AUDIO=AHI|PAULA`, behind the same sink interface as `audio.c` (blocks, played
-  bytes, pause), the Amiga calls in `amiga.c`; the conversion and the lower rate in the portable core, tested on the
-  host bit for bit like the rest.
-- **Criterion** (to agree when the step starts): on the slow profile, the same music and the same LMS criteria as
-  player-4 to player-6, sides in place without `SWAP`, at a CPU load clearly below AHI's (measured with `cpucount`, as in
-  player-4c); then heard on the real 68020 machine (player-9).
+- **Heard through AHI on the A1200** (`paula.audio` of AHI 4.180, the same music): Paula at 27,429 Hz with a
+  32 kHz stream sounded best; at 22,050 Hz with 44.1 kHz (an exact half) and at 24,000 Hz with 24 kHz (no
+  conversion), worse. Paula's highest rate matters.
+- **Criterion** (agreed with the user):
+  - in WinUAE, slow profile: player-4 to player-6's LMS criteria (test tones, pause, seek, volume, tracks without
+    gaps), the sides in place without `SWAP`, and a load clearly below AHI's, measured with `cpucount` as in
+    player-4c; WinUAE set to NTSC: the same pitch as in PAL, and the same elapsed time in LMS; the LED filter
+    restored after Ctrl-C; a channel taken by another program: its message and a clean stop; with `PAULA8`, the
+    system's beep heard while the music plays on; without AHI, `PAULA` taken with its message;
+  - on the A1200 with LMS, the rate lowered by the server, `PAULA` and `PAULA8`: a load of at most 40 %
+    (`cpucount`; about 50 % through AHI), the same at volume 50 with a clean sound; no `STMo`;
+  - a 44.1 kHz stream not lowered by the server (Music Assistant in WinUAE, `MAXRATE=48000` on the A1200):
+    played at 22.05 kHz, the right pitch and elapsed time, its load measured;
+  - on the A1200, while the PCMCIA card receives: no crackle, or clearly fewer than through AHI in the same
+    setup (the card's driver has its share, player-9);
+  - by ear on the A1200: `PAULA` at least as good as AHI's 14 bits on the same song, no click from volume 100 to
+    99, a quiet passage clean at volume 30, mute fading smoothly.
 
 ## player-12 Hardening ✅ version 0.8
 
