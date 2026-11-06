@@ -87,7 +87,8 @@ To keep the options for every start: [keeping the options](#keeping-the-options)
 
 amisqueeze plays through **AHI**, the standard audio system of the Amiga. Programs play through AHI, and an AHI
 driver drives the sound hardware: Paula (the Amiga's own sound chip) or a sound card. AHI is free, on Aminet, but
-**not part of AmigaOS 3.x**: an Amiga that only ever played games and demos usually does not have it.
+**not part of AmigaOS 3.x**: an Amiga that only ever played games and demos usually does not have it. Without
+AHI, amisqueeze plays on Paula directly (see [Paula without AHI](#paula-without-ahi)).
 
 #### Installing AHI
 
@@ -135,6 +136,25 @@ CPU.
   modes take more.
 - **The power LED dims** while amisqueeze runs: `paula.audio` turns Paula's filter off, which the LED shows. This
   is normal; the LED comes back when amisqueeze quits.
+
+#### Paula without AHI
+
+`AUDIO=PAULA` plays straight on Paula, without AHI, and takes much less CPU than through AHI. Without AHI
+installed, amisqueeze does it by itself, and says so.
+
+- **`AUDIO=PAULA`**: 14 bits, on all four of Paula's channels. No other sound, the system's beep included, is
+  heard while amisqueeze runs.
+- **`AUDIO=PAULA8`**: 8 bits, on two channels only, at a lower quality. The system's beep and other programs keep
+  the other two.
+- **Left and right are in place**: no `SWAP`.
+- **The rate**: amisqueeze asks the server for Paula's highest rate, about 28.6 kHz (see [`MAXRATE`](#maxrate)).
+  With LMS, add the rules of `MAXRATE`: without them, LMS refuses every file above that rate. Music played at a
+  higher rate all the same is played at half its rate (a third, a quarter...), with duller treble.
+- **The volume** is Paula's own. Below 100, `AUDIO=PAULA` plays 8 bits, lowered by Paula.
+- **The power LED dims** while it plays, as with AHI's Paula driver.
+- **Chip memory**: 96 KB (48 KB with `PAULA8`). The AHI unit (`UNIT`) is not used.
+- **Another program playing on Paula**: amisqueeze does not take its channels, and stops with a message. Try
+  `AUDIO=PAULA8`, which needs only two.
 
 ### Server setup
 
@@ -369,7 +389,7 @@ LMS's volume scale is logarithmic: 50 is already quiet, 25 very quiet.
 The command line's template:
 
 ```
-SERVER,PORT/N/K,NAME/K,MAC/K,OUTPUT/K,LOG/K,UNIT/N/K,NOAUDIO/S,SWAP/S,FLAC/K,MP3/K,MAXRATE/K,PRI/N/K,BENCH/S,VERBOSE/S
+SERVER,PORT/N/K,NAME/K,MAC/K,OUTPUT/K,LOG/K,AUDIO/K,UNIT/N/K,NOAUDIO/S,SWAP/S,FLAC/K,MP3/K,MAXRATE/K,PRI/N/K,BENCH/S,VERBOSE/S
 ```
 
 | Option | Meaning | Default |
@@ -378,6 +398,7 @@ SERVER,PORT/N/K,NAME/K,MAC/K,OUTPUT/K,LOG/K,UNIT/N/K,NOAUDIO/S,SWAP/S,FLAC/K,MP3
 | `PORT` | the server's slimproto port, 1 to 65535; without `SERVER`, the server is looked for on that UDP port too | `3483` |
 | `NAME` | the player's name shown by the server (see [`NAME` and `MAC`](#name-and-mac)) | `Amiga` |
 | `MAC` | the player's identifier, `xx:xx:xx:xx:xx:xx` | derived from `NAME` |
+| `AUDIO` | `AHI`, `PAULA` or `PAULA8`: through AHI, or on Paula directly in 14 or 8 bits (see [Paula without AHI](#paula-without-ahi)) | `AHI`; `PAULA` when AHI is not installed |
 | `UNIT` | the AHI unit to play through, 0 to 3 (see [setting up the unit](#setting-up-the-unit)) | `0` |
 | `SWAP` | swaps left and right, for an AHI driver that swaps them | off |
 | `FLAC` | `AUTO`, `ON` or `OFF`: where FLAC is decoded (see [`FLAC`, `MP3` and `BENCH`](#flac-mp3-and-bench)) | `AUTO` |
@@ -486,6 +507,10 @@ No gap nor crackle in any of them.
 At another rate than the unit's, AHI converts it simply, which adds faint whistles. For the lightest load, set the
 unit itself to 22050 Hz in `SYS:Prefs/AHI`, then give `MAXRATE=AHI`.
 
+**On Paula without AHI** ([`AUDIO=PAULA`](#paula-without-ahi)), amisqueeze asks for Paula's highest rate without
+`MAXRATE`: 28603 Hz in PAL, 28867 Hz in NTSC. `MAXRATE=AHI` and `AHISTD` have no AHI unit to follow, and give
+that rate too, with a message. `MAXRATE=<Hz>` still works: `MAXRATE=22050` for a lighter load.
+
 At start-up, amisqueeze says what it asks for:
 
 ```
@@ -571,6 +596,8 @@ with `amisqueeze: `, left out below. `N` stands for a number, `...` for a name o
 | `connected to the server` | the connection is up; the player should show up on the server |
 | `player name: ...` | the player was renamed on the server: amisqueeze takes the new name; each byte outside plain ASCII shows as `?`, so an accented letter shows as `??`, while the server keeps the name as typed |
 | `stopped` | amisqueeze has stopped cleanly (Ctrl-C, `Break`, Remove in Exchange) |
+| `another program took Paula's channel N` | with `AUDIO=PAULA` or `PAULA8`: amisqueeze stops; should not happen, since no other program can take them |
+| `Paula: N blocks restarted on every channel to keep them in step` | at the end, with `AUDIO=PAULA` or `PAULA8`: the Amiga was too busy to queue the music in time; not seen so far |
 
 #### Warnings at start-up
 
@@ -582,6 +609,9 @@ amisqueeze plays anyway.
 | `AHI unit N uses "...", a mono mode: the music will play in mono` | choose a "stereo++" mode for stereo |
 | `MP3=ON: this build does not decode MP3 ...` | `MP3=ON` given to `amisqueeze`: MP3 stays with the server |
 | `MAXRATE=AHI: the AHI unit's rate is not known (...): at most 48000 Hz asked of the server` (or `AHISTD`) | with `NOAUDIO` or `OUTPUT`, or when the AHI preferences cannot be read: give the rate in Hz instead |
+| `playing on Paula directly instead (AUDIO=PAULA)` | after `cannot open ahi.device ...`, without `AUDIO`: AHI is missing, amisqueeze plays on Paula (see [Paula without AHI](#paula-without-ahi)) |
+| `SWAP is not needed with AUDIO=PAULA, whose left and right are in place: swapped as asked` (or `PAULA8`) | leave `SWAP` out with Paula without AHI |
+| `MAXRATE=AHI: no AHI with Paula direct: at most N Hz asked of the server, Paula's highest rate` (or `AHISTD`) | with `AUDIO=PAULA` or `PAULA8`, leave `MAXRATE` out, or give a rate in Hz |
 
 #### amisqueeze does not start
 
@@ -597,6 +627,7 @@ amisqueeze stops at once.
 | `invalid MAC (expected xx:xx:xx:xx:xx:xx)` | `MAC` is not six hexadecimal pairs |
 | `FLAC=...: expected AUTO, ON or OFF` (or `MP3=...`) | a wrong value for that option |
 | `MAXRATE=...: expected AHI, AHISTD, or a rate from 8000 to 48000 Hz` | a wrong value for `MAXRATE` |
+| `AUDIO=...: expected AHI, PAULA or PAULA8` | a wrong value for `AUDIO` |
 | `PORT=...: expected 1 to 65535`, `UNIT=...: expected 0 to 3`, `PRI=...: expected -10 to 10` | a number out of range for that option |
 | `Recoverable Alert. Press left mouse button to continue.` with `Error: 0006 8020` | a 68000 or 68010: both executables need a 68020 or better; after the click, amisqueeze quits (return code 20) |
 | `amisqueeze.fpu needs an FPU (...): use amisqueeze instead` | `amisqueeze.fpu` started on an Amiga without an FPU |
@@ -604,8 +635,10 @@ amisqueeze stops at once.
 | `bsdsocket.library not found (is a TCP/IP stack running?)` | no TCP/IP stack started |
 | `server ... not found` | the server's host name cannot be resolved |
 | `not enough memory for the 1024 KB stream buffer` | not enough free memory |
-| `not enough memory for the audio blocks` (or `for the audio output`) | the 3 audio blocks (96 KB) or the AHI requests cannot be allocated |
-| `cannot open ahi.device unit N (is AHI installed? NOAUDIO plays without sound)` | AHI missing, or that unit cannot be opened |
+| `not enough memory for the audio blocks` (or `for the audio output`) | the 3 audio blocks (96 KB), the AHI requests, or those of Paula without AHI cannot be allocated |
+| `cannot open ahi.device unit N (is AHI installed? NOAUDIO plays without sound)` | with `AUDIO=AHI`: AHI missing, or that unit cannot be opened; without `AUDIO`, amisqueeze plays on Paula instead |
+| `Paula's channels 0 to 3 are used by another program (AUDIO=PAULA8 needs only channels 0 and 1)` (or `0 and 1`) | another program plays on Paula: stop it, or try `AUDIO=PAULA8` |
+| `cannot open audio.device`, `not enough chip memory for Paula: N KB` | Paula without AHI cannot start: the system's audio device, or not enough chip memory |
 | `timer.device unavailable` | the system timer cannot be opened; should not happen |
 
 #### Connection
@@ -808,7 +841,9 @@ Paula through AHI 4.180, a Xircom CE3-10/100 PCMCIA card with a fixed `xircomce2
 - CPU: a 68020 at about 28 MHz, and with the JIT (the speed of a PiStorm, roughly); with and without a 68882;
 - AmigaOS 3.2.3; 3.0 and 3.1 from a Shell, without AHI; 2.04, the oldest version it asks for, starts;
 - TCP/IP: WinUAE's emulation (`bsdsocket_emu=true`), and AmiNetXDuo on WinUAE's emulated network card;
-- sound: AHI 6.6 with `paula.audio` and a Toccata card, checked by ear;
+- sound: AHI 6.6 with `paula.audio` and a Toccata card, checked by ear; Paula without AHI (`AUDIO=PAULA` and
+  `PAULA8`), in PAL and NTSC, checked by ear with LMS. On the 28 MHz 68020, LMS sending 28603 Hz, it took 20 % of
+  the CPU in 14 bits and 9 % in 8 bits, against 54 % through AHI at 27429 Hz;
 - with LMS 9.1.1: everything amisqueeze does, an hour of playback included; with Music Assistant 2.10.7:
   playback, the commands, its codecs, a server restart;
 - an internet radio with LMS: an MP3 radio at an `http://` address fetched by `amisqueeze.fpu` itself, its titles

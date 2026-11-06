@@ -250,6 +250,17 @@ uint32_t parse_maxrate(const char *s)
     return v >= MAXRATE_MIN && v <= MAXRATE_DEFAULT ? v : 0;
 }
 
+int parse_audio_output(const char *s)
+{
+    if (same_word(s, "AHI"))
+        return AUDIO_AHI;
+    if (same_word(s, "PAULA"))
+        return AUDIO_PAULA;
+    if (same_word(s, "PAULA8"))
+        return AUDIO_PAULA8;
+    return -1;
+}
+
 /* Never above the unit's rate: what it cannot play, AHI's conversion folds back into whistles (heard
  * on the A1200 with a sweep) */
 uint32_t maxrate_from_ahi(uint32_t which, uint32_t freq)
@@ -445,6 +456,74 @@ static void run(struct player *p)
     }
 }
 
+/* AHI opened: its unit's mode, printed with VERBOSE and checked; returns 1 if known (in *mode) */
+static int ahi_mode(const struct player *p, const struct options *o, struct audio_mode *mode)
+{
+    const char *swapped = o->swap ? ", left and right swapped" : "";
+
+    if (plat_audio_mode(o->unit, mode)) {
+        if (p->verbose)
+            msg("output: AHI unit %d (%s, %lu Hz)%s\n", o->unit, mode->name, (unsigned long)mode->freq, swapped);
+        audio_check_mode(o->unit, mode);
+        return 1;
+    }
+    if (p->verbose)
+        msg("output: AHI unit %d%s\n", o->unit, swapped);
+    return 0;
+}
+
+/* The audio output: AHI, or Paula direct (AUDIO, or ahi.device missing without AUDIO; UNIT unused). Returns -1 if
+ * it cannot be opened, else 1 if the AHI unit's mode is known (in *mode). */
+static int open_output(struct player *p, const struct options *o, struct audio_mode *mode)
+{
+    int out = o->audio_output;
+
+    if (out != AUDIO_PAULA && out != AUDIO_PAULA8) {
+        if (audio_open(p, AUDIO_AHI, o->unit, o->swap))
+            return ahi_mode(p, o, mode);
+        if (out == AUDIO_AHI)
+            return -1;
+        msg("amisqueeze: playing on Paula directly instead (AUDIO=PAULA)\n");
+        out = AUDIO_PAULA;
+    }
+    if (!audio_open(p, out, o->unit, o->swap))
+        return -1;
+    if (o->swap)                            /* paula.audio puts them the wrong way round, not Paula */
+        msg("amisqueeze: SWAP is not needed with AUDIO=%s, whose left and right are in place: swapped as asked\n",
+            out == AUDIO_PAULA ? "PAULA" : "PAULA8");
+    if (p->verbose)
+        msg("output: Paula direct, %s%s\n", out == AUDIO_PAULA ? "14 bits" : "8 bits, channels 2 and 3 left free",
+            o->swap ? ", left and right swapped" : "");
+    return 0;
+}
+
+/* The highest rate asked of the server (HELO). With Paula direct, its highest rate by default, so that the server
+ * lowers the rate with a better filter than the Amiga's division. mode: the AHI unit's, if mode_known. */
+static void set_maxrate(struct player *p, const struct options *o, const struct audio_mode *mode, int mode_known)
+{
+    uint32_t paula = p->audio.enabled && p->audio.paula ? paula_max_rate(p->audio.clock) : 0;
+
+    p->maxrate = paula ? paula : MAXRATE_DEFAULT;
+    if (o->maxrate == MAXRATE_AHI || o->maxrate == MAXRATE_AHISTD) {
+        const char *which = o->maxrate == MAXRATE_AHI ? "AHI" : "AHISTD";
+
+        if (paula)
+            msg("amisqueeze: MAXRATE=%s: no AHI with Paula direct: at most %lu Hz asked of the server, Paula's "
+                "highest rate\n", which, (unsigned long)paula);
+        else if (mode_known) {
+            p->maxrate = maxrate_from_ahi(o->maxrate, mode->freq);
+            msg("MAXRATE: at most %lu Hz asked of the server (AHI unit %d at %lu Hz)\n", (unsigned long)p->maxrate,
+                o->unit, (unsigned long)mode->freq);
+        } else
+            msg("amisqueeze: MAXRATE=%s: the AHI unit's rate is not known (NOAUDIO, OUTPUT, or no AHI "
+                "preferences): at most %lu Hz asked of the server\n", which, (unsigned long)p->maxrate);
+    } else if (o->maxrate) {
+        p->maxrate = o->maxrate;
+        msg("MAXRATE: at most %lu Hz asked of the server\n", (unsigned long)p->maxrate);
+    } else if (paula && p->verbose)
+        msg("MAXRATE: at most %lu Hz asked of the server, Paula's highest rate\n", (unsigned long)paula);
+}
+
 int player_main(struct player *p, const struct options *o)
 {
     struct audio_mode mode;
@@ -496,19 +575,11 @@ int player_main(struct player *p, const struct options *o)
     }
     /* OUTPUT checks the data: it keeps the virtual output (what AHI aborts on a stop would be in the file) */
     if (o->audio && !o->output) {
-        if (!audio_open(p, AUDIO_AHI, o->unit, o->swap)) {
+        if ((mode_known = open_output(p, o, &mode)) < 0) {
             output_file_close(p);
             stream_free(p);
             return PLAYER_FAIL;
         }
-        if (plat_audio_mode(o->unit, &mode)) {
-            mode_known = 1;
-            if (p->verbose)
-                msg("output: AHI unit %d (%s, %lu Hz)%s\n", o->unit, mode.name, (unsigned long)mode.freq,
-                    o->swap ? ", left and right swapped" : "");
-            audio_check_mode(o->unit, &mode);
-        } else if (p->verbose)
-            msg("output: AHI unit %d%s\n", o->unit, o->swap ? ", left and right swapped" : "");
     } else if (p->verbose)
         msg("output: virtual (no sound)\n");
     /* What the server may send as is: decided once, at start-up (HELO) */
@@ -520,21 +591,7 @@ int player_main(struct player *p, const struct options *o)
     if (o->mp3 == DECODE_ON)
         msg("MP3=ON: this build does not decode MP3 (amisqueeze.fpu does, with an FPU): converted by the server\n");
 #endif
-    /* The highest rate asked of the server (HELO) */
-    p->maxrate = MAXRATE_DEFAULT;
-    if (o->maxrate == MAXRATE_AHI || o->maxrate == MAXRATE_AHISTD) {
-        if (mode_known) {
-            p->maxrate = maxrate_from_ahi(o->maxrate, mode.freq);
-            msg("MAXRATE: at most %lu Hz asked of the server (AHI unit %d at %lu Hz)\n", (unsigned long)p->maxrate,
-                o->unit, (unsigned long)mode.freq);
-        } else
-            msg("amisqueeze: MAXRATE=%s: the AHI unit's rate is not known (NOAUDIO, OUTPUT, or no AHI "
-                "preferences): at most %lu Hz asked of the server\n", o->maxrate == MAXRATE_AHI ? "AHI" : "AHISTD",
-                (unsigned long)p->maxrate);
-    } else if (o->maxrate) {
-        p->maxrate = o->maxrate;
-        msg("MAXRATE: at most %lu Hz asked of the server\n", (unsigned long)p->maxrate);
-    }
+    set_maxrate(p, o, &mode, mode_known);
     msg("player \"%s\" (%02X:%02X:%02X:%02X:%02X:%02X), ", p->name, p->mac[0], p->mac[1], p->mac[2], p->mac[3],
         p->mac[4], p->mac[5]);
     if (p->discover)

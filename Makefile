@@ -2,7 +2,7 @@
 # finds the available toolchain; see docs/development/building.md).
 #
 # One program per directory: src/<prog>/*.c -> out/<prog>. In a program directory, amiga*.c (amiga.c,
-# amiga_ahi.c) are only built for the Amiga and posix.c only for the host.
+# amiga_ahi.c, amiga_paula.c) are only built for the Amiga and posix.c only for the host.
 #
 #   make [all]    Amiga build (out/): out/amisqueeze, and out/amisqueeze.fpu (68881 FPU code)
 #   make host     host build of the programs listed in HOST_PROGS (out-host/), native compiler $(HOSTCC)

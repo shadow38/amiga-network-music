@@ -12,7 +12,8 @@ sound itself. It runs as one task, with two connections to the server, one buffe
 
 - the control connection (slimproto, TCP 3483) carries the server's commands and the player's statuses;
 - the HTTP stream brings a track's bytes into the ring buffer;
-- the decoder of each track turns them into PCM, which the output hands to AHI or to the virtual output.
+- the decoder of each track turns them into PCM, which the output hands to AHI, to Paula directly, or to the
+  virtual output.
 
 ```mermaid
 flowchart LR
@@ -26,6 +27,7 @@ flowchart LR
     file["OUTPUT file"]
     blocks["audio.c: 3 blocks (16-bit, volume, SWAP)"]
     ahi["amiga_ahi.c: ahi.device"]
+    paula["amiga_paula.c: audio.device (AUDIO=PAULA, PAULA8)"]
 
     server -->|"strm, cont, audg, setd"| slim
     slim -->|"STAT, RESP, DSCO, META, SETD"| server
@@ -35,6 +37,7 @@ flowchart LR
     out -->|"hand_over()"| virt
     virt -.->|"OUTPUT="| file
     out -->|"audio_submit()"| blocks --> ahi
+    blocks --> paula
 ```
 
 ## Source files and builds
@@ -59,11 +62,13 @@ device, the wait.
 
 `platform.h` has three implementations:
 
-- on the Amiga, `amiga.c` and `amiga_ahi.c`. `amiga.c` uses bsdsocket.library (`WaitSelect()`), timer.device and
-  dos.library, and holds the entry point ([The Amiga side](#the-amiga-side-start-up-window-commodity)).
-  `amiga_ahi.c` holds the ahi.device calls;
+- on the Amiga, `amiga.c`, `amiga_ahi.c` and `amiga_paula.c`. `amiga.c` uses bsdsocket.library (`WaitSelect()`),
+  timer.device and dos.library, and holds the entry point
+  ([The Amiga side](#the-amiga-side-start-up-window-commodity)). `amiga_ahi.c` holds the ahi.device calls,
+  `amiga_paula.c` the audio.device calls of the direct Paula output;
 - `posix.c`, the host build, for tests and debugging. It has no audio device: its entry point never asks for the
-  audio output, so it always uses the virtual output. `UNIT`, `NOAUDIO` and `SWAP` are accepted and ignored;
+  audio output, so it always uses the virtual output. `AUDIO`, `UNIT`, `NOAUDIO` and `SWAP` are accepted and
+  ignored;
 - `tests/stub_platform.c`, for the unit tests (`tests/test_*.c`). It simulates the clock and the sockets. Its
   fake audio device counts the requests ahi.device would mishandle (`stub_audio_bad`); its fake Paula, the calls
   against Paula's rules (`stub_paula_bad`).
@@ -90,7 +95,7 @@ amisqueeze is one task running one loop, `run()` in `player.c`. Each turn waits 
 **The wait** (`plat_wait()`) watches the control socket, and the stream socket while there is one. The stream
 socket is watched for writing while it connects, for reading once the ring has room enough. The wait ends after
 100 ms while something streams or plays, or while a socket is left out (below), and after 1 s otherwise. On the
-Amiga, the end of an AHI request ends it too, and so do the window's and Exchange's events.
+Amiga, the end of an audio request (AHI or Paula) ends it too, and so do the window's and Exchange's events.
 
 **No socket blocks**, except during the control connection's `connect()`. A read that finds nothing
 (`PLAT_AGAIN`) is no error: that socket is left out of the waits for 100 ms (`AGAIN_WAIT_MS`).
@@ -248,6 +253,39 @@ from the source of ahi.device (AHI 6.0):
 
 The fake audio device of the unit tests counts the requests that break the first two rules (`stub_audio_bad`).
 
+## Paula direct
+
+`AUDIO=PAULA` and `PAULA8` play without AHI: `audio.c` converts each block straight into chip RAM buffers
+(`paula.c`), and `amiga_paula.c` sends one `CMD_WRITE` per channel and block to audio.device. Why: AHI's mixing
+costs a slow 68020 most of its time. The rules, from audio.device's autodoc and what WinUAE showed:
+
+- **14 bits from two channels per side**: the 8 high bits at volume 64, the next 6 at volume 1, uncalibrated.
+  Left: channels 0 (high) and 3 (low); right: 1 and 2. `PAULA8` takes channels 0 and 1 only, leaving one per side
+  to the system's beep or another program.
+- **`BeginIO()`, never `DoIO()`**: `DoIO()` clears `io_Flags`, so `ADIOF_PERVOL` is lost and the write plays at
+  volume 0. A request used again is marked as a message (`NT_MESSAGE`) before it is sent: it comes back as a
+  reply, which `CheckIO()` and `WaitIO()` take for done.
+- **The two channels of a side stay in step**, or the 14 bits are wrong. A start from idle (the first block, a
+  resume, after an underrun) stops the channels, gives each its write, and starts them together with
+  `CMD_START`. A block added while one plays is sent to every channel with the interrupts off; if the block before
+  has already ended on some channels, it goes through `CMD_STOP` and `CMD_START` instead, which is counted and
+  said at the end.
+- **`CMD_STOP` is no pause**: it loses the cycle it stops. A pause aborts the blocks, as with AHI, after a
+  `CMD_STOP` on every channel, so that the next block does not start on some channels only. audio.device does not
+  tell how much a write played: the clock estimates it.
+- **The channels are taken from no one**: allocated at the lowest precedence (-128) without waiting, which fails
+  if another program holds one, then raised to the highest (127), so that nothing takes them back, the system's
+  beep included. A write ended by another program all the same stops the player, as Ctrl-C does.
+- **The volume is Paula's**, never the samples': below full, the high channels at the server's volume and the low
+  ones silent. `ADCMD_PERVOL` changes it at once; the writes not started yet carry it too.
+- **The period from the machine's crystal**: `REALLY_PAL` in `GfxBase->DisplayFlags` from graphics V39, the `PAL`
+  flag before it. The shortest period, 124, gives the highest rate, asked of the server as `MAXRATE` by default,
+  so that the server lowers the rate with a better filter than the Amiga's division.
+- **Paula's low-pass filter** (the power LED) is turned off while playing, as `paula.audio` does, and set back at
+  every exit, Ctrl-C included.
+- **The conversion takes the bytes as they are** when the rate is not divided, the usual case: the general path,
+  with a mean per sample, cost the slow profile more than AHI did.
+
 ## The Amiga side: start-up, window, commodity
 
 `main()` in `amiga.c` reads the options, opens the system's resources, then calls `player_main()`:
@@ -346,6 +384,7 @@ builds and the allocations of the code:
   usual stereo blocks of 4,096 samples, more for a file with bigger ones. MP3: minimp3's state (7 KB), the
   16 KB staging buffer, a frame of PCM (4.5 KB).
 - AHI takes about 0.2 MB more the first time a program opens it.
+- With `AUDIO=PAULA`, the chip RAM buffers come on top of the blocks: 96 KB (48 KB with `PAULA8`), and no AHI.
 - The rest of what `Avail` shows, about 0.2 MB, is not broken down. Likely parts: the process, the window, what
   the TCP/IP stack allocates for a new client, libnix's memory lists.
 
@@ -367,8 +406,8 @@ A platform layer implements `platform.h`, whose comments are the reference; `pos
   another starts when that one ends. The unit's mode (`plat_audio_mode()`), and on an abort, the bytes played, or
   `-1` when the device cannot tell;
 - **Paula direct** (`plat_paula_*`): chip RAM buffers of `PAULA_BLOCK_SAMPLES` per block and channel, blocks played
-  by every channel in the order sent, Paula's clock, its volume set at once; on an abort, the samples played. Not
-  available yet on the Amiga, nor on the host;
+  by every channel in the order sent, Paula's clock, its volume set at once; on an abort, the samples played, or
+  `-1` when the device cannot tell (audio.device never can). Not available on the host;
 - **the output file** of `OUTPUT`, the task's priority (`PRI`), and the name resolution of `SERVER`;
 - **the entry point**: it reads the options into `struct options`, then calls `player_main()`, or
   `player_bench()` for `BENCH`.

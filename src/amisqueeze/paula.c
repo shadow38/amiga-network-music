@@ -94,16 +94,44 @@ static void put(uint8_t *high, uint8_t *low, uint32_t k, int32_t s)
         low[k] = (uint8_t)(((uint32_t)s >> 2) & 0x3F);
 }
 
+/* The rate not divided, the usual case (the server lowers it): each sample's bytes taken as they are, the high one
+ * as it is, the low one shifted. The general path cost a slow 68020 more than AHI did (seen in WinUAE). */
+static uint32_t convert_whole(const struct paula_in *in, uint8_t *const high[2], uint8_t *const low[2])
+{
+    const uint8_t *b = in->data;
+    uint32_t step = 2 * (uint32_t)in->channels, right = in->channels == 2 ? 2 : 0, k;
+    int hi = in->big_endian ? 0 : 1, lo = 1 - hi;
+    uint8_t *h0 = high[0], *h1 = high[1], *l0 = low[0], *l1 = low[1];
+
+    if (l0 != NULL && l1 != NULL) {
+        for (k = 0; k < in->frames; k++, b += step) {
+            h0[k] = b[hi];
+            l0[k] = (uint8_t)(b[lo] >> 2);
+            h1[k] = b[right + hi];
+            l1[k] = (uint8_t)(b[right + lo] >> 2);
+        }
+    } else {
+        for (k = 0; k < in->frames; k++, b += step) {
+            h0[k] = b[hi];
+            h1[k] = b[right + hi];
+        }
+    }
+    return k;
+}
+
 uint32_t paula_convert(const struct paula_in *in, uint8_t *const high[2], uint8_t *const low[2])
 {
     int shift = power_of_two(in->divisor), side;
     uint32_t f, n, k = 0;
 
-    for (f = 0; f < in->frames; f += n, k++) {
-        n = in->frames - f < in->divisor ? in->frames - f : in->divisor;
-        for (side = 0; side < 2; side++)
-            put(high[side], low[side], k, group_mean(in, f, n, in->channels == 2 ? side : 0, shift));
-    }
+    if (in->divisor <= 1)
+        k = convert_whole(in, high, low);
+    else
+        for (f = 0; f < in->frames; f += n, k++) {
+            n = in->frames - f < in->divisor ? in->frames - f : in->divisor;
+            for (side = 0; side < 2; side++)
+                put(high[side], low[side], k, group_mean(in, f, n, in->channels == 2 ? side : 0, shift));
+        }
     if (k & 1) {                            /* Paula plays an even count */
         for (side = 0; side < 2; side++) {
             high[side][k] = high[side][k - 1];

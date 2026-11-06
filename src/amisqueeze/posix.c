@@ -3,10 +3,11 @@
  * services of platform.h. Same behaviour as the Amiga build; the arguments use the same KEY=value syntax:
  *
  *   amisqueeze [[SERVER=]<ip|name>] [PORT=3483] [NAME=<name>] [MAC=xx:xx:xx:xx:xx:xx] [OUTPUT=<file>] [LOG=<file>]
- *              [UNIT=<n>] [NOAUDIO] [SWAP] [FLAC=AUTO|ON|OFF] [MP3=AUTO|ON|OFF]
+ *              [AUDIO=AHI|PAULA|PAULA8] [UNIT=<n>] [NOAUDIO] [SWAP] [FLAC=AUTO|ON|OFF] [MP3=AUTO|ON|OFF]
  *              [MAXRATE=AHI|AHISTD|<Hz>] [PRI=<n>] [BENCH] [VERBOSE]
  *
- * No audio output: always the virtual output (UNIT, NOAUDIO and SWAP are accepted for the same command lines).
+ * No audio output: always the virtual output (AUDIO, UNIT, NOAUDIO and SWAP are accepted for the same command
+ * lines).
  * PRI is checked but leaves the process's priority as it is.
  *
  * Ctrl-C (SIGINT) or SIGTERM stops it, like Ctrl-C on the Amiga. No default options file.
@@ -314,7 +315,7 @@ int32_t plat_audio_abort(int i)
     return 0;
 }
 
-/* No Paula on the host either */
+/* No Paula on the host either: the entry point never asks for it */
 int plat_paula_open(int channels)
 {
     (void)channels;
@@ -437,6 +438,32 @@ int plat_wait(struct plat_fd *fds, int n, uint32_t timeout_ms)
 
 /* ---- entry point ---- */
 
+/* The options that take one of a few values: a, the KEY=value argument, its key k characters long, v its value.
+ * Returns 1 if read into o, 0 if the value is wrong (said), -1 if the key is none of them. */
+static int parse_choice(const char *a, size_t k, const char *v, struct options *o)
+{
+    if (k == 4 && !strncasecmp(a, "FLAC", 4)) {
+        if ((o->flac = parse_decode_mode(v)) >= 0)
+            return 1;
+        msg("amisqueeze: FLAC=%s: expected AUTO, ON or OFF\n", v);
+    } else if (k == 3 && !strncasecmp(a, "MP3", 3)) {
+        if ((o->mp3 = parse_decode_mode(v)) >= 0)
+            return 1;
+        msg("amisqueeze: MP3=%s: expected AUTO, ON or OFF\n", v);
+    } else if (k == 7 && !strncasecmp(a, "MAXRATE", 7)) {
+        if ((o->maxrate = parse_maxrate(v)) != 0)
+            return 1;
+        msg("amisqueeze: MAXRATE=%s: expected AHI, AHISTD, or a rate from %lu to %lu Hz\n", v,
+            (unsigned long)MAXRATE_MIN, (unsigned long)MAXRATE_DEFAULT);
+    } else if (k == 5 && !strncasecmp(a, "AUDIO", 5)) {
+        if ((o->audio_output = parse_audio_output(v)) >= 0)
+            return 1;
+        msg("amisqueeze: AUDIO=%s: expected AHI, PAULA or PAULA8\n", v);
+    } else
+        return -1;
+    return 0;
+}
+
 /* KEY=value arguments like the Amiga template; the SERVER= keyword may be omitted */
 static int parse_args(int argc, char **argv, struct options *o)
 {
@@ -466,26 +493,13 @@ static int parse_args(int argc, char **argv, struct options *o)
             else if (k == 3 && !strncasecmp(a, "PRI", 3)) {
                 o->pri = atoi(v);
                 o->pri_given = 1;
-            }
-            else if (k == 4 && !strncasecmp(a, "FLAC", 4)) {
-                if ((o->flac = parse_decode_mode(v)) < 0) {
-                    msg("amisqueeze: FLAC=%s: expected AUTO, ON or OFF\n", v);
-                    return 0;
-                }
-            } else if (k == 3 && !strncasecmp(a, "MP3", 3)) {
-                if ((o->mp3 = parse_decode_mode(v)) < 0) {
-                    msg("amisqueeze: MP3=%s: expected AUTO, ON or OFF\n", v);
-                    return 0;
-                }
-            } else if (k == 7 && !strncasecmp(a, "MAXRATE", 7)) {
-                if ((o->maxrate = parse_maxrate(v)) == 0) {
-                    msg("amisqueeze: MAXRATE=%s: expected AHI, AHISTD, or a rate from %lu to %lu Hz\n", v,
-                        (unsigned long)MAXRATE_MIN, (unsigned long)MAXRATE_DEFAULT);
-                    return 0;
-                }
             } else {
-                msg("amisqueeze: unknown option %s\n", a);
-                return 0;
+                int r = parse_choice(a, k, v, o);
+
+                if (r < 0)
+                    msg("amisqueeze: unknown option %s\n", a);
+                if (r <= 0)
+                    return 0;
             }
         } else if (!strcasecmp(a, "VERBOSE"))
             o->verbose = 1;

@@ -21,8 +21,8 @@ portable core by `make test`, a change to the Amiga side in WinUAE too.
 ## Host build and tests
 
 amisqueeze is split into a **portable core** in standard C, with no Amiga header, and a thin **platform layer**
-(`platform.h`): `amiga.c` and `amiga_ahi.c` on AmigaOS, `posix.c` on Linux and other POSIX systems. So the same
-core also runs on the build machine, where it is fast to test. How they fit together:
+(`platform.h`): `amiga.c`, `amiga_ahi.c` and `amiga_paula.c` on AmigaOS, `posix.c` on Linux and other POSIX
+systems. So the same core also runs on the build machine, where it is fast to test. How they fit together:
 [architecture](architecture.md).
 
 ### In short
@@ -217,7 +217,11 @@ tests use:
 | 2 | `Paula:8 bit stereo++`, 27,429 Hz | the lighter Paula mode |
 | 3 | `Toccata:16 bit stereo` (without "++") | the start-up warning of a mode that plays one side only |
 
-- With Paula in WinUAE, left and right come out swapped: use `SWAP`.
+- With Paula through AHI in WinUAE, left and right come out swapped: use `SWAP`. Paula without AHI
+  (`AUDIO=PAULA`, `PAULA8`) needs none; with LMS, it needs the `MAXRATE` rules of the user guide for the player's
+  MAC address.
+- In WinUAE, a tone on one side only (`tone-left.flac`) is faintly heard on the other side too, with every output,
+  AHI included: not amisqueeze's.
 - Judge Paula at volume 100 on the server: a lower volume scales the samples down and brings out Paula's noise
   (a crackle at 50). Occasional crackles also occur with AHI's own test tone: WinUAE's, not amisqueeze's.
 - A "Filesave" mode on a unit plays nothing (it is not real time): the bytes amisqueeze plays are checked with
@@ -391,7 +395,7 @@ shows there first.
 ### Sound
 
 - Paula through AHI (`paula.audio`) is the main test, an AHI sound card (Toccata in WinUAE) the 16-bit reference.
-- With Paula in WinUAE, use `SWAP`: left and right come out swapped.
+- With Paula through AHI in WinUAE, use `SWAP`: left and right come out swapped. Not with `AUDIO=PAULA`.
 - Judge Paula's sound at volume 100 on the server. A lower volume scales the samples down and brings out Paula's
   14-bit noise: a crackle at 50.
 

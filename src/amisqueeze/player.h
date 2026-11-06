@@ -33,8 +33,9 @@ struct options {
     const char *name;                   /* NULL = "Amiga" */
     const char *mac;                    /* "xx:xx:xx:xx:xx:xx", NULL = derived from the name */
     const char *output;                 /* file receiving the audio played, NULL = none (implies no audio) */
-    int         audio;                  /* 1 = play through the platform's audio output (AHI), 0 = virtual */
-    int         unit;                   /* audio unit (AHI unit), checked by player_main: 0 to 3 */
+    int         audio;                  /* 1 = play through the platform's audio output, 0 = virtual */
+    int         audio_output;           /* AUDIO: enum audio_output, AUDIO_DEFAULT if not given */
+    int         unit;                   /* audio unit (AHI unit), checked by player_main: 0 to 3; unused by Paula */
     int         swap;                   /* swap left and right */
     int         pri;                    /* PRI: the task priority, checked by player_main: -10 to 10 */
     int         pri_given;              /* 0: the priority is left as it was */
@@ -188,8 +189,10 @@ struct audio_block {
     uint32_t period;                    /* Paula: clock cycles per sample played */
 };
 
-/* Which audio output: AHI, or Paula direct with 14 bits (four channels) or 8 bits (two) */
+/* Which audio output: AHI, or Paula direct with 14 bits (four channels) or 8 bits (two). AUDIO_DEFAULT, AUDIO not
+ * given: AHI, or Paula with 14 bits when ahi.device cannot be opened. */
 enum audio_output {
+    AUDIO_DEFAULT,
     AUDIO_AHI,
     AUDIO_PAULA,
     AUDIO_PAULA8
@@ -253,6 +256,8 @@ int parse_mac(const char *s, uint8_t mac[6]);
 /* Value of the MAXRATE option: MAXRATE_AHI or MAXRATE_AHISTD (AHI, AHISTD, any case), or a rate in Hz from
  * MAXRATE_MIN to MAXRATE_DEFAULT; 0 if it is none of them */
 uint32_t parse_maxrate(const char *s);
+/* AUDIO option: AHI, PAULA or PAULA8 (any case) to enum audio_output; -1 if none of them */
+int parse_audio_output(const char *s);
 /* The rate that MAXRATE_AHI or MAXRATE_AHISTD (which) asks for an AHI unit playing at freq Hz: freq itself, or
  * the standard slimproto rate at or below it (27429 gives 24000); kept from MAXRATE_MIN to MAXRATE_DEFAULT */
 uint32_t maxrate_from_ahi(uint32_t which, uint32_t freq);

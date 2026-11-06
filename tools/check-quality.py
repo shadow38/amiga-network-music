@@ -29,7 +29,7 @@ NO_FILE_LIMIT = "tests/*"
 
 OVER = {
     ("src/amisqueeze/amiga.c", "plat_wait"): {"complexity": 24},
-    ("src/amisqueeze/amiga.c", "main"): {"complexity": 29, "lines": 101},
+    ("src/amisqueeze/amiga.c", "main"): {"complexity": 27, "lines": 90},
     ("src/amisqueeze/decoder.c", "wav_header"): {"complexity": 19},
     ("src/amisqueeze/flac.c", "frame_streaminfo"): {"complexity": 29},
     ("src/amisqueeze/flac.c", "read_header"): {"complexity": 29, "lines": 95},
@@ -38,8 +38,8 @@ OVER = {
     ("src/amisqueeze/output.c", "feed_audio"): {"complexity": 17},
     ("src/amisqueeze/player.c", "tooltypes_line"): {"complexity": 16},
     ("src/amisqueeze/player.c", "run"): {"complexity": 31, "lines": 66},
-    ("src/amisqueeze/player.c", "player_main"): {"complexity": 33, "lines": 96},
-    ("src/amisqueeze/posix.c", "parse_args"): {"complexity": 33, "lines": 64},
+    ("src/amisqueeze/player.c", "player_main"): {"complexity": 23, "lines": 75},
+    ("src/amisqueeze/posix.c", "parse_args"): {"complexity": 26, "lines": 50},
     ("src/amisqueeze/slimproto.c", "slim_discover"): {"complexity": 18},
     ("src/amisqueeze/stream.c", "stream_start"): {"parameters": 9},
     ("tests/test_decoder.c", "wav"): {"parameters": 8},

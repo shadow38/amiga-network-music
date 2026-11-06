@@ -37,7 +37,7 @@ static void test_priority(void)
     CHECK(player_main(&p, &o) == PLAYER_FAIL && stub_priority == STUB_PRI_NONE);
 }
 
-/* A server not found and ahi.device that cannot be opened: PLAYER_FAIL with the message (with QUIET, the window
+/* A server not found and ahi.device that cannot be opened with AUDIO=AHI: PLAYER_FAIL with the message (with QUIET, the window
  * opens for it), before any connection */
 static void test_start_fail(void)
 {
@@ -56,6 +56,7 @@ static void test_start_fail(void)
 
     o.server = "127.0.0.1";
     o.audio = 1;
+    o.audio_output = AUDIO_AHI;                 /* without AUDIO, Paula instead (test_start_paula_fallback) */
     stub_reset();
     stub_audio_fails = 1;
     memset(&p, 0, sizeof(p));
@@ -139,10 +140,96 @@ static void test_start_maxrate(void)
     stub_audio_mode_known = 0;
 }
 
-/* The player's start-up: the AHI mode, MAXRATE, PRI, the errors */
+/* AUDIO's values, any case */
+static void test_parse_audio_output(void)
+{
+    CHECK(parse_audio_output("AHI") == AUDIO_AHI && parse_audio_output("paula") == AUDIO_PAULA &&
+          parse_audio_output("Paula8") == AUDIO_PAULA8);
+    CHECK(parse_audio_output("") < 0 && parse_audio_output("PAULA14") < 0 && parse_audio_output("AHI ") < 0);
+}
+
+/* A start-up with these options; 1 if player_main() returned rc */
+static int start_with(struct player *p, const struct options *o, int rc)
+{
+    stub_reset();
+    stub_paula_volumes = 0;
+    memset(p, 0, sizeof(*p));
+    return player_main(p, o) == rc;
+}
+
+/* AUDIO=PAULA and PAULA8: Paula opened (its volume set), its highest rate asked of the server, PAL and NTSC; SWAP
+ * said not to be needed; MAXRATE=AHI said and replaced, MAXRATE=<Hz> kept */
+static void test_start_paula(void)
+{
+    struct player p;
+    struct options o;
+
+    memset(&o, 0, sizeof(o));
+    o.server = "127.0.0.1";
+    o.port = SLIMPROTO_PORT;
+    o.audio = 1;
+    o.audio_output = AUDIO_PAULA;
+    o.unit = 3;                                 /* unused by Paula */
+    o.verbose = 1;
+    o.flac = o.mp3 = DECODE_OFF;
+    CHECK(start_with(&p, &o, PLAYER_OK) && stub_paula_volumes > 0 && !stub_audio_open);
+    CHECK(strstr(stub_out, "output: Paula direct, 14 bits\n") && helo_caps_have(",MaxSampleRate=28603,") &&
+          strstr(stub_out, "MAXRATE: at most 28603 Hz asked of the server, Paula's highest rate\n"));
+    stub_paula_clock = 3579545;
+    CHECK(start_with(&p, &o, PLAYER_OK) && helo_caps_have(",MaxSampleRate=28867,"));
+    stub_paula_clock = 3546895;
+
+    o.audio_output = AUDIO_PAULA8;
+    o.swap = 1;
+    o.maxrate = MAXRATE_AHI;
+    CHECK(start_with(&p, &o, PLAYER_OK) && helo_caps_have(",MaxSampleRate=28603,"));
+    CHECK(strstr(stub_out, "output: Paula direct, 8 bits, channels 2 and 3 left free, left and right swapped\n") &&
+          strstr(stub_out, "SWAP is not needed with AUDIO=PAULA8, whose left and right are in place"));
+    CHECK(strstr(stub_out, "MAXRATE=AHI: no AHI with Paula direct: at most 28603 Hz asked of the server"));
+    o.swap = 0;
+    o.maxrate = 22050;
+    CHECK(start_with(&p, &o, PLAYER_OK) && helo_caps_have(",MaxSampleRate=22050,") && !strstr(stub_out, "SWAP"));
+
+    stub_paula_fails = 1;                       /* a channel in use: the start-up fails */
+    CHECK(start_with(&p, &o, PLAYER_FAIL) && stub_tx_len == 0);
+    stub_paula_fails = 0;
+}
+
+/* Without AUDIO, ahi.device missing gives Paula with 14 bits, said; AUDIO=AHI keeps the error; NOAUDIO and OUTPUT
+ * win over AUDIO */
+static void test_start_paula_fallback(void)
+{
+    struct player p;
+    struct options o;
+
+    memset(&o, 0, sizeof(o));
+    o.server = "127.0.0.1";
+    o.port = SLIMPROTO_PORT;
+    o.audio = 1;
+    o.flac = o.mp3 = DECODE_OFF;
+    stub_audio_fails = 1;
+    CHECK(start_with(&p, &o, PLAYER_OK) && stub_paula_volumes > 0 && helo_caps_have(",MaxSampleRate=28603,"));
+    CHECK(strstr(stub_out, "cannot open ahi.device unit 0") &&
+          strstr(stub_out, "amisqueeze: playing on Paula directly instead (AUDIO=PAULA)\n"));
+    o.audio_output = AUDIO_AHI;
+    CHECK(start_with(&p, &o, PLAYER_FAIL) && stub_paula_volumes == 0 && !strstr(stub_out, "Paula"));
+    stub_audio_fails = 0;
+
+    o.audio_output = AUDIO_PAULA;
+    o.audio = 0;                                /* NOAUDIO */
+    CHECK(start_with(&p, &o, PLAYER_OK) && stub_paula_volumes == 0 && helo_caps_have(",MaxSampleRate=48000,"));
+    o.audio = 1;
+    o.output = "file";
+    CHECK(start_with(&p, &o, PLAYER_OK) && stub_paula_volumes == 0 && helo_caps_have(",MaxSampleRate=48000,"));
+}
+
+/* The player's start-up: the AHI mode, Paula, MAXRATE, PRI, the errors */
 static void test_start(void)
 {
     test_start_mode();
+    test_parse_audio_output();
+    test_start_paula();
+    test_start_paula_fallback();
     test_start_maxrate();
     test_priority();
     test_start_fail();

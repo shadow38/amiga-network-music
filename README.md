@@ -6,14 +6,14 @@ your local network and driven like any other player in the house.
 [![tests](https://github.com/shadow38/amiga-network-music/actions/workflows/tests.yml/badge.svg)](https://github.com/shadow38/amiga-network-music/actions/workflows/tests.yml)
 [![latest release](https://img.shields.io/github/v/release/shadow38/amiga-network-music?include_prereleases&display_name=release&label=latest%20release)](https://github.com/shadow38/amiga-network-music/releases)
 ![status: preview until 1.0](https://img.shields.io/badge/status-preview%20until%201.0-orange) |
-AmigaOS 3.x | 68020 or better | sound through AHI | MIT licence
+AmigaOS 3.x | 68020 or better | sound through AHI or on Paula directly | MIT licence
 
 ## How it works
 
 amisqueeze needs a **music server** on the local network. The server holds the music library, web radios and
 streaming services, and streams them to its players. A web browser, a phone or a tablet chooses what plays where.
 The server sees the Amiga as one more Squeezebox, through slimproto, the protocol of Squeezebox players.
-amisqueeze receives the music, decodes it if needed and plays it through AHI.
+amisqueeze receives the music, decodes it if needed and plays it through AHI, or on Paula directly.
 
 ```mermaid
 flowchart LR
@@ -21,6 +21,7 @@ flowchart LR
     subgraph amiga ["Amiga"]
         tcp["TCP/IP stack<br>(bsdsocket.library)"] --> sq["amisqueeze"]
         sq --> ahi["AHI"]
+        sq -.->|"AUDIO=PAULA"| paula["Paula"]
         ahi --> out["Paula or<br>a sound card"]
     end
     srv -->|"slimproto, TCP 3483:<br>play, pause, volume..."| tcp
@@ -41,7 +42,7 @@ flowchart LR
 - About **1.7 MB of free memory**.
 - A **TCP/IP stack** providing `bsdsocket.library`: Roadshow, Miami, AmiNetXDuo, AmiTCP, or WinUAE's emulation.
 - **AHI**, the standard Amiga audio system, with the driver of Paula or of a sound card. It is free, on Aminet,
-  but not part of AmigaOS 3.x.
+  but not part of AmigaOS 3.x. Without it, amisqueeze plays on Paula directly.
 
 ## Quick start
 

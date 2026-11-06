@@ -1,10 +1,10 @@
-Short:        Squeezebox network music player (AHI)
+Short:        Squeezebox network music player
 Uploader:     shadow38
 Author:       shadow38
 Type:         mus/play
 Version:      @VERSION@
 Architecture: m68k-amigaos >= 3.0.0
-Requires:     68020+, a TCP/IP stack, driver/audio/m68k-amigaos-ahiusr.lha
+Requires:     68020+, a TCP/IP stack
 Distribution: Aminet
 
 amisqueeze turns a classic Amiga into a network music player: a Squeezebox
@@ -14,8 +14,9 @@ the Amiga like any other player in the house: play, pause, seek, next track,
 volume.
 
 The music comes over the network as an HTTP stream and plays through AHI
-(Paula, or a sound card). The server sends raw PCM, or amisqueeze decodes FLAC
-itself on a fast Amiga, and MP3 too with an FPU.
+(Paula, or a sound card), or on Paula directly without AHI. The server sends
+raw PCM, or amisqueeze decodes FLAC itself on a fast Amiga, and MP3 too with
+an FPU.
 
 Two executables of the same program:
 
@@ -31,7 +32,8 @@ What it needs:
   - AmigaOS 3.x and a 68020 or better; about 1.7 MB of free memory;
   - a TCP/IP stack providing bsdsocket.library (Roadshow, AmiTCP...);
   - AHI (driver/audio/m68k-amigaos-ahiusr.lha and the driver of your sound
-    output, driver/audio/m68k-amigaos-ahidrv.lha for Paula);
+    output, driver/audio/m68k-amigaos-ahidrv.lha for Paula); without AHI,
+    amisqueeze plays on Paula directly;
   - a music server on the network: Lyrion Music Server or Music Assistant.
 
 user-guide.md, in the archive, tells how to set up the server, install and

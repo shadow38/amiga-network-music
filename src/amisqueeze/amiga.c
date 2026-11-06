@@ -1,15 +1,15 @@
 /*
- * amiga.c - amisqueeze on AmigaOS 3.x: entry point and the system services of platform.h, but the audio output
- * (amiga_ahi.c)
+ * amiga.c - amisqueeze on AmigaOS 3.x: entry point and the system services of platform.h, but the audio outputs
+ * (amiga_ahi.c, amiga_paula.c)
  *
  * Usage: amisqueeze [SERVER=<ip|name>] [PORT=3483] [NAME=<name>] [MAC=xx:xx:xx:xx:xx:xx] [OUTPUT=<file>]
- *                   [LOG=<file>] [UNIT=<n>] [NOAUDIO] [SWAP] [FLAC=AUTO|ON|OFF] [MP3=AUTO|ON|OFF]
- *                   [MAXRATE=AHI|AHISTD|<Hz>] [PRI=<n>] [BENCH] [VERBOSE]
+ *                   [LOG=<file>] [AUDIO=AHI|PAULA|PAULA8] [UNIT=<n>] [NOAUDIO] [SWAP] [FLAC=AUTO|ON|OFF]
+ *                   [MP3=AUTO|ON|OFF] [MAXRATE=AHI|AHISTD|<Hz>] [PRI=<n>] [BENCH] [VERBOSE]
  * Ctrl-C to quit. Default options come from ENV:amisqueeze.prefs (same syntax as the command line, which
  * takes precedence); see docs/user-guide.md.
  *
  * Needs a TCP/IP stack (Roadshow, AmiTCP, AmiNetXDuo, or WinUAE's bsdsocket emulation) and, for the sound, AHI
- * (ahi.device, version 4 or later). Everything runs in one
+ * (ahi.device, version 4 or later) or Paula through audio.device (AUDIO=PAULA). Everything runs in one
  * task: the SocketBase belongs to the task that opened bsdsocket.library. Printed strings stay ASCII: the
  * Amiga uses ISO-8859-1.
  */
@@ -65,10 +65,10 @@ unsigned long __stack = 16384;
 #endif
 
 /* Used for the command line and for the prefs variable */
-#define TEMPLATE "SERVER,PORT/N/K,NAME/K,MAC/K,OUTPUT/K,LOG/K,UNIT/N/K,NOAUDIO/S,SWAP/S,FLAC/K,MP3/K,MAXRATE/K," \
-                 "PRI/N/K,BENCH/S,VERBOSE/S"
-enum { ARG_SERVER, ARG_PORT, ARG_NAME, ARG_MAC, ARG_OUTPUT, ARG_LOG, ARG_UNIT, ARG_NOAUDIO, ARG_SWAP, ARG_FLAC,
-       ARG_MP3, ARG_MAXRATE, ARG_PRI, ARG_BENCH, ARG_VERBOSE, ARG_COUNT };
+#define TEMPLATE "SERVER,PORT/N/K,NAME/K,MAC/K,OUTPUT/K,LOG/K,AUDIO/K,UNIT/N/K,NOAUDIO/S,SWAP/S,FLAC/K,MP3/K," \
+                 "MAXRATE/K,PRI/N/K,BENCH/S,VERBOSE/S"
+enum { ARG_SERVER, ARG_PORT, ARG_NAME, ARG_MAC, ARG_OUTPUT, ARG_LOG, ARG_AUDIO, ARG_UNIT, ARG_NOAUDIO, ARG_SWAP,
+       ARG_FLAC, ARG_MP3, ARG_MAXRATE, ARG_PRI, ARG_BENCH, ARG_VERBOSE, ARG_COUNT };
 
 /* Global variable ENV:amisqueeze.prefs (saved in ENVARC: to survive a reboot) */
 #define PREFS_VAR "amisqueeze.prefs"
@@ -79,8 +79,9 @@ static struct timerequest timer_io;
 static int last_error;
 static int stop_asked;                      /* a socket call was interrupted by Ctrl-C (EINTR) */
 
-/* amiga_ahi.c: the signal of the port its requests are replied to (0 while closed) */
+/* amiga_ahi.c and amiga_paula.c: the signal of the port their requests are replied to (0 while closed) */
 ULONG audio_signal(void);
+ULONG paula_signal(void);
 
 /* static: holds a 4 KB buffer, and the default stack is small */
 static struct player player;
@@ -561,51 +562,6 @@ void plat_file_close(int file)
     Close((BPTR)file);
 }
 
-/* No direct Paula output yet: the core never asks for it (it plays through AHI) */
-int plat_paula_open(int channels)
-{
-    (void)channels;
-    msg("amisqueeze: no direct Paula output in this build\n");
-    return 0;
-}
-
-void plat_paula_close(void)
-{
-}
-
-uint32_t plat_paula_clock(void)
-{
-    return 0;
-}
-
-uint8_t *plat_paula_buffer(int b, int c)
-{
-    (void)b; (void)c;
-    return NULL;
-}
-
-void plat_paula_send(int b, uint32_t start, uint32_t len, uint32_t period)
-{
-    (void)b; (void)start; (void)len; (void)period;
-}
-
-int plat_paula_done(int b)
-{
-    (void)b;
-    return 1;
-}
-
-int32_t plat_paula_abort(int b)
-{
-    (void)b;
-    return 0;
-}
-
-void plat_paula_volume(int high, int low)
-{
-    (void)high; (void)low;
-}
-
 int plat_error(void)
 {
     return last_error;
@@ -699,7 +655,7 @@ int plat_wait(struct plat_fd *fds, int n, uint32_t timeout_ms)
 {
     fd_set rfds, wfds;
     struct timeval tv;
-    ULONG audio_sig = audio_signal();
+    ULONG audio_sig = audio_signal() | paula_signal();
     ULONG ui_sig = ui_signals();
     ULONG sigs = SIGBREAKF_CTRL_C | audio_sig | ui_sig;
     LONG r;
@@ -865,6 +821,29 @@ static void wb_end(void)
         CloseLibrary(IconBase);
 }
 
+/* The options that take one of a few values, into o; 0 with a message if one is wrong */
+static int parse_choices(LONG args[], struct options *o)
+{
+    if (args[ARG_FLAC] && (o->flac = parse_decode_mode((const char *)args[ARG_FLAC])) < 0) {
+        msg("amisqueeze: FLAC=%s: expected AUTO, ON or OFF\n", (const char *)args[ARG_FLAC]);
+        return 0;
+    }
+    if (args[ARG_MP3] && (o->mp3 = parse_decode_mode((const char *)args[ARG_MP3])) < 0) {
+        msg("amisqueeze: MP3=%s: expected AUTO, ON or OFF\n", (const char *)args[ARG_MP3]);
+        return 0;
+    }
+    if (args[ARG_MAXRATE] && (o->maxrate = parse_maxrate((const char *)args[ARG_MAXRATE])) == 0) {
+        msg("amisqueeze: MAXRATE=%s: expected AHI, AHISTD, or a rate from %lu to %lu Hz\n",
+            (const char *)args[ARG_MAXRATE], (unsigned long)MAXRATE_MIN, (unsigned long)MAXRATE_DEFAULT);
+        return 0;
+    }
+    if (args[ARG_AUDIO] && (o->audio_output = parse_audio_output((const char *)args[ARG_AUDIO])) < 0) {
+        msg("amisqueeze: AUDIO=%s: expected AHI, PAULA or PAULA8\n", (const char *)args[ARG_AUDIO]);
+        return 0;
+    }
+    return 1;
+}
+
 int main(void)
 {
     LONG args[ARG_COUNT] = { 0 }, prefs[ARG_COUNT] = { 0 };
@@ -907,19 +886,8 @@ int main(void)
         log_open((const char *)args[ARG_LOG]);
     memset(&o, 0, sizeof(o));
     o.bench = args[ARG_BENCH] != 0;
-    if (args[ARG_FLAC] && (o.flac = parse_decode_mode((const char *)args[ARG_FLAC])) < 0) {
-        msg("amisqueeze: FLAC=%s: expected AUTO, ON or OFF\n", (const char *)args[ARG_FLAC]);
+    if (!parse_choices(args, &o))
         goto out_args;
-    }
-    if (args[ARG_MP3] && (o.mp3 = parse_decode_mode((const char *)args[ARG_MP3])) < 0) {
-        msg("amisqueeze: MP3=%s: expected AUTO, ON or OFF\n", (const char *)args[ARG_MP3]);
-        goto out_args;
-    }
-    if (args[ARG_MAXRATE] && (o.maxrate = parse_maxrate((const char *)args[ARG_MAXRATE])) == 0) {
-        msg("amisqueeze: MAXRATE=%s: expected AHI, AHISTD, or a rate from %lu to %lu Hz\n",
-            (const char *)args[ARG_MAXRATE], (unsigned long)MAXRATE_MIN, (unsigned long)MAXRATE_DEFAULT);
-        goto out_args;
-    }
     o.server = (const char *)args[ARG_SERVER];
     o.port = args[ARG_PORT] ? *(LONG *)args[ARG_PORT] : SLIMPROTO_PORT;
     o.name = (const char *)args[ARG_NAME];

@@ -1048,8 +1048,8 @@ belongs to the task that opened it; packets serialised field by field; buffers a
     `UNIT` is unused with Paula.
   - **`MAXRATE` with Paula** (agreed with the user): by default Paula's highest rate, so that the server lowers
     the rate with a better filter than the Amiga's; `AHI` or `AHISTD` give a message and Paula's highest rate
-    instead. `MAXRATE=<Hz>` stays, for instance 22050 for a lighter load. The highest rate is to measure in
-    player-11b: the shortest period gives about 28.6 kHz, but 27,429 Hz sounded best through AHI (below).
+    instead. `MAXRATE=<Hz>` stays, for instance 22050 for a lighter load. The highest rate is judged by ear in
+    player-11c: the shortest period gives about 28.6 kHz, but 27,429 Hz sounded best through AHI (below).
   - **The rate divided** (agreed with the user): a stream above Paula's highest rate is divided by the smallest
     whole number that brings it under, the grouped samples averaged (a coarse filter). So 44.1 kHz plays at
     22.05, 48 at 24, 32 at 16, 88.2 and 96 kHz at a quarter. No interpolation: 32 kHz cannot become 24.
@@ -1057,20 +1057,35 @@ belongs to the task that opened it; packets serialised field by field; buffers a
     `SWAP` stays for `paula.audio`, and `SWAP` with `PAULA` or `PAULA8` gives a message saying it is not
     needed.
 - **Sub-steps**, one commit each:
-  - **player-11a, on the host only**: the conversion (`paula.c`), the divisor, the server's volume turned into 0
-    to 64, the bytes played, the period and the elapsed time; `plat_paula_*` in `platform.h`, not available yet
-    in `amiga.c` and `posix.c`; a fake Paula device in `tests/stub_platform.c`.
-  - **player-11b**: `audio.device` in `amiga.c`, the `AUDIO` option, Paula when AHI is missing, `MAXRATE` with
-    Paula; the checks below first, then WinUAE. A block holds at most 8,192 samples per channel in chip RAM
-    (96 KB for `PAULA`, 48 KB for `PAULA8`), so 16-bit mono at a rate not divided fills half a block.
+  - **player-11a ✅, on the host only**: the conversion (`paula.c`), the divisor, the server's volume turned into 0
+    to 64, the bytes played, the period and the elapsed time; `plat_paula_*` in `platform.h`; a fake Paula device
+    in `tests/stub_platform.c`.
+  - **player-11b ✅ in WinUAE**: `audio.device` in `amiga_paula.c`, the `AUDIO` option, Paula when AHI is missing,
+    `MAXRATE` with Paula; the checks below first. A block holds at most 8,192 samples per channel in chip RAM
+    (96 KB for `PAULA`, 48 KB for `PAULA8`), so 16-bit mono at a rate not divided fills half a block. On the slow
+    profile, LMS sending 28603 Hz: 20 % of the CPU with `PAULA`, 9 % with `PAULA8`, 54 % through AHI at
+    27429 Hz (the conversion takes the bytes as they are when the rate is not divided: the general path took
+    85 %). Heard: the faint sound of one side on the other with a tone on one side only, and a short gap between
+    MP3s converted by LMS, both through AHI as well.
   - **player-11c**: the A1200.
-- **To check before coding**, in the autodocs or in WinUAE (player-11b):
-  - `CMD_STOP` and `CMD_START` stop and restart a write at once: the pause would then send nothing again;
-  - the four channels started in step;
-  - the longest `ioa_Length`;
-  - how a channel taken by another program is reported (`ADIOERR_CHANNELSTOLEN`), and at which precedence the
-    Sound preferences play the beep;
-  - PAL or NTSC read from `REALLY_PAL` in `GfxBase->DisplayFlags`.
+- **Checked before coding** (`audio.doc` of the NDK 3.2, the RKM's Audio Device chapter), and what was agreed
+  with the user from it:
+  - `CMD_STOP` loses the cycle it stops, and `audio.device` does not tell how much a write played: the pause keeps
+    aborting the blocks, the clock estimating what played. `CMD_STOP` on every channel comes before the aborts, so
+    that the next block does not start on some channels only;
+  - `CMD_START` starts the writes waiting on several channels at once: a start from idle (the first block, a
+    resume, after an underrun) is `CMD_STOP`, one write per channel, `CMD_START`. A block added while another
+    plays stays in step if its four writes arrive before that one ends: they are sent under `Disable()`, and if
+    the block before has already ended on a channel, the start goes through `CMD_STOP` and `CMD_START` again;
+  - `ioa_Length` from 2 to 131,072 bytes, even; the period from 124 to 65,536;
+  - `ADCMD_ALLOCATE` steals the channels of a lower precedence, and `ADIOERR_CHANNELSTOLEN` only answers
+    `ADCMD_LOCK`; a stolen write ends with `IOERR_ABORTED`. So the channels are allocated at -128 with
+    `ADIOF_NOWAIT`, which takes them from no one and fails if one is in use (the message), then raised to 127 with
+    `ADCMD_SETPREC`, so that nothing, the beep included, takes them; a write ended by another program all the same
+    is taken as a channel taken. The beep's own precedence is not documented, and no longer matters;
+  - `REALLY_PAL` exists from graphics V39; before it, the `PAL` flag of `DisplayFlags`;
+  - `PAULA_PERIOD_MIN` stays at 124, the documented shortest period; the highest rate is judged by ear on the
+    A1200 (player-11c).
 - **On the A1200** (agreed with the user): the AHI Paula driver 4.33 (Aminet `driver/audio/AHI-Paula`, the
   A1200 has 4.23) tried with its `AHIpaulaBufferLength`, to learn whether a larger AHI buffer stops the crackles
   with a PCMCIA network card.

@@ -17,6 +17,8 @@ The sound goes through AHI:
 - or another AHI driver: a sound card, or the PiStorm's own outputs (the I2S DAC of the PiStorm32-lite FPGA
   firmware, HDMI with a Pi 4).
 
+Or straight to Paula through audio.device (`AUDIO=PAULA` or `PAULA8`, and when AHI is missing).
+
 The code uses only the `ahi.device` features of AHI 4. It is tested with AHI 6.6 in WinUAE, and plays with AHI
 4.180 on the A1200.
 
@@ -66,6 +68,13 @@ The code uses only the `ahi.device` features of AHI 4. It is tested with AHI 6.6
 - Keep the rules of [AHI](architecture.md#ahi): a request chained only to one already playing, the playing one
   aborted first, `CMD_STOP` is no pause.
 - **Never send `ahir_Volume` below full**: the core scales the samples instead.
+
+### Paula direct
+
+- Keep the rules of [Paula direct](architecture.md#paula-direct): `BeginIO()` and never `DoIO()` for a write, the
+  two channels of a side started together, the channels allocated without taking them from another program, the
+  filter set back at every exit.
+- The volume is Paula's, never the samples'.
 
 ### Third-party code
 
