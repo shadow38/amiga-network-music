@@ -184,10 +184,21 @@ struct audio_block {
     int      channels;
     int      big_endian;                /* byte order of the stream copied in */
     int      converted;                 /* 1 once converted for the device (when first sent) */
+    uint32_t divisor;                   /* Paula: stream frames per sample played */
+    uint32_t period;                    /* Paula: clock cycles per sample played */
+};
+
+/* Which audio output: AHI, or Paula direct with 14 bits (four channels) or 8 bits (two) */
+enum audio_output {
+    AUDIO_AHI,
+    AUDIO_PAULA,
+    AUDIO_PAULA8
 };
 
 struct audio {
     int                enabled;
+    int                paula;          /* Paula direct: its channels (4 or 2); 0 = AHI */
+    uint32_t           clock;          /* Paula's clock, Hz */
     int                swap;
     struct audio_block block[AUDIO_BLOCKS];
     int                order[AUDIO_BLOCKS];    /* non-free blocks, in playing order (the sent ones first) */
@@ -375,8 +386,9 @@ uint32_t output_elapsed_ms(const struct player *p);
 int player_busy(const struct player *p);
 
 /* audio.c: the audio output's blocks (portable; the device itself is behind platform.h) */
-/* Opens the platform's audio output and allocates the blocks; 0 on failure (message printed) */
-int audio_open(struct player *p, int unit, int swap);
+/* Opens the platform's audio output (enum audio_output; unit is AHI's) and allocates the blocks; 0 on failure
+ * (message printed) */
+int audio_open(struct player *p, int output, int unit, int swap);
 void audio_close(struct player *p);
 /* Aborts everything queued; positions start again from 0 */
 void audio_reset(struct player *p);
@@ -388,6 +400,9 @@ int audio_free_block(const struct player *p);
 int audio_pending(const struct player *p);
 /* Buffer of block b (AUDIO_BLOCK_SIZE bytes), where the output writes the PCM before audio_submit() */
 uint8_t *audio_block_data(struct player *p, int b);
+/* Bytes of PCM in format f that a block takes: whole frames (for Paula, whole groups of two samples played), within
+ * the block's size and, for Paula, its PAULA_BLOCK_SAMPLES samples per channel */
+uint32_t audio_block_room(const struct player *p, const struct pcm_format *f);
 /* Queues block b, holding n bytes of PCM in format f (whole frames; n <= AUDIO_BLOCK_SIZE, half of it for 8-bit
  * samples, which double in size); it is converted for the device (16-bit big-endian, volume, left/right swapped
  * with SWAP) when sent */
@@ -397,7 +412,7 @@ uint64_t audio_played(const struct player *p, uint32_t now, int estimate);
 void audio_pause(struct player *p, uint32_t now);
 void audio_resume(struct player *p, uint32_t now);
 /* audg: 16.16 gains of left and right, adjust 0 = fixed volume (full); applied to the samples of the next blocks
- * sent. Returns 1 if the volume, or whether it is fixed, changed. */
+ * sent, or with Paula direct to its channels at once. Returns 1 if the volume, or whether it is fixed, changed. */
 int audio_set_volume(struct player *p, uint32_t left, uint32_t right, int adjust);
 /* Audio mode and frequency of an AHI unit in the bytes of its preferences file (ENV:Sys/ahi.prefs: an IFF FORM
  * PREF with one AHIU chunk per unit); 0 if that unit is not in it */
@@ -406,6 +421,31 @@ struct audio_mode;
 /* Warns when the unit's mode would not play a stereo stream right: a stereo mode that cannot pan (each sound on
  * one side) or a mono mode. Returns 1 if it warned. */
 int audio_check_mode(int unit, const struct audio_mode *m);
+
+/* paula.c: the direct Paula output's arithmetic and conversion (portable; the device is behind platform.h) */
+/* Paula's highest rate for its clock: the shortest period's */
+uint32_t paula_max_rate(uint32_t clock);
+/* The smallest whole number dividing rate down to Paula's highest rate or below: 1 for a rate not above it */
+uint32_t paula_divisor(uint32_t rate, uint32_t clock);
+/* The nearest whole period playing rate / divisor samples a second, within Paula's limits */
+uint32_t paula_period(uint32_t rate, uint32_t divisor, uint32_t clock);
+/* Samples Paula plays for frames of the stream: one per group of divisor frames (the last one may be shorter), made
+ * even */
+uint32_t paula_samples(uint32_t frames, uint32_t divisor);
+/* Volume of the high channels, 0 to 64, for a 16.16 gain of AUDIO_VOLUME_FULL at most: 0 only for 0 */
+int paula_volume(uint32_t gain);
+/* 16-bit PCM to convert: frames of 1 or 2 channels, in either byte order */
+struct paula_in {
+    const uint8_t *data;
+    uint32_t       frames;
+    int            channels;
+    int            big_endian;
+    uint32_t       divisor;
+};
+/* Per side (0 left, 1 right), the mean of each group of divisor frames, rounded down: its 8 high bits to high[side],
+ * signed, and its next 6 to low[side], from 0 to 63 (no low channels: NULL); a mono stream goes to both sides.
+ * Returns the samples written per channel, paula_samples(): an odd count gets its last sample again. */
+uint32_t paula_convert(const struct paula_in *in, uint8_t *const high[2], uint8_t *const low[2]);
 
 /* icy.c */
 /* The status code of an HTTP response: the three digits after the first space, whatever the protocol ("ICY 200 OK"

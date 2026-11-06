@@ -51,6 +51,20 @@ int      stub_audio_sends;
 int      stub_audio_bad;
 static int audio_fifo[64], audio_fifo_len;     /* queued requests, in playing order */
 
+struct stub_paula_req stub_paula[8];
+int      stub_paula_fails;
+int      stub_paula_open;
+uint32_t stub_paula_clock = 3546895;
+int32_t  stub_paula_abort_played;
+uint8_t  stub_paula_out[4][STUB_PAULA_OUT];
+uint32_t stub_paula_out_len;
+int      stub_paula_high, stub_paula_low;
+int      stub_paula_volumes;
+int      stub_paula_sends;
+int      stub_paula_bad;
+static uint8_t paula_buf[8][4][PAULA_BLOCK_SAMPLES];
+static int paula_fifo[8], paula_fifo_len;      /* queued blocks, in playing order */
+
 struct queue {
     uint8_t data[2 * 1024 * 1024];
     int     len, pos;
@@ -390,6 +404,143 @@ int32_t plat_audio_abort(int i)
     while (audio_fifo_len > 0)              /* the request linked to it goes with it */
         audio_unqueue(audio_fifo[0]);
     return played;
+}
+
+void stub_paula_clear(void)
+{
+    stub_paula_out_len = 0;
+    stub_paula_volumes = 0;
+    stub_paula_sends = 0;
+    stub_paula_bad = 0;
+}
+
+static void paula_capture(int b, uint32_t n)
+{
+    int c;
+
+    for (c = 0; c < stub_paula_open; c++)
+        memcpy(stub_paula_out[c] + stub_paula_out_len, paula_buf[b][c] + stub_paula[b].start, n);
+    stub_paula_out_len += n;
+}
+
+static void paula_unqueue(int b)
+{
+    int k;
+
+    for (k = 0; k < paula_fifo_len; k++)
+        if (paula_fifo[k] == b) {
+            memmove(paula_fifo + k, paula_fifo + k + 1, (size_t)(paula_fifo_len - k - 1) * sizeof(int));
+            paula_fifo_len--;
+            break;
+        }
+    stub_paula[b].queued = 0;
+}
+
+int stub_paula_finish(void)
+{
+    int b;
+
+    if (paula_fifo_len == 0)
+        return -1;
+    b = paula_fifo[0];
+    paula_capture(b, stub_paula[b].len);
+    paula_unqueue(b);
+    stub_paula[b].ended = 1;
+    if (paula_fifo_len > 0)
+        stub_paula[paula_fifo[0]].playing = 1;
+    return b;
+}
+
+int stub_paula_queue(int *order)
+{
+    memcpy(order, paula_fifo, (size_t)paula_fifo_len * sizeof(int));
+    return paula_fifo_len;
+}
+
+int plat_paula_open(int channels)
+{
+    if (stub_paula_fails) {
+        msg("amisqueeze: cannot open audio.device\n");
+        return 0;
+    }
+    if (channels != 4 && channels != 2)
+        stub_paula_bad++;
+    memset(stub_paula, 0, sizeof(stub_paula));
+    memset(paula_buf, 0, sizeof(paula_buf));
+    paula_fifo_len = 0;
+    stub_paula_open = channels;
+    return 1;
+}
+
+void plat_paula_close(void)
+{
+    stub_paula_open = 0;
+}
+
+uint32_t plat_paula_clock(void)
+{
+    return stub_paula_clock;
+}
+
+uint8_t *plat_paula_buffer(int b, int c)
+{
+    if (c >= stub_paula_open)
+        stub_paula_bad++;
+    return paula_buf[b][c];
+}
+
+void plat_paula_send(int b, uint32_t start, uint32_t len, uint32_t period)
+{
+    if (!stub_paula_open || (start | len) & 1 || len == 0 || start + len > PAULA_BLOCK_SAMPLES ||
+        period < PAULA_PERIOD_MIN || period > PAULA_PERIOD_MAX || paula_fifo_len >= 2)
+        stub_paula_bad++;
+    stub_paula[b].start = start;
+    stub_paula[b].len = len;
+    stub_paula[b].period = period;
+    stub_paula[b].queued = 1;
+    stub_paula[b].ended = 0;
+    stub_paula[b].playing = paula_fifo_len == 0;
+    paula_fifo[paula_fifo_len++] = b;
+    stub_paula_sends++;
+}
+
+int plat_paula_done(int b)
+{
+    if (!stub_paula[b].ended)
+        return 0;
+    stub_paula[b].ended = 0;
+    return 1;
+}
+
+/* The block playing has played stub_paula_abort_played samples; one queued behind it, nothing (aborted at once) */
+int32_t plat_paula_abort(int b)
+{
+    int32_t played = 0;
+
+    if (stub_paula[b].ended) {              /* ended before the abort: all of it */
+        stub_paula[b].ended = 0;
+        return (int32_t)stub_paula[b].len;
+    }
+    if (!stub_paula[b].queued)
+        return 0;
+    if (paula_fifo[0] != b)
+        stub_paula_bad++;
+    if (stub_paula[b].playing) {
+        played = stub_paula_abort_played;
+        if (played > 0)
+            paula_capture(b, (uint32_t)played);
+    }
+    paula_unqueue(b);
+    return played;
+}
+
+void plat_paula_volume(int high, int low)
+{
+    if (high < 0 || high > 64 || low < 0 || low > 64)
+        stub_paula_bad++;
+    stub_paula_high = high;
+    stub_paula_low = low;
+    stub_paula_volumes++;
 }
 
 int plat_file_create(const char *name)

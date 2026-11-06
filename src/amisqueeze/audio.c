@@ -17,6 +17,11 @@
  * The volume is applied to the samples here, as a block is sent for the first time; the device always gets full
  * volume: with ahi.device 6.6 and paula.audio, requests sent again after an abort (a resume) with a low ahir_Volume
  * corrupted the free memory list (seen in WinUAE).
+ *
+ * Paula direct (audio.device on the Amiga) follows the same order of blocks, two at most with the device. A block is
+ * converted when first sent, from its 16-bit samples into the chip RAM buffers of its channels (paula.c); its len,
+ * done and sent stay in bytes of those 16-bit samples, so the bytes played are counted as with AHI. The volume is
+ * Paula's own, changed at once, never the samples'.
  */
 #include <stdlib.h>
 #include <string.h>
@@ -26,12 +31,31 @@
 
 #define AUDIO_SENT_MAX 2                    /* blocks with the device at the same time */
 
-int audio_open(struct player *p, int unit, int swap)
+/* Paula's volumes for the volume set: at full volume (or fixed), 14 bits; below it, the high channels lowered and
+ * the low ones silent */
+static void paula_set_volume(const struct audio *a)
+{
+    plat_paula_volume(paula_volume(a->volume), a->volume >= AUDIO_VOLUME_FULL ? 1 : 0);
+}
+
+static int device_open(struct audio *a, int unit)
+{
+    if (!a->paula)
+        return plat_audio_open(unit);
+    if (!plat_paula_open(a->paula))
+        return 0;
+    a->clock = plat_paula_clock();
+    paula_set_volume(a);
+    return 1;
+}
+
+int audio_open(struct player *p, int output, int unit, int swap)
 {
     struct audio *a = &p->audio;
     int i;
 
     memset(a, 0, sizeof(*a));
+    a->paula = output == AUDIO_PAULA ? 4 : output == AUDIO_PAULA8 ? 2 : 0;
     a->swap = swap;
     a->volume = AUDIO_VOLUME_FULL;
     a->tables = AUDIO_VOLUME_FULL;          /* not built yet (not needed at full volume) */
@@ -43,7 +67,7 @@ int audio_open(struct player *p, int unit, int swap)
             return 0;
         }
     }
-    if (!plat_audio_open(unit)) {
+    if (!device_open(a, unit)) {
         audio_close(p);
         return 0;
     }
@@ -58,7 +82,10 @@ void audio_close(struct player *p)
 
     if (a->enabled) {
         audio_reset(p);
-        plat_audio_close();
+        if (a->paula)
+            plat_paula_close();
+        else
+            plat_audio_close();
         a->enabled = 0;
     }
     for (i = 0; i < AUDIO_BLOCKS; i++) {
@@ -161,9 +188,73 @@ static void convert(struct audio *a, struct audio_block *bl)
         }
 }
 
-/* Sends the ready blocks the device can take, each linked to the one before it (which is playing). A block is
- * converted when it is sent for the first time, at the volume of that moment: a change is heard once the blocks
- * already with the device have played (0.2 to 0.4 s); the rest of a paused block is sent again as it is. */
+/* Paula: bytes of the block's 16-bit samples behind one sample played (a group of divisor frames) */
+static uint32_t paula_unit(const struct audio_block *bl)
+{
+    return 2 * (uint32_t)bl->channels * bl->divisor;
+}
+
+/* Paula: block b's 16-bit samples into its channels' buffers, the stream's left to channels 0 and 3 (to 1 and 2
+ * with SWAP) */
+static void convert_paula(struct audio *a, struct audio_block *bl, int b)
+{
+    static const int high_channel[2] = { 0, 1 }, low_channel[2] = { 3, 2 };
+    struct paula_in in;
+    uint8_t *high[2], *low[2];
+    int side, x = a->swap ? 1 : 0;
+
+    in.big_endian = bl->big_endian;
+    if (bl->sample_bytes != 2) {            /* 16 bits, the usual case, needs no extra pass */
+        to_16bit(bl->buf, stream_bytes(bl, bl->len), bl->sample_bytes, bl->big_endian);
+        in.big_endian = 1;
+    }
+    for (side = 0; side < 2; side++) {
+        high[side] = plat_paula_buffer(b, high_channel[side ^ x]);
+        low[side] = a->paula == 4 ? plat_paula_buffer(b, low_channel[side ^ x]) : NULL;
+    }
+    in.data = bl->buf;
+    in.frames = bl->len / (2 * (uint32_t)bl->channels);
+    in.channels = bl->channels;
+    in.divisor = bl->divisor;
+    paula_convert(&in, high, low);
+}
+
+/* Sends block b, k-th of the playing order: with AHI linked to the one before it (which is playing); with Paula,
+ * the samples from the one done is at (even, see audio_pause) */
+static void device_send(struct audio *a, int b, int k)
+{
+    struct audio_block *bl = &a->block[b];
+    uint32_t start;
+
+    if (!a->paula) {
+        plat_audio_send(b, bl->buf + bl->done, bl->sent, bl->rate, bl->channels, k > 0 ? a->order[k - 1] : -1);
+        return;
+    }
+    start = bl->done / paula_unit(bl);
+    plat_paula_send(b, start, paula_samples(bl->len / (2 * (uint32_t)bl->channels), bl->divisor) - start,
+                    bl->period);
+}
+
+static int device_done(const struct audio *a, int b)
+{
+    return a->paula ? plat_paula_done(b) : plat_audio_done(b);
+}
+
+/* Aborts block b; returns the bytes of its 16-bit samples played (Paula: each sample played counts for its group,
+ * the last one maybe more than the block holds), or -1 if the device cannot tell */
+static int32_t device_abort(const struct audio *a, int b)
+{
+    int32_t n;
+
+    if (!a->paula)
+        return plat_audio_abort(b);
+    n = plat_paula_abort(b);
+    return n < 0 ? -1 : n * (int32_t)paula_unit(&a->block[b]);
+}
+
+/* Sends the ready blocks the device can take. A block is converted when it is sent for the first time, at the
+ * volume of that moment (AHI): a change is heard once the blocks already with the device have played (0.2 to
+ * 0.4 s); the rest of a paused block is sent again as it is. */
 static void send_ready(struct audio *a, uint32_t now)
 {
     int k = sent_count(a);
@@ -173,14 +264,17 @@ static void send_ready(struct audio *a, uint32_t now)
         struct audio_block *bl = &a->block[b];
 
         if (!bl->converted) {
-            convert(a, bl);
+            if (a->paula)
+                convert_paula(a, bl, b);
+            else
+                convert(a, bl);
             bl->converted = 1;
         }
         bl->sent = bl->len - bl->done;
         bl->state = BLOCK_SENT;
         if (k == 0)
             a->head_ms = now;               /* the device was idle: this block starts now */
-        plat_audio_send(b, bl->buf + bl->done, bl->sent, bl->rate, bl->channels, k > 0 ? a->order[k - 1] : -1);
+        device_send(a, b, k);
         k++;
     }
 }
@@ -204,7 +298,7 @@ void audio_reset(struct player *p)
         struct audio_block *bl = &a->block[a->order[k]];
 
         if (bl->state == BLOCK_SENT)
-            plat_audio_abort(a->order[k]);
+            device_abort(a, a->order[k]);
         bl->state = BLOCK_FREE;
     }
     a->count = 0;
@@ -221,7 +315,7 @@ void audio_poll(struct player *p, uint32_t now)
         int b = a->order[0];
         struct audio_block *bl = &a->block[b];
 
-        if (bl->state != BLOCK_SENT || !plat_audio_done(b))
+        if (bl->state != BLOCK_SENT || !device_done(a, b))
             break;
         a->played += stream_bytes(bl, bl->sent);
         bl->state = BLOCK_FREE;
@@ -253,6 +347,24 @@ uint8_t *audio_block_data(struct player *p, int b)
     return p->audio.block[b].buf;
 }
 
+/* 8-bit samples fill half a block: they double in size when converted to 16 bits. With Paula, a block holds whole
+ * groups of two samples played (even lengths), so that only a track's last block plays a sample twice or a group
+ * cut short. */
+uint32_t audio_block_room(const struct player *p, const struct pcm_format *f)
+{
+    uint32_t frame = (uint32_t)f->channels * f->sample_bytes, unit = frame;
+    uint32_t room = f->sample_bytes == 1 ? AUDIO_BLOCK_SIZE / 2 : AUDIO_BLOCK_SIZE;
+
+    if (p->audio.paula) {
+        uint32_t divisor = paula_divisor(f->rate, p->audio.clock);
+
+        unit = 2 * divisor * frame;
+        if (room > PAULA_BLOCK_SAMPLES * divisor * frame)
+            room = PAULA_BLOCK_SAMPLES * divisor * frame;
+    }
+    return room - room % unit;
+}
+
 void audio_submit(struct player *p, int b, uint32_t n, const struct pcm_format *f, uint32_t now)
 {
     struct audio *a = &p->audio;
@@ -265,18 +377,27 @@ void audio_submit(struct player *p, int b, uint32_t n, const struct pcm_format *
     bl->sample_bytes = f->sample_bytes;
     bl->big_endian = f->big_endian;
     bl->converted = 0;                      /* converted when sent, at the volume of that moment */
+    if (a->paula) {
+        bl->divisor = paula_divisor(f->rate, a->clock);
+        bl->period = paula_period(f->rate, bl->divisor, a->clock);
+    }
     bl->state = BLOCK_READY;
     a->order[a->count++] = b;
     if (!a->paused)
         send_ready(a, now);
 }
 
-/* Bytes the first block has played by now, estimated from the clock */
+/* Bytes the first block has played by now, estimated from the clock; with Paula, at the rate its period gives */
 static uint32_t head_estimate(const struct audio *a, uint32_t now)
 {
     const struct audio_block *bl = &a->block[a->order[0]];
-    uint64_t e = (uint64_t)(uint32_t)(now - a->head_ms) * bl->rate * (uint32_t)bl->channels * 2 / 1000;
+    uint32_t ms = now - a->head_ms;
+    uint64_t e;
 
+    if (a->paula)
+        e = (uint64_t)ms * a->clock / ((uint64_t)bl->period * 1000) * paula_unit(bl);
+    else
+        e = (uint64_t)ms * bl->rate * (uint32_t)bl->channels * 2 / 1000;
     return e > bl->sent ? bl->sent : (uint32_t)e;
 }
 
@@ -300,14 +421,16 @@ void audio_pause(struct player *p, uint32_t now)
     a->paused = 1;
     for (k = 0, sent = sent_count(a); k < sent; k++) {     /* from the first one, see audio_reset() */
         struct audio_block *bl = &a->block[a->order[k]];
-        uint32_t frame = (uint32_t)bl->channels * 2, got = 0;
-        int32_t actual = plat_audio_abort(a->order[k]);
+        /* the rest is sent again from a whole frame; with Paula, from an even sample (an even length) */
+        uint32_t unit = a->paula ? 2 * paula_unit(bl) : (uint32_t)bl->channels * 2, got = 0;
+        int32_t actual = device_abort(a, a->order[k]);
 
         if (actual >= 0)
             got = (uint32_t)actual > bl->sent ? bl->sent : (uint32_t)actual;
         else if (k == 0)                    /* the device cannot tell: the clock says */
             got = head_estimate(a, now);
-        got -= got % frame;
+        if (got < bl->sent)
+            got -= got % unit;
         bl->done += got;
         a->played += stream_bytes(bl, got);
         bl->state = bl->done >= bl->len ? BLOCK_FREE : BLOCK_READY;
@@ -328,7 +451,7 @@ void audio_resume(struct player *p, uint32_t now)
 }
 
 /* One volume for both sides (no balance) and no amplification: the louder side, at most full volume. Applied to
- * the blocks sent from now on (see send_ready). */
+ * the blocks sent from now on (see send_ready), or with Paula to its channels at once. */
 int audio_set_volume(struct player *p, uint32_t left, uint32_t right, int adjust)
 {
     struct audio *a = &p->audio;
@@ -341,6 +464,8 @@ int audio_set_volume(struct player *p, uint32_t left, uint32_t right, int adjust
         return 0;
     a->volume = v;
     a->fixed = fixed;
+    if (a->enabled && a->paula)
+        paula_set_volume(a);
     return 1;
 }
 

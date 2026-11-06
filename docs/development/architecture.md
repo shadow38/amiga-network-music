@@ -53,7 +53,8 @@ device, the wait.
 | `icy.c` | an internet radio's parts that need no system: the HTTP status line, the metadata blocks taken out of the sound, the title in them |
 | `ring.c` | the 1 MB ring buffer of stream bytes |
 | `decoder.c`, `flac.c`, `mp3.c` | the decoders: raw PCM (and a WAV header), FLAC (dr_flac), MP3 (minimp3, `AMISQUEEZE_MP3` only) |
-| `audio.c` | the audio output's blocks: order, conversion to 16-bit big-endian, volume, `SWAP`, bytes played, pause |
+| `audio.c` | the audio output's blocks, through AHI or Paula direct: order, conversion to 16-bit big-endian, volume, `SWAP`, bytes played, pause |
+| `paula.c` | the direct Paula output's arithmetic: its highest rate, the rate divided, the period, its volume, the 16-bit samples split into its channels' 8 + 6 bits |
 | `bench.c` | the decoding speed (built-in samples `bench_flac.c`, `bench_mp3.c`), for `AUTO` and `BENCH` |
 
 `platform.h` has three implementations:
@@ -64,7 +65,8 @@ device, the wait.
 - `posix.c`, the host build, for tests and debugging. It has no audio device: its entry point never asks for the
   audio output, so it always uses the virtual output. `UNIT`, `NOAUDIO` and `SWAP` are accepted and ignored;
 - `tests/stub_platform.c`, for the unit tests (`tests/test_*.c`). It simulates the clock and the sockets. Its
-  fake audio device counts the requests ahi.device would mishandle (`stub_audio_bad`).
+  fake audio device counts the requests ahi.device would mishandle (`stub_audio_bad`); its fake Paula, the calls
+  against Paula's rules (`stub_paula_bad`).
 
 The same sources give three programs:
 
@@ -364,6 +366,9 @@ A platform layer implements `platform.h`, whose comments are the reference; `pos
 - **the audio device**: `AUDIO_BLOCKS` requests of 16-bit big-endian PCM, at full volume. A request linked to
   another starts when that one ends. The unit's mode (`plat_audio_mode()`), and on an abort, the bytes played, or
   `-1` when the device cannot tell;
+- **Paula direct** (`plat_paula_*`): chip RAM buffers of `PAULA_BLOCK_SAMPLES` per block and channel, blocks played
+  by every channel in the order sent, Paula's clock, its volume set at once; on an abort, the samples played. Not
+  available yet on the Amiga, nor on the host;
 - **the output file** of `OUTPUT`, the task's priority (`PRI`), and the name resolution of `SERVER`;
 - **the entry point**: it reads the options into `struct options`, then calls `player_main()`, or
   `player_bench()` for `BENCH`.

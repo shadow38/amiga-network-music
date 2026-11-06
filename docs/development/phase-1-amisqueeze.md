@@ -1057,10 +1057,12 @@ belongs to the task that opened it; packets serialised field by field; buffers a
     `SWAP` stays for `paula.audio`, and `SWAP` with `PAULA` or `PAULA8` gives a message saying it is not
     needed.
 - **Sub-steps**, one commit each:
-  - **player-11a, on the host only**: the conversion, the divisor, the server's volume turned into 0 to 64, the
-    bytes played, the period and the elapsed time; a fake Paula device in `tests/stub_platform.c`.
-  - **player-11b**: `plat_paula_*` in `platform.h`, `audio.device` in `amiga.c`, the `AUDIO` option, Paula when
-    AHI is missing, `MAXRATE` with Paula; the checks below first, then WinUAE.
+  - **player-11a, on the host only**: the conversion (`paula.c`), the divisor, the server's volume turned into 0
+    to 64, the bytes played, the period and the elapsed time; `plat_paula_*` in `platform.h`, not available yet
+    in `amiga.c` and `posix.c`; a fake Paula device in `tests/stub_platform.c`.
+  - **player-11b**: `audio.device` in `amiga.c`, the `AUDIO` option, Paula when AHI is missing, `MAXRATE` with
+    Paula; the checks below first, then WinUAE. A block holds at most 8,192 samples per channel in chip RAM
+    (96 KB for `PAULA`, 48 KB for `PAULA8`), so 16-bit mono at a rate not divided fills half a block.
   - **player-11c**: the A1200.
 - **To check before coding**, in the autodocs or in WinUAE (player-11b):
   - `CMD_STOP` and `CMD_START` stop and restart a write at once: the pause would then send nothing again;

@@ -561,6 +561,51 @@ void plat_file_close(int file)
     Close((BPTR)file);
 }
 
+/* No direct Paula output yet: the core never asks for it (it plays through AHI) */
+int plat_paula_open(int channels)
+{
+    (void)channels;
+    msg("amisqueeze: no direct Paula output in this build\n");
+    return 0;
+}
+
+void plat_paula_close(void)
+{
+}
+
+uint32_t plat_paula_clock(void)
+{
+    return 0;
+}
+
+uint8_t *plat_paula_buffer(int b, int c)
+{
+    (void)b; (void)c;
+    return NULL;
+}
+
+void plat_paula_send(int b, uint32_t start, uint32_t len, uint32_t period)
+{
+    (void)b; (void)start; (void)len; (void)period;
+}
+
+int plat_paula_done(int b)
+{
+    (void)b;
+    return 1;
+}
+
+int32_t plat_paula_abort(int b)
+{
+    (void)b;
+    return 0;
+}
+
+void plat_paula_volume(int high, int low)
+{
+    (void)high; (void)low;
+}
+
 int plat_error(void)
 {
     return last_error;

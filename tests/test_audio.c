@@ -290,7 +290,7 @@ static void test_audio_errors(void)
 
     setup(&p, "Amiga");
     stub_audio_fails = 1;
-    CHECK(!audio_open(&p, 0, 0) && !p.audio.enabled);
+    CHECK(!audio_open(&p, AUDIO_AHI, 0, 0) && !p.audio.enabled);
     CHECK(strstr(stub_out, "cannot open ahi.device unit 0") != NULL);
     teardown(&p);
 }
@@ -401,18 +401,6 @@ static void test_audio_gapless_24bit(void)
 }
 
 /* ---- volume ---- */
-
-/* audg body (after the opcode): old gains (2 x 4 bytes), adjust, preamp, then the 16.16 gains of left and right */
-static void feed_audg(int adjust, uint32_t left, uint32_t right)
-{
-    uint8_t b[18];
-
-    memset(b, 0, sizeof(b));
-    b[8] = (uint8_t)adjust;
-    set32(b + 10, left);
-    set32(b + 14, right);
-    stub_feed_packet("audg", b, sizeof(b));
-}
 
 /* Like to_device(), with the samples scaled by a 16.16 volume first */
 static void to_device_vol(uint8_t *dst, const uint8_t *src, uint32_t n, int swap_lr, uint32_t volume)

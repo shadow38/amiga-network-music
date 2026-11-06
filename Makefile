@@ -111,7 +111,7 @@ $(foreach p,$(HOST_PROGS),$(eval $(call HOST_template,$(p))))
 
 # Unit tests: the portable core of amisqueeze on a fake platform (tests/stub_platform.c); test_core.c holds what
 # the tests share and main(), test_<module>.c the tests of each module
-TEST_CORE := player slimproto stream tracks output icy ring audio decoder flac dr_flac mp3 minimp3 bench \
+TEST_CORE := player slimproto stream tracks output icy ring audio paula decoder flac dr_flac mp3 minimp3 bench \
              bench_flac bench_mp3
 TEST_FILES := $(patsubst tests/%.c,obj-host/tests/%.o,$(wildcard tests/test_*.c))
 out-host/test_core: $(TEST_FILES) obj-host/tests/stub_platform.o \

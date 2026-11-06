@@ -35,7 +35,7 @@ OVER = {
     ("src/amisqueeze/flac.c", "read_header"): {"complexity": 29, "lines": 95},
     ("src/amisqueeze/mp3.c", "mp3_lame_header"): {"complexity": 21},
     ("src/amisqueeze/mp3.c", "mp3_run"): {"complexity": 30, "lines": 78},
-    ("src/amisqueeze/output.c", "feed_audio"): {"complexity": 18},
+    ("src/amisqueeze/output.c", "feed_audio"): {"complexity": 17},
     ("src/amisqueeze/player.c", "tooltypes_line"): {"complexity": 16},
     ("src/amisqueeze/player.c", "run"): {"complexity": 31, "lines": 66},
     ("src/amisqueeze/player.c", "player_main"): {"complexity": 33, "lines": 96},

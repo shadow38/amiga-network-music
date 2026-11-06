@@ -76,7 +76,7 @@ int plat_file_create(const char *name);
 int plat_file_write(int file, const void *buf, int len);
 void plat_file_close(int file);
 
-/* Audio output (ahi.device on the Amiga): AUDIO_BLOCKS requests, numbered 0 to AUDIO_BLOCKS - 1, playing 16-bit
+/* Audio output through AHI (ahi.device on the Amiga): AUDIO_BLOCKS requests, numbered 0 to AUDIO_BLOCKS - 1, playing 16-bit
  * big-endian PCM. A request linked to another (link >= 0) starts when that one ends, at once if it already
  * ended. plat_wait() also returns when a request ends. */
 /* Opens the given unit; 0 if impossible (message printed) */
@@ -99,6 +99,30 @@ int plat_audio_done(int i);
 /* Aborts request i and waits for it; returns the bytes it played, or -1 if the device cannot tell (AHI before
  * version 6) */
 int32_t plat_audio_abort(int i);
+
+/* Direct Paula output (audio.device on the Amiga): Paula's four channels (14 bits) or channels 0 and 1 only (8
+ * bits), playing signed 8-bit samples from buffers in chip RAM that the platform layer allocates: AUDIO_BLOCKS
+ * blocks, each with one buffer of PAULA_BLOCK_SAMPLES bytes per channel. Channels 0 and 3 play on the left, 1 and 2
+ * on the right. A block is played by every channel at once, after the blocks already sent. plat_wait() also
+ * returns when one ends. */
+#define PAULA_BLOCK_SAMPLES 8192
+#define PAULA_PERIOD_MIN    124             /* Paula's shortest period (clock cycles per sample) */
+#define PAULA_PERIOD_MAX    65535
+/* Opens Paula with 4 or 2 channels; 0 if impossible (message printed) */
+int plat_paula_open(int channels);
+void plat_paula_close(void);
+/* Paula's clock in Hz, PAL or NTSC: a period of n plays clock / n samples a second */
+uint32_t plat_paula_clock(void);
+/* Buffer of block b for channel c */
+uint8_t *plat_paula_buffer(int b, int c);
+/* Plays samples [start, start + len) of block b's buffers, at the given period; start and len are even */
+void plat_paula_send(int b, uint32_t start, uint32_t len, uint32_t period);
+/* 1 if block b has ended (it is then free again) */
+int plat_paula_done(int b);
+/* Aborts block b and waits for it; returns the samples it played, or -1 if the device cannot tell */
+int32_t plat_paula_abort(int b);
+/* Volumes, 0 to 64, of the high channels (0 and 1) and the low ones (3 and 2), applied at once */
+void plat_paula_volume(int high, int low);
 
 /* Waits until one of the n sockets is ready, the timeout expires or the user interrupts (Ctrl-C). n may be 0
  * (plain delay that can be interrupted). Returns 1 = something ready, 0 = timeout, -1 = interrupted,

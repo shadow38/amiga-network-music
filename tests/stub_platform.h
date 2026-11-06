@@ -74,6 +74,34 @@ int stub_audio_finish(void);
 /* Requests queued, in playing order */
 int stub_audio_queue(int *order);
 
+/* The fake Paula: blocks played in the order sent, two at most queued, by every channel; the test ends them
+ * (stub_paula_finish) or a pause aborts them; what each channel played is captured in stub_paula_out[channel] */
+#define STUB_PAULA_OUT (256 * 1024)
+struct stub_paula_req {
+    uint32_t start, len, period;
+    int      queued, ended, playing;
+};
+extern struct stub_paula_req stub_paula[8];
+extern int      stub_paula_fails;       /* 1: plat_paula_open() fails */
+extern int      stub_paula_open;        /* channels open, 0 = closed */
+extern uint32_t stub_paula_clock;       /* given by plat_paula_clock(): PAL unless the test sets it */
+extern int32_t  stub_paula_abort_played;  /* samples the playing block has played when aborted (-1 = unknown) */
+extern uint8_t  stub_paula_out[4][STUB_PAULA_OUT];
+extern uint32_t stub_paula_out_len;     /* samples each channel played */
+extern int      stub_paula_high, stub_paula_low;   /* the volumes set */
+extern int      stub_paula_volumes;     /* calls of plat_paula_volume() since stub_paula_clear() */
+extern int      stub_paula_sends;       /* blocks sent since stub_paula_clear() */
+extern int      stub_paula_bad;         /* calls against Paula's rules: an odd start or length, a length of 0 or past
+                                           the buffer, a period out of Paula's range, a third block queued, a
+                                           channel not open, a volume out of 0 to 64, a block aborted before the
+                                           one playing */
+/* Clears the captured output and the counters (not the blocks) */
+void stub_paula_clear(void);
+/* The block playing now ends: its samples go to stub_paula_out; returns its number, or -1 if none is queued */
+int stub_paula_finish(void);
+/* Blocks queued, in playing order */
+int stub_paula_queue(int *order);
+
 /* Clears everything sent, printed and still to be received */
 void stub_reset(void);
 /* Queues a server -> client packet on the control connection: 2-byte length, then opcode and body */

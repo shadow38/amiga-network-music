@@ -177,14 +177,14 @@ static void output_empty(struct player *p)
 
 /* Audio output: the decoder fills the free blocks. A block holds whole frames of one track; it is sent full, or
  * with what there is when the track's data is complete or when the device is about to run dry (fewer than two
- * blocks queued). 8-bit samples fill half a block: they double in size when converted to 16 bits. */
+ * blocks queued). How much a block takes: audio_block_room(). */
 static void feed_audio(struct player *p, uint32_t now)
 {
     struct output *o = &p->out;
 
     for (;;) {
         struct track *t;
-        uint32_t frame, n, avail, full;
+        uint32_t n, avail, full;
         uint64_t before;
         int b, complete;
 
@@ -203,9 +203,7 @@ static void feed_audio(struct player *p, uint32_t now)
         t = decode_track(p);
         if (!prepare_decoder(p, t))
             continue;
-        frame = (uint32_t)t->out_fmt.channels * t->out_fmt.sample_bytes;
-        full = t->out_fmt.sample_bytes == 1 ? AUDIO_BLOCK_SIZE / 2 : AUDIO_BLOCK_SIZE;
-        full -= full % frame;
+        full = audio_block_room(p, &t->out_fmt);
         avail = track_input(p, t, &complete);
         if (!complete && audio_pending(p) >= 2 && o->dec.ops->buffered(&o->dec) == 0 &&
             avail < o->dec.ops->input_for(&o->dec, full))

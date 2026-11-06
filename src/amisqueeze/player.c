@@ -496,7 +496,7 @@ int player_main(struct player *p, const struct options *o)
     }
     /* OUTPUT checks the data: it keeps the virtual output (what AHI aborts on a stop would be in the file) */
     if (o->audio && !o->output) {
-        if (!audio_open(p, o->unit, o->swap)) {
+        if (!audio_open(p, AUDIO_AHI, o->unit, o->swap)) {
             output_file_close(p);
             stream_free(p);
             return PLAYER_FAIL;

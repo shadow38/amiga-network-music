@@ -233,9 +233,21 @@ void setup_audio(struct player *p, int swap)
     setup(p, "Amiga");
     stub_audio_fails = 0;
     stub_audio_abort_played = 0;
-    CHECK(audio_open(p, 2, swap) && stub_audio_open && stub_audio_unit == 2);
+    CHECK(audio_open(p, AUDIO_AHI, 2, swap) && stub_audio_open && stub_audio_unit == 2);
     stub_audio_clear();
     CHECK(slim_connect(p, 0));
+}
+
+/* audg body (after the opcode): old gains (2 x 4 bytes), adjust, preamp, then the 16.16 gains of left and right */
+void feed_audg(int adjust, uint32_t left, uint32_t right)
+{
+    uint8_t b[18];
+
+    memset(b, 0, sizeof(b));
+    b[8] = (uint8_t)adjust;
+    set32(b + 10, left);
+    set32(b + 14, right);
+    stub_feed_packet("audg", b, sizeof(b));
 }
 
 /* Ends the request playing now, then lets the output collect it and refill */
@@ -388,6 +400,7 @@ int main(void)
     tests_output();
     tests_icy();
     tests_audio();
+    tests_paula();
     tests_decoder();
     tests_tracks();
     tests_player();
