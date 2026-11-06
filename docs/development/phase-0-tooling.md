@@ -190,7 +190,8 @@ phase 1; the figures below are those of 0.6.
   commands through AHI (pause, resume, seek, stop, two tracks in a row, the `Largest` column of `Avail` before and
   after); a byte-by-byte `OUTPUT` comparison of the Amiga build (FLAC and MP3, `tools/pcm-compare.py`); these two
   before the release of 0.7. Music Assistant before 1.0: its LMS-like CLI cannot start a library track (see tools-9),
-  so the scenario goes through its API, which needs a token and a small WebSocket client (reused by amilms, remote-8).
+  so the scenario goes through its API, which needs a token and a small WebSocket client. The client is a test
+  tool in `tools/winuae/`, nothing of amilms (agreed with the user).
   Not in it: the measures (CPU load, long runs, the slow relay) and the old ROMs, which stay manual.
 - **Criterion**: one command runs the scenarios, each in less than 2 minutes, and prints OK or the reason of each
   failure.

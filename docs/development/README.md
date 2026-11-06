@@ -55,7 +55,7 @@ agreed with the user.
 | 0.1 to 0.7 | the player for LMS and Music Assistant: PCM, FLAC, MP3, start from the Workbench, the `.lha`, releases built by the CI | player-1 to player-8d, player-7b, part of player-10, tools-10 (LMS), publish-2 (`.lha`), publish-3 | ✅, see the [changelog](../../CHANGELOG.md) |
 | 0.8 | what the real machine shows; a lower rate asked of the server; automatic server discovery; hardening; the writing rules applied to the documentation | player-9, player-10 (discovery), player-12, player-13, player-14, player-15, player-16, player-17, tools-11, tools-13, publish-6 | ✅, see the [changelog](../../CHANGELOG.md) |
 | 0.9 | internet radios' metadata (ICY); the window shown and hidden from Exchange; finishing touches after the 0.8 reviews; the code's size and complexity checked; a readable architecture page; the technical documentation organised | player-10 (end), tools-14, player-18, player-19, publish-7, publish-8, player-20, player-21 | ✅, see the [changelog](../../CHANGELOG.md) |
-| 1.0 | `stream.c` and the unit tests split; a direct Paula output; setup guides, a full audit, the upload to Aminet | player-11, publish-4, publish-5, tools-10 (Music Assistant), publish-2 (Aminet) | ⬜ |
+| 1.0 | `stream.c` and the unit tests split; a direct Paula output; setup guides, a full audit, the upload to Aminet | player-22, player-11, publish-4, publish-5, tools-10 (Music Assistant), publish-2 (Aminet) | ⬜ |
 | none yet | idea: source-level debugging | tools-8 | ⬜ |
 | none | reference documents on AmigaOS for contributors, committed when ready (agreed with the user) | tools-12 | ⬜ |
 
@@ -153,10 +153,12 @@ The rest agreed with the user, in this order, then a light review (publish-5):
 
 In this order (agreed with the user):
 
-- **The split**: `stream.c` and `tests/test_core.c` split, the former into smaller modules (its stream, its queue
-  of tracks, its output), the latter by module. The output module is where the Paula output goes.
+- **The split** (player-22): `stream.c` and `tests/test_core.c` split, the former into smaller modules (its
+  stream, its queue of tracks, its output), the latter by module. The output module is where the Paula output
+  goes.
 - **A direct Paula output** (player-11), with a reduced scope: an option, AHI still the default (see
-  [player-11](phase-1-amisqueeze.md)). If its study rules it out, it leaves 1.0 rather than grow.
+  [player-11](phase-1-amisqueeze.md)). If its study rules it out, it leaves 1.0 rather than grow. On the A1200,
+  a newer AHI Paula driver is tried too.
 - **The guides and the audit**: the setup guides (publish-4), written with the Paula output known; the Music
   Assistant scenario in WinUAE (tools-10); a full audit (publish-5), which checks the split and the Paula output.
 - **Last**: the upload to Aminet (publish-2), once the `Author:` and `Uploader:` of the `.readme` are corrected.
@@ -205,6 +207,7 @@ In this order (agreed with the user):
 | player-19 The window shown and hidden from Exchange | ✅ version 0.9 |
 | player-20 Fixes after the 0.9 review | ✅ version 0.9 |
 | player-21 From the 0.9 review's 50 list | ✅ version 0.9 |
+| player-22 `stream.c` and the unit tests split | ⬜ version 1.0, first |
 | remote-0 Study (common interface, Music Assistant feasibility, name) | ⬜ before any amilms code |
 | remote-1 to remote-7 LMS | ⬜ |
 | remote-8 to remote-11 Music Assistant | ⬜ |
