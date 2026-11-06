@@ -283,8 +283,10 @@ costs a slow 68020 most of its time. The rules, from audio.device's autodoc and 
   so that the server lowers the rate with a better filter than the Amiga's division.
 - **Paula's low-pass filter** (the power LED) is turned off while playing, as `paula.audio` does, and set back at
   every exit, Ctrl-C included.
-- **The conversion takes the bytes as they are** when the rate is not divided, the usual case: the general path,
-  with a mean per sample, cost the slow profile more than AHI did.
+- **The conversion has two fast paths**: the bytes taken as they are when the rate is not divided, the usual case,
+  and a mean of each pair by an addition and a shift when it is divided by 2 (44.1, 48 and 32 kHz). The general
+  path, with a function and a loop per sample, cost the slow profile more than AHI did; it is left to the rare
+  divisors 3 and 4.
 
 ## The Amiga side: start-up, window, commodity
 

@@ -9,9 +9,10 @@ are previews, until 1.0.
 
 ### Added
 
-- `AUDIO=PAULA` and `AUDIO=PAULA8` play on Paula directly, without AHI, in 14 or 8 bits, for much less CPU than
-  through AHI. Without AHI installed, amisqueeze plays on Paula by itself. Paula's highest rate is then asked of
-  the server; with LMS, the rules of `MAXRATE` lower it. See the user guide, Paula without AHI.
+- `AUDIO=PAULA` and `AUDIO=PAULA8` play on Paula directly, without AHI, in 14 or 8 bits, for less CPU than
+  through AHI, also when the Amiga halves a rate the server did not lower. Without AHI installed, amisqueeze
+  plays on Paula by itself. Paula's highest rate is then asked of the server; with LMS, the rules of `MAXRATE`
+  lower it. See the user guide, Paula without AHI.
 
 ## [0.9] - 2026-11-03
 

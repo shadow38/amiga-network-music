@@ -1065,7 +1065,8 @@ belongs to the task that opened it; packets serialised field by field; buffers a
     (96 KB for `PAULA`, 48 KB for `PAULA8`), so 16-bit mono at a rate not divided fills half a block. On the slow
     profile, LMS sending 28603 Hz: 20 % of the CPU with `PAULA`, 9 % with `PAULA8`, 54 % through AHI at
     27429 Hz (the conversion takes the bytes as they are when the rate is not divided: the general path took
-    85 %). Heard: the faint sound of one side on the other with a tone on one side only, and a short gap between
+    85 %). A 44.1 kHz stream divided by 2 (`MAXRATE=48000`): 45 % with `PAULA`, 41 % with `PAULA8`, about 65 %
+    through AHI (the general path took 84 %; reception alone, 6 %). Heard: the faint sound of one side on the other with a tone on one side only, and a short gap between
     MP3s converted by LMS, both through AHI as well.
   - **player-11c**: the A1200.
 - **Checked before coding** (`audio.doc` of the NDK 3.2, the RKM's Audio Device chapter), and what was agreed

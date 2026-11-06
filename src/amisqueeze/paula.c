@@ -119,6 +119,48 @@ static uint32_t convert_whole(const struct paula_in *in, uint8_t *const high[2],
     return k;
 }
 
+/* Sample p of a frame, its sign bit flipped (0 to 65535), as group_mean() sums them */
+#define OFFSET_SAMPLE(p, hi, lo) (((uint32_t)(p)[hi] << 8 | (p)[lo]) ^ 0x8000)
+
+/* Sample k of a side from m, a mean with its sign bit flipped: 8 high bits (signed), then the next 6 */
+#define PUT_HIGH(dst, k, m) ((dst)[k] = (uint8_t)(((m) >> 8) ^ 0x80))
+#define PUT_LOW(dst, k, m)  ((dst)[k] = (uint8_t)(((m) >> 2) & 0x3F))
+
+/* The rate divided by 2 (44.1, 48 and 32 kHz not lowered by the server): each pair's mean, rounded down as
+ * group_mean() does, an odd last frame on its own. The general path cost a slow 68020 more than AHI did (seen in
+ * WinUAE). */
+static uint32_t convert_half(const struct paula_in *in, uint8_t *const high[2], uint8_t *const low[2])
+{
+    const uint8_t *b = in->data;
+    uint32_t step = 2 * (uint32_t)in->channels, right = in->channels == 2 ? 2 : 0, k, m0, m1;
+    uint32_t pairs = in->frames / 2;
+    int hi = in->big_endian ? 0 : 1, lo = 1 - hi;
+    uint8_t *h0 = high[0], *h1 = high[1], *l0 = low[0], *l1 = low[1];
+
+    for (k = 0; k < pairs; k++, b += 2 * step) {
+        m0 = (OFFSET_SAMPLE(b, hi, lo) + OFFSET_SAMPLE(b + step, hi, lo)) >> 1;
+        m1 = (OFFSET_SAMPLE(b + right, hi, lo) + OFFSET_SAMPLE(b + step + right, hi, lo)) >> 1;
+        PUT_HIGH(h0, k, m0);
+        PUT_HIGH(h1, k, m1);
+        if (l0 != NULL) {
+            PUT_LOW(l0, k, m0);
+            PUT_LOW(l1, k, m1);
+        }
+    }
+    if (in->frames & 1) {
+        m0 = OFFSET_SAMPLE(b, hi, lo);
+        m1 = OFFSET_SAMPLE(b + right, hi, lo);
+        PUT_HIGH(h0, k, m0);
+        PUT_HIGH(h1, k, m1);
+        if (l0 != NULL) {
+            PUT_LOW(l0, k, m0);
+            PUT_LOW(l1, k, m1);
+        }
+        k++;
+    }
+    return k;
+}
+
 uint32_t paula_convert(const struct paula_in *in, uint8_t *const high[2], uint8_t *const low[2])
 {
     int shift = power_of_two(in->divisor), side;
@@ -126,6 +168,8 @@ uint32_t paula_convert(const struct paula_in *in, uint8_t *const high[2], uint8_
 
     if (in->divisor <= 1)
         k = convert_whole(in, high, low);
+    else if (in->divisor == 2)
+        k = convert_half(in, high, low);
     else
         for (f = 0; f < in->frames; f += n, k++) {
             n = in->frames - f < in->divisor ? in->frames - f : in->divisor;

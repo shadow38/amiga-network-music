@@ -843,7 +843,8 @@ Paula through AHI 4.180, a Xircom CE3-10/100 PCMCIA card with a fixed `xircomce2
 - TCP/IP: WinUAE's emulation (`bsdsocket_emu=true`), and AmiNetXDuo on WinUAE's emulated network card;
 - sound: AHI 6.6 with `paula.audio` and a Toccata card, checked by ear; Paula without AHI (`AUDIO=PAULA` and
   `PAULA8`), in PAL and NTSC, checked by ear with LMS. On the 28 MHz 68020, LMS sending 28603 Hz, it took 20 % of
-  the CPU in 14 bits and 9 % in 8 bits, against 54 % through AHI at 27429 Hz;
+  the CPU in 14 bits and 9 % in 8 bits, against 54 % through AHI at 27429 Hz; with a 44.1 kHz stream played at
+  half its rate, 45 % and 41 %, against 65 % through AHI;
 - with LMS 9.1.1: everything amisqueeze does, an hour of playback included; with Music Assistant 2.10.7:
   playback, the commands, its codecs, a server restart;
 - an internet radio with LMS: an MP3 radio at an `http://` address fetched by `amisqueeze.fpu` itself, its titles
