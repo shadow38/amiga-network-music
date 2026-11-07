@@ -256,6 +256,11 @@ Neither planned nor dropped for good. Each is taken up only by the user's decisi
   makes the advice clear (agreed with the user).
 - **LMS's `body` frame**: for a playlist address played directly, LMS asks the player to send the body back.
   amisqueeze shows it as "not handled" (agreed with the user).
+- **Sub-folders in `src/amisqueeze/`**: its files sit flat (25, about 5,000 lines of our own plus the samples of
+  `bench_*.c`), grouped by name: `amiga*.c` and `posix.c` are the platform layers, the rest the portable core. If
+  the files grow a lot (new decoders, a second real platform such as AROS), only a `core/` and `platform/` cut:
+  the core's border visible, and checkable by the build (no Amiga header reachable from the core). Not before 1.0:
+  the Makefile, the CI, `tools/`, the documents and the review agents follow every path (agreed with the user).
 - **Two programs in one repository** (once the remote starts): to settle in a step of its own, just before
   remote-1, the documents of amisqueeze moved first and alone. Proposed:
   - **the documents in three levels**: the project at the root (README, CONTRIBUTING's map, CLAUDE.md); each
