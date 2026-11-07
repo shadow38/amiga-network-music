@@ -1,9 +1,11 @@
 /*
  * platform.h - what the portable core of amisqueeze needs from the system.
  *
- * Implemented by amiga.c (AmigaOS: bsdsocket.library, timer.device, dos.library) and posix.c (Linux and other
- * POSIX systems, for host-side tests). Addresses and ports are in host byte order: conversions to network order
- * happen in the implementations, never in the core.
+ * Implemented by amiga.c, amiga_ahi.c and amiga_paula.c (AmigaOS: bsdsocket.library, timer.device, dos.library,
+ * ahi.device, audio.device) and posix.c (Linux and other POSIX systems, for host-side tests). Portable means tested
+ * on the host and able to follow the other systems with ahi.device, not a player for PCs: the audio functions
+ * follow ahi.device (plat_ahi_*) and audio.device (plat_paula_*). Addresses and ports are in host byte order:
+ * conversions to network order happen in the implementations, never in the core.
  */
 #ifndef PLATFORM_H
 #define PLATFORM_H

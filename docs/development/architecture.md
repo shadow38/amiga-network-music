@@ -44,7 +44,10 @@ flowchart LR
 
 The **portable core** is every file of `src/amisqueeze/` but `amiga*.c` and `posix.c`. It is standard C, with no
 Amiga or POSIX header. Whatever touches the system goes through `platform.h`: sockets, clock, files, the audio
-device, the wait.
+device, the wait. Portable means two things: the core is tested on the host, and it could follow the other
+systems with ahi.device (AmigaOS 4, MorphOS, AROS). It is not meant for a player on PCs, where squeezelite exists:
+the audio part of `platform.h` follows ahi.device (`plat_ahi_*`) and audio.device (`plat_paula_*`), and what the
+unit tests must reach, such as the conversion for Paula, stays above it in the core.
 
 | File | Role |
 |---|---|
