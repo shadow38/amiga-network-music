@@ -17,18 +17,18 @@ static void test_audio_blocks(void)
     drain_stream(&p);
     CHECK(p.out.state == OUTPUT_RUNNING);
     output_tick(&p, stub_now);
-    n = stub_audio_queue(order);
-    CHECK(n == 2 && stub_audio_sends == 2);            /* two with the device, the third one filled */
-    CHECK(stub_audio[order[0]].link == -1 && stub_audio[order[1]].link == order[0]);
-    CHECK(stub_audio[order[0]].len == BLOCK && stub_audio[order[0]].rate == 44100 &&
-          stub_audio[order[0]].channels == 2);
+    n = stub_ahi_queue(order);
+    CHECK(n == 2 && stub_ahi_sends == 2);            /* two with the device, the third one filled */
+    CHECK(stub_ahi[order[0]].link == -1 && stub_ahi[order[1]].link == order[0]);
+    CHECK(stub_ahi[order[0]].len == BLOCK && stub_ahi[order[0]].rate == 44100 &&
+          stub_ahi[order[0]].channels == 2);
     CHECK(ring_used(&p.ring) == sizeof(track_a) - AUDIO_BLOCKS * BLOCK && audio_pending(&p) == AUDIO_BLOCKS);
     stub_now += 100;
     CHECK(output_elapsed_ms(&p) == 100);                /* estimated within the block playing */
 
     CHECK(finish(&p) == order[0]);                      /* the first block ends: the third one is sent, linked */
-    n = stub_audio_queue(order);                        /* to the one now playing; the first one is refilled */
-    CHECK(n == 2 && stub_audio_sends == 3 && stub_audio[order[1]].link == order[0]);
+    n = stub_ahi_queue(order);                        /* to the one now playing; the first one is refilled */
+    CHECK(n == 2 && stub_ahi_sends == 3 && stub_ahi[order[1]].link == order[0]);
     CHECK(audio_pending(&p) == AUDIO_BLOCKS);
 
     stub_stream_end();
@@ -39,11 +39,11 @@ static void test_audio_blocks(void)
         finish(&p);
     }
     CHECK(p.out.state == OUTPUT_STOPPED && strstr(trace(), "STAT:STMu") != NULL);
-    CHECK(stub_audio_out_len == (int)sizeof(track_a));
+    CHECK(stub_ahi_out_len == (int)sizeof(track_a));
     to_device(expect, track_a, sizeof(track_a), 0);
-    CHECK(!memcmp(stub_audio_out, expect, sizeof(track_a)));
-    CHECK(stub_audio_sends == 6);                       /* 5 full blocks, then the 12560 bytes left */
-    CHECK(stub_audio_bad == 0);
+    CHECK(!memcmp(stub_ahi_out, expect, sizeof(track_a)));
+    CHECK(stub_ahi_sends == 6);                       /* 5 full blocks, then the 12560 bytes left */
+    CHECK(stub_ahi_bad == 0);
     teardown(&p);
 }
 
@@ -63,7 +63,7 @@ static void test_audio_swap_mono(void)
     while (finish(&p) >= 0)
         ;
     to_device(expect, track_a, 4000, 1);
-    CHECK(stub_audio_out_len == 4000 && !memcmp(stub_audio_out, expect, 4000));
+    CHECK(stub_ahi_out_len == 4000 && !memcmp(stub_ahi_out, expect, 4000));
     teardown(&p);
 
     setup_audio(&p, 1);
@@ -76,10 +76,10 @@ static void test_audio_swap_mono(void)
     stub_stream_end();
     stream_io(&p, PLAT_READ);
     output_tick(&p, stub_now);
-    CHECK(stub_audio[0].channels == 1);
+    CHECK(stub_ahi[0].channels == 1);
     while (finish(&p) >= 0)
         ;
-    CHECK(stub_audio_out_len == 4000 && !memcmp(stub_audio_out, track_a, 4000));
+    CHECK(stub_ahi_out_len == 4000 && !memcmp(stub_ahi_out, track_a, 4000));
     teardown(&p);
 }
 
@@ -94,28 +94,28 @@ static void test_audio_pause(void)
     stub_feed_stream(track_a, sizeof(track_a));
     drain_stream(&p);
     output_tick(&p, stub_now);
-    stub_audio_abort_played = 1000;
+    stub_ahi_abort_played = 1000;
 
     clear_tx();
     feed_strm('p', NULL, 0, 0, 0, NULL);
     drain(&p);
     CHECK(!strcmp(trace(), "STAT:STMp"));
-    CHECK(stub_audio_queue(order) == 0);                /* nothing left playing */
+    CHECK(stub_ahi_queue(order) == 0);                /* nothing left playing */
     stub_now += 2000;
     CHECK(output_elapsed_ms(&p) == 1000 * 1000 / PCM_BPS);   /* 1000 bytes played: time stands still */
 
     feed_strm('u', NULL, 0, 0, 0, NULL);
     drain(&p);
-    CHECK(stub_audio_queue(order) == 2);
-    CHECK(stub_audio[order[0]].len == BLOCK - 1000 && stub_audio[order[0]].link == -1);
-    CHECK(stub_audio[order[1]].len == BLOCK && stub_audio[order[1]].link == order[0]);
+    CHECK(stub_ahi_queue(order) == 2);
+    CHECK(stub_ahi[order[0]].len == BLOCK - 1000 && stub_ahi[order[0]].link == -1);
+    CHECK(stub_ahi[order[1]].len == BLOCK && stub_ahi[order[1]].link == order[0]);
     stub_stream_end();
     stream_io(&p, PLAT_READ);
     while (finish(&p) >= 0)
         ;
     to_device(expect, track_a, sizeof(track_a), 0);
-    CHECK(stub_audio_out_len == (int)sizeof(track_a) && !memcmp(stub_audio_out, expect, sizeof(track_a)));
-    CHECK(stub_audio_bad == 0);
+    CHECK(stub_ahi_out_len == (int)sizeof(track_a) && !memcmp(stub_ahi_out, expect, sizeof(track_a)));
+    CHECK(stub_ahi_bad == 0);
     teardown(&p);
 }
 
@@ -131,26 +131,26 @@ static void test_audio_pause_ahi4(void)
     stub_feed_stream(track_a, sizeof(track_a));
     drain_stream(&p);
     output_tick(&p, stub_now);
-    stub_audio_abort_played = -1;
-    stub_audio_abort_real = PCM_BPS / 10;               /* what the device really played in 100 ms */
+    stub_ahi_abort_played = -1;
+    stub_ahi_abort_real = PCM_BPS / 10;               /* what the device really played in 100 ms */
     stub_now += 100;
     feed_strm('p', NULL, 0, 0, 0, NULL);
     drain(&p);
     CHECK(p.audio.block[p.audio.order[0]].done == PCM_BPS / 10);     /* whole frames */
     CHECK(audio_played(&p, stub_now, 1) == PCM_BPS / 10 && output_elapsed_ms(&p) == 100);
-    stub_audio_abort_played = 0;
+    stub_ahi_abort_played = 0;
     feed_strm('u', NULL, 0, 0, 0, NULL);
     drain(&p);
-    CHECK(stub_audio_queue(order) == 2 && stub_audio[order[0]].len == BLOCK - PCM_BPS / 10);
+    CHECK(stub_ahi_queue(order) == 2 && stub_ahi[order[0]].len == BLOCK - PCM_BPS / 10);
     stub_stream_end();
     stream_io(&p, PLAT_READ);
     while (finish(&p) >= 0)
         ;
     to_device(expect, track_a, sizeof(track_a), 0);
-    CHECK(stub_audio_out_len == (int)sizeof(track_a) && !memcmp(stub_audio_out, expect, sizeof(track_a)));
-    CHECK(stub_audio_bad == 0);
-    stub_audio_abort_played = 0;
-    stub_audio_abort_real = 0;
+    CHECK(stub_ahi_out_len == (int)sizeof(track_a) && !memcmp(stub_ahi_out, expect, sizeof(track_a)));
+    CHECK(stub_ahi_bad == 0);
+    stub_ahi_abort_played = 0;
+    stub_ahi_abort_real = 0;
     teardown(&p);
 }
 
@@ -167,12 +167,12 @@ static void test_audio_stop(void)
     output_tick(&p, stub_now);
     feed_strm('q', NULL, 0, 0, 0, NULL);
     drain(&p);
-    CHECK(stub_audio_queue(order) == 0 && audio_pending(&p) == 0 && audio_played(&p, stub_now, 1) == 0);
+    CHECK(stub_ahi_queue(order) == 0 && audio_pending(&p) == 0 && audio_played(&p, stub_now, 1) == 0);
     CHECK(p.out.state == OUTPUT_STOPPED && ring_used(&p.ring) == 0);
-    CHECK(stub_audio_bad == 0);                         /* the one playing aborted first */
+    CHECK(stub_ahi_bad == 0);                         /* the one playing aborted first */
 
     stub_reset();                                       /* play again: the blocks are used again */
-    stub_audio_clear();
+    stub_ahi_clear();
     open_stream(&p, '1', 1);
     stub_feed_stream(track_b, sizeof(track_b));
     drain_stream(&p);
@@ -182,8 +182,8 @@ static void test_audio_stop(void)
     while (finish(&p) >= 0)
         ;
     to_device(expect, track_b, sizeof(track_b), 0);
-    CHECK(stub_audio_out_len == (int)sizeof(track_b) && !memcmp(stub_audio_out, expect, sizeof(track_b)));
-    CHECK(p.out.state == OUTPUT_STOPPED && stub_audio_bad == 0);
+    CHECK(stub_ahi_out_len == (int)sizeof(track_b) && !memcmp(stub_ahi_out, expect, sizeof(track_b)));
+    CHECK(p.out.state == OUTPUT_STOPPED && stub_ahi_bad == 0);
     teardown(&p);
 }
 
@@ -208,16 +208,16 @@ static void test_audio_gapless(void)
 
     clear_tx();
     output_tick(&p, stub_now);
-    CHECK(stub_audio_queue(order) == 2 && audio_pending(&p) == 3);
-    CHECK(stub_audio[order[0]].len == BLOCK && stub_audio[order[1]].len == 40000 - BLOCK);
+    CHECK(stub_ahi_queue(order) == 2 && audio_pending(&p) == 3);
+    CHECK(stub_ahi[order[0]].len == BLOCK && stub_ahi[order[1]].len == 40000 - BLOCK);
     CHECK(strstr(trace(), "STMs") == NULL);             /* B handed over, not played yet */
     finish(&p);
-    stub_audio_queue(order);
-    CHECK(stub_audio[order[1]].len == 30000);           /* B, in a block of its own */
+    stub_ahi_queue(order);
+    CHECK(stub_ahi[order[1]].len == 30000);           /* B, in a block of its own */
     CHECK(strstr(trace(), "STMs") == NULL);
     finish(&p);                                         /* end of A */
     CHECK(strstr(trace(), "STAT:STMs") != NULL && output_elapsed_ms(&p) == 0);
-    CHECK(stub_audio_bad == 0);
+    CHECK(stub_ahi_bad == 0);
     teardown(&p);
 }
 
@@ -231,12 +231,12 @@ static void test_audio_wait_full_block(void)
     stub_feed_stream(track_a, 100000);                  /* 3 blocks + 1696 bytes, more to come */
     drain_stream(&p);
     output_tick(&p, stub_now);
-    CHECK(stub_audio_sends == 2 && audio_pending(&p) == 3);
+    CHECK(stub_ahi_sends == 2 && audio_pending(&p) == 3);
     finish(&p);
-    CHECK(stub_audio_sends == 3 && audio_pending(&p) == 2);   /* 1696 bytes, 2 blocks left: wait */
+    CHECK(stub_ahi_sends == 3 && audio_pending(&p) == 2);   /* 1696 bytes, 2 blocks left: wait */
     finish(&p);
-    CHECK(stub_audio_sends == 4 && audio_pending(&p) == 2);   /* 1 block left: sent as it is */
-    CHECK(stub_audio_bad == 0);
+    CHECK(stub_ahi_sends == 4 && audio_pending(&p) == 2);   /* 1 block left: sent as it is */
+    CHECK(stub_ahi_bad == 0);
     teardown(&p);
 }
 
@@ -254,7 +254,7 @@ static void audio_starved(int first)
     drain_stream(&p);
     clear_tx();
     output_tick(&p, stub_now);
-    CHECK(stub_audio_sends == 2);                       /* a full block, and the rest: the device would run dry */
+    CHECK(stub_ahi_sends == 2);                       /* a full block, and the rest: the device would run dry */
     finish(&p);
     CHECK(count_in_trace("STMo") == 0);                 /* one block still playing */
     finish(&p);
@@ -271,9 +271,9 @@ static void audio_starved(int first)
     for (guard = 0; guard < 20 && p.out.state == OUTPUT_RUNNING; guard++)
         finish(&p);
     to_device(expect, track_a, 100000, 0);
-    CHECK(stub_audio_out_len == 100000 && !memcmp(stub_audio_out, expect, 100000));
+    CHECK(stub_ahi_out_len == 100000 && !memcmp(stub_ahi_out, expect, 100000));
     CHECK(count_in_trace("STMo") == 1 && count_in_trace("STAT:STMu") == 1);
-    CHECK(stub_audio_bad == 0);
+    CHECK(stub_ahi_bad == 0);
     teardown(&p);
 }
 
@@ -289,7 +289,7 @@ static void test_audio_errors(void)
     struct player p;
 
     setup(&p, "Amiga");
-    stub_audio_fails = 1;
+    stub_ahi_fails = 1;
     CHECK(!audio_open(&p, AUDIO_AHI, 0, 0) && !p.audio.enabled);
     CHECK(strstr(stub_out, "cannot open ahi.device unit 0") != NULL);
     teardown(&p);
@@ -333,15 +333,15 @@ static void test_audio_formats(void)
         stub_feed_stream(track_a, (int)n);
         drain_stream(&p);
         output_tick(&p, stub_now);
-        CHECK(stub_audio[0].len == full / (uint32_t)sb * 2 && stub_audio[0].channels == channels);
+        CHECK(stub_ahi[0].len == full / (uint32_t)sb * 2 && stub_ahi[0].channels == channels);
         finish(&p);                                     /* the first block played: its stream bytes */
         CHECK(audio_played(&p, stub_now, 0) == full);
         CHECK(output_elapsed_ms(&p) == (uint32_t)((uint64_t)full * 1000 / (44100 * frame)));
         play_out(&p);
         dev = to_device_fmt(expect, track_a, n, sb, cases[c].endian == '0');
-        CHECK(stub_audio_out_len == (int)dev && !memcmp(stub_audio_out, expect, dev));
+        CHECK(stub_ahi_out_len == (int)dev && !memcmp(stub_ahi_out, expect, dev));
         CHECK(audio_played(&p, stub_now, 0) == n && p.out.state == OUTPUT_STOPPED);
-        CHECK(stub_audio_bad == 0);
+        CHECK(stub_ahi_bad == 0);
         teardown(&p);
     }
 }
@@ -358,7 +358,7 @@ static void test_audio_24bit_pause(void)
     stub_feed_stream(track_a, (int)n);
     drain_stream(&p);
     output_tick(&p, stub_now);
-    stub_audio_abort_played = 1000;                     /* device bytes: 250 frames */
+    stub_ahi_abort_played = 1000;                     /* device bytes: 250 frames */
     feed_strm('p', NULL, 0, 0, 0, NULL);
     drain(&p);
     CHECK(audio_played(&p, stub_now, 0) == 1500);       /* 250 frames of 6 bytes */
@@ -366,8 +366,8 @@ static void test_audio_24bit_pause(void)
     drain(&p);
     play_out(&p);
     dev = to_device_fmt(expect, track_a, n, 3, 0);
-    CHECK(stub_audio_out_len == (int)dev && !memcmp(stub_audio_out, expect, dev));
-    CHECK(stub_audio_bad == 0);
+    CHECK(stub_ahi_out_len == (int)dev && !memcmp(stub_ahi_out, expect, dev));
+    CHECK(stub_ahi_bad == 0);
     teardown(&p);
 }
 
@@ -395,8 +395,8 @@ static void test_audio_gapless_24bit(void)
     CHECK(count_in_trace("STAT:STMs") == 1 && count_in_trace("STAT:STMu") == 1);
     to_device(expect, track_a, na, 0);
     dev = to_device_fmt(expect + na, track_b, nb, 3, 0);
-    CHECK(stub_audio_out_len == (int)(na + dev) && !memcmp(stub_audio_out, expect, na + dev));
-    CHECK(stub_audio_bad == 0);
+    CHECK(stub_ahi_out_len == (int)(na + dev) && !memcmp(stub_ahi_out, expect, na + dev));
+    CHECK(stub_ahi_bad == 0);
     teardown(&p);
 }
 
@@ -432,7 +432,7 @@ static void test_audio_volume(void)
     stub_feed_stream(track_a, sizeof(track_a));
     drain_stream(&p);
     output_tick(&p, stub_now);                          /* two blocks sent at full volume, the third one filled */
-    CHECK(stub_audio_sends == 2);
+    CHECK(stub_ahi_sends == 2);
 
     stub_out[0] = '\0';
     feed_audg(1, 0x4000, 0x4000);
@@ -441,7 +441,7 @@ static void test_audio_volume(void)
     play_out(&p);
     to_device_vol(expect, track_a, 2 * BLOCK, 1, 0x10000);
     to_device_vol(expect + 2 * BLOCK, track_a + 2 * BLOCK, sizeof(track_a) - 2 * BLOCK, 1, 0x4000);
-    CHECK(stub_audio_out_len == (int)sizeof(track_a) && !memcmp(stub_audio_out, expect, sizeof(track_a)));
+    CHECK(stub_ahi_out_len == (int)sizeof(track_a) && !memcmp(stub_ahi_out, expect, sizeof(track_a)));
 
     stub_out[0] = '\0';
     feed_audg(1, 0x4000, 0x4000);                       /* the same again (the server repeats it): quiet */
@@ -467,7 +467,7 @@ static void test_audio_volume(void)
     feed_audg(0, 0x10000, 0x10000);                     /* fixed again from 100: reported too */
     drain(&p);
     CHECK(p.audio.fixed && strstr(stub_out, "volume: fixed at 100 % by LMS") != NULL);
-    CHECK(stub_audio_bad == 0);
+    CHECK(stub_ahi_bad == 0);
     teardown(&p);
 }
 
@@ -485,7 +485,7 @@ static void test_audio_volume_pause(void)
     stub_feed_stream(track_a, sizeof(track_a));
     drain_stream(&p);
     output_tick(&p, stub_now);
-    stub_audio_abort_played = 1000;
+    stub_ahi_abort_played = 1000;
     feed_strm('p', NULL, 0, 0, 0, NULL);
     drain(&p);
     feed_audg(1, 0x8000, 0x8000);
@@ -495,8 +495,8 @@ static void test_audio_volume_pause(void)
     play_out(&p);
     to_device_vol(expect, track_a, 2 * BLOCK, 0, 0x10000);
     to_device_vol(expect + 2 * BLOCK, track_a + 2 * BLOCK, sizeof(track_a) - 2 * BLOCK, 0, 0x8000);
-    CHECK(stub_audio_out_len == (int)sizeof(track_a) && !memcmp(stub_audio_out, expect, sizeof(track_a)));
-    CHECK(stub_audio_bad == 0);
+    CHECK(stub_ahi_out_len == (int)sizeof(track_a) && !memcmp(stub_ahi_out, expect, sizeof(track_a)));
+    CHECK(stub_ahi_bad == 0);
     teardown(&p);
 
     setup_audio(&p, 0);
@@ -507,9 +507,9 @@ static void test_audio_volume_pause(void)
     drain_stream(&p);
     output_tick(&p, stub_now);
     play_out(&p);
-    for (i = 0, zero = 1; i < (uint32_t)stub_audio_out_len; i++)
-        zero &= stub_audio_out[i] == 0;
-    CHECK(stub_audio_out_len == 40000 && zero);
+    for (i = 0, zero = 1; i < (uint32_t)stub_ahi_out_len; i++)
+        zero &= stub_ahi_out[i] == 0;
+    CHECK(stub_ahi_out_len == 40000 && zero);
     teardown(&p);
 }
 
@@ -542,7 +542,7 @@ static void test_ahi_mode(void)
 {
     uint32_t mode = 0, freq = 0;
     uint8_t *cut, odd[12 + 14 + 40];
-    struct audio_mode m;
+    struct ahi_mode m;
 
     CHECK(ahi_prefs_unit(ahi_prefs, sizeof(ahi_prefs), 0, &mode, &freq) && mode == 0x00020001 && freq == 27429);
     CHECK(ahi_prefs_unit(ahi_prefs, sizeof(ahi_prefs), 1, &mode, &freq) && mode == 0x000A0001 && freq == 44100);
@@ -567,16 +567,16 @@ static void test_ahi_mode(void)
     memset(&m, 0, sizeof(m));
     strcpy(m.name, "Paula:14 bit stereo++");
     m.stereo = m.panning = 1;
-    CHECK(!audio_check_mode(0, &m) && stub_out[0] == '\0');                    /* stereo++: nothing to say */
+    CHECK(!ahi_check_mode(0, &m) && stub_out[0] == '\0');                    /* stereo++: nothing to say */
     strcpy(m.name, "Toccata:16 bit stereo");
     m.panning = 0;
-    CHECK(audio_check_mode(3, &m) && strstr(stub_out, "AHI unit 3 uses \"Toccata:16 bit stereo\"") &&
+    CHECK(ahi_check_mode(3, &m) && strstr(stub_out, "AHI unit 3 uses \"Toccata:16 bit stereo\"") &&
           strstr(stub_out, "one side only") && strstr(stub_out, "stereo++"));
     stub_reset();
     strcpy(m.name, "Paula:8 bit mono");
     m.stereo = 0;
     m.panning = 1;
-    CHECK(audio_check_mode(2, &m) && strstr(stub_out, "a mono mode: the music will play in mono"));
+    CHECK(ahi_check_mode(2, &m) && strstr(stub_out, "a mono mode: the music will play in mono"));
 }
 
 void tests_audio(void)

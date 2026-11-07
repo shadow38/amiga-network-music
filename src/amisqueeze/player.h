@@ -119,7 +119,7 @@ struct stream {
 #define CONT_SAY_MS 10000
 
 /* Output: the buffer's bytes go to a sink, the virtual output (consumed at the PCM rate, as a sound card would;
- * with the OUTPUT option also written to a file, as received) or the platform's audio output (AHI) */
+ * with the OUTPUT option also written to a file, as received) or the platform's audio output (AHI or Paula direct) */
 enum output_state {
     OUTPUT_STOPPED,                     /* nothing to play */
     OUTPUT_LOADED,                      /* autostart 0: ready, waiting for strm u */
@@ -160,9 +160,9 @@ struct output {
     struct decoder dec;                 /* decoder of the track at the buffer's read position */
 };
 
-/* Audio output through the platform (AHI on the Amiga): blocks of converted PCM played one after the other, two at
- * most with the device and one filled in advance. About 0.6 s ahead: enough to ride out a busy moment, short
- * enough for the volume. */
+/* Audio output through the platform (AHI or Paula direct on the Amiga): blocks of converted PCM played one after the
+ * other, two at most with the device and one filled in advance. About 0.6 s ahead: enough to ride out a busy
+ * moment, short enough for the volume. */
 #define AUDIO_BLOCKS     3
 #define AUDIO_BLOCK_SIZE 32768UL        /* about 0.19 s of 44.1 kHz 16-bit stereo; filled with whole frames only
                                            (a 24-bit frame, 3 or 6 bytes, does not divide it) */
@@ -422,10 +422,10 @@ int audio_set_volume(struct player *p, uint32_t left, uint32_t right, int adjust
 /* Audio mode and frequency of an AHI unit in the bytes of its preferences file (ENV:Sys/ahi.prefs: an IFF FORM
  * PREF with one AHIU chunk per unit); 0 if that unit is not in it */
 int ahi_prefs_unit(const uint8_t *prefs, uint32_t size, int unit, uint32_t *mode, uint32_t *freq);
-struct audio_mode;
+struct ahi_mode;
 /* Warns when the unit's mode would not play a stereo stream right: a stereo mode that cannot pan (each sound on
  * one side) or a mono mode. Returns 1 if it warned. */
-int audio_check_mode(int unit, const struct audio_mode *m);
+int ahi_check_mode(int unit, const struct ahi_mode *m);
 
 /* paula.c: the direct Paula output's arithmetic and conversion (portable; the device is behind platform.h) */
 /* Paula's highest rate for its clock: the shortest period's */

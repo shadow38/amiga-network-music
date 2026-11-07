@@ -17,16 +17,16 @@ static void test_decoder_audio(void)
     stub_feed_stream(track_a, (int)n);
     drain_stream(&p);
     output_tick(&p, stub_now);
-    CHECK(stub_audio[0].len == BLOCK);                  /* 16384 bytes of input */
+    CHECK(stub_ahi[0].len == BLOCK);                  /* 16384 bytes of input */
     finish(&p);
     CHECK(audio_played(&p, stub_now, 0) == BLOCK);
     CHECK(output_elapsed_ms(&p) == BLOCK * 1000 / PCM_BPS);
     play_out(&p);
     widen(decoded, track_a, n);
     to_device(expect, decoded, 2 * n, 0);
-    CHECK(stub_audio_out_len == (int)(2 * n) && !memcmp(stub_audio_out, expect, 2 * n));
+    CHECK(stub_ahi_out_len == (int)(2 * n) && !memcmp(stub_ahi_out, expect, 2 * n));
     CHECK(audio_played(&p, stub_now, 0) == 2 * n && p.out.state == OUTPUT_STOPPED);
-    CHECK(stub_audio_bad == 0);
+    CHECK(stub_ahi_bad == 0);
     teardown(&p);
 }
 
@@ -66,8 +66,8 @@ static void test_decoder_audio_gapless(void)
     widen(decoded, track_a, na);
     to_device(expect, decoded, 2 * na, 0);
     to_device(expect + 2 * na, track_b, nb, 0);
-    CHECK(stub_audio_out_len == (int)(2 * na + nb) && !memcmp(stub_audio_out, expect, 2 * na + nb));
-    CHECK(stub_audio_bad == 0);
+    CHECK(stub_ahi_out_len == (int)(2 * na + nb) && !memcmp(stub_ahi_out, expect, 2 * na + nb));
+    CHECK(stub_ahi_bad == 0);
     teardown(&p);
 }
 
@@ -84,7 +84,7 @@ static void test_decoder_audio_pause(void)
     stub_feed_stream(track_a, (int)n);
     drain_stream(&p);
     output_tick(&p, stub_now);
-    stub_audio_abort_played = 1000;
+    stub_ahi_abort_played = 1000;
     feed_strm('p', NULL, 0, 0, 0, NULL);
     drain(&p);
     CHECK(audio_played(&p, stub_now, 0) == 1000 && output_elapsed_ms(&p) == 1000 * 1000 / PCM_BPS);
@@ -93,8 +93,8 @@ static void test_decoder_audio_pause(void)
     play_out(&p);
     widen(decoded, track_a, n);
     to_device(expect, decoded, 2 * n, 0);
-    CHECK(stub_audio_out_len == (int)(2 * n) && !memcmp(stub_audio_out, expect, 2 * n));
-    CHECK(stub_audio_bad == 0);
+    CHECK(stub_ahi_out_len == (int)(2 * n) && !memcmp(stub_ahi_out, expect, 2 * n));
+    CHECK(stub_ahi_bad == 0);
     teardown(&p);
 }
 
@@ -224,10 +224,10 @@ static void test_decoder_end_call_audio(void)
     setup_audio(&p, 0);
     open_ahead(&p, na);
     output_tick(&p, stub_now);
-    CHECK(stub_audio_sends == 2 && audio_pending(&p) == 2 && !ahead_done);    /* more of A to come: waits */
+    CHECK(stub_ahi_sends == 2 && audio_pending(&p) == 2 && !ahead_done);    /* more of A to come: waits */
     end_then_raw(&p, nb);
-    stub_audio_finish();
-    stub_audio_finish();
+    stub_ahi_finish();
+    stub_ahi_finish();
     stub_now += 400;
     output_tick(&p, stub_now);
     CHECK(audio_pending(&p) == 0 && ahead_done && count_in_trace("STAT:STMu") == 0);
@@ -236,9 +236,9 @@ static void test_decoder_end_call_audio(void)
     widen(decoded, track_a, na - 1);
     to_device(expect, decoded, 2 * (na - 1), 0);
     to_device(expect + 2 * (na - 1), track_b, nb, 0);
-    CHECK(stub_audio_out_len == (int)(2 * (na - 1) + nb) && !memcmp(stub_audio_out, expect, 2 * (na - 1) + nb));
+    CHECK(stub_ahi_out_len == (int)(2 * (na - 1) + nb) && !memcmp(stub_ahi_out, expect, 2 * (na - 1) + nb));
     CHECK(count_in_trace("STMo") == 0 && count_in_trace("STAT:STMs") == 1 && count_in_trace("STAT:STMu") == 1);
-    CHECK(stub_audio_bad == 0);
+    CHECK(stub_ahi_bad == 0);
     teardown(&p);
 }
 
@@ -374,7 +374,7 @@ static void test_decoder_no_start_audio(void)
     stream_io(&p, PLAT_READ);
     stub_now += 100;
     output_tick(&p, stub_now);
-    CHECK(nostart_starts == 1 && nostart_used == 0 && stub_audio_out_len == 0 &&
+    CHECK(nostart_starts == 1 && nostart_used == 0 && stub_ahi_out_len == 0 &&
           strstr(stub_out, "nostart: cannot decode this track, skipped") != NULL);
     stub_reset();
     open_stream(&p, '1', 1);
@@ -386,8 +386,8 @@ static void test_decoder_no_start_audio(void)
     for (guard = 0; guard < 20 && p.out.state == OUTPUT_RUNNING; guard++)
         finish(&p);
     to_device(expect, track_b, nb, 0);
-    CHECK(nostart_used == 0 && stub_audio_out_len == (int)nb && !memcmp(stub_audio_out, expect, nb));
-    CHECK(stub_audio_bad == 0);
+    CHECK(nostart_used == 0 && stub_ahi_out_len == (int)nb && !memcmp(stub_ahi_out, expect, nb));
+    CHECK(stub_ahi_bad == 0);
     teardown(&p);
 }
 

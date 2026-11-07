@@ -70,7 +70,7 @@ device, the wait.
   audio output, so it always uses the virtual output. `AUDIO`, `UNIT`, `NOAUDIO` and `SWAP` are accepted and
   ignored;
 - `tests/stub_platform.c`, for the unit tests (`tests/test_*.c`). It simulates the clock and the sockets. Its
-  fake audio device counts the requests ahi.device would mishandle (`stub_audio_bad`); its fake Paula, the calls
+  fake AHI counts the requests ahi.device would mishandle (`stub_ahi_bad`); its fake Paula, the calls
   against Paula's rules (`stub_paula_bad`).
 
 The same sources give three programs:
@@ -251,7 +251,7 @@ from the source of ahi.device (AHI 6.0):
   a low volume corrupt the free memory list: the system hangs, or amisqueeze dies later. `audio.c` scales the
   samples instead, with two 256-entry tables and no multiplication per sample.
 
-The fake audio device of the unit tests counts the requests that break the first two rules (`stub_audio_bad`).
+The fake AHI of the unit tests counts the requests that break the first two rules (`stub_ahi_bad`).
 
 ## Paula direct
 
@@ -405,7 +405,7 @@ A platform layer implements `platform.h`, whose comments are the reference; `pos
 - **the wait**: `plat_wait()` on the sockets given, with a time-out. Ctrl-C ends it (`-1`), and so does the end
   of an audio request. After a socket call failed because of Ctrl-C, `plat_interrupted()` says so;
 - **the audio device**: `AUDIO_BLOCKS` requests of 16-bit big-endian PCM, at full volume. A request linked to
-  another starts when that one ends. The unit's mode (`plat_audio_mode()`), and on an abort, the bytes played, or
+  another starts when that one ends. The unit's mode (`plat_ahi_mode()`), and on an abort, the bytes played, or
   `-1` when the device cannot tell;
 - **Paula direct** (`plat_paula_*`): chip RAM buffers of `PAULA_BLOCK_SAMPLES` per block and channel, blocks played
   by every channel in the order sent, Paula's clock, its volume set at once; on an abort, the samples played, or

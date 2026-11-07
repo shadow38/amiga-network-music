@@ -80,25 +80,25 @@ void plat_file_close(int file);
  * big-endian PCM. A request linked to another (link >= 0) starts when that one ends, at once if it already
  * ended. plat_wait() also returns when a request ends. */
 /* Opens the given unit; 0 if impossible (message printed) */
-int plat_audio_open(int unit);
-void plat_audio_close(void);
+int plat_ahi_open(int unit);
+void plat_ahi_close(void);
 /* The audio mode the opened unit is set to (AHI preferences), as the device describes it */
-struct audio_mode {
+struct ahi_mode {
     char     name[64];                      /* e.g. "Paula:14 bit stereo++" */
     uint32_t freq;                          /* Hz */
     int      stereo;                        /* 1: two output channels */
     int      panning;                       /* 1: a sound can be placed anywhere between them ("stereo++") */
 };
 /* Fills m for the given unit; 0 if unknown (no preferences for it: the device's defaults) */
-int plat_audio_mode(int unit, struct audio_mode *m);
+int plat_ahi_mode(int unit, struct ahi_mode *m);
 /* Queues request i: len bytes at data, rate in Hz, 1 or 2 channels, linked to request link (-1 = none), at full
  * volume (the core scales the samples) */
-void plat_audio_send(int i, const void *data, uint32_t len, uint32_t rate, int channels, int link);
+void plat_ahi_send(int i, const void *data, uint32_t len, uint32_t rate, int channels, int link);
 /* 1 if request i has ended (it is then free again) */
-int plat_audio_done(int i);
+int plat_ahi_done(int i);
 /* Aborts request i and waits for it; returns the bytes it played, or -1 if the device cannot tell (AHI before
  * version 6) */
-int32_t plat_audio_abort(int i);
+int32_t plat_ahi_abort(int i);
 
 /* Direct Paula output (audio.device on the Amiga): Paula's four channels (14 bits) or channels 0 and 1 only (8
  * bits), playing signed 8-bit samples from buffers in chip RAM that the platform layer allocates: AUDIO_BLOCKS

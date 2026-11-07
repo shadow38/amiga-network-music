@@ -1,7 +1,8 @@
 /*
  * audio.c - portable core: the blocks of the audio output
  *
- * The platform's audio device (ahi.device on the Amiga, see platform.h) plays the blocks one after the other.
+ * The platform's audio device plays the blocks one after the other: AHI (plat_ahi_*, ahi.device on the Amiga) or
+ * Paula direct (plat_paula_*, audio.device), see platform.h; the device_* functions below choose between them.
  * Here: which block holds what and in which order, the conversion of the stream's PCM for the device (8, 16, 24 or
  * 32-bit samples to 16-bit big-endian, left and right swapped with SWAP), the bytes played (counted in bytes of the
  * stream, whatever the device got), the pause, and the volume. At start-up, the AHI unit's mode (read by the
@@ -41,7 +42,7 @@ static void paula_set_volume(const struct audio *a)
 static int device_open(struct audio *a, int unit)
 {
     if (!a->paula)
-        return plat_audio_open(unit);
+        return plat_ahi_open(unit);
     if (!plat_paula_open(a->paula))
         return 0;
     a->clock = plat_paula_clock();
@@ -85,7 +86,7 @@ void audio_close(struct player *p)
         if (a->paula)
             plat_paula_close();
         else
-            plat_audio_close();
+            plat_ahi_close();
         a->enabled = 0;
     }
     for (i = 0; i < AUDIO_BLOCKS; i++) {
@@ -227,7 +228,7 @@ static void device_send(struct audio *a, int b, int k)
     uint32_t start;
 
     if (!a->paula) {
-        plat_audio_send(b, bl->buf + bl->done, bl->sent, bl->rate, bl->channels, k > 0 ? a->order[k - 1] : -1);
+        plat_ahi_send(b, bl->buf + bl->done, bl->sent, bl->rate, bl->channels, k > 0 ? a->order[k - 1] : -1);
         return;
     }
     start = bl->done / paula_unit(bl);
@@ -237,7 +238,7 @@ static void device_send(struct audio *a, int b, int k)
 
 static int device_done(const struct audio *a, int b)
 {
-    return a->paula ? plat_paula_done(b) : plat_audio_done(b);
+    return a->paula ? plat_paula_done(b) : plat_ahi_done(b);
 }
 
 /* Aborts block b; returns the bytes of its 16-bit samples played (Paula: each sample played counts for its group,
@@ -247,7 +248,7 @@ static int32_t device_abort(const struct audio *a, int b)
     int32_t n;
 
     if (!a->paula)
-        return plat_audio_abort(b);
+        return plat_ahi_abort(b);
     n = plat_paula_abort(b);
     return n < 0 ? -1 : n * (int32_t)paula_unit(&a->block[b]);
 }
@@ -500,7 +501,7 @@ int ahi_prefs_unit(const uint8_t *prefs, uint32_t size, int unit, uint32_t *mode
     return 0;
 }
 
-int audio_check_mode(int unit, const struct audio_mode *m)
+int ahi_check_mode(int unit, const struct ahi_mode *m)
 {
     if (m->stereo && !m->panning) {
         msg("amisqueeze: AHI unit %d uses \"%s\", a stereo mode without \"++\": the music will play on one side "

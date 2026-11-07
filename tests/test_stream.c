@@ -415,8 +415,8 @@ static void test_flush_audio(void)
     play_out_boundary(&p, sizeof(track_a));
     to_device(expect, track_a, sizeof(track_a), 0);
     to_device(expect + sizeof(track_a), track_c, nc, 0);
-    CHECK(stub_audio_out_len == (int)(sizeof(track_a) + nc) && !memcmp(stub_audio_out, expect, sizeof(track_a) + nc));
-    CHECK(stub_audio_bad == 0);
+    CHECK(stub_ahi_out_len == (int)(sizeof(track_a) + nc) && !memcmp(stub_ahi_out, expect, sizeof(track_a) + nc));
+    CHECK(stub_ahi_bad == 0);
     teardown(&p);
 }
 
@@ -461,8 +461,8 @@ static void test_flush_audio_reached(void)
     to_device(expect, track_a, na, 0);
     to_device(expect + na, track_b, BLOCK, 0);
     to_device(expect + na + BLOCK, track_c, nc, 0);
-    CHECK(stub_audio_out_len == (int)(na + BLOCK + nc) && !memcmp(stub_audio_out, expect, na + BLOCK + nc));
-    CHECK(stub_audio_bad == 0);
+    CHECK(stub_ahi_out_len == (int)(na + BLOCK + nc) && !memcmp(stub_ahi_out, expect, na + BLOCK + nc));
+    CHECK(stub_ahi_bad == 0);
     teardown(&p);
 }
 

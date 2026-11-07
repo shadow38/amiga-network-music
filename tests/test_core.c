@@ -231,10 +231,10 @@ void to_device(uint8_t *dst, const uint8_t *src, uint32_t n, int swap_lr)
 void setup_audio(struct player *p, int swap)
 {
     setup(p, "Amiga");
-    stub_audio_fails = 0;
-    stub_audio_abort_played = 0;
-    CHECK(audio_open(p, AUDIO_AHI, 2, swap) && stub_audio_open && stub_audio_unit == 2);
-    stub_audio_clear();
+    stub_ahi_fails = 0;
+    stub_ahi_abort_played = 0;
+    CHECK(audio_open(p, AUDIO_AHI, 2, swap) && stub_ahi_open && stub_ahi_unit == 2);
+    stub_ahi_clear();
     CHECK(slim_connect(p, 0));
 }
 
@@ -253,7 +253,7 @@ void feed_audg(int adjust, uint32_t left, uint32_t right)
 /* Ends the request playing now, then lets the output collect it and refill */
 int finish(struct player *p)
 {
-    int b = stub_audio_finish();
+    int b = stub_ahi_finish();
 
     stub_now += 10;
     output_tick(p, stub_now);

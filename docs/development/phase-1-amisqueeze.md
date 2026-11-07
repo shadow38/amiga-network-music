@@ -208,7 +208,7 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   left and right (LMS sends the same value, or a balance: no balance through AHI for now), never above 1.0 (AHI
   does not amplify); `adjust` 0 (fixed volume) = full; ignored without the audio output (`OUTPUT` stays
   byte-exact); with `VERBOSE`, `volume: n.n % of full amplitude` when it changes. Replay gain (`strm s`) left out.
-- **Done**: `audio_set_volume()` (`audio.c`), `plat_audio_send()` takes the volume; unit tests (262
+- **Done**: `audio_set_volume()` (`audio.c`), `plat_ahi_send()` takes the volume; unit tests (262
   checks: volume per block, the next block only, louder side, at most full, mute, fixed volume, kept across a
   pause) and the fake server (`audg` in the session scenario).
 - **Validated** (WinUAE, LMS 9.1.1, Paula): every command sent through LMS's CLI (volume 100, 25, 50,
@@ -984,8 +984,8 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   **Done** (design agreed with the user): `ahi.device` reads its units' modes from `ENV:Sys/ahi.prefs`
   (IFF FORM PREF, one `AHIU` chunk per unit: `struct AHIUnitPrefs`, mode ID and frequency; unit 255 is the
   "Music" unit). `ahi_prefs_unit()` in the core finds the unit's chunk (host-tested on the real file of the test
-  Amiga, and on a file cut short); `plat_audio_mode()` in `amiga.c` reads the file and asks AHI about the mode
-  (`AHI_GetAudioAttrsA`, AHI 4: name, `AHIDB_Stereo`, `AHIDB_Panning`); `audio_check_mode()` warns for a stereo
+  Amiga, and on a file cut short); `plat_ahi_mode()` in `amiga.c` reads the file and asks AHI about the mode
+  (`AHI_GetAudioAttrsA`, AHI 4: name, `AHIDB_Stereo`, `AHIDB_Panning`); `ahi_check_mode()` warns for a stereo
   mode that cannot pan or a mono mode, and amisqueeze plays anyway; `VERBOSE` prints the mode and frequency. No
   preferences for the unit: nothing said, as before. WinUAE: unit 3 (Toccata:16 bit stereo) warns, unit 0
   (Paula:14 bit stereo++ calibrated, 27429 Hz) does not. 371 unit checks.

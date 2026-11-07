@@ -58,11 +58,11 @@ static void test_start_fail(void)
     o.audio = 1;
     o.audio_output = AUDIO_AHI;                 /* without AUDIO, Paula instead (test_start_paula_fallback) */
     stub_reset();
-    stub_audio_fails = 1;
+    stub_ahi_fails = 1;
     memset(&p, 0, sizeof(p));
     CHECK(player_main(&p, &o) == PLAYER_FAIL && strstr(stub_out, "cannot open ahi.device unit 0") != NULL);
-    CHECK(stub_tx_len == 0 && !stub_audio_open);
-    stub_audio_fails = 0;
+    CHECK(stub_tx_len == 0 && !stub_ahi_open);
+    stub_ahi_fails = 0;
 }
 
 /* The player's start-up with the audio output: the unit's mode printed with VERBOSE, the warning for a mode that
@@ -81,19 +81,19 @@ static void test_start_mode(void)
     o.verbose = 1;
     o.flac = o.mp3 = DECODE_OFF;
     stub_reset();
-    stub_audio_fails = 0;
-    stub_audio_mode_known = 1;
-    memset(&stub_audio_mode, 0, sizeof(stub_audio_mode));
-    strcpy(stub_audio_mode.name, "Toccata:16 bit stereo");
-    stub_audio_mode.freq = 44100;
-    stub_audio_mode.stereo = 1;
+    stub_ahi_fails = 0;
+    stub_ahi_mode_known = 1;
+    memset(&stub_ahi_mode, 0, sizeof(stub_ahi_mode));
+    strcpy(stub_ahi_mode.name, "Toccata:16 bit stereo");
+    stub_ahi_mode.freq = 44100;
+    stub_ahi_mode.stereo = 1;
     memset(&p, 0, sizeof(p));
-    CHECK(player_main(&p, &o) == PLAYER_OK && stub_audio_unit == 3);
+    CHECK(player_main(&p, &o) == PLAYER_OK && stub_ahi_unit == 3);
     CHECK(strstr(stub_out, "output: AHI unit 3 (Toccata:16 bit stereo, 44100 Hz)\n") != NULL);
     CHECK(strstr(stub_out, "AHI unit 3 uses \"Toccata:16 bit stereo\", a stereo mode without \"++\"") != NULL);
 
     stub_reset();
-    stub_audio_mode.panning = 1;                /* stereo++: the mode printed, no warning */
+    stub_ahi_mode.panning = 1;                /* stereo++: the mode printed, no warning */
     o.swap = 1;
     memset(&p, 0, sizeof(p));
     CHECK(player_main(&p, &o) == PLAYER_OK);
@@ -101,7 +101,7 @@ static void test_start_mode(void)
           !strstr(stub_out, "uses \""));
 
     stub_reset();
-    stub_audio_mode_known = 0;                  /* the mode unknown: the unit alone */
+    stub_ahi_mode_known = 0;                  /* the mode unknown: the unit alone */
     o.swap = 0;
     memset(&p, 0, sizeof(p));
     CHECK(player_main(&p, &o) == PLAYER_OK);
@@ -122,12 +122,12 @@ static void test_start_maxrate(void)
     o.flac = o.mp3 = DECODE_OFF;
     o.maxrate = MAXRATE_AHI;
     stub_reset();
-    stub_audio_fails = 0;
-    stub_audio_mode_known = 1;
-    memset(&stub_audio_mode, 0, sizeof(stub_audio_mode));
-    strcpy(stub_audio_mode.name, "Paula:14 bit stereo++");
-    stub_audio_mode.freq = 27429;
-    stub_audio_mode.stereo = stub_audio_mode.panning = 1;
+    stub_ahi_fails = 0;
+    stub_ahi_mode_known = 1;
+    memset(&stub_ahi_mode, 0, sizeof(stub_ahi_mode));
+    strcpy(stub_ahi_mode.name, "Paula:14 bit stereo++");
+    stub_ahi_mode.freq = 27429;
+    stub_ahi_mode.stereo = stub_ahi_mode.panning = 1;
     memset(&p, 0, sizeof(p));
     CHECK(player_main(&p, &o) == PLAYER_OK && helo_caps_have(",MaxSampleRate=27429,"));
     CHECK(strstr(stub_out, "MAXRATE: at most 27429 Hz asked of the server (AHI unit 0 at 27429 Hz)\n") != NULL);
@@ -137,7 +137,7 @@ static void test_start_maxrate(void)
     memset(&p, 0, sizeof(p));
     CHECK(player_main(&p, &o) == PLAYER_OK && helo_caps_have(",MaxSampleRate=24000,"));
     CHECK(strstr(stub_out, "MAXRATE: at most 24000 Hz asked of the server (AHI unit 0 at 27429 Hz)\n") != NULL);
-    stub_audio_mode_known = 0;
+    stub_ahi_mode_known = 0;
 }
 
 /* AUDIO's values, any case */
@@ -172,7 +172,7 @@ static void test_start_paula(void)
     o.unit = 3;                                 /* unused by Paula */
     o.verbose = 1;
     o.flac = o.mp3 = DECODE_OFF;
-    CHECK(start_with(&p, &o, PLAYER_OK) && stub_paula_volumes > 0 && !stub_audio_open);
+    CHECK(start_with(&p, &o, PLAYER_OK) && stub_paula_volumes > 0 && !stub_ahi_open);
     CHECK(strstr(stub_out, "output: Paula direct, 14 bits\n") && helo_caps_have(",MaxSampleRate=28603,") &&
           strstr(stub_out, "MAXRATE: at most 28603 Hz asked of the server, Paula's highest rate\n"));
     stub_paula_clock = 3579545;
@@ -207,13 +207,13 @@ static void test_start_paula_fallback(void)
     o.port = SLIMPROTO_PORT;
     o.audio = 1;
     o.flac = o.mp3 = DECODE_OFF;
-    stub_audio_fails = 1;
+    stub_ahi_fails = 1;
     CHECK(start_with(&p, &o, PLAYER_OK) && stub_paula_volumes > 0 && helo_caps_have(",MaxSampleRate=28603,"));
     CHECK(strstr(stub_out, "cannot open ahi.device unit 0") &&
           strstr(stub_out, "amisqueeze: playing on Paula directly instead (AUDIO=PAULA)\n"));
     o.audio_output = AUDIO_AHI;
     CHECK(start_with(&p, &o, PLAYER_FAIL) && stub_paula_volumes == 0 && !strstr(stub_out, "Paula"));
-    stub_audio_fails = 0;
+    stub_ahi_fails = 0;
 
     o.audio_output = AUDIO_PAULA;
     o.audio = 0;                                /* NOAUDIO */

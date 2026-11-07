@@ -457,14 +457,14 @@ static void run(struct player *p)
 }
 
 /* AHI opened: its unit's mode, printed with VERBOSE and checked; returns 1 if known (in *mode) */
-static int ahi_mode(const struct player *p, const struct options *o, struct audio_mode *mode)
+static int read_ahi_mode(const struct player *p, const struct options *o, struct ahi_mode *mode)
 {
     const char *swapped = o->swap ? ", left and right swapped" : "";
 
-    if (plat_audio_mode(o->unit, mode)) {
+    if (plat_ahi_mode(o->unit, mode)) {
         if (p->verbose)
             msg("output: AHI unit %d (%s, %lu Hz)%s\n", o->unit, mode->name, (unsigned long)mode->freq, swapped);
-        audio_check_mode(o->unit, mode);
+        ahi_check_mode(o->unit, mode);
         return 1;
     }
     if (p->verbose)
@@ -474,13 +474,13 @@ static int ahi_mode(const struct player *p, const struct options *o, struct audi
 
 /* The audio output: AHI, or Paula direct (AUDIO, or ahi.device missing without AUDIO; UNIT unused). Returns -1 if
  * it cannot be opened, else 1 if the AHI unit's mode is known (in *mode). */
-static int open_output(struct player *p, const struct options *o, struct audio_mode *mode)
+static int open_output(struct player *p, const struct options *o, struct ahi_mode *mode)
 {
     int out = o->audio_output;
 
     if (out != AUDIO_PAULA && out != AUDIO_PAULA8) {
         if (audio_open(p, AUDIO_AHI, o->unit, o->swap))
-            return ahi_mode(p, o, mode);
+            return read_ahi_mode(p, o, mode);
         if (out == AUDIO_AHI)
             return -1;
         msg("amisqueeze: playing on Paula directly instead (AUDIO=PAULA)\n");
@@ -499,7 +499,7 @@ static int open_output(struct player *p, const struct options *o, struct audio_m
 
 /* The highest rate asked of the server (HELO). With Paula direct, its highest rate by default, so that the server
  * lowers the rate with a better filter than the Amiga's division. mode: the AHI unit's, if mode_known. */
-static void set_maxrate(struct player *p, const struct options *o, const struct audio_mode *mode, int mode_known)
+static void set_maxrate(struct player *p, const struct options *o, const struct ahi_mode *mode, int mode_known)
 {
     uint32_t paula = p->audio.enabled && p->audio.paula ? paula_max_rate(p->audio.clock) : 0;
 
@@ -526,7 +526,7 @@ static void set_maxrate(struct player *p, const struct options *o, const struct 
 
 int player_main(struct player *p, const struct options *o)
 {
-    struct audio_mode mode;
+    struct ahi_mode mode;
     int mode_known = 0;
 
     p->sock = -1;

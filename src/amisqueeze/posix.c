@@ -280,36 +280,36 @@ void plat_close(int sock)
 }
 
 /* No audio output on the host: the core keeps the virtual output (options.audio is always 0) */
-int plat_audio_open(int unit)
+int plat_ahi_open(int unit)
 {
     (void)unit;
     msg("amisqueeze: no audio output in the host build\n");
     return 0;
 }
 
-void plat_audio_close(void)
+void plat_ahi_close(void)
 {
 }
 
-int plat_audio_mode(int unit, struct audio_mode *m)
+int plat_ahi_mode(int unit, struct ahi_mode *m)
 {
     (void)unit;
     (void)m;
     return 0;
 }
 
-void plat_audio_send(int i, const void *data, uint32_t len, uint32_t rate, int channels, int link)
+void plat_ahi_send(int i, const void *data, uint32_t len, uint32_t rate, int channels, int link)
 {
     (void)i; (void)data; (void)len; (void)rate; (void)channels; (void)link;
 }
 
-int plat_audio_done(int i)
+int plat_ahi_done(int i)
 {
     (void)i;
     return 1;
 }
 
-int32_t plat_audio_abort(int i)
+int32_t plat_ahi_abort(int i)
 {
     (void)i;
     return 0;

@@ -25,7 +25,7 @@ static struct MsgPort *audio_port;
 static struct AHIRequest *audio_req[AUDIO_BLOCKS];
 static int audio_v6;                        /* io_Actual valid for an aborted request from version 6 */
 
-int plat_audio_open(int unit)
+int plat_ahi_open(int unit)
 {
     int i;
 
@@ -34,7 +34,7 @@ int plat_audio_open(int unit)
         audio_req[0] = (struct AHIRequest *)CreateIORequest(audio_port, sizeof(struct AHIRequest));
     if (audio_req[0] == NULL) {
         msg("amisqueeze: not enough memory for the audio output\n");
-        plat_audio_close();
+        plat_ahi_close();
         return 0;
     }
     audio_req[0]->ahir_Version = 4;
@@ -42,7 +42,7 @@ int plat_audio_open(int unit)
         msg("amisqueeze: cannot open ahi.device unit %d (is AHI installed? NOAUDIO plays without sound)\n", unit);
         DeleteIORequest((struct IORequest *)audio_req[0]);
         audio_req[0] = NULL;
-        plat_audio_close();
+        plat_ahi_close();
         return 0;
     }
     audio_v6 = audio_req[0]->ahir_Std.io_Device->dd_Library.lib_Version >= 6;
@@ -50,7 +50,7 @@ int plat_audio_open(int unit)
         audio_req[i] = AllocVec(sizeof(struct AHIRequest), MEMF_PUBLIC);
         if (audio_req[i] == NULL) {
             msg("amisqueeze: not enough memory for the audio output\n");
-            plat_audio_close();
+            plat_ahi_close();
             return 0;
         }
         CopyMem(audio_req[0], audio_req[i], sizeof(struct AHIRequest));
@@ -58,7 +58,7 @@ int plat_audio_open(int unit)
     return 1;
 }
 
-int plat_audio_mode(int unit, struct audio_mode *m)
+int plat_ahi_mode(int unit, struct ahi_mode *m)
 {
     static uint8_t prefs[2048];             /* static: the default stack is small; the file is about 300 bytes */
     struct TagItem tags[5];
@@ -93,7 +93,7 @@ int plat_audio_mode(int unit, struct audio_mode *m)
 }
 
 /* The core has aborted every request before (audio_reset) */
-void plat_audio_close(void)
+void plat_ahi_close(void)
 {
     int i;
 
@@ -112,7 +112,7 @@ void plat_audio_close(void)
     }
 }
 
-void plat_audio_send(int i, const void *data, uint32_t len, uint32_t rate, int channels, int link)
+void plat_ahi_send(int i, const void *data, uint32_t len, uint32_t rate, int channels, int link)
 {
     struct AHIRequest *r = audio_req[i];
 
@@ -130,7 +130,7 @@ void plat_audio_send(int i, const void *data, uint32_t len, uint32_t rate, int c
     SendIO((struct IORequest *)r);
 }
 
-int plat_audio_done(int i)
+int plat_ahi_done(int i)
 {
     if (CheckIO((struct IORequest *)audio_req[i]) == NULL)
         return 0;
@@ -138,7 +138,7 @@ int plat_audio_done(int i)
     return 1;
 }
 
-int32_t plat_audio_abort(int i)
+int32_t plat_ahi_abort(int i)
 {
     struct AHIRequest *r = audio_req[i];
 

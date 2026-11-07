@@ -241,11 +241,11 @@ static void test_wav_audio_8bit(void)
     stub_feed_stream(track_a, (int)n);
     drain_stream(&p);
     output_tick(&p, stub_now);
-    CHECK(stub_audio[0].len == BLOCK && stub_audio[0].channels == 2);
+    CHECK(stub_ahi[0].len == BLOCK && stub_ahi[0].channels == 2);
     play_out(&p);
     dev = to_device_fmt(expect, track_a, n, 1, 0);
-    CHECK(stub_audio_out_len == (int)dev && !memcmp(stub_audio_out, expect, dev));
-    CHECK(audio_played(&p, stub_now, 0) == n && stub_audio_bad == 0);
+    CHECK(stub_ahi_out_len == (int)dev && !memcmp(stub_ahi_out, expect, dev));
+    CHECK(audio_played(&p, stub_now, 0) == n && stub_ahi_bad == 0);
     teardown(&p);
 }
 

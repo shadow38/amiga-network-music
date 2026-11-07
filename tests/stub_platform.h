@@ -2,8 +2,8 @@
  * stub_platform.h - fake platform for the unit tests of the portable core: no network, packets sent by the
  * player are captured, packets from the "server" are fed in, the clock is set by the test.
  * Socket 3 is the control connection, socket 4 the stream (HTTP) connection; handle 5 is the OUTPUT file, captured
- * in memory; socket 6 is server discovery's (UDP), when stub_udp_replies asks for it. The audio device plays requests in the order sent; the test ends them (stub_audio_finish) or a
- * pause aborts them; what they "played" is captured in stub_audio_out.
+ * in memory; socket 6 is server discovery's (UDP), when stub_udp_replies asks for it. The fake ahi.device plays requests in the order sent; the test ends them (stub_ahi_finish) or a
+ * pause aborts them; what they "played" is captured in stub_ahi_out.
  */
 #ifndef STUB_PLATFORM_H
 #define STUB_PLATFORM_H
@@ -47,32 +47,32 @@ extern int      stub_recv_interrupted;  /* 1: the next plat_recv() on the contro
  * replies, each from its own address (127.0.0.2, 127.0.0.3...), then plat_wait() on it times out, moving stub_now on */
 extern int      stub_udp_replies;
 
-struct stub_audio_req {
+struct stub_ahi_req {
     const uint8_t *data;
     uint32_t       len, rate;
     int            channels, link, queued, ended;
 };
-extern struct stub_audio_req stub_audio[8];
-extern int      stub_audio_fails;       /* 1: plat_audio_open() fails */
-extern int      stub_audio_unit;        /* unit given to plat_audio_open() */
+extern struct stub_ahi_req stub_ahi[8];
+extern int      stub_ahi_fails;         /* 1: plat_ahi_open() fails */
+extern int      stub_ahi_unit;          /* unit given to plat_ahi_open() */
 extern int      stub_priority;          /* given to plat_set_priority(); STUB_PRI_NONE after stub_reset() */
 #define STUB_PRI_NONE 1000
-extern int      stub_audio_mode_known;  /* 1: plat_audio_mode() returns stub_audio_mode */
-extern struct audio_mode stub_audio_mode;
-extern int      stub_audio_open;
-extern int32_t  stub_audio_abort_played;  /* bytes the playing request has played when aborted (-1 = unknown) */
-extern int32_t  stub_audio_abort_real;  /* with -1 (AHI 4): bytes it really played, captured but not returned */
-extern uint8_t  stub_audio_out[2 * 1024 * 1024];  /* what the device played, in order */
-extern int      stub_audio_out_len;
-extern int      stub_audio_sends;       /* requests sent since stub_audio_clear() */
-extern int      stub_audio_bad;         /* requests sent against ahi.device's rules: linked to a request that is not
+extern int      stub_ahi_mode_known;    /* 1: plat_ahi_mode() returns stub_ahi_mode */
+extern struct ahi_mode stub_ahi_mode;
+extern int      stub_ahi_open;
+extern int32_t  stub_ahi_abort_played;  /* bytes the playing request has played when aborted (-1 = unknown) */
+extern int32_t  stub_ahi_abort_real;    /* with -1 (AHI 4): bytes it really played, captured but not returned */
+extern uint8_t  stub_ahi_out[2 * 1024 * 1024];  /* what the device played, in order */
+extern int      stub_ahi_out_len;
+extern int      stub_ahi_sends;         /* requests sent since stub_ahi_clear() */
+extern int      stub_ahi_bad;           /* requests sent against ahi.device's rules: linked to a request that is not
                                            playing, unlinked while one is queued, or a third one at once */
 /* Clears the captured output and the counters (not the requests) */
-void stub_audio_clear(void);
-/* The request playing now ends: its data goes to stub_audio_out; returns its number, or -1 if none is queued */
-int stub_audio_finish(void);
+void stub_ahi_clear(void);
+/* The request playing now ends: its data goes to stub_ahi_out; returns its number, or -1 if none is queued */
+int stub_ahi_finish(void);
 /* Requests queued, in playing order */
-int stub_audio_queue(int *order);
+int stub_ahi_queue(int *order);
 
 /* The fake Paula: blocks played in the order sent, two at most queued, by every channel; the test ends them
  * (stub_paula_finish) or a pause aborts them; what each channel played is captured in stub_paula_out[channel] */
