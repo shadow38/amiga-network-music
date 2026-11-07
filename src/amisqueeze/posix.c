@@ -279,7 +279,7 @@ void plat_close(int sock)
     close(sock);
 }
 
-/* No audio output on the host: the core keeps the virtual output (options.audio is always 0) */
+/* No AHI on the host: the core keeps the virtual output (options.audio is always 0) */
 int plat_ahi_open(int unit)
 {
     (void)unit;

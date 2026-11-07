@@ -1,9 +1,9 @@
 /*
  * output.c - portable core: the output, which hands the decoded PCM over to a sink
  *
- * The sink is the platform's audio output (AHI, blocks managed by audio.c), or the virtual output, which consumes
- * the PCM at its rate like a sound card (host build, NOAUDIO, OUTPUT); with the OUTPUT option, the decoded PCM is
- * also written to a file (the tests compare it byte by byte). Track boundaries, elapsed time and the end of
+ * The sink is the platform's audio output (AHI or Paula direct, blocks managed by audio.c), or the virtual output,
+ * which consumes the PCM at its rate like a sound card (host build, NOAUDIO, OUTPUT); with the OUTPUT option, the
+ * decoded PCM is also written to a file (the tests compare it byte by byte). Track boundaries, elapsed time and the end of
  * playback follow the bytes of decoded PCM the sink has played: STMs at each track started, STMt every second, STMo
  * when the buffer runs dry while still streaming, STMu once everything was played.
  */

@@ -1,5 +1,6 @@
 /*
- * amiga_paula.c - amisqueeze on AmigaOS 3.x: the direct Paula output of platform.h, through audio.device
+ * amiga_paula.c - amisqueeze on AmigaOS 3.x: the direct Paula output of platform.h (plat_paula_*), through
+ * audio.device
  *
  * audio.c (portable) converts each block into its channels' chip RAM buffers; here each block is one CMD_WRITE per
  * channel. The rules this follows: docs/development/architecture.md, Paula direct.

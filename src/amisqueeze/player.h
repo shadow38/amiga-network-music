@@ -35,7 +35,7 @@ struct options {
     const char *output;                 /* file receiving the audio played, NULL = none (implies no audio) */
     int         audio;                  /* 1 = play through the platform's audio output, 0 = virtual */
     int         audio_output;           /* AUDIO: enum audio_output, AUDIO_DEFAULT if not given */
-    int         unit;                   /* audio unit (AHI unit), checked by player_main: 0 to 3; unused by Paula */
+    int         unit;                   /* AHI's unit (UNIT), checked by player_main: 0 to 3; unused by Paula */
     int         swap;                   /* swap left and right */
     int         pri;                    /* PRI: the task priority, checked by player_main: -10 to 10 */
     int         pri_given;              /* 0: the priority is left as it was */
@@ -209,9 +209,10 @@ struct audio {
     uint64_t           played;         /* bytes played by finished (or paused) blocks since the last reset */
     uint32_t           head_ms;        /* when the first block started playing */
     int                paused;
-    uint32_t           volume;         /* 16.16 gain (audg) applied to the samples, AUDIO_VOLUME_FULL at most */
+    uint32_t           volume;         /* 16.16 gain (audg), AUDIO_VOLUME_FULL at most: applied to the
+                                          samples (AHI) or to Paula's channels */
     int                fixed;          /* volume fixed at 100 % in LMS (audg adjust 0): the gains are ignored */
-    uint32_t           tables;         /* volume the tables below were built for */
+    uint32_t           tables;         /* AHI: volume the tables below were built for */
     int32_t            high[256];      /* sample * volume = high[high byte] + low[low byte] */
     int32_t            low[256];
 };
@@ -390,7 +391,7 @@ uint32_t output_elapsed_ms(const struct player *p);
 /* 1 if the loop must wake up often (stream or output active) */
 int player_busy(const struct player *p);
 
-/* audio.c: the audio output's blocks (portable; the device itself is behind platform.h) */
+/* audio.c: the audio output's blocks, AHI or Paula direct (portable; both devices are behind platform.h) */
 /* Opens the platform's audio output (enum audio_output; unit is AHI's) and allocates the blocks; 0 on failure
  * (message printed) */
 int audio_open(struct player *p, int output, int unit, int swap);

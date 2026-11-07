@@ -9,15 +9,15 @@
  * platform layer, from AHI's preferences parsed here) is checked: a mode that would play a stereo stream on one
  * side only, or in mono, gets a warning.
  *
- * ahi.device chains a request only to one that is already playing: a request linked to a request that is itself
- * waiting is never played (seen in WinUAE, and in AHI's source: the third one is left in the waiting list). So at
- * most two blocks are with the device, the one playing and the next one linked to it; the third block is filled
- * in advance and sent as soon as the first one ends.
+ * AHI: ahi.device chains a request only to one that is already playing: a request linked to a request that is
+ * itself waiting is never played (seen in WinUAE, and in AHI's source: the third one is left in the waiting list).
+ * So at most two blocks are with the device, the one playing and the next one linked to it; the third block is
+ * filled in advance and sent as soon as the first one ends.
  * AHI's CMD_STOP only holds back the requests sent after it (and those of every program): a pause aborts the
  * blocks with the device and sends again, on resume, what they had not played yet.
- * The volume is applied to the samples here, as a block is sent for the first time; the device always gets full
- * volume: with ahi.device 6.6 and paula.audio, requests sent again after an abort (a resume) with a low ahir_Volume
- * corrupted the free memory list (seen in WinUAE).
+ * With AHI, the volume is applied to the samples here, as a block is sent for the first time; ahi.device always
+ * gets full volume: with ahi.device 6.6 and paula.audio, requests sent again after an abort (a resume) with a low
+ * ahir_Volume corrupted the free memory list (seen in WinUAE).
  *
  * Paula direct (audio.device on the Amiga) follows the same order of blocks, two at most with the device. A block is
  * converted when first sent, from its 16-bit samples into the chip RAM buffers of its channels (paula.c); its len,
@@ -150,9 +150,9 @@ static uint32_t stream_bytes(const struct audio_block *bl, uint32_t device_bytes
     return device_bytes / 2 * (uint32_t)bl->sample_bytes;
 }
 
-/* In place: the stream's samples to 16-bit big-endian, scaled by the volume (16.16, unchanged at full volume),
+/* AHI, in place: the stream's samples to 16-bit big-endian, scaled by the volume (16.16, unchanged at full volume),
  * then left and right swapped if asked. Byte by byte, so that the host build gives the same result. */
-static void convert(struct audio *a, struct audio_block *bl)
+static void convert_ahi(struct audio *a, struct audio_block *bl)
 {
     uint8_t *d = bl->buf;
     uint32_t i, n = bl->len;
@@ -268,7 +268,7 @@ static void send_ready(struct audio *a, uint32_t now)
             if (a->paula)
                 convert_paula(a, bl, b);
             else
-                convert(a, bl);
+                convert_ahi(a, bl);
             bl->converted = 1;
         }
         bl->sent = bl->len - bl->done;

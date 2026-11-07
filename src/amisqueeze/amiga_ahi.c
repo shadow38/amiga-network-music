@@ -1,5 +1,5 @@
 /*
- * amiga_ahi.c - amisqueeze on AmigaOS 3.x: the audio output of platform.h, through ahi.device
+ * amiga_ahi.c - amisqueeze on AmigaOS 3.x: the AHI output of platform.h (plat_ahi_*), through ahi.device
  *
  * audio.c (portable) fills the blocks; here they are sent to ahi.device, one request per block. The rules this
  * follows: docs/development/architecture.md, AHI.
@@ -20,40 +20,40 @@ struct Library *AHIBase;
 /* The preferences ahi.device reads: one AHIU chunk per unit, with its audio mode */
 #define AHI_PREFS "ENV:Sys/ahi.prefs"
 
-/* ahi.device: one request per audio block, all replied to audio_port */
-static struct MsgPort *audio_port;
-static struct AHIRequest *audio_req[AUDIO_BLOCKS];
-static int audio_v6;                        /* io_Actual valid for an aborted request from version 6 */
+/* ahi.device: one request per audio block, all replied to ahi_port */
+static struct MsgPort *ahi_port;
+static struct AHIRequest *ahi_req[AUDIO_BLOCKS];
+static int ahi_v6;                        /* io_Actual valid for an aborted request from version 6 */
 
 int plat_ahi_open(int unit)
 {
     int i;
 
-    audio_port = CreateMsgPort();
-    if (audio_port != NULL)
-        audio_req[0] = (struct AHIRequest *)CreateIORequest(audio_port, sizeof(struct AHIRequest));
-    if (audio_req[0] == NULL) {
+    ahi_port = CreateMsgPort();
+    if (ahi_port != NULL)
+        ahi_req[0] = (struct AHIRequest *)CreateIORequest(ahi_port, sizeof(struct AHIRequest));
+    if (ahi_req[0] == NULL) {
         msg("amisqueeze: not enough memory for the audio output\n");
         plat_ahi_close();
         return 0;
     }
-    audio_req[0]->ahir_Version = 4;
-    if (OpenDevice(AHINAME, (ULONG)unit, (struct IORequest *)audio_req[0], 0) != 0) {
+    ahi_req[0]->ahir_Version = 4;
+    if (OpenDevice(AHINAME, (ULONG)unit, (struct IORequest *)ahi_req[0], 0) != 0) {
         msg("amisqueeze: cannot open ahi.device unit %d (is AHI installed? NOAUDIO plays without sound)\n", unit);
-        DeleteIORequest((struct IORequest *)audio_req[0]);
-        audio_req[0] = NULL;
+        DeleteIORequest((struct IORequest *)ahi_req[0]);
+        ahi_req[0] = NULL;
         plat_ahi_close();
         return 0;
     }
-    audio_v6 = audio_req[0]->ahir_Std.io_Device->dd_Library.lib_Version >= 6;
+    ahi_v6 = ahi_req[0]->ahir_Std.io_Device->dd_Library.lib_Version >= 6;
     for (i = 1; i < AUDIO_BLOCKS; i++) {    /* copies of the opened request: same device and unit */
-        audio_req[i] = AllocVec(sizeof(struct AHIRequest), MEMF_PUBLIC);
-        if (audio_req[i] == NULL) {
+        ahi_req[i] = AllocVec(sizeof(struct AHIRequest), MEMF_PUBLIC);
+        if (ahi_req[i] == NULL) {
             msg("amisqueeze: not enough memory for the audio output\n");
             plat_ahi_close();
             return 0;
         }
-        CopyMem(audio_req[0], audio_req[i], sizeof(struct AHIRequest));
+        CopyMem(ahi_req[0], ahi_req[i], sizeof(struct AHIRequest));
     }
     return 1;
 }
@@ -67,13 +67,13 @@ int plat_ahi_mode(int unit, struct ahi_mode *m)
     BPTR f;
     LONG n;
 
-    if (audio_req[0] == NULL || (f = Open((STRPTR)AHI_PREFS, MODE_OLDFILE)) == 0)
+    if (ahi_req[0] == NULL || (f = Open((STRPTR)AHI_PREFS, MODE_OLDFILE)) == 0)
         return 0;
     n = Read(f, prefs, sizeof(prefs));
     Close(f);
     if (n <= 0 || !ahi_prefs_unit(prefs, (uint32_t)n, unit, &mode, &freq))
         return 0;
-    AHIBase = (struct Library *)audio_req[0]->ahir_Std.io_Device;
+    AHIBase = (struct Library *)ahi_req[0]->ahir_Std.io_Device;
     m->name[0] = '\0';
     tags[0].ti_Tag = AHIDB_Name;
     tags[0].ti_Data = (ULONG)m->name;
@@ -98,23 +98,23 @@ void plat_ahi_close(void)
     int i;
 
     for (i = 1; i < AUDIO_BLOCKS; i++) {
-        FreeVec(audio_req[i]);
-        audio_req[i] = NULL;
+        FreeVec(ahi_req[i]);
+        ahi_req[i] = NULL;
     }
-    if (audio_req[0] != NULL) {
-        CloseDevice((struct IORequest *)audio_req[0]);
-        DeleteIORequest((struct IORequest *)audio_req[0]);
-        audio_req[0] = NULL;
+    if (ahi_req[0] != NULL) {
+        CloseDevice((struct IORequest *)ahi_req[0]);
+        DeleteIORequest((struct IORequest *)ahi_req[0]);
+        ahi_req[0] = NULL;
     }
-    if (audio_port != NULL) {
-        DeleteMsgPort(audio_port);
-        audio_port = NULL;
+    if (ahi_port != NULL) {
+        DeleteMsgPort(ahi_port);
+        ahi_port = NULL;
     }
 }
 
 void plat_ahi_send(int i, const void *data, uint32_t len, uint32_t rate, int channels, int link)
 {
-    struct AHIRequest *r = audio_req[i];
+    struct AHIRequest *r = ahi_req[i];
 
     r->ahir_Std.io_Message.mn_Node.ln_Pri = 0;
     r->ahir_Std.io_Command = CMD_WRITE;
@@ -126,31 +126,31 @@ void plat_ahi_send(int i, const void *data, uint32_t len, uint32_t rate, int cha
     r->ahir_Volume = 0x10000;               /* always full: a low volume on requests sent again after an abort
                                                corrupted memory (AHI 6.6, paula.audio); audio.c scales instead */
     r->ahir_Position = 0x8000;              /* centre */
-    r->ahir_Link = link >= 0 ? audio_req[link] : NULL;
+    r->ahir_Link = link >= 0 ? ahi_req[link] : NULL;
     SendIO((struct IORequest *)r);
 }
 
 int plat_ahi_done(int i)
 {
-    if (CheckIO((struct IORequest *)audio_req[i]) == NULL)
+    if (CheckIO((struct IORequest *)ahi_req[i]) == NULL)
         return 0;
-    WaitIO((struct IORequest *)audio_req[i]);
+    WaitIO((struct IORequest *)ahi_req[i]);
     return 1;
 }
 
 int32_t plat_ahi_abort(int i)
 {
-    struct AHIRequest *r = audio_req[i];
+    struct AHIRequest *r = ahi_req[i];
 
     if (CheckIO((struct IORequest *)r) == NULL)
         AbortIO((struct IORequest *)r);
     WaitIO((struct IORequest *)r);
-    if (r->ahir_Std.io_Error != 0 && !audio_v6)
+    if (r->ahir_Std.io_Error != 0 && !ahi_v6)
         return -1;
     return (int32_t)r->ahir_Std.io_Actual;
 }
 
-ULONG audio_signal(void)
+ULONG ahi_signal(void)
 {
-    return audio_port != NULL ? 1UL << audio_port->mp_SigBit : 0;
+    return ahi_port != NULL ? 1UL << ahi_port->mp_SigBit : 0;
 }

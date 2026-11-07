@@ -78,7 +78,7 @@ int plat_file_create(const char *name);
 int plat_file_write(int file, const void *buf, int len);
 void plat_file_close(int file);
 
-/* Audio output through AHI (ahi.device on the Amiga): AUDIO_BLOCKS requests, numbered 0 to AUDIO_BLOCKS - 1, playing 16-bit
+/* AHI output (ahi.device on the Amiga): AUDIO_BLOCKS requests, numbered 0 to AUDIO_BLOCKS - 1, playing 16-bit
  * big-endian PCM. A request linked to another (link >= 0) starts when that one ends, at once if it already
  * ended. plat_wait() also returns when a request ends. */
 /* Opens the given unit; 0 if impossible (message printed) */

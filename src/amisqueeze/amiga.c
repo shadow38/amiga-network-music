@@ -80,7 +80,7 @@ static int last_error;
 static int stop_asked;                      /* a socket call was interrupted by Ctrl-C (EINTR) */
 
 /* amiga_ahi.c and amiga_paula.c: the signal of the port their requests are replied to (0 while closed) */
-ULONG audio_signal(void);
+ULONG ahi_signal(void);
 ULONG paula_signal(void);
 
 /* static: holds a 4 KB buffer, and the default stack is small */
@@ -655,7 +655,7 @@ int plat_wait(struct plat_fd *fds, int n, uint32_t timeout_ms)
 {
     fd_set rfds, wfds;
     struct timeval tv;
-    ULONG audio_sig = audio_signal() | paula_signal();
+    ULONG audio_sig = ahi_signal() | paula_signal();
     ULONG ui_sig = ui_signals();
     ULONG sigs = SIGBREAKF_CTRL_C | audio_sig | ui_sig;
     LONG r;
