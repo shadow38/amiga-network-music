@@ -115,7 +115,7 @@ int plat_paula_open(int channels);
 void plat_paula_close(void);
 /* Paula's clock in Hz, PAL or NTSC: a period of n plays clock / n samples a second */
 uint32_t plat_paula_clock(void);
-/* Buffer of block b for channel c */
+/* Buffer of block b for channel c, aligned on 4 bytes */
 uint8_t *plat_paula_buffer(int b, int c);
 /* Plays samples [start, start + len) of block b's buffers, at the given period; start and len are even */
 void plat_paula_send(int b, uint32_t start, uint32_t len, uint32_t period);

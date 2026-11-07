@@ -62,7 +62,7 @@ int      stub_paula_high, stub_paula_low;
 int      stub_paula_volumes;
 int      stub_paula_sends;
 int      stub_paula_bad;
-static uint8_t paula_buf[8][4][PAULA_BLOCK_SAMPLES];
+static _Alignas(4) uint8_t paula_buf[8][4][PAULA_BLOCK_SAMPLES];  /* aligned, as platform.h asks */
 static int paula_fifo[8], paula_fifo_len;      /* queued blocks, in playing order */
 
 struct queue {

@@ -1068,7 +1068,14 @@ belongs to the task that opened it; packets serialised field by field; buffers a
     85 %). A 44.1 kHz stream divided by 2 (`MAXRATE=48000`): 45 % with `PAULA`, 41 % with `PAULA8`, about 65 %
     through AHI (the general path took 84 %; reception alone, 6 %). Heard: the faint sound of one side on the other with a tone on one side only, and a short gap between
     MP3s converted by LMS, both through AHI as well.
-  - **player-11c**: the A1200.
+  - **player-11c**: the A1200, under way. CPU load (AmiNetXDuo with the fixed `xircomce2.device`, LMS with the
+    `MAXRATE` rules, `song-44k.flac`, volume 100, three 10 s windows): the reception alone (`NOAUDIO`, 28603 Hz)
+    25 %, `PAULA8` 31 %, `PAULA` 39 %, AHI (`Paula:14 bit stereo++`, 27429 Hz) 57 %; no `STMo`. The crackles
+    are left to a signal that shows them (`song-44k.flac` hides them) and to a setup where AHI crackles.
+  - **player-11d ✅** (agreed with the user, from 11c's figures): chip RAM written 4 samples at a time when the
+    rate is not divided (`architecture.md`, Paula direct). A probe writing nowhere in chip RAM gave the ceiling,
+    32 % for `PAULA`. On the A1200, `PAULA` 35 % and `PAULA8` 30 %; on the slow profile, 15 % and 9 %. The rate
+    divided by 2 keeps writing byte by byte.
 - **Checked before coding** (`audio.doc` of the NDK 3.2, the RKM's Audio Device chapter), and what was agreed
   with the user from it:
   - `CMD_STOP` loses the cycle it stops, and `audio.device` does not tell how much a write played: the pause keeps

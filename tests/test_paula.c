@@ -132,14 +132,17 @@ static void make_pcm(uint8_t *dst, uint32_t samples, int big_endian, uint32_t se
 }
 
 /* paula_convert() against the reference: divisors 1 to 7 (powers of two and not), mono and stereo, both byte
- * orders, a last group cut short, an odd count; 8 bits leave the low channels alone */
+ * orders, a last group cut short, an odd count; 8 bits leave the low channels alone. Not divided, stereo goes 4
+ * frames at a time: 1 to 9 frames, so 0 to 3 left after the groups, in both byte orders. */
 static void test_paula_convert(void)
 {
     static const struct { int channels, big_endian; uint32_t d, frames; } cases[] = {
         { 2, 0, 1, 10 }, { 2, 1, 2, 9 }, { 1, 0, 3, 10 }, { 2, 0, 7, 15 }, { 1, 1, 2, 7 }, { 2, 0, 4, 64 },
         { 2, 0, 3, 1000 }, { 2, 1, 2, 0 },
+        { 2, 0, 1, 1 }, { 2, 1, 1, 2 }, { 2, 0, 1, 3 }, { 2, 1, 1, 4 }, { 2, 0, 1, 5 }, { 2, 1, 1, 6 },
+        { 2, 0, 1, 7 }, { 2, 1, 1, 8 }, { 2, 0, 1, 9 }, { 2, 1, 1, 1000 }, { 1, 0, 1, 9 }, { 1, 1, 1, 8 },
     };
-    static uint8_t got[4][1024];
+    static _Alignas(4) uint8_t got[4][1024];         /* aligned on 4 bytes, as Paula's buffers */
     uint32_t c;
 
     for (c = 0; c < sizeof(cases) / sizeof(cases[0]); c++) {

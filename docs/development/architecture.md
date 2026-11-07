@@ -291,6 +291,12 @@ Why: AHI's mixing costs a slow 68020 most of its time. The rules, from audio.dev
   and a mean of each pair by an addition and a shift when it is divided by 2 (44.1, 48 and 32 kHz). The general
   path, with a function and a loop per sample, cost the slow profile more than AHI did; it is left to the rare
   divisors 3 and 4.
+- **Chip RAM written 4 samples at a time**: a write to chip RAM costs about the same for 1 byte or 4. So when the
+  rate is not divided, stereo goes 4 frames at a time, each channel's 4 samples put together in a register and
+  written with one `move.l` (`WORD4()` and `put4()` in `paula.c`). GCC merges neither four byte writes nor a
+  `memcpy()` to an address it does not know aligned: hence the word built by hand for the machine's byte order,
+  and the buffers aligned on 4 bytes (`platform.h`). On the A1200, `PAULA` 39 to 35 % of the CPU (chip writes
+  removed altogether: 32 %), `PAULA8` 31 to 30 %.
 
 ## The Amiga side: start-up, window, commodity
 

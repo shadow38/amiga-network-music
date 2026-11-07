@@ -8,6 +8,7 @@
  * audio.c decides which block goes where; the device itself is behind platform.h.
  */
 #include <stddef.h>
+#include <string.h>
 
 #include "platform.h"
 #include "player.h"
@@ -94,24 +95,64 @@ static void put(uint8_t *high, uint8_t *low, uint32_t k, int32_t s)
         low[k] = (uint8_t)(((uint32_t)s >> 2) & 0x3F);
 }
 
+/* Four bytes a, b, c, d as one 32-bit word holding them in that order in memory, on either byte order: written with
+ * memcpy() to an address known aligned, one write (move.l on the Amiga; without the alignment, GCC copies byte by
+ * byte). In chip RAM, a write of 4 bytes costs about what a write of 1 does. GCC does not merge four byte writes by
+ * itself (seen in its 68020 output). */
+#if defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+#define WORD4(a, b, c, d) ((uint32_t)(a) << 24 | (uint32_t)(b) << 16 | (uint32_t)(c) << 8 | (uint32_t)(d))
+#elif defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+#define WORD4(a, b, c, d) ((uint32_t)(a) | (uint32_t)(b) << 8 | (uint32_t)(c) << 16 | (uint32_t)(d) << 24)
+#else
+#error "unknown byte order: define WORD4 for this compiler"
+#endif
+
+/* dst: aligned on 4 bytes */
+static void put4(uint8_t *dst, uint32_t word)
+{
+    memcpy(__builtin_assume_aligned(dst, 4), &word, 4);
+}
+
+/* convert_whole() for stereo, 4 frames at a time from the first (the buffers start aligned): one write per channel
+ * instead of four. Returns the frames done, the last 1 to 3 left to convert_whole(); 0 for mono. */
+static uint32_t convert_whole4(const struct paula_in *in, uint8_t *const high[2], uint8_t *const low[2])
+{
+    const uint8_t *h = in->data + (in->big_endian ? 0 : 1), *l = in->data + (in->big_endian ? 1 : 0);
+    uint8_t *h0 = high[0], *h1 = high[1], *l0 = low[0], *l1 = low[1];
+    uint32_t k;
+
+    if (in->channels != 2)
+        return 0;
+    for (k = 0; k + 4 <= in->frames; k += 4, h += 16, l += 16) {
+        put4(h0 + k, WORD4(h[0], h[4], h[8], h[12]));
+        put4(h1 + k, WORD4(h[2], h[6], h[10], h[14]));
+        if (l0 != NULL && l1 != NULL) {
+            /* each byte shifted right by 2: the bits a shift brings in from the next byte are masked out */
+            put4(l0 + k, WORD4(l[0], l[4], l[8], l[12]) >> 2 & 0x3F3F3F3FUL);
+            put4(l1 + k, WORD4(l[2], l[6], l[10], l[14]) >> 2 & 0x3F3F3F3FUL);
+        }
+    }
+    return k;
+}
+
 /* The rate not divided, the usual case (the server lowers it): each sample's bytes taken as they are, the high one
  * as it is, the low one shifted. The general path cost a slow 68020 more than AHI did (seen in WinUAE). */
 static uint32_t convert_whole(const struct paula_in *in, uint8_t *const high[2], uint8_t *const low[2])
 {
-    const uint8_t *b = in->data;
-    uint32_t step = 2 * (uint32_t)in->channels, right = in->channels == 2 ? 2 : 0, k;
+    uint32_t step = 2 * (uint32_t)in->channels, right = in->channels == 2 ? 2 : 0, k = convert_whole4(in, high, low);
+    const uint8_t *b = in->data + k * step;
     int hi = in->big_endian ? 0 : 1, lo = 1 - hi;
     uint8_t *h0 = high[0], *h1 = high[1], *l0 = low[0], *l1 = low[1];
 
     if (l0 != NULL && l1 != NULL) {
-        for (k = 0; k < in->frames; k++, b += step) {
+        for (; k < in->frames; k++, b += step) {
             h0[k] = b[hi];
             l0[k] = (uint8_t)(b[lo] >> 2);
             h1[k] = b[right + hi];
             l1[k] = (uint8_t)(b[right + lo] >> 2);
         }
     } else {
-        for (k = 0; k < in->frames; k++, b += step) {
+        for (; k < in->frames; k++, b += step) {
             h0[k] = b[hi];
             h1[k] = b[right + hi];
         }
