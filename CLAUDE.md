@@ -68,6 +68,7 @@ One line each; the pointer says where it is explained.
 | `stream.c`, `tracks.c`, `output.c`, `slimproto.c`, `icy.c` (statuses, `strm`, `cont`) | `protocol.md`; `architecture.md`, The states |
 | `decoder.c`, `flac.c`, `mp3.c`, `third_party/` | `architecture.md`, Decoders; `code-rules.md` |
 | `audio.c`, `amiga_ahi.c` | `architecture.md`, AHI |
+| `paula.c`, `amiga_paula.c` (and `audio.c`'s Paula parts) | `architecture.md`, Paula direct |
 | the start-up of `amiga.c`, `__stack`, libnix | `architecture.md`, The Amiga side; `code-rules.md`, Stack and memory; `pitfalls.md` |
 | `Makefile`, `tools/check-saves.py`, `tools/check-stack.py`, `tools/amiga-make.sh` | `building.md`; `code-rules.md`, Stack and memory |
 | `tests/`, `.github/workflows/` | `testing.md`, What tests what and Host build and tests; `building.md`, Builds made by GitHub |

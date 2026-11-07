@@ -36,8 +36,9 @@ flowchart LR
     http --> ring --> dec --> out
     out -->|"hand_over()"| virt
     virt -.->|"OUTPUT="| file
-    out -->|"audio_submit()"| blocks --> ahi
-    blocks --> paula
+    out -->|"audio_submit()"| blocks
+    blocks -->|"plat_ahi_*"| ahi
+    blocks -->|"plat_paula_*"| paula
 ```
 
 ## Source files and builds
@@ -241,8 +242,8 @@ What each decoder needs from its caller:
 
 ## AHI
 
-`audio.c` (portable) fills the blocks; `amiga_ahi.c` makes the ahi.device calls. They keep these rules, learnt
-from the source of ahi.device (AHI 6.0):
+`audio.c` (portable) fills the blocks; `amiga_ahi.c` makes the ahi.device calls (`plat_ahi_*`). They keep these
+rules, learnt from the source of ahi.device (AHI 6.0):
 
 - chain a request (`ahir_Link`) only to one already **playing**. Linked to a waiting one, it never plays nor ends.
   Hence at most two requests with the device;
@@ -259,8 +260,8 @@ The fake AHI of the unit tests counts the requests that break the first two rule
 ## Paula direct
 
 `AUDIO=PAULA` and `PAULA8` play without AHI: `audio.c` converts each block straight into chip RAM buffers
-(`paula.c`), and `amiga_paula.c` sends one `CMD_WRITE` per channel and block to audio.device. Why: AHI's mixing
-costs a slow 68020 most of its time. The rules, from audio.device's autodoc and what WinUAE showed:
+(`paula.c`), and `amiga_paula.c` sends one `CMD_WRITE` per channel and block to audio.device (`plat_paula_*`).
+Why: AHI's mixing costs a slow 68020 most of its time. The rules, from audio.device's autodoc and what WinUAE showed:
 
 - **14 bits from two channels per side**: the 8 high bits at volume 64, the next 6 at volume 1, uncalibrated.
   Left: channels 0 (high) and 3 (low); right: 1 and 2. `PAULA8` takes channels 0 and 1 only, leaving one per side
@@ -406,8 +407,8 @@ A platform layer implements `platform.h`, whose comments are the reference; `pos
   Once connected, a socket never blocks: `plat_recv()` returns `PLAT_AGAIN` when there is nothing to read;
 - **UDP**: a socket allowed to broadcast, for the discovery;
 - **the wait**: `plat_wait()` on the sockets given, with a time-out. Ctrl-C ends it (`-1`), and so does the end
-  of an audio request. After a socket call failed because of Ctrl-C, `plat_interrupted()` says so;
-- **the audio device**: `AUDIO_BLOCKS` requests of 16-bit big-endian PCM, at full volume. A request linked to
+  of an AHI request or a Paula block. After a socket call failed because of Ctrl-C, `plat_interrupted()` says so;
+- **AHI** (`plat_ahi_*`): `AUDIO_BLOCKS` requests of 16-bit big-endian PCM, at full volume. A request linked to
   another starts when that one ends. The unit's mode (`plat_ahi_mode()`), and on an abort, the bytes played, or
   `-1` when the device cannot tell;
 - **Paula direct** (`plat_paula_*`): chip RAM buffers of `PAULA_BLOCK_SAMPLES` per block and channel, blocks played
