@@ -198,7 +198,7 @@ In this order (agreed with the user):
 | player-8d MP3 without gaps between tracks | ✅ |
 | player-9 Real machine | ✅ the protocol on the A1200 with LMS; `SYS:WBStartup`, Music Assistant and the memory in WinUAE; a PiStorm when one is at hand |
 | player-10 Finishing touches | ✅ the parts of 0.4 and 0.5; server discovery (0.8), on the A1200 with three stacks; ICY (0.9), on the host and in WinUAE, again after the rebase on `dev` |
-| player-11 Direct Paula output, without AHI | ⬜ version 1.0, reduced scope (CPU load on a slow 68020; crackles with a PCMCIA network card, player-9); player-11a ✅ on the host, player-11b ✅ in WinUAE; player-11c ✅ on the A1200 (no crackle where AHI crackles); player-11d ✅ chip RAM written 4 samples at a time; left: the AHI Paula driver 4.33 tried on the A1200 |
+| player-11 Direct Paula output, without AHI | ⬜ version 1.0, reduced scope (CPU load on a slow 68020; crackles with a PCMCIA network card, player-9); player-11a ✅ on the host, player-11b ✅ in WinUAE; player-11c ✅ on the A1200 (no crackle where AHI crackles); player-11d ✅ chip RAM written 4 samples at a time; left: player-11e (the rate divided by 2 made lighter), the AHI Paula driver 4.33 tried on the A1200 |
 | player-12 Hardening (the 0.7 review's 50 list) | ✅ version 0.8 |
 | player-13 A lower rate asked of the server | ✅ `MAXRATE` and the LMS rules; on the A1200, 62 % of the CPU at 32 kHz against 77 %; Music Assistant upstream: the user's decision |
 | player-14 The buffer running dry in the middle of a frame | ✅ on the host and the A1200 |

@@ -1079,6 +1079,13 @@ belongs to the task that opened it; packets serialised field by field; buffers a
     rate is not divided (`architecture.md`, Paula direct). A probe writing nowhere in chip RAM gave the ceiling,
     32 % for `PAULA`. On the A1200, `PAULA` 35 % and `PAULA8` 30 %; on the slow profile, 15 % and 9 %. The rate
     divided by 2 keeps writing byte by byte.
+  - **player-11e** (agreed with the user, from 11c's figures): `convert_half` rewritten. On the A1200, divided by
+    2, Paula's output costs 30 points over the reception (67 % against 37 % with `NOAUDIO`), against 10 points
+    when not divided; the byte writes explain about 5 of them, the rest is the mean computed byte by byte. So: the
+    samples read 16 bits at a time, each pair's mean without rebuilding them, written 4 at a time as in
+    player-11d; a probe writing nowhere in chip RAM first, for the floor. Criterion: the host tests bit for bit
+    as today; on the A1200, `PAULA` with `MAXRATE=48000` clearly below 67 % (aim: 55 % or less), the sound the
+    same by ear.
 - **Checked before coding** (`audio.doc` of the NDK 3.2, the RKM's Audio Device chapter), and what was agreed
   with the user from it:
   - `CMD_STOP` loses the cycle it stops, and `audio.device` does not tell how much a write played: the pause keeps
