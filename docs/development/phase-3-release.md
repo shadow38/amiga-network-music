@@ -241,6 +241,9 @@ documents carry no dates (agreed with the user).
   and per output; each optimization with its measured gain (the rate lowered by the server, AHI's volume by
   tables, the direct Paula output, its conversion without division, the network driver's share); what is left to
   gain. The user guide's settings for slow machines link to it, without repeating it.
+- **The user guide's Slow row** (agreed with the user): `AUDIO=PAULA` recommended on a slow machine without a
+  sound card, instead of AHI's Paula driver (on the A1200, 35 % against 57 % of the CPU, the sound as good, no
+  crackle where AHI crackles), with LMS's `MAXRATE` rules; AHI stays for a sound card.
 - **What was tried and not kept** (agreed with the user): each with its figures and the reason. Among them, the
   rate divided by 2 with a loop small enough for the 68020's 256-byte instruction cache (240 bytes against 484:
   two means a round, each channel's 4 bytes gathered over two rounds, the samples' bytes swapped by `ror.w` and
