@@ -297,6 +297,15 @@ Why: AHI's mixing costs a slow 68020 most of its time. The rules, from audio.dev
   `memcpy()` to an address it does not know aligned: hence the word built by hand for the machine's byte order,
   and the buffers aligned on 4 bytes (`platform.h`). On the A1200, `PAULA` 39 to 35 % of the CPU (chip writes
   removed altogether: 32 %), `PAULA8` 31 to 30 %.
+- **Divided by 2, the mean without rebuilding the samples**: stereo goes 8 frames at a time. Each frame is read
+  as one 32-bit word, both sides in it; the sign bits of the high bytes flipped, the high bytes of two frames are
+  summed in two 16-bit lanes, the low bytes too, and since twice a mean of 16-bit samples is 256 times the high
+  bytes' sum plus the low bytes', the mean is 128 times the first plus half the second rounded down, both sides at once with no
+  carry from one lane into the other (`pair_means()` in `paula.c`). The 4 means of each channel are then written
+  as one word, as above. The byte order is a constant in the loop (two copies of it), and `pair_means()` forced
+  inline: with `-Os`, GCC called it with its arguments on the stack and shifted by a register. On the A1200, a
+  44.1 kHz stream with `PAULA` and `MAXRATE=48000`: 67 to 53 % of the CPU (chip writes removed altogether: 51 %;
+  the reception alone: 37 %).
 
 ## The Amiga side: start-up, window, commodity
 

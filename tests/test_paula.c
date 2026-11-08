@@ -8,7 +8,7 @@
 #define NTSC 3579545UL
 
 static uint8_t ref[4][STUB_PAULA_OUT];      /* what each channel must play */
-static uint8_t pcm16[2 * PCM_BPS];
+static _Alignas(4) uint8_t pcm16[2 * PCM_BPS];  /* aligned as malloc() aligns the samples' buffers */
 
 /* ---- references, made here without paula.c's tricks ---- */
 
@@ -131,9 +131,40 @@ static void make_pcm(uint8_t *dst, uint32_t samples, int big_endian, uint32_t se
     }
 }
 
-/* paula_convert() against the reference: divisors 1 to 7 (powers of two and not), mono and stereo, both byte
- * orders, a last group cut short, an odd count; 8 bits leave the low channels alone. Not divided, stereo goes 4
- * frames at a time: 1 to 9 frames, so 0 to 3 left after the groups, in both byte orders. */
+/* paula_convert() against the reference, for 14 then 8 bits (the low channels left alone) */
+static void check_convert(int channels, int big_endian, uint32_t d, uint32_t frames, uint32_t seed)
+{
+    static _Alignas(4) uint8_t got[4][1024];         /* aligned on 4 bytes, as Paula's buffers */
+    struct paula_in in;
+    uint8_t *high[2], *low[2];
+    uint32_t n, expect_n;
+    int ch;
+
+    make_pcm(pcm16, frames * (uint32_t)channels, big_endian, seed);
+    in.data = pcm16;
+    in.frames = frames;
+    in.channels = channels;
+    in.big_endian = big_endian;
+    in.divisor = d;
+    memset(got, 0xEE, sizeof(got));
+    high[0] = got[0], high[1] = got[1], low[0] = got[3], low[1] = got[2];
+    n = paula_convert(&in, high, low);
+    expect_n = ref_paula(pcm16, in.frames, in.channels, in.big_endian, in.divisor, 0);
+    CHECK(n == expect_n && n == paula_samples(in.frames, in.divisor));
+    for (ch = 0; ch < 4; ch++)
+        CHECK(!memcmp(got[ch], ref[ch], n) && got[ch][n] == 0xEE);
+
+    memset(got, 0xEE, sizeof(got));                 /* 8 bits */
+    low[0] = low[1] = NULL;
+    CHECK(paula_convert(&in, high, low) == n);
+    CHECK(!memcmp(got[0], ref[0], n) && !memcmp(got[1], ref[1], n));
+    CHECK(got[2][0] == 0xEE && got[3][0] == 0xEE);
+}
+
+/* Divisors 1 to 7 (powers of two and not), mono and stereo, both byte orders, a last group cut short, an odd
+ * count. Not divided, stereo goes 4 frames at a time: 1 to 9 frames, so 0 to 3 left after the groups, in both byte
+ * orders. Divided by 2, stereo goes 8 frames at a time: 0 to 17 frames, so every remainder and an odd last frame,
+ * in both byte orders; mono beside it. */
 static void test_paula_convert(void)
 {
     static const struct { int channels, big_endian; uint32_t d, frames; } cases[] = {
@@ -141,36 +172,16 @@ static void test_paula_convert(void)
         { 2, 0, 3, 1000 }, { 2, 1, 2, 0 },
         { 2, 0, 1, 1 }, { 2, 1, 1, 2 }, { 2, 0, 1, 3 }, { 2, 1, 1, 4 }, { 2, 0, 1, 5 }, { 2, 1, 1, 6 },
         { 2, 0, 1, 7 }, { 2, 1, 1, 8 }, { 2, 0, 1, 9 }, { 2, 1, 1, 1000 }, { 1, 0, 1, 9 }, { 1, 1, 1, 8 },
+        { 2, 0, 2, 1000 }, { 2, 1, 2, 1000 }, { 2, 0, 2, 1001 }, { 1, 0, 2, 17 }, { 1, 1, 2, 16 },
     };
-    static _Alignas(4) uint8_t got[4][1024];         /* aligned on 4 bytes, as Paula's buffers */
-    uint32_t c;
+    uint32_t c, f;
+    int be;
 
-    for (c = 0; c < sizeof(cases) / sizeof(cases[0]); c++) {
-        struct paula_in in;
-        uint8_t *high[2], *low[2];
-        uint32_t n, expect_n;
-        int ch;
-
-        make_pcm(pcm16, cases[c].frames * (uint32_t)cases[c].channels, cases[c].big_endian, c + 1);
-        in.data = pcm16;
-        in.frames = cases[c].frames;
-        in.channels = cases[c].channels;
-        in.big_endian = cases[c].big_endian;
-        in.divisor = cases[c].d;
-        memset(got, 0xEE, sizeof(got));
-        high[0] = got[0], high[1] = got[1], low[0] = got[3], low[1] = got[2];
-        n = paula_convert(&in, high, low);
-        expect_n = ref_paula(pcm16, in.frames, in.channels, in.big_endian, in.divisor, 0);
-        CHECK(n == expect_n && n == paula_samples(in.frames, in.divisor));
-        for (ch = 0; ch < 4; ch++)
-            CHECK(!memcmp(got[ch], ref[ch], n) && got[ch][n] == 0xEE);
-
-        memset(got, 0xEE, sizeof(got));             /* 8 bits */
-        low[0] = low[1] = NULL;
-        CHECK(paula_convert(&in, high, low) == n);
-        CHECK(!memcmp(got[0], ref[0], n) && !memcmp(got[1], ref[1], n));
-        CHECK(got[2][0] == 0xEE && got[3][0] == 0xEE);
-    }
+    for (c = 0; c < sizeof(cases) / sizeof(cases[0]); c++)
+        check_convert(cases[c].channels, cases[c].big_endian, cases[c].d, cases[c].frames, c + 1);
+    for (be = 0; be < 2; be++)
+        for (f = 0; f <= 17; f++)
+            check_convert(2, be, 2, f, 100 + f);
 }
 
 /* Known values: -1 and -2 make -2 (rounded down), Paula's bytes 0xFF and 63; -32768 and 32767 at both ends */

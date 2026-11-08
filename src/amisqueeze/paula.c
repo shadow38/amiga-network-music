@@ -99,10 +99,13 @@ static void put(uint8_t *high, uint8_t *low, uint32_t k, int32_t s)
  * memcpy() to an address known aligned, one write (move.l on the Amiga; without the alignment, GCC copies byte by
  * byte). In chip RAM, a write of 4 bytes costs about what a write of 1 does. GCC does not merge four byte writes by
  * itself (seen in its 68020 output). */
+/* MEMORY_ORDER(w): a word read from memory as the value holding its first byte highest, or back (no-op on the Amiga) */
 #if defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
 #define WORD4(a, b, c, d) ((uint32_t)(a) << 24 | (uint32_t)(b) << 16 | (uint32_t)(c) << 8 | (uint32_t)(d))
+#define MEMORY_ORDER(w)   (w)
 #elif defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 #define WORD4(a, b, c, d) ((uint32_t)(a) | (uint32_t)(b) << 8 | (uint32_t)(c) << 16 | (uint32_t)(d) << 24)
+#define MEMORY_ORDER(w)   __builtin_bswap32(w)
 #else
 #error "unknown byte order: define WORD4 for this compiler"
 #endif
@@ -167,18 +170,82 @@ static uint32_t convert_whole(const struct paula_in *in, uint8_t *const high[2],
 #define PUT_HIGH(dst, k, m) ((dst)[k] = (uint8_t)(((m) >> 8) ^ 0x80))
 #define PUT_LOW(dst, k, m)  ((dst)[k] = (uint8_t)(((m) >> 2) & 0x3F))
 
+/* A stereo frame at p (aligned on 2: the samples' buffer comes from malloc()) as one word, its first byte highest */
+static uint32_t get4(const uint8_t *p)
+{
+    uint32_t w;
+
+    memcpy(&w, __builtin_assume_aligned(p, 2), 4);
+    return MEMORY_ORDER(w);
+}
+
+/* The means of the stereo frames at p and p + 4, both sides in one word: the left's in the high 16 bits, the
+ * right's in the low 16, each with its sign bit flipped, as OFFSET_SAMPLE() then >> 1 give them. The sign bits of
+ * the high bytes flipped (flip), the high bytes of both frames summed in two 16-bit lanes (hs, at most 510 each),
+ * the low bytes too (ls); 256 hs being even, (256 hs + ls) / 2 = 128 hs + ls / 2, at most 65535: no carry from one
+ * lane into the other. shift: 0 for little-endian samples (the high byte second), 8 for big-endian. Inlined: with
+ * -Os, GCC called it, its arguments on the stack, four times per loop (seen in its 68020 output). */
+__attribute__((always_inline)) static inline uint32_t pair_means(const uint8_t *p, unsigned shift, uint32_t flip)
+{
+    uint32_t x = get4(p) ^ flip, y = get4(p + 4) ^ flip, hs, ls;
+
+    hs = (x >> shift & 0x00FF00FFUL) + (y >> shift & 0x00FF00FFUL);
+    ls = (x >> (8 - shift) & 0x00FF00FFUL) + (y >> (8 - shift) & 0x00FF00FFUL);
+    return (hs << 7) + (ls >> 1 & 0x7FFF7FFFUL);
+}
+
+/* convert_half4() for one byte order, shift being a constant (see pair_means()): its shifts by a register, and the
+ * register holding it, cost the loop more than its size (seen in GCC's 68020 output). */
+__attribute__((always_inline)) static inline uint32_t half4(const struct paula_in *in, uint8_t *const high[2],
+                                                            uint8_t *const low[2], unsigned shift)
+{
+    const uint8_t *b = in->data;
+    uint32_t flip = 0x00800080UL << shift, pairs = in->frames / 2, k, a, c, h1, h2, l1, l2;
+    uint8_t *h0p = high[0], *h1p = high[1], *l0p = low[0], *l1p = low[1];
+
+    for (k = 0; k + 4 <= pairs; k += 4, b += 32) {
+        /* h1, l1: the high and low bytes of the first two means as [L1 L2 R1 R2]; h2, l2 of the next two */
+        a = pair_means(b, shift, flip);
+        c = pair_means(b + 8, shift, flip);
+        h1 = (a & 0xFF00FF00UL) | (c >> 8 & 0x00FF00FFUL);
+        l1 = (a << 6 & 0x3F003F00UL) | (c >> 2 & 0x003F003FUL);
+        a = pair_means(b + 16, shift, flip);
+        c = pair_means(b + 24, shift, flip);
+        h2 = (a & 0xFF00FF00UL) | (c >> 8 & 0x00FF00FFUL);
+        l2 = (a << 6 & 0x3F003F00UL) | (c >> 2 & 0x003F003FUL);
+        /* the high bytes' sign bits flipped back */
+        put4(h0p + k, MEMORY_ORDER(((h1 & 0xFFFF0000UL) | h2 >> 16) ^ 0x80808080UL));
+        put4(h1p + k, MEMORY_ORDER((h1 << 16 | (h2 & 0xFFFFUL)) ^ 0x80808080UL));
+        if (l0p != NULL && l1p != NULL) {
+            put4(l0p + k, MEMORY_ORDER((l1 & 0xFFFF0000UL) | l2 >> 16));
+            put4(l1p + k, MEMORY_ORDER(l1 << 16 | (l2 & 0xFFFFUL)));
+        }
+    }
+    return k;
+}
+
+/* convert_half() for stereo, 4 pairs of frames at a time from the first (the buffers start aligned): each pair's
+ * means without rebuilding its samples (pair_means()), and one write per channel instead of four. Returns the
+ * pairs done, the rest left to convert_half(); 0 for mono. */
+static uint32_t convert_half4(const struct paula_in *in, uint8_t *const high[2], uint8_t *const low[2])
+{
+    if (in->channels != 2)
+        return 0;
+    return in->big_endian ? half4(in, high, low, 8) : half4(in, high, low, 0);
+}
+
 /* The rate divided by 2 (44.1, 48 and 32 kHz not lowered by the server): each pair's mean, rounded down as
  * group_mean() does, an odd last frame on its own. The general path cost a slow 68020 more than AHI did (seen in
  * WinUAE). */
 static uint32_t convert_half(const struct paula_in *in, uint8_t *const high[2], uint8_t *const low[2])
 {
-    const uint8_t *b = in->data;
-    uint32_t step = 2 * (uint32_t)in->channels, right = in->channels == 2 ? 2 : 0, k, m0, m1;
-    uint32_t pairs = in->frames / 2;
+    uint32_t step = 2 * (uint32_t)in->channels, right = in->channels == 2 ? 2 : 0, k = convert_half4(in, high, low);
+    uint32_t pairs = in->frames / 2, m0, m1;
+    const uint8_t *b = in->data + 2 * k * step;
     int hi = in->big_endian ? 0 : 1, lo = 1 - hi;
     uint8_t *h0 = high[0], *h1 = high[1], *l0 = low[0], *l1 = low[1];
 
-    for (k = 0; k < pairs; k++, b += 2 * step) {
+    for (; k < pairs; k++, b += 2 * step) {
         m0 = (OFFSET_SAMPLE(b, hi, lo) + OFFSET_SAMPLE(b + step, hi, lo)) >> 1;
         m1 = (OFFSET_SAMPLE(b + right, hi, lo) + OFFSET_SAMPLE(b + step + right, hi, lo)) >> 1;
         PUT_HIGH(h0, k, m0);
