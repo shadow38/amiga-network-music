@@ -231,3 +231,18 @@ releasing, pitfalls, documentation rules), each rewritten to the writing rules; 
 what amisqueeze trusts and what it does not handle; in `architecture.md`, the states, the time-outs and limits, the
 memory and the platform layer. The review tooling reads the rules in the pages `CONTRIBUTING.md` lists; the
 documents carry no dates (agreed with the user).
+
+## publish-9 A page on performance ⬜ version 1.0
+
+- **Why** (agreed with the user): the optimizations deserve a page of their own. Today their figures are spread
+  over the plan (player-4c, player-9, player-13, player-11c, player-11d), where a contributor does not look.
+- **What**: `docs/development/performance.md`, for a contributor: what costs the CPU, what was done to lower it,
+  and how it is measured. The method (`cpucount`, the idle count, three 10 s windows); the figures per machine
+  and per output; each optimization with its measured gain (the rate lowered by the server, AHI's volume by
+  tables, the direct Paula output, its conversion without division, the network driver's share); what is left to
+  gain. The user guide's settings for slow machines link to it, without repeating it.
+- **When** (agreed with the user): after player-11, so that the figures are final, and before the full audit
+  (publish-5), which reads it.
+- **Criterion**: the page in `documentation-rules.md`'s table and `CONTRIBUTING.md`'s map; the figures moved out
+  of the plan, which keeps one line per step; each optimization's gain found there with its machine and method.
+

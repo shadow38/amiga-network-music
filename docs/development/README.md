@@ -55,7 +55,7 @@ agreed with the user.
 | 0.1 to 0.7 | the player for LMS and Music Assistant: PCM, FLAC, MP3, start from the Workbench, the `.lha`, releases built by the CI | player-1 to player-8d, player-7b, part of player-10, tools-10 (LMS), publish-2 (`.lha`), publish-3 | ✅, see the [changelog](../../CHANGELOG.md) |
 | 0.8 | what the real machine shows; a lower rate asked of the server; automatic server discovery; hardening; the writing rules applied to the documentation | player-9, player-10 (discovery), player-12, player-13, player-14, player-15, player-16, player-17, tools-11, tools-13, publish-6 | ✅, see the [changelog](../../CHANGELOG.md) |
 | 0.9 | internet radios' metadata (ICY); the window shown and hidden from Exchange; finishing touches after the 0.8 reviews; the code's size and complexity checked; a readable architecture page; the technical documentation organised | player-10 (end), tools-14, player-18, player-19, publish-7, publish-8, player-20, player-21 | ✅, see the [changelog](../../CHANGELOG.md) |
-| 1.0 | `stream.c` and the unit tests split; a direct Paula output; setup guides, a full audit, the upload to Aminet | player-22, player-11, publish-4, publish-5, tools-10 (Music Assistant), publish-2 (Aminet) | ⬜ |
+| 1.0 | `stream.c` and the unit tests split; a direct Paula output; a page on performance; setup guides, a full audit, the upload to Aminet | player-22, player-11, publish-9, publish-4, publish-5, tools-10 (Music Assistant), publish-2 (Aminet) | ⬜ |
 | none yet | idea: source-level debugging | tools-8 | ⬜ |
 | none | reference documents on AmigaOS for contributors, committed when ready (agreed with the user) | tools-12 | ⬜ |
 
@@ -159,6 +159,8 @@ In this order (agreed with the user):
 - **A direct Paula output** (player-11), with a reduced scope: an option, AHI still the default (see
   [player-11](phase-1-amisqueeze.md)). If its study rules it out, it leaves 1.0 rather than grow. On the A1200,
   a newer AHI Paula driver is tried too.
+- **A page on performance** (publish-9, agreed with the user): the optimizations and their measured gains, out
+  of the plan into a page of their own, once player-11 is done.
 - **The guides and the audit**: the setup guides (publish-4), written with the Paula output known; the Music
   Assistant scenario in WinUAE (tools-10); a full audit (publish-5), which checks the split and the Paula output.
 - **Last**: the upload to Aminet (publish-2), once the `Author:` and `Uploader:` of the `.readme` are corrected.
@@ -220,6 +222,7 @@ In this order (agreed with the user):
 | publish-6 Writing rules for the documentation | ✅ the rules, the plan and the user guide; `docs/development/` later, where the user finds it worth it (closed) |
 | publish-7 A readable architecture page | ✅ version 0.9 |
 | publish-8 The technical documentation organised | ✅ version 0.9 |
+| publish-9 A page on performance | ⬜ version 1.0, after player-11 |
 
 Phase 0 moves forward as needed: a tooling step is done when a step of phase 1 or 2 needs it. Phases 1 and 2 can
 progress in parallel.
