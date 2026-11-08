@@ -241,6 +241,14 @@ documents carry no dates (agreed with the user).
   and per output; each optimization with its measured gain (the rate lowered by the server, AHI's volume by
   tables, the direct Paula output, its conversion without division, the network driver's share); what is left to
   gain. The user guide's settings for slow machines link to it, without repeating it.
+- **What was tried and not kept** (agreed with the user): each with its figures and the reason. Among them, the
+  rate divided by 2 with a loop small enough for the 68020's 256-byte instruction cache (240 bytes against 484:
+  two means a round, each channel's 4 bytes gathered over two rounds, the samples' bytes swapped by `ror.w` and
+  `swap`, then the two words' mean `(a & b) + ((a ^ b) >> 1)`, its sign fixed by one XOR; a copy of the loop per
+  byte order and per 8 or 14 bits). Bit for bit the same, the sound the same; on the A1200, 53.1 to 51.9 %; on
+  the slow profile, 67.3 to 61.3 %. Not kept: 1.2 points on a path that is not the default one (the server
+  lowers the rate), for four copies of the loop; the gain would be larger with slower memory, on machines too
+  slow for that path anyway.
 - **When** (agreed with the user): after player-11, so that the figures are final, and before the full audit
   (publish-5), which reads it.
 - **Criterion**: the page in `documentation-rules.md`'s table and `CONTRIBUTING.md`'s map; the figures moved out
