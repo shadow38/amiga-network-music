@@ -1048,8 +1048,8 @@ belongs to the task that opened it; packets serialised field by field; buffers a
     `UNIT` is unused with Paula.
   - **`MAXRATE` with Paula** (agreed with the user): by default Paula's highest rate, so that the server lowers
     the rate with a better filter than the Amiga's; `AHI` or `AHISTD` give a message and Paula's highest rate
-    instead. `MAXRATE=<Hz>` stays, for instance 22050 for a lighter load. The highest rate is judged by ear in
-    player-11c: the shortest period gives about 28.6 kHz, but 27,429 Hz sounded best through AHI (below).
+    instead. `MAXRATE=<Hz>` stays, for instance 22050 for a lighter load. The shortest period gives about
+    28.6 kHz, heard on the A1200 at least as good as AHI at 27,429 Hz (player-11c).
   - **The rate divided** (agreed with the user): a stream above Paula's highest rate is divided by the smallest
     whole number that brings it under, the grouped samples averaged (a coarse filter). So 44.1 kHz plays at
     22.05, 48 at 24, 32 at 16, 88.2 and 96 kHz at a quarter. No interpolation: 32 kHz cannot become 24.
@@ -1068,10 +1068,13 @@ belongs to the task that opened it; packets serialised field by field; buffers a
     85 %). A 44.1 kHz stream divided by 2 (`MAXRATE=48000`): 45 % with `PAULA`, 41 % with `PAULA8`, about 65 %
     through AHI (the general path took 84 %; reception alone, 6 %). Heard: the faint sound of one side on the other with a tone on one side only, and a short gap between
     MP3s converted by LMS, both through AHI as well.
-  - **player-11c**: the A1200, under way. CPU load (AmiNetXDuo with the fixed `xircomce2.device`, LMS with the
-    `MAXRATE` rules, `song-44k.flac`, volume 100, three 10 s windows): the reception alone (`NOAUDIO`, 28603 Hz)
-    25 %, `PAULA8` 31 %, `PAULA` 39 %, AHI (`Paula:14 bit stereo++`, 27429 Hz) 57 %; no `STMo`. The crackles
-    are left to a signal that shows them (`song-44k.flac` hides them) and to a setup where AHI crackles.
+  - **player-11c ✅ on the A1200** (AmiNetXDuo, LMS with the `MAXRATE` rules, three 10 s windows; no `STMo`).
+    CPU load: the reception alone (`NOAUDIO`, 28603 Hz) 25 %, `PAULA8` 30 %, `PAULA` 35 % (after player-11d),
+    the same at volume 50; AHI (`Paula:14 bit stereo++`, 27429 Hz) 57 %. A 44.1 kHz stream divided by 2
+    (`MAXRATE=48000`): 67 % with `PAULA`, whichever driver, at 22,030 Hz (period 161), the elapsed time right.
+    With `xircomce2.device` 1.1 unfixed, a 44.1 kHz stream from Music Assistant crackles a lot through AHI, not at
+    all with `PAULA`; with the fixed driver, neither crackles. By ear, `PAULA` as good as AHI; no click from 100
+    to 99 nor from 100 to 0 and back; volume 30 and mute's fade the same as through AHI (LMS's own).
   - **player-11d ✅** (agreed with the user, from 11c's figures): chip RAM written 4 samples at a time when the
     rate is not divided (`architecture.md`, Paula direct). A probe writing nowhere in chip RAM gave the ceiling,
     32 % for `PAULA`. On the A1200, `PAULA` 35 % and `PAULA8` 30 %; on the slow profile, 15 % and 9 %. The rate
@@ -1092,8 +1095,8 @@ belongs to the task that opened it; packets serialised field by field; buffers a
     `ADCMD_SETPREC`, so that nothing, the beep included, takes them; a write ended by another program all the same
     is taken as a channel taken. The beep's own precedence is not documented, and no longer matters;
   - `REALLY_PAL` exists from graphics V39; before it, the `PAL` flag of `DisplayFlags`;
-  - `PAULA_PERIOD_MIN` stays at 124, the documented shortest period; the highest rate is judged by ear on the
-    A1200 (player-11c).
+  - `PAULA_PERIOD_MIN` stays at 124, the documented shortest period; on the A1200 its rate sounded at least as
+    good as AHI's (player-11c).
 - **On the A1200** (agreed with the user): the AHI Paula driver 4.33 (Aminet `driver/audio/AHI-Paula`, the
   A1200 has 4.23) tried with its `AHIpaulaBufferLength`, to learn whether a larger AHI buffer stops the crackles
   with a PCMCIA network card.
