@@ -15,7 +15,8 @@ Version 1.0 in development. The latest release, 0.9, is a preview (see [what has
 ## Using amisqueeze
 
 In order: install amisqueeze, find the settings for your Amiga, set up AHI, set up the server, then start
-amisqueeze.
+amisqueeze. The Amiga must be on the network first: if it is not, start with
+[putting the Amiga on the network](network-guide.md).
 
 ### Installing
 
@@ -167,6 +168,23 @@ Then tell it where the music is:
 
 - LMS: its "Media Folders", asked at its first start, or later in *Settings > Basic Settings*;
 - Music Assistant: a music provider, such as "Filesystem (local disk)" for files on its computer.
+
+What the server does with each track:
+
+```mermaid
+flowchart LR
+    track["A track"] --> q1{"Does amisqueeze<br>decode its format?"}
+    q1 -->|"yes"| asis["Sent as is"]
+    q1 -->|"no"| q2{"Can the server<br>convert it?"}
+    q2 -->|"yes"| pcm["Converted, then sent"]
+    q2 -->|"no"| skip["Not played"]
+```
+
+amisqueeze always decodes PCM. It decodes FLAC when the Amiga is fast enough, and MP3 too with
+`amisqueeze.fpu` (see [`FLAC`, `MP3` and `BENCH`](#flac-mp3-and-bench)). The server converts the rest:
+
+- LMS by its rules, MP3 needing one (see [Lyrion Music Server](#lyrion-music-server));
+- Music Assistant converts every track to the player's codec (see [Music Assistant](#music-assistant)).
 
 #### Ports
 
@@ -737,13 +755,13 @@ rows say what comes next.
 
 - **The player does not show up on the server.** Start amisqueeze from a Shell, or add `LOG`, and read the
   messages:
-  - `bsdsocket.library not found`: no TCP/IP stack is running;
+  - `bsdsocket.library not found`: no TCP/IP stack is running (see
+    [putting the Amiga on the network](network-guide.md));
   - `no server answered`: check that the server runs, that its firewall lets 3483/udp in, and that it is on the
     same local network (see [ports](#ports)). A router does not pass the question on to another
     network. With Music Assistant on another slimproto port, give it with `PORT`. Or give `SERVER`;
   - `no server answered` or `cannot connect`, and the server is fine: check that the Amiga itself is on the
-    network. If its TCP/IP stack has a `ping` command, `ping <server's address>` must get answers; if not, see the
-    stack's own documentation;
+    network: see [checking the connection](network-guide.md#checking-the-connection);
   - `cannot connect`: nothing answers at that address. Check `SERVER`, that the server runs, and that its
     firewall lets 3483/tcp in (see [ports](#ports));
   - `connected to the server`: the connection is up.

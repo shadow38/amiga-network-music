@@ -107,7 +107,7 @@ it saved.
 
 - the Amiga executables and their icons;
 - `LICENSE`, the README and the changelog;
-- the user guide, with its images (`docs/images/`).
+- the user guide, with its images (`docs/images/`), and the network guide.
 
 **Beside them**:
 

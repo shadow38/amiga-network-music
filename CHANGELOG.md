@@ -13,6 +13,8 @@ are previews, until 1.0.
   through AHI, also when the Amiga halves a rate the server did not lower. Without AHI installed, amisqueeze
   plays on Paula by itself. Paula's highest rate is then asked of the server; with LMS, the rules of `MAXRATE`
   lower it. See the user guide, Paula without AHI.
+- A guide to putting the Amiga on the network, from the network card to the first music: `network-guide.md`,
+  in the archives beside the user guide.
 
 ## [0.9] - 2026-11-03
 

@@ -3,9 +3,10 @@
 readme, out/<prog>-<version>.readme.
 
 Both archives hold the same <prog>-<version>/ directory: the Amiga executable (out/<prog>, and out/<prog>.fpu if
-built) with its .info icon, LICENSE, README.md, CHANGELOG.md and the user guide with its images (docs/images/ ->
-images/). The files are copied first into a temporary directory, the executables with mode 755 and the rest 644,
-so that both archives record the same modes whatever the file system the repository sits on. The version is the
+built) with its .info icon, LICENSE, README.md, CHANGELOG.md, the user guide with its images (docs/images/ ->
+images/) and the network guide. The files are copied first into a temporary directory, the executables with
+mode 755 and the rest 644, so that both archives record the same modes whatever the file system the repository
+sits on. The version is the
 one tools/check-version.py --release accepts (the same in both $VER: strings, Firmware=, the user guide, the
 README and the CHANGELOG, not a -dev one), so the archives always match the executables.
 
@@ -43,7 +44,7 @@ import tempfile
 import zipfile
 
 READMES = "dist"
-TEXTS = ("LICENSE", "README.md", "CHANGELOG.md", "docs/user-guide.md")     # in the archives
+TEXTS = ("LICENSE", "README.md", "CHANGELOG.md", "docs/user-guide.md", "docs/network-guide.md")   # in the archives
 AMIGA_TOOLS = "tools/amiga"     # developer tools built for the Amiga (make cpucount), not in the archives
 SHORT_MAX = 40          # Aminet: "This description must not be longer than 40 characters."
 LINE_MAX = 78           # Aminet: "Lines should not be longer than 78 characters"
@@ -207,7 +208,8 @@ def main():
                  "amigadev/crosstools has, builds the .lha")
     root = f"{prog}-{version}"
     files = [(f"out/{prog}", prog), ("LICENSE", "LICENSE"), ("README.md", "README.md"),
-             ("CHANGELOG.md", "CHANGELOG.md"), ("docs/user-guide.md", "user-guide.md")]
+             ("CHANGELOG.md", "CHANGELOG.md"), ("docs/user-guide.md", "user-guide.md"),
+             ("docs/network-guide.md", "network-guide.md")]
     executables = {prog}
     if os.path.isfile(f"out/{prog}.fpu"):       # the FPU build, when the program has one
         files.insert(1, (f"out/{prog}.fpu", f"{prog}.fpu"))

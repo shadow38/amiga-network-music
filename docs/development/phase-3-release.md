@@ -94,7 +94,7 @@ Back to the [plan](README.md).
   by commit SHA, the checkout without a token (`persist-credentials: false`, the build's container mounts the
   repository), agreed with the user; an attestation of provenance left for 1.0.
 
-## publish-4 Setup guide: the Amiga on the network ⬜
+## publish-4 Setup guide: the Amiga on the network 🔶
 
 - **Why**: putting the Amiga on the network is often the real obstacle, and no guide takes a user from an Amiga
   without network to a Squeezebox player. Without it few users will get as far as the player, whatever its
@@ -110,8 +110,8 @@ Back to the [plan](README.md).
   heard. Its sections: what you need; how it fits together; network hardware; getting files onto the Amiga; a
   TCP/IP stack; checking the connection; sound; the server's settings; first music. Getting files onto the Amiga
   (agreed with the user): AmigaOS 3.x has no LhA, and the stack's archive must reach an Amiga without network;
-  the usual ways in a few lines each (a FAT card or stick read by CrossDOS, a Gotek, a serial cable), then LhA.
-  Sound, the server's settings and amisqueeze itself are links to the user guide, without repeating it (agreed
+  the usual ways in a few lines each (a FAT card or stick read by CrossDOS, a serial cable; not a floppy, too
+  small for the stack's archive), then LhA. Sound, the server's settings and amisqueeze itself are links to the user guide, without repeating it (agreed
   with the user).
   - **The stack**: AmiNetXDuo step by step (agreed with the user): free (MIT), its installer finds the card and
     writes the interface, DHCP; its own drivers cover NE2000 PCMCIA cards, the usual Zorro cards and a PiStorm32
@@ -120,9 +120,9 @@ Back to the [plan](README.md).
   - **The hardware**: the families only (PCMCIA card on an A1200 or A600, network on an accelerator or a Zorro
     card, PiStorm), each with where its driver comes from. What was tried stays in the user guide's "What has
     been tried", linked (agreed with the user).
-- **Diagrams** (Mermaid): the overall picture (sources, server, network, amisqueeze, AHI, Paula or a DAC, a phone
-  driving the server) and the network with its ports, in the guide; the path of a track (format decoded by
-  amisqueeze: sent as is; otherwise converted by the server; otherwise refused), in "Server setup".
+- **Diagrams** (Mermaid): the network with its ports, in the guide, which links to the README's overall picture;
+  the path of a track (format decoded by amisqueeze: sent as is; otherwise converted by the server; otherwise
+  refused), in "Server setup".
 - **Criterion**: a user who does not know the project goes, with our documents and the servers' own guides they
   link to, from a server installed by its own guide and an Amiga without network or amisqueeze to music playing.
 - **Check** (agreed with the user): the guide followed by hand, to the letter, in WinUAE: a fresh AmigaOS 3.2.3

@@ -9,6 +9,8 @@ belongs, with a link.
 |---|---|---|
 | `README.md` | someone discovering the project | What is it, what does it need, how do I start? |
 | `docs/user-guide.md` | a user | How do I set it up and use it? Then, for reference: every option, message and limit. |
+| `docs/network-guide.md` | a user whose Amiga has no network | How do I put the Amiga on the network, up to the first music? |
+| `docs/README.md` | a reader browsing `docs/` | Which page do I read? |
 | `CHANGELOG.md` | a user upgrading | What changed in this version? |
 | `CONTRIBUTING.md` | a new contributor | Which page answers my question? How do I start, and propose a change? |
 | `docs/development/building.md` | a contributor | What does the build need, and how do I build and package it? |
