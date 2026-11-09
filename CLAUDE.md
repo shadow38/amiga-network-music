@@ -3,7 +3,7 @@
 For Claude Code. What a human contributor needs is in the repository's own documents, not here: `README.md` (for
 users, kept short), `docs/user-guide.md` (options, messages, server setup), `CONTRIBUTING.md` (the map of the
 documents for contributors, a quick start, proposing a change) and the pages of `docs/development/` it lists:
-`building.md`, `code-rules.md`, `testing.md`, `architecture.md`, `pitfalls.md`, `releasing.md`,
+`building.md`, `code-rules.md`, `testing.md`, `architecture.md`, `performance.md`, `pitfalls.md`, `releasing.md`,
 `documentation-rules.md`; `docs/development/README.md` is the plan (roadmap, where each step stands, open points).
 This file keeps only how to work with the maintainer, the rules never to break, and what to read before touching
 what. Public GitHub repository `shadow38/amiga-network-music`; documentation, code comments and program messages
@@ -68,7 +68,7 @@ One line each; the pointer says where it is explained.
 | `stream.c`, `tracks.c`, `output.c`, `slimproto.c`, `icy.c` (statuses, `strm`, `cont`) | `protocol.md`; `architecture.md`, The states |
 | `decoder.c`, `flac.c`, `mp3.c`, `third_party/` | `architecture.md`, Decoders; `code-rules.md` |
 | `audio.c`, `amiga_ahi.c` | `architecture.md`, AHI |
-| `paula.c`, `amiga_paula.c` (and `audio.c`'s Paula parts) | `architecture.md`, Paula direct |
+| `paula.c`, `amiga_paula.c` (and `audio.c`'s Paula parts) | `architecture.md`, Paula direct; `performance.md` |
 | the start-up of `amiga.c`, `__stack`, libnix | `architecture.md`, The Amiga side; `code-rules.md`, Stack and memory; `pitfalls.md` |
 | `Makefile`, `tools/check-saves.py`, `tools/check-stack.py`, `tools/amiga-make.sh` | `building.md`; `code-rules.md`, Stack and memory |
 | `tests/`, `.github/workflows/` | `testing.md`, What tests what and Host build and tests; `building.md`, Builds made by GitHub |

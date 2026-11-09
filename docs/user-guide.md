@@ -77,7 +77,8 @@ without an FPU, it says so. `BENCH` needs no server, prints its measures and qui
 | **Fast**: `BENCH` lets this machine decode FLAC and MP3, such as on a PiStorm | `amisqueeze.fpu` | `SWAP` with Paula | nothing | the codec `flac`, the default |
 
 - The Slow row was tried on an A1200 with a 68EC020 at 26 MHz and Paula. The Fast row was tried in WinUAE, at
-  about a PiStorm's speed.
+  about a PiStorm's speed. What each setting costs and saves, measured, is in the developers'
+  [performance page](https://github.com/shadow38/amiga-network-music/blob/main/docs/development/performance.md).
 - A 68030, 68040 or 68060 has not been tried yet. A format that `BENCH` leaves to the server needs that server's
   settings of the Slow row; `MAXRATE` and `PRI` only if the sound has gaps.
 - With Paula, see also [with Paula](#with-paula).

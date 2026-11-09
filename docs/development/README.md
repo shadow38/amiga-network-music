@@ -160,7 +160,7 @@ In this order (agreed with the user):
   [player-11](phase-1-amisqueeze.md)). If its study rules it out, it leaves 1.0 rather than grow. On the A1200,
   a newer AHI Paula driver is tried too.
 - **A page on performance** (publish-9, agreed with the user): the optimizations and their measured gains, out
-  of the plan into a page of their own, once player-11 is done.
+  of the plan into a page of their own; completed after player-11's last session on the A1200.
 - **The guide and the audit**: the guide to the Amiga on the network (publish-4), written with the Paula output
   known; the Music Assistant scenario in WinUAE (tools-10); a full audit (publish-5), which checks the split and
   the Paula output.
@@ -201,7 +201,7 @@ In this order (agreed with the user):
 | player-10 Finishing touches | ✅ the parts of 0.4 and 0.5; server discovery (0.8), on the A1200 with three stacks; ICY (0.9), on the host and in WinUAE, again after the rebase on `dev` |
 | player-11 Direct Paula output, without AHI | ⬜ version 1.0, reduced scope (CPU load on a slow 68020; crackles with a PCMCIA network card, player-9); player-11a ✅ on the host, player-11b ✅ in WinUAE; player-11c ✅ on the A1200 (no crackle where AHI crackles); player-11d ✅ chip RAM written 4 samples at a time; player-11e ✅ the rate divided by 2 made lighter; left: the AHI Paula driver 4.33 tried on the A1200 |
 | player-12 Hardening (the 0.7 review's 50 list) | ✅ version 0.8 |
-| player-13 A lower rate asked of the server | ✅ `MAXRATE` and the LMS rules; on the A1200, 62 % of the CPU at 32 kHz against 77 %; Music Assistant upstream: the user's decision |
+| player-13 A lower rate asked of the server | ✅ `MAXRATE` and the LMS rules ([its gain](performance.md#less-to-receive-maxrate)); Music Assistant upstream: the user's decision |
 | player-14 The buffer running dry in the middle of a frame | ✅ on the host and the A1200 |
 | player-15 The task priority (`PRI`) | ✅ on the host, in WinUAE and on the A1200 |
 | player-16 A receive that never blocks | ✅ on the host, in WinUAE and on the A1200 with AmiNetXDuo |
@@ -223,7 +223,7 @@ In this order (agreed with the user):
 | publish-6 Writing rules for the documentation | ✅ the rules, the plan and the user guide; `docs/development/` later, where the user finds it worth it (closed) |
 | publish-7 A readable architecture page | ✅ version 0.9 |
 | publish-8 The technical documentation organised | ✅ version 0.9 |
-| publish-9 A page on performance | ⬜ version 1.0, after player-11 |
+| publish-9 A page on performance | 🔶 version 1.0, [performance.md](performance.md) written; player-11's last session on the A1200 and the user guide's Slow row left |
 
 Phase 0 moves forward as needed: a tooling step is done when a step of phase 1 or 2 needs it. Phases 1 and 2 can
 progress in parallel.

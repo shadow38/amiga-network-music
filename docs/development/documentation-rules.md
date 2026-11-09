@@ -18,6 +18,7 @@ belongs, with a link.
 | `docs/development/testing.md` | a contributor testing a change | Which test covers what, and how do I run it, on the host and in WinUAE? |
 | `docs/development/winuae-scenarios.md` | the same | What do the automated scenarios in WinUAE check, and how do I run them? |
 | `docs/development/architecture.md` | a contributor | How does amisqueeze work, and why this way? |
+| `docs/development/performance.md` | a contributor | What costs the CPU, what was done to lower it, and how is it measured? |
 | `docs/development/protocol.md` | a contributor, anyone writing a Squeezebox player or remote | What do the servers send, what does amisqueeze answer, and what does it trust? |
 | `docs/development/pitfalls.md` | a contributor who is stuck | What has already gone wrong, and how do I debug? |
 | `docs/development/releasing.md` | the maintainer | How is a version checked and published? |

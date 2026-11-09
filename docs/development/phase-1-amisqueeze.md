@@ -175,15 +175,7 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   - memory: `Avail FLUSH` around each round, chip unchanged; fast drops by 1,064 bytes now and then, also when
     only `C:Wait` is started the same way (`Run` with output to a WinUAE folder), and not on every amisqueeze run:
     the system's, not amisqueeze's;
-  - CPU load on the slow profile (68020 without FPU, WinUAE approximate mode at 4 x 7.09 = 28.4 MHz, as a
-    typical A1200 accelerator; free CPU counted by a priority -128 loop, load = 1 - count while playing / count
-    when idle, 10 s windows): through AHI and Paula, **66-68 % in 14 bits** (unit 0) and **61-65 % in 8 bits** (unit 2), for
-    44.1 and 48 kHz streams, no `STMo`, LMS time exact; with `NOAUDIO`, 2-5 % (true until step player-8a, see player-9).
-    So nearly all of it is the sound
-    output: AHI resampling and mixing for Paula (27,429 Hz), plus the byte swap into the AHI blocks (not measured
-    apart; estimated at a few percent). Limits of the figure: WinUAE's networking runs TCP/IP on the host (a real
-    stack, Roadshow, adds its own load) and its Zorro II fast RAM is not the accelerator's own RAM. About a third
-    of the CPU is left on such a machine: to keep in mind for local FLAC decoding (player-8).
+  - CPU load on the slow profile, the method of every later measure: [performance.md](performance.md).
 - **Validated with the user**: Paula's crackles left to the real machine (player-9); the CPU load accepted
   for now (lighter AHI settings to look at in player-8 if decoding does not fit); `SWAP` stays a manual option until
   the real machine shows whether its channels are swapped too (player-9). Not done then: the start-up warning for a mode
@@ -270,10 +262,8 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   a low volume (its source, AROS copy, does not show why). **Fixed**: the core scales the samples itself when a
   block is first sent (the rest of a paused block goes again as it was converted), the device always gets full
   volume (as in player-4, where pause and resume were tested many times); unit tests check the samples bit for bit,
-  pause included. Sequence replayed twice: memory intact, clean stop. Cost on the slow profile: none at volume
-  100; at 50, Paula 14-bit 65 % to 88 % (8-bit 60 % to 84 %); a first version with one 32-bit multiplication per
-  sample (about 43 cycles on a 68020) reached 100 %, two 256-entry tables (sample = high byte * 256 + low byte)
-  brought it down. User guide: on a slow Amiga, leave LMS at 100 (agreed); later possibilities: a
+  pause included. Sequence replayed twice: memory intact, clean stop. Its cost:
+  [performance.md](performance.md#the-volume). User guide: on a slow Amiga, leave LMS at 100 (agreed); later possibilities: a
   `FIXED` volume mode (player-10), a faster loop. Final build, one hour on the slow profile at volume 50 (88 % load):
   no `STMo`, 20 tracks, pause, resume and stop clean, largest free block unchanged. While WinUAE's window was
   minimised, the emulated machine fell behind real time (2.5 min in 10 min), the music following the Amiga's own
@@ -374,8 +364,7 @@ belongs to the task that opened it; packets serialised field by field; buffers a
     a new stream with its header), all read: 24 bits at 44.1 or 48 kHz; no `STMo`, no `wav:` message. Two gapless
     boundaries (MA appends the next track after `STMd` with autostart 3; the second one after a seek 15 s before
     the end), one of them from 48 to 44.1 kHz. Heard by the user: right pitch, no crackle at volume 100, fluid and
-    without a gap at the boundaries. CPU load while playing 24 bits at 48 kHz: 75 % (`cpucount`, 2046 rounds in
-    10 s against 8204 idle; 61-68 % in player-4c, 16 bits at 44.1 kHz). Not tried: `mp3`, `aac` codecs (next item of
+    without a gap at the boundaries. CPU load: [performance.md](performance.md#on-winuaes-slow-profile). Not tried: `mp3`, `aac` codecs (next item of
     0.7).
 - **player-7b, the `mp3` and `aac` codecs** (amisqueeze 0.7-dev, MA 2.10.7; WinUAE JIT + FPU,
   `amisqueeze.fpu`, Toccata). No code changed; the user guide gained a table of MA's output codecs.
@@ -595,12 +584,8 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   WinUAE's network costs the Amiga nothing: the real TCP/IP stack and the PCMCIA card (the CPU copies every byte
   received) are the unknown. Without an FPU it runs `amisqueeze`, FLAC is left to the server: everything comes as
   raw PCM, about 176 KB/s at CD quality, the hardest case for that card. A first estimate in WinUAE (tools-11,
-  AmiNetXDuo, the stack planned for this machine, on an emulated NE2000 card; this machine's card is a
-  Xircom, `xircomce2.device`): on the slow profile, raw PCM at CD quality costs about 45 % of the CPU with
-  `NOAUDIO` instead of 4.5 % with WinUAE's emulated network, and 92 % through Paula instead of 53 %. An order of
-  magnitude only (another driver and card, PCMCIA accesses not cycle-exact, 4 MB of Zorro II memory, some of the
-  playback in chip memory): what to watch here, with the memory the stack takes (about 1.3 MB of fast memory in
-  WinUAE).
+  [performance.md](performance.md#on-winuaes-slow-profile)): what to watch here, with the memory the stack takes
+  (about 1.3 MB of fast memory in WinUAE).
 - **First playback on that machine** (version 0.7, before the protocol below): Kickstart 3.1, Miami
   3.2b then AmiNetXDuo 1.0.0-rc2, `xircomce2.device`, AHI 4.18 with `paula.audio`, LMS on the local network.
   amisqueeze plays.
@@ -611,16 +596,8 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   - `Paula:14 bit stereo` without "++" plays one channel of the stream only, as tools-5 found. With `SWAP`, the
     left tone is silent and the right tone comes out on the right only; without `SWAP`, only the left tone was
     heard.
-  - **CPU load**, method of player-4c (`cpucount`, three 10 s windows), `song-44k.flac` sent as raw PCM, LMS
-    volume 100, `SWAP`. Idle, the machine counts about 13,600: 1.6 times the slow WinUAE profile (8,288), so the
-    WinUAE estimates were pessimistic. No `STMo` in any run.
-
-    | Stack | Idle | `NOAUDIO` | Paula Fast 14 bit stereo++ | Paula 14 bit stereo++ |
-    |---|---|---|---|---|
-    | Miami 3.2b | 13,613 | 2,145: 84 % | about 100 %, gaps heard | about 100 %, crackles and gaps heard |
-    | AmiNetXDuo | 13,574 | 7,246: 47 % | 4,155: 69 % | 3,729: 73 % |
-
-    The stack makes the difference: AmiNetXDuo costs about half as much as Miami for the same reception.
+  - **CPU load** with Miami and AmiNetXDuo: AmiNetXDuo costs about half as much
+    ([performance.md](performance.md#the-network-driver-and-the-stack)).
   - **Occasional crackles** remain with AmiNetXDuo. They do not change with amisqueeze at priority 5, with AHI's
     echo and surround off, or with the mode (Fast or not). A 20 s raw PCM excerpt played through `AUDIO:`, without
     amisqueeze, is clean on its own. It crackles the same while amisqueeze receives a stream with `NOAUDIO`. So the
@@ -639,19 +616,9 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   - **Step 1 done**: the `AUDIO:` excerpt while the PC sends a steady stream to `nc` on the Amiga
     stays clean at 44 and 88 KB/s, crackles once at 176 KB/s and all the time at 330 KB/s. So the bursts count,
     not the mean rate: LMS sends at full speed whenever amisqueeze frees room. A remedy without code: AmiNetXDuo's
-    `RXBUFFER`, set in the interface file, caps the TCP window, so the bursts. With amisqueeze, Paula 14 bit
-    stereo++:
-
-    | `RXBUFFER` | Load | Crackles |
-    |---|---|---|
-    | none | 73 % | occasional |
-    | 8192 | 90 % | none, heard as perfect |
-    | 12288 | 81 % | some |
-    | 16384 | 76 % | all the time |
-
-    8192 leaves about 10 % of the CPU. Why a small window costs 17 points is open: more acknowledgments, or
-    amisqueeze receiving in smaller pieces, which amisqueeze itself could fix. Steps 3 and 5 would win the margin
-    back; at 88 KB/s (step 3) nothing crackled even without `RXBUFFER`.
+    `RXBUFFER`, set in the interface file, caps the TCP window, so the bursts: at 8192, no crackle, at about 90 %
+    of the CPU ([performance.md](performance.md#the-network-driver-and-the-stack)). At 88 KB/s (step 3) nothing
+    crackled even without `RXBUFFER`.
   - **Step 2, the driver read** (`xircomce2.device` 1.1, GPL, sources on Aminet; the card is a Xircom
     CE3B-100). The receive work runs in a software interrupt, `RXInt`, at priority 0. It loops until the card
     holds no frame, so a large burst keeps it busy long, and a software interrupt of the same priority waits. That
@@ -665,40 +632,22 @@ belongs to the task that opened it; packets serialised field by field; buffers a
     pass in `RXInt` and cause it again, so that AHI gets its turn and a larger window becomes possible; then the
     copy itself. `anxnet.device` remains to be tried.
   - **The same driver rebuilt**: `xircomce2.device` 1.1 cross-compiled with GCC 16, sources
-    unchanged, kept apart from this project (GPL). It costs about 12 points less at `RXBUFFER=8192` and plays
-    clean at 10240. Same protocol as the table above (Paula 14 bit stereo++, `SWAP`, LMS volume 100, three
-    10 s windows), both drivers swapped without a reboot; idle count 13,508 to 13,539 before and after:
-
-    | Driver | `RXBUFFER` | Load | Crackles |
-    |---|---|---|---|
-    | Aminet's | 8192 | 92 % | none |
-    | Aminet's | 12288 | 81 % | quite a few |
-    | rebuilt | 8192 | 80 % | none |
-    | rebuilt | 10240 | 79 % | none heard |
-    | rebuilt | 12288 | 79 % | three very small ones |
-
-    No `STMo` in any run. A larger window brings the rebuilt driver almost nothing (80 to 79 %), unlike Aminet's
-    (92 to 81 %).
+    unchanged, kept apart from this project (GPL). It costs about 12 points less at `RXBUFFER=8192`.
   - **The driver fixed**: `RXInt` handles at most 4 frames per pass, then causes itself again (2
-    gave the same results). Same protocol, one session: clean without `RXBUFFER` at 77 %, and at 16384 at 79 %,
-    where the rebuilt 1.1 driver crackles a lot. File transfers keep their speed. `RXBUFFER` is no longer needed
-    on this machine.
-  - **Roadshow**: its 1.15 demo, run without installing it, with the fixed driver, same protocol and
-    same day. 86 % while playing, against 77 % with AmiNetXDuo; transfers about a fifth slower in, a quarter
-    slower out. No `STMo`. The demo ships only the 68000 build of its stack; the commercial build, tuned for 68020
-    and better, was not measured. AmiNetXDuo stays the stack for this machine.
+    gave the same results). Clean without `RXBUFFER`, and at 16384, where the rebuilt 1.1 driver crackles a lot.
+    File transfers keep their speed. `RXBUFFER` is no longer needed on this machine. Loads:
+    [performance.md](performance.md#the-network-driver-and-the-stack).
+  - **Roadshow**: its 1.15 demo, run without installing it, with the fixed driver: more CPU than AmiNetXDuo,
+    transfers about a fifth slower in, a quarter slower out. AmiNetXDuo stays the stack for this machine.
   - **Optimization roadmap for this machine** (agreed with the user): the most modest machine first,
-    so that the others benefit. Today: clean playback at about 77 % of the CPU, with the fixed driver and no
-    `RXBUFFER` (above). In this order:
-    1. the cheap measures: a lighter system (a trimmed install, MapROM), AHI 6 (step 4 of the strategy); a few
-       points each, estimated. Why a small TCP window costs 17 points no longer matters: the window need not be
-       capped any more;
-    2. less to receive: a lower rate asked of the server (player-13). Done: 62 % at
-       32 kHz, 50 % at 22.05 kHz (below);
-    3. the driver: a few frames per pass in `RXInt`. Done (above): 77 %, against 73 % estimated;
-    4. the direct Paula output (player-11), if the margin is still short after 1 to 3: AHI's mixing gone (a good
-       share of the 25 to 30 points playback costs, estimated), and large buffers that do not mind a late
+    so that the others benefit. In this order:
+    1. the cheap measures: a lighter system (a trimmed install, MapROM), AHI 6 (step 4 of the strategy);
+    2. less to receive: a lower rate asked of the server (player-13). Done;
+    3. the driver: a few frames per pass in `RXInt`. Done (above);
+    4. the direct Paula output (player-11): AHI's mixing gone, and large buffers that do not mind a late
        interrupt.
+
+    Where each stands: [performance.md](performance.md).
 
     A 68030 card (twice the CPU, and the PCMCIA range free for the driver's faster path) is the user's own choice,
     outside this plan.
@@ -762,13 +711,9 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   | 7 Workbench | the icon as shipped; `QUIET` with `LOG` (no window, all in the log); `UNIT=9` (the window says why); Exchange's Remove (sound stopped, "stopped"). The icon as shipped takes unit 0, Paula Fast 8 bit mono here: amisqueeze warns it plays in mono |
   | 8 discovery | LMS, Music Assistant (its own `PORT`) and no server, with each stack below. Ctrl-C while looking: "stopped" alone. AmiNetXDuo also from the icon as shipped |
 
-  About 30 s of playback through each stack, the same day:
-
-  | Stack | Rate | Load | Sound |
-  |---|---|---|---|
-  | AmiNetXDuo 1.0.0-rc2 | 44.1 kHz | 77 % | clean |
-  | Miami 3.2b | 22.05 kHz | 71 % (AmiNetXDuo: 50 %) | many crackles; probably Aminet's driver, without the fix (not checked) |
-  | Roadshow 1.15 demo | 44.1 kHz | about 95 % (one early window; 86 %) | clean |
+  About 30 s of playback through each stack, the same day: clean with AmiNetXDuo and the Roadshow demo; many
+  crackles with Miami at 22.05 kHz, probably Aminet's driver, without the fix (not checked). Loads:
+  [performance.md](performance.md#the-network-driver-and-the-stack).
 
   Left, split with the user while the A1200 is away:
   - in WinUAE, not checked again on the A1200, since the result does not depend on the machine. Done
@@ -788,49 +733,12 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   | Load, Music Assistant against LMS | slow profile with AmiNetXDuo, the same session. Through Paula: about 99 % with both, saturated. With `NOAUDIO`: 42.6 % with LMS, 44.0 % with Music Assistant. So about 78 to 79 % expected on the A1200 instead of 77 % |
   | Memory | same profile, fast memory taken while playing through AHI: 1.72 MB at the first start, AHI loaded with it (1.69 MB on the A1200); 1.52 MB at the second; 1.27 MB with `NOAUDIO`. AHI keeps about 0.2 MB once loaded; nothing else stays. The user guide said 1.1 MB: now about 1.7 MB |
   | `SYS:WBStartup` | slow profile, AmiNetXDuo started from `S:User-Startup`, an icon with `SERVER` and `DONOTWAIT`: connected at the first try, plays, "stopped" on Ctrl-C |
-- **Load of the lighter AHI settings, measured in WinUAE** (0.7-dev at `60a14fa`), to know which one
-  to try first in step 4: slow profile (68020, about 28 MHz, no FPU, as the ACA1221lc), LMS 9.1.1, a 156 s song
-  resampled to a 44.1 kHz 16-bit FLAC, sent as raw PCM by the server (`FLAC=AUTO` leaves FLAC to it on this
-  profile: `stream: format p, size 1, rate 3`), `amisqueeze` with `SWAP` and `VERBOSE`, LMS volume 100. Method of
-  player-4c: free CPU counted by `cpucount` (in the repository, `make cpucount`, never released;
-  agreed with the user) at priority -128, load = 1 - count while playing / count when idle, three
-  10 s windows per setting, the first 15 s after `play`; idle measured before and after the series (8,258 to
-  8,334, mean 8,288). Mode and frequency as read from `ENV:Sys/ahi.prefs` and printed by `VERBOSE`
-  (`output: AHI unit ...`); the 22 kHz rows coming out lower confirm AHI used them. No `STMo` in any run.
-
-  | Setting (Paula, stereo++) | Counts (10 s) | Load per window | Load |
-  |---|---|---|---|
-  | 14 bits, 27,429 Hz (reference) | 2867, 2870, 2891 | 65.4, 65.4, 65.1 % | 65 % |
-  | 14 bits, 22,050 Hz | 3402, 3398, 3400 | 59.0, 59.0, 59.0 % | 59 % |
-  | 8 bits, 27,429 Hz | 3275, 3278, 3271 | 60.5, 60.5, 60.5 % | 60.5 % |
-  | 8 bits, 22,050 Hz | 3732, 3719, 3732 | 55.0, 55.1, 55.0 % | 55 % |
-  | `NOAUDIO` (two runs) | 5118, 4860, 4797; 4906, 5361, 4662 | 35.3 to 43.8 % | 40 % |
-  | `NOAUDIO`, with the fix below (idle 8,309 that session) | 7937, 7925, 7917 | 4.5, 4.6, 4.7 % | 4.6 % |
-
-  Each lighter setting saves about 5 to 6 points of CPU, both together about 10: none changes the picture (more
-  than half of the CPU still goes to playback). The windows repeat within 0.1 point, but the slow profile is
-  WinUAE's approximate mode, not cycle-exact (chip RAM writes, which grow with the bit depth and the rate, may
-  weigh differently on the real A1200): which of the two saves more is for the real machine to tell. The reference
-  matches player-4c (66-68 %); `NOAUDIO` does not (2-5 % in player-4c, 40 % now, its windows spread over several points).
-  Found the same day by bisection (`NOAUDIO`, two windows per build): 3.7 % at `b4a1459` (player-7a), 35 % at
-  `148ba47` (player-8a, the decoder stage: the virtual output now copies the PCM out of the ring instead of dropping it
-  in place), 31 % for the current code with that copy left out (so the copy is about 10 points, the rest not
-  located yet). The AHI path is not affected: `8ecb2cf` (player-4c) against `60a14fa` in the same session, unit 0,
-  three windows each: 66.6 % and 65.3 %. Throwaway counters in the main loop (turns, stream reads, bytes in, per
-  10 s) showed why: with `NOAUDIO`, about 47 turns and 38 reads of 4.7 KB a second at `b4a1459`, 470 to 875 turns
-  and as many reads of about 200 bytes from `148ba47` on; through AHI, 12 turns and 5.4 reads of 32 KB (a whole
-  block) before and after. The stream was read as soon as one byte of the ring was free, and the virtual output
-  frees a few hundred bytes at each turn, so the loop kept reading what it had just freed; each turn does more
-  since player-8a (the copy, the decoder calls), and every turn reads the clock (`plat_now_ms()`, `ReadEClock` and a
-  64-bit division, already so before player-8a): a counter build with one more such call per turn went up to 95 %, a
-  hint that it is costly, not a measure of it. Why player-8a tipped the loop into this rhythm is not understood; the
-  cause common to both is removed instead. **Fixed** (decided with the user for 0.7, so that `NOAUDIO` can
-  isolate the network's cost on the real machine): during the body, the stream is read only once 8 KB of the ring
-  are free (at most a quarter of it; `READ_MIN_SPACE` in `stream.c`, unit test `test_read_min_space`). Measured in
-  the same way: `NOAUDIO` 4.6 % (three windows), 18 turns and 9 reads of about 20 KB a second; AHI unit 0
-  65.3 %, its counters unchanged. Not counted, as in player-4c: the real network (TCP/IP stack such as Roadshow, the
-  PCMCIA card whose bytes the CPU copies), which WinUAE's emulated `bsdsocket.library` runs on the host; and
-  WinUAE's fast RAM is not the accelerator's own.
+- **Load of the lighter AHI settings, measured in WinUAE** (0.7), to know which one to try first in step 4:
+  each saves 5 to 6 points, none changes the picture. The same measures found `NOAUDIO` at 40 % instead of the
+  2-5 % of player-4c: since player-8a the loop read the stream a few hundred bytes at a time. **Fixed** (decided
+  with the user for 0.7, so that `NOAUDIO` can isolate the network's cost on the real machine): the stream is read
+  only once 8 KB of the ring are free (`READ_MIN_SPACE` in `stream.c`, unit test `test_read_min_space`). Figures:
+  [performance.md](performance.md#the-main-loop-reads-in-large-pieces).
 - **Elapsed time after a seek, in WinUAE** (while checking the fix above): on the slow profile, LMS's
   `time ?` is wrong for a while after a seek or a new start: 156 s (the track's length) 3 s after a seek to 146 s,
   about 20 s instead of 5 s just after a new start; the same with `8ecb2cf` (player-4c), with AHI and `NOAUDIO`, with
@@ -1062,25 +970,20 @@ belongs to the task that opened it; packets serialised field by field; buffers a
     in `tests/stub_platform.c`.
   - **player-11b ✅ in WinUAE**: `audio.device` in `amiga_paula.c`, the `AUDIO` option, Paula when AHI is missing,
     `MAXRATE` with Paula; the checks below first. A block holds at most 8,192 samples per channel in chip RAM
-    (96 KB for `PAULA`, 48 KB for `PAULA8`), so 16-bit mono at a rate not divided fills half a block. On the slow
-    profile, LMS sending 28603 Hz: 20 % of the CPU with `PAULA`, 9 % with `PAULA8`, 54 % through AHI at
-    27429 Hz (the conversion takes the bytes as they are when the rate is not divided: the general path took
-    85 %). A 44.1 kHz stream divided by 2 (`MAXRATE=48000`): 45 % with `PAULA`, 41 % with `PAULA8`, about 65 %
-    through AHI (the general path took 84 %; reception alone, 6 %). Heard: the faint sound of one side on the other with a tone on one side only, and a short gap between
+    (96 KB for `PAULA`, 48 KB for `PAULA8`), so 16-bit mono at a rate not divided fills half a block. Two fast
+    paths for the conversion; loads: [performance.md](performance.md#paula-without-ahi). Heard: the faint sound of one side on the other with a tone on one side only, and a short gap between
     MP3s converted by LMS, both through AHI as well.
-  - **player-11c ✅ on the A1200** (AmiNetXDuo, LMS with the `MAXRATE` rules, three 10 s windows; no `STMo`).
-    CPU load: the reception alone (`NOAUDIO`, 28603 Hz) 25 %, `PAULA8` 30 %, `PAULA` 35 % (after player-11d),
-    the same at volume 50; AHI (`Paula:14 bit stereo++`, 27429 Hz) 57 %. A 44.1 kHz stream divided by 2
-    (`MAXRATE=48000`): 67 % with `PAULA`, whichever driver, at 22,030 Hz (period 161), the elapsed time right.
+  - **player-11c ✅ on the A1200** (AmiNetXDuo, LMS with the `MAXRATE` rules; no `STMo`). The load within the
+    criterion, the same at volume 50 ([performance.md](performance.md#on-the-a1200)). A 44.1 kHz stream divided
+    by 2 (`MAXRATE=48000`) plays at 22,030 Hz (period 161), the elapsed time right.
     With `xircomce2.device` 1.1 unfixed, a 44.1 kHz stream from Music Assistant crackles a lot through AHI, not at
     all with `PAULA`; with the fixed driver, neither crackles. By ear, `PAULA` as good as AHI; no click from 100
     to 99 nor from 100 to 0 and back; volume 30 and mute's fade the same as through AHI (LMS's own).
   - **player-11d ✅** (agreed with the user, from 11c's figures): chip RAM written 4 samples at a time when the
-    rate is not divided (`architecture.md`, Paula direct). A probe writing nowhere in chip RAM gave the ceiling,
-    32 % for `PAULA`. On the A1200, `PAULA` 35 % and `PAULA8` 30 %; on the slow profile, 15 % and 9 %.
+    rate is not divided (`architecture.md`, Paula direct; its gain in [performance.md](performance.md#paula-without-ahi)).
   - **player-11e ✅** (agreed with the user, from 11c's figures): the rate divided by 2 made lighter, each pair's
-    mean without rebuilding the samples, written 4 at a time (`architecture.md`, Paula direct); on the A1200, 67
-    to 53 %.
+    mean without rebuilding the samples, written 4 at a time (`architecture.md`, Paula direct; its gain in
+    [performance.md](performance.md#paula-without-ahi)).
 - **Checked before coding** (`audio.doc` of the NDK 3.2, the RKM's Audio Device chapter), and what was agreed
   with the user from it:
   - `CMD_STOP` loses the cycle it stops, and `audio.device` does not tell how much a write played: the pause keeps
@@ -1141,17 +1044,8 @@ belongs to the task that opened it; packets serialised field by field; buffers a
 
 - **On the A1200** (0.8-dev, AmiNetXDuo with the fixed `xircomce2.device`, Paula 14 bit stereo++
   at 27,429 Hz, `SWAP`, volume 100, `song-44k.flac`; method of player-9). LMS with the guide's rules for its MAC;
-  Music Assistant 2.10.7 with the local fix below, output codec `wav`:
-
-  | Server | Option | Stream | Load |
-  |---|---|---|---|
-  | LMS | none | WAV, 16 bits, 44.1 kHz, 176 KB/s | 77 % |
-  | LMS | `MAXRATE=32000` (then `AHI`) | WAV, 16 bits, 32 kHz, 128 KB/s | 62 % |
-  | LMS | `MAXRATE=22050` | WAV, 16 bits, 22.05 kHz, 88 KB/s | 50 % |
-  | Music Assistant | `MAXRATE=32000` (then `AHI`) | WAV, 24 bits, 32 kHz, 192 KB/s | 77 % |
-  | Music Assistant | `MAXRATE=22050` | WAV, 24 bits, 22.05 kHz, 132 KB/s | 60 % |
-
-  No `STMo`, no crackle heard. The load follows the bytes received, whatever the server. The user heard no
+  Music Assistant 2.10.7 with the local fix below, output codec `wav`: the loads in
+  [performance.md](performance.md#less-to-receive-maxrate). No `STMo`, no crackle heard. The user heard no
   difference between 22.05 kHz and above with that song; to confirm with others. `MAXRATE=AHI` then rounded the
   unit's rate up to a standard rate: 32000 here.
 - **A sweep on the A1200** (`music/sweep.flac`, linear, about 1 kHz a second, LMS; when it fades, read on the

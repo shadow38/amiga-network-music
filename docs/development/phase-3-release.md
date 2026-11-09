@@ -244,7 +244,7 @@ what amisqueeze trusts and what it does not handle; in `architecture.md`, the st
 memory and the platform layer. The review tooling reads the rules in the pages `CONTRIBUTING.md` lists; the
 documents carry no dates (agreed with the user).
 
-## publish-9 A page on performance ⬜ version 1.0
+## publish-9 A page on performance 🔶 version 1.0
 
 - **Why** (agreed with the user): the optimizations deserve a page of their own. Today their figures are spread
   over the plan (player-4c, player-9, player-13, player-11c, player-11d), where a contributor does not look.
@@ -264,8 +264,9 @@ documents carry no dates (agreed with the user).
   the slow profile, 67.3 to 61.3 %. Not kept: 1.2 points on a path that is not the default one (the server
   lowers the rate), for four copies of the loop; the gain would be larger with slower memory, on machines too
   slow for that path anyway.
-- **When** (agreed with the user): after player-11, so that the figures are final, and before the full audit
-  (publish-5), which reads it.
+- **When** (agreed with the user): written before player-11's last session on the A1200, from the figures
+  already measured; completed after it, with its figures and the user guide's Slow row, which the AHI Paula
+  driver 4.33 may change. Before the full audit (publish-5), which reads it.
 - **Criterion**: the page in `documentation-rules.md`'s table and `CONTRIBUTING.md`'s map; the figures moved out
   of the plan, which keeps one line per step; each optimization's gain found there with its machine and method.
 

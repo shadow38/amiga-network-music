@@ -340,7 +340,7 @@ How to measure:
 3. Send nothing to the Amiga during a window: the serial shell and amiagent cost CPU too.
 
 The load is 1 - count while playing / count when idle. On the slow profile, about 8,300 rounds in 10 s when idle.
-The results so far: steps player-4c and player-9 of the [plan](phase-1-amisqueeze.md).
+The results, and what to watch when comparing them: [performance.md](performance.md).
 
 ### Test sounds
 
