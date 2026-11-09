@@ -94,29 +94,41 @@ Back to the [plan](README.md).
   by commit SHA, the checkout without a token (`persist-credentials: false`, the build's container mounts the
   repository), agreed with the user; an attestation of provenance left for 1.0.
 
-## publish-4 Setup guides: server and network ⬜
+## publish-4 Setup guide: the Amiga on the network ⬜
 
-- **Why**: amisqueeze is useless without a server, and many Amiga users have never installed LMS; putting the
-  Amiga on the network is often the real obstacle. Without these guides few users will get as far as the player,
-  whatever its quality. Before 1.0.
+- **Why**: putting the Amiga on the network is often the real obstacle, and no guide takes a user from an Amiga
+  without network to a Squeezebox player. Without it few users will get as far as the player, whatever its
+  quality. Before 1.0.
+- **No server installation guide** (agreed with the user): LMS and Music Assistant document their own
+  installation, and a copy here would age with each of their versions. Our documents link to their guides and
+  hold only what amisqueeze needs changed on the server: the user guide's "Server setup", the one place for it.
 - **Where** (decided): everything in `docs/`, not in a GitHub wiki: one place that moves with the code
   (versioned, reviewed by commit, in the release archive), and GitHub renders Mermaid diagrams in the repository's
   Markdown files too. A summary page `docs/README.md` links the guides, short pages linked to each other, so that
   `docs/` reads like a small site (GitHub Pages could later publish it as is, without copying anything).
+- **Content**: one guide in `docs/`, linked from the user guide, from an Amiga without network to amisqueeze
+  heard. Its sections: what you need; how it fits together; network hardware; getting files onto the Amiga; a
+  TCP/IP stack; checking the connection; sound; the server's settings; first music. Getting files onto the Amiga
+  (agreed with the user): AmigaOS 3.x has no LhA, and the stack's archive must reach an Amiga without network;
+  the usual ways in a few lines each (a FAT card or stick read by CrossDOS, a Gotek, a serial cable), then LhA.
+  Sound, the server's settings and amisqueeze itself are links to the user guide, without repeating it (agreed
+  with the user).
+  - **The stack**: AmiNetXDuo step by step (agreed with the user): free (MIT), its installer finds the card and
+    writes the interface, DHCP; its own drivers cover NE2000 PCMCIA cards, the usual Zorro cards and a PiStorm32
+    under Emu68. The guide links to its latest release, without its version number or its installer's details.
+    Roadshow and AmiTCP in a few lines each.
+  - **The hardware**: the families only (PCMCIA card on an A1200 or A600, network on an accelerator or a Zorro
+    card, PiStorm), each with where its driver comes from. What was tried stays in the user guide's "What has
+    been tried", linked (agreed with the user).
 - **Diagrams** (Mermaid): the overall picture (sources, server, network, amisqueeze, AHI, Paula or a DAC, a phone
-  driving the server); the path of a track (format decoded by amisqueeze: sent as is; otherwise a conversion rule
-  on the server: converted to PCM; otherwise refused), with a table of the formats each executable decodes, on
-  which machine, and which rule is still needed (e.g. MP3 to PCM); network and ports (3483, the web port, 9090,
-  port mapping with Docker).
-- **Content**, two guides in `docs/`, linked from the user guide:
-  - **minimal server**: Lyrion Music Server (then Music Assistant, after player-7b) on a Raspberry Pi, a NAS or in Docker,
-    with only what amisqueeze needs: ports (3483, the web port), the conversion rules still needed (e.g. MP3 to PCM
-    for an Amiga without FPU, which does not decode MP3 itself), adding music, checking that the Amiga's player shows up;
-  - **the Amiga on the network**: a TCP/IP stack (Roadshow, AmiTCP, AmiNetXDuo), the usual hardware (PCMCIA network
-    card on an A1200, network on accelerators or a PiStorm), checking the connection (`ping`, server reachable),
-    then AHI (Paula or a sound card's driver), ending with amisqueeze started and heard.
-- **Criterion**: a user who does not know the project goes, with the guides alone, from a fresh server and a
-  networked Amiga without amisqueeze to music playing; checked at least once in WinUAE on a clean installation.
+  driving the server) and the network with its ports, in the guide; the path of a track (format decoded by
+  amisqueeze: sent as is; otherwise converted by the server; otherwise refused), in "Server setup".
+- **Criterion**: a user who does not know the project goes, with our documents and the servers' own guides they
+  link to, from a server installed by its own guide and an Amiga without network or amisqueeze to music playing.
+- **Check** (agreed with the user): the guide followed by hand, to the letter, in WinUAE: a fresh AmigaOS 3.2.3
+  installation (a base hard file kept untouched, the check on a copy), WinUAE's NE2000 PCMCIA card on its slirp
+  network, not `bsdsocket_emu`, which would skip the stack. Every place where the reader had to guess is fixed
+  in the guide. The base installation is made later, before the check.
 
 ## publish-5 Review before each release (decided) ✅
 
