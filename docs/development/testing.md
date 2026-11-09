@@ -14,8 +14,8 @@ portable core by `make test`, a change to the Amiga side in WinUAE too.
 | Scenarios against a fake server (`make test`) | `tests/fake_server.py` against `out-host/amisqueeze` (`posix.c`), on localhost | the program from end to end, with real sockets and real time: see [Host build and tests](#host-build-and-tests) | AHI, audio.device and AmigaOS; the servers' real behaviour |
 | Checks of `make test` | `tools/check-version.py`, `check-core.py`, `check-quality.py`, the self-test of `check-saves.py`, the scripts' syntax, the Aminet readme, the archives' texts in ASCII | the rules a script can hold | |
 | Checks of the Amiga build | `tools/check-saves.py` on the assembly, `tools/check-stack.py` on the linker map | the compiler's register bug; the stack's set-up | how much stack is used |
-| Scenarios in WinUAE | `python3 tools/winuae/run-scenarios.py`, with LMS ([winuae-scenarios.md](winuae-scenarios.md)) | the Amiga build with a real LMS: a test tone through AHI, LMS's commands, the `OUTPUT` file compared with the source | Music Assistant; a real TCP/IP stack (unless the profile [Real network](#real-network)); listening |
-| By hand in WinUAE | the [checks the host tests cannot make](#checks-the-host-tests-cannot-make), and what no scenario covers yet | the stack, the speed, the memory, the sound; Music Assistant, the window and Exchange | the speed of a real machine |
+| Scenarios in WinUAE | `python3 tools/winuae/run-scenarios.py`, with LMS, and Music Assistant when its API token is given ([winuae-scenarios.md](winuae-scenarios.md)) | the Amiga build with the real servers: a test tone through AHI, LMS's commands, the `OUTPUT` file compared with the source, Music Assistant's commands (FLAC and WAV) | a real TCP/IP stack (unless the profile [Real network](#real-network)); listening |
+| By hand in WinUAE | the [checks the host tests cannot make](#checks-the-host-tests-cannot-make), and what no scenario covers yet | the stack, the speed, the memory, the sound; the window and Exchange | the speed of a real machine |
 | On the real machines | listening and measures, at the end of each phase (the plan's [method](README.md#method)) | the sound, the CPU load, a real network card and TCP/IP stack | |
 
 ## Host build and tests
@@ -119,8 +119,8 @@ of [phase-0-tooling.md](phase-0-tooling.md).
   WinUAE's Toccata card, the 16-bit reference, also needs `toccata.library` (Aminet).
 - **A server** reachable from the host: Lyrion Music Server or Music Assistant, set up as the
   [user guide](../user-guide.md) says, with the [test sounds](#test-sounds) in its music folder. The
-  [automated scenarios](#automated-scenarios) need LMS, running, on the host or forwarded to it
-  ([what they expect of it](winuae-scenarios.md#running-them)). With LMS, add the user guide's `mp3 pcm` rule
+  [automated scenarios](#automated-scenarios) need LMS, running, on the host or forwarded to it, and Music
+  Assistant with an API token for its own two ([what they expect](winuae-scenarios.md#running-them)). With LMS, add the user guide's `mp3 pcm` rule
   ([server setup](../user-guide.md#server-setup)), to test the builds that leave MP3 to the server. Its CLI
   (9090/tcp) is handy to drive it from scripts ([the server side](#the-server-side)), and squeezelite on the PC as
   a reference player (steps tools-2 and tools-3 of the [tooling plan](phase-0-tooling.md)).
@@ -301,6 +301,13 @@ itself). With LMS, the CLI on TCP port 9090, one command per line:
 Stop the player and clear its playlist before starting amisqueeze: LMS resumes a playback left running by an
 interrupted test.
 
+With Music Assistant, through its JSON API rather than its LMS-like CLI, which cannot start a track of the library:
+
+- an HTTP `POST` to `/api` on its web port (8095), with `{"command": ..., "args": {...}}` and a long-lived access
+  token (`Authorization: Bearer`), created in its web interface ("Long-lived access tokens");
+- the commands and their arguments are listed by the server itself, at `http://<server>:8095/api-docs`;
+- `tools/winuae/ma_api.py` is a small client of it; keep the token out of the repository (`MA_TOKEN`).
+
 **WinUAE's clock falls behind real time**: about 28 s lost during a two-minute run on the slow profile; where
 exactly is not known.
 
@@ -357,8 +364,8 @@ music for the rest: the test sounds check the player, not the listening pleasure
 ### Automated scenarios
 
 [winuae-scenarios.md](winuae-scenarios.md): `tools/winuae/` runs tests from the host (starting WinUAE if needed)
-and prints `OK` or the reason of the failure, with an exit code: a test tone, LMS's commands through AHI and
-`OUTPUT` comparisons (PCM, FLAC and MP3 decoded on the Amiga), all of them with
+and prints `OK` or the reason of the failure, with an exit code: a test tone, LMS's commands through AHI,
+`OUTPUT` comparisons (PCM, FLAC and MP3 decoded on the Amiga) and Music Assistant's commands, all of them with
 `python3 tools/winuae/run-scenarios.py`, in the JIT profile with a 68882. Its serial shell client also runs one
 command: `python3 tools/winuae/amiga_shell.py "Status"`.
 

@@ -162,7 +162,7 @@ phase 1; the figures below are those of 0.6.
   `m68k-amigaos-gdb` (`target remote …:2345`) driven by VS Code (cpptools); build with `-g`.
 - **Criterion**: stops on a breakpoint in a function of amisqueeze (e.g. in `player.c`), variables readable.
 
-## tools-9 Test Music Assistant server 🔶 (players side done; API token not yet)
+## tools-9 Test Music Assistant server ✅
 
 - **Goal**: a Music Assistant server reachable from the emulated Amiga, for the Music Assistant back end of the
   remote (remote-8 to remote-11) and for amisqueeze as a Music Assistant player (player-7b).
@@ -178,9 +178,10 @@ phase 1; the figures below are those of 0.6.
   the published IP (Settings > System > Streams, advanced; `publish_ip`) to the address the Amiga reaches. Players
   need the Squeezelite provider, added by hand; it also serves an LMS-like CLI (9090, no token), too limited to
   start a library track: playback was started from the web UI. amisqueeze was tried instead of squeezelite (player-7b).
-  Not done: an API token (needed by remote-8).
+  The API answers with a long-lived access token, created in the web interface; the Music Assistant scenarios of
+  tools-10 use it.
 
-## tools-10 Regression scenarios in WinUAE 🔶 (LMS part done; Music Assistant before 1.0)
+## tools-10 Regression scenarios in WinUAE ✅ (LMS: version 0.7; Music Assistant: version 1.0)
 
 - **Goal**: before a release, replay in WinUAE what `make test` cannot check: the Amiga platform layer (AHI,
   bsdsocket, `Break`), the real servers (LMS, Music Assistant) and the 68k build, so that a release is validated
@@ -190,8 +191,8 @@ phase 1; the figures below are those of 0.6.
   commands through AHI (pause, resume, seek, stop, two tracks in a row, the `Largest` column of `Avail` before and
   after); a byte-by-byte `OUTPUT` comparison of the Amiga build (FLAC and MP3, `tools/pcm-compare.py`); these two
   before the release of 0.7. Music Assistant before 1.0: its LMS-like CLI cannot start a library track (see tools-9),
-  so the scenario goes through its API, which needs a token and a small WebSocket client. The client is a test
-  tool in `tools/winuae/`, nothing of amilms (agreed with the user).
+  so the scenario goes through its JSON API, an HTTP `POST` with a token. The client is a test tool in
+  `tools/winuae/`, nothing of amilms (agreed with the user).
   Not in it: the measures (CPU load, long runs, the slow relay) and the old ROMs, which stay manual.
 - **Criterion**: one command runs the scenarios, each in less than 2 minutes, and prints OK or the reason of each
   failure.
@@ -219,8 +220,11 @@ phase 1; the figures below are those of 0.6.
   scale. A mutation test (decided with the user): `ahir_Volume` made to follow the volume again, as
   before the fix of step player-6; `commands-pcm` still passed, memory unchanged to the byte although the resume came
   at 0.0 %: the defect does not show in this profile and this short run, so the scenarios do not guard against
-  it (the constant full volume in `amiga.c` does); code put back, `git diff src/` empty, checked again. Left: the
-  Music Assistant scenario, before 1.0.
+  it (the constant full volume in `amiga.c` does); code put back, `git diff src/` empty, checked again.
+- **Music Assistant** (agreed with the user): `ma-flac` and `ma-wav`, its commands through its API with the codec
+  set for the scenario (FLAC decoded by amisqueeze; WAV, the codec for a slow Amiga), each track's `cont` checked
+  in the log; the token in `MA_TOKEN` or a file, never in the repository; without it, `run-scenarios.py` skips
+  them. Done, described in [winuae-scenarios.md](winuae-scenarios.md).
 
 ## tools-11 A real TCP/IP stack in WinUAE ✅
 

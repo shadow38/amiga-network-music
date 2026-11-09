@@ -51,8 +51,8 @@ On the build to be tagged:
    - an urgent fix may ship after a review of its own diff;
    - remarks that come after a version's review (outside readings, new ideas) go to the next version, unless they
      show a real defect or the maintainer chooses otherwise.
-2. **The scenarios in WinUAE**: `python3 tools/winuae/run-scenarios.py` all OK (JIT, 68882 with `compfpu`). See
-   [winuae-scenarios.md](winuae-scenarios.md).
+2. **The scenarios in WinUAE**: `python3 tools/winuae/run-scenarios.py` all OK (JIT, 68882 with `compfpu`), with
+   Music Assistant's token so that none is skipped. See [winuae-scenarios.md](winuae-scenarios.md).
 3. **`Version <exe> FULL`** for both executables in WinUAE (see `$VER:` in [pitfalls.md](pitfalls.md)).
 4. **The stack** measured again, when [Stack and memory](code-rules.md#stack-and-memory) says so.
 5. **The version**: the "Unreleased" part of `CHANGELOG.md` given the version and the date, the version number set

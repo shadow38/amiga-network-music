@@ -222,8 +222,8 @@ tools/check-quality.py checks the C code's size and complexity with lizard, and 
 tools/requirements.txt the Python packages of make test (lizard), pinned with their hashes
 tools/pcm-compare.py  compares the PCM written by amisqueeze (OUTPUT option) with a reference, byte by byte
 tools/make-test-audio.sh makes the test sounds (tones, sides, sweep, gapless MP3s, counter pattern)
-tools/winuae/         test scenarios run in WinUAE from the host (run-scenarios.py runs them all; serial shell
-                      and LMS CLI clients)
+tools/winuae/         test scenarios run in WinUAE from the host (run-scenarios.py runs them all; serial shell,
+                      LMS CLI and Music Assistant API clients)
 tools/amiga/cpucount.c free CPU meter run on the Amiga for the load measures (make cpucount, not released)
 tools/make-dist.py    builds the release archives and the Aminet readme (make dist); checks the texts are ASCII
 dist/amisqueeze.readme the Aminet readme, its version filled in by make dist

@@ -7,9 +7,10 @@ Usage:
 First, once: the serial shell (WinUAE started if needed, as by each scenario), the WinUAE profile (both decoders
 on the Amiga at least twice real time: the JIT and a 68882 with compfpu, checked with NM:amisqueeze.fpu BENCH),
 and a warm-up (amisqueeze started on AHI unit 0, then stopped: the first AHI run after a boot keeps about 12 KB,
-which the memory check would take for a leak). Then each scenario in its own process, with the common options.
-Common options (scenario.py): --name, --server, --lms, --serial, --nm-dir, --memory-slack,
---winuae EXE --config FILE [--winuae-arg ARG...], -v.
+which the memory check would take for a leak). Then each scenario in its own process, with the common options;
+the Music Assistant scenarios are skipped without its API token (MA_TOKEN or --ma-token-file).
+Common options (scenario.py): --name, --server, --lms, --ma, --ma-port, --ma-token-file, --serial, --nm-dir,
+--memory-slack, --winuae EXE --config FILE [--winuae-arg ARG...], -v.
 
 What it does and checks: docs/development/winuae-scenarios.md. The last line is OK or FAIL: <reasons>. Exit code:
 the worst of the scenarios' (0 OK, 1 a check failed, 2 environment: the next scenarios are not run, 3 usage).
@@ -23,7 +24,8 @@ from pathlib import Path
 sys.dont_write_bytecode = True          # no __pycache__ next to the tools
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from scenario import (RUN_DONE, Fail, LmsCli, LmsError, ShellError, UsageParser, add_options,  # noqa: E402
-                      amisqueeze_process, host_port, open_shell, reset_player, stop_amisqueeze, wait_for)
+                      amisqueeze_process, host_port, ma_token, open_shell, reset_player, stop_amisqueeze,
+                      wait_for)
 
 HERE = Path(__file__).resolve().parent
 SCENARIOS = [
@@ -33,7 +35,10 @@ SCENARIOS = [
     ("output-pcm", ["output-compare.py", "--case", "pcm"]),
     ("output-flac", ["output-compare.py", "--case", "flac"]),
     ("output-mp3", ["output-compare.py", "--case", "mp3"]),
+    ("ma-flac", ["ma-commands.py", "--codec", "flac"]),
+    ("ma-wav", ["ma-commands.py", "--codec", "wav"]),
 ]
+MA_SCENARIOS = ("ma-flac", "ma-wav")         # skipped without Music Assistant's API token
 PROFILE = ("the JIT and a 68882 with compfpu: -s fpu_model=68882 -s compfpu=true with the JIT profile's lines "
            "(docs/development/testing.md, Profiles)")
 
@@ -97,20 +102,27 @@ def main():
     add_options(parser)
     args = parser.parse_args()
     sys.stdout.reconfigure(line_buffering=True)
-    common = ["--name", args.name, "--server", args.server, "--lms", args.lms, "--serial", args.serial,
-              "--nm-dir", str(args.nm_dir), "--memory-slack", str(args.memory_slack)] + (["-v"] if args.verbose else [])
+    common = ["--name", args.name, "--server", args.server, "--lms", args.lms, "--ma", args.ma,
+              "--ma-port", str(args.ma_port), "--serial", args.serial, "--nm-dir", str(args.nm_dir),
+              "--memory-slack", str(args.memory_slack)] + (["-v"] if args.verbose else [])
+    if args.ma_token_file:
+        common += ["--ma-token-file", str(args.ma_token_file)]
 
     try:
         if not args.nm_dir.is_dir():
             raise Fail(3, f"--nm-dir: no folder {args.nm_dir}")
+        has_ma_token = ma_token(args) is not None
         prepare(args)
     except Fail as e:
         print(f"FAIL: {e}")
         return e.code
 
-    results = []
+    results, skipped = [], []
     for name, command in SCENARIOS:
         if args.only and name not in args.only:
+            continue
+        if name in MA_SCENARIOS and not has_ma_token:
+            skipped.append(name)
             continue
         print(f"=== {name}")
         t0 = time.monotonic()
@@ -130,7 +142,9 @@ def main():
     for name, code, last, took in results:
         print(f"{name:<14} {last if code else 'OK':<60} {took:4.0f} s")
     for name, _ in SCENARIOS:
-        if (not args.only or name in args.only) and name not in [r[0] for r in results]:
+        if name in skipped:
+            print(f"{name:<14} skipped: no Music Assistant API token (MA_TOKEN or --ma-token-file)")
+        elif (not args.only or name in args.only) and name not in [r[0] for r in results]:
             print(f"{name:<14} not run")
     worst = max((code for _, code, _, _ in results), default=0)
     failed = [name for name, code, _, _ in results if code]

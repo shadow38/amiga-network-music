@@ -179,8 +179,8 @@ In this order (agreed with the user):
 | tools-6 Host-side tests (`make test`) | ✅ |
 | tools-7 Automated runs in WinUAE | ✅ |
 | tools-8 Source-level debugging (optional) | ⬜ |
-| tools-9 Test Music Assistant server | 🔶 the players side; the API token with remote-8 |
-| tools-10 Regression scenarios in WinUAE | 🔶 the LMS scenarios ([winuae-scenarios.md](winuae-scenarios.md)); Music Assistant before 1.0 |
+| tools-9 Test Music Assistant server | ✅ |
+| tools-10 Regression scenarios in WinUAE | ✅ LMS (0.7) and Music Assistant (1.0), [winuae-scenarios.md](winuae-scenarios.md) |
 | tools-11 A real TCP/IP stack in WinUAE (AmiNetXDuo, PCMCIA card) | ✅ |
 | tools-12 Amiga reference documents (`docs/amiga/`) | ⬜ agreed with the user; tools-12a (AHI, network) first |
 | tools-13 Safety nets from the 0.8 review | ✅ version 0.8 |

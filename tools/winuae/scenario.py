@@ -16,6 +16,7 @@ from pathlib import Path
 sys.dont_write_bytecode = True          # no __pycache__ next to the tools
 from amiga_shell import RUN_DONE, AmigaShell, ShellError, UsageParser  # noqa: E402,F401
 from lms_cli import LmsCli, LmsError  # noqa: E402
+from ma_api import MaApi, MaError  # noqa: E402
 
 REPOSITORY = Path(__file__).resolve().parents[2]
 
@@ -53,6 +54,11 @@ def add_options(parser):
     parser.add_argument("--name", default="Amiga", help="player name (default Amiga)")
     parser.add_argument("--server", default="127.0.0.1", help="the server as the Amiga reaches it")
     parser.add_argument("--lms", default="127.0.0.1:9090", help="LMS's CLI as this host reaches it")
+    parser.add_argument("--ma", default="127.0.0.1:8095", help="Music Assistant's API as this host reaches it")
+    parser.add_argument("--ma-port", type=int, default=3483,
+                        help="Music Assistant's slimproto port as the Amiga reaches it (default 3483)")
+    parser.add_argument("--ma-token-file", type=Path,
+                        help="a file holding Music Assistant's API token (default: MA_TOKEN from the environment)")
     parser.add_argument("--serial", default="127.0.0.1:1234", help="the serial shell")
     parser.add_argument("--nm-dir", type=Path, default=REPOSITORY / "out",
                         help="the host folder mounted as NM: (default the repository's out/)")
@@ -146,12 +152,44 @@ def stop_amisqueeze(shell, exe):
         return False
 
 
-def reset_player(lms, name):
-    """Stops the player and clears its playlist: LMS would resume a playback left running by an earlier run"""
-    player = lms.player_id(name)
+def ma_token(args):
+    """Music Assistant's API token: MA_TOKEN, else the first line of --ma-token-file; None if neither is given"""
+    if os.environ.get("MA_TOKEN"):
+        return os.environ["MA_TOKEN"].strip()
+    if args.ma_token_file:
+        try:
+            return args.ma_token_file.read_text(encoding="ascii").strip() or None
+        except OSError as e:
+            raise Fail(2, f"--ma-token-file: {e}")
+    return None
+
+
+def open_ma(args):
+    """Music Assistant's API, checked: a token, and streams published at the address the Amiga reaches the server
+    by (Music Assistant gives the players its own address otherwise, unreachable from an emulated Amiga)"""
+    token = ma_token(args)
+    if not token:
+        raise Fail(2, "no Music Assistant API token: MA_TOKEN or --ma-token-file")
+    ma = MaApi(*host_port(args.ma, "--ma"), token, args.verbose)
+    values = (ma.call("config/core/get", domain="streams") or {}).get("values", {})
+    entry = values.get("publish_ip") or {}
+    published = entry.get("value") or entry.get("default_value")
+    if re.fullmatch(r"[\d.]+", args.server) and published and published != args.server:
+        raise Fail(2, f"Music Assistant publishes its streams at {published}, not at {args.server} where the Amiga "
+                      "reaches it: set its published IP address (Settings > System > Streams, advanced)")
+    return ma
+
+
+def reset_player(server, name):
+    """Stops the player and clears its playlist (LMS) or queue (Music Assistant): the server would resume a
+    playback left running by an earlier run"""
+    if isinstance(server, MaApi):
+        server.reset(name)
+        return
+    player = server.player_id(name)
     if player:
-        lms.player(player, "stop")
-        lms.player(player, "playlist", "clear")
+        server.player(player, "stop")
+        server.player(player, "playlist", "clear")
 
 
 def fast_memory(shell):
@@ -165,15 +203,18 @@ def fast_memory(shell):
 
 
 class Scenario:
-    """One run of amisqueeze in WinUAE, driven by LMS.
+    """One run of amisqueeze in WinUAE, driven by LMS (server "lms") or Music Assistant ("ma").
 
     exe: the program in NM:; log_name: its output, redirected into NM:; tracks: the files it needs in the server's
-    library; options: amisqueeze's own options (SERVER, NAME and VERBOSE are added); output: how the log's
-    "output:" line must begin ("AHI unit 0", "virtual"); stream_format: the format every strm s must give
-    ("p" raw PCM, "f" FLAC, "m" MP3; None: not checked); files: other files of NM: deleted first (OUTPUT)."""
+    library; options: amisqueeze's own options (SERVER, NAME and VERBOSE are added, and PORT for Music Assistant);
+    output: how the log's "output:" line must begin ("AHI unit 0", "virtual"); stream_format: the format every
+    strm s must give ("p" raw PCM, "f" FLAC, "m" MP3; None: not checked); files: other files of NM: deleted first
+    (OUTPUT)."""
 
     def __init__(self, args, exe, log_name, tracks, options="", output="AHI unit 0", stream_format=None,
-                 files=()):
+                 files=(), server="lms"):
+        self.ma = server == "ma"
+        self.label = "Music Assistant" if self.ma else "LMS"
         self.args = args
         self.exe = exe
         self.log = args.nm_dir / log_name
@@ -183,7 +224,7 @@ class Scenario:
         self.output = output
         self.stream_format = stream_format
         self.files = [args.nm_dir / f for f in files]
-        self.shell = self.lms = self.player = None
+        self.shell = self.server = self.player = None
         self.tracks = {}                    # file -> (track id, length in seconds)
         self.exits = []                     # what the steps want done in the clean-up (a volume set back)
 
@@ -195,18 +236,32 @@ class Scenario:
 
     def query(self, *terms):
         """A command to the player in LMS; returns the last term of the answer"""
-        return self.lms.player(self.player, *terms)
+        return self.server.player(self.player, *terms)
+
+    def call(self, command, **args):
+        """A command to the player's queue in Music Assistant (queue_id added); returns its answer"""
+        return self.server.call(command, queue_id=self.player, **args)
 
     def mode(self):
+        """play, pause or stop, as LMS says it"""
+        if self.ma:
+            state = self.server.queue(self.player).get("state")
+            return {"playing": "play", "paused": "pause", "idle": "stop"}.get(state, state)
         return self.query("mode", "?")
 
     def elapsed(self):
+        if self.ma:
+            return self.server.elapsed(self.server.queue(self.player))
         try:
             return float(self.query("time", "?"))
         except ValueError:
             return 0.0
 
     def index(self):
+        """The playing track's place in the playlist or queue, from 0"""
+        if self.ma:
+            i = self.server.queue(self.player).get("current_index")
+            return -1 if i is None else int(i)
         try:
             return int(self.query("playlist", "index", "?"))
         except ValueError:
@@ -220,7 +275,7 @@ class Scenario:
         behind real time and LMS's absolute elapsed time is wrong for about 50 s after a start or a seek
         (testing.md, "The server side"); the tolerance is wide (a still or twice too fast clock is what this
         catches). settle: seconds left to LMS first (after a resume, its elapsed time takes a moment to move)."""
-        check(wait_for(lambda: self.mode() == "play", 10), f"{what}: LMS's mode is not play")
+        check(wait_for(lambda: self.mode() == "play", 10), f"{what}: {self.label}'s mode is not play")
         check(wait_for(lambda: self.elapsed() > 0, 15), f"{what}: the elapsed time stays at 0")
         time.sleep(settle)
         h1, e1 = time.monotonic(), self.elapsed()
@@ -232,7 +287,7 @@ class Scenario:
 
     def check_paused(self, what, interval=3.0):
         """Mode pause, and the elapsed time stands still"""
-        check(wait_for(lambda: self.mode() == "pause", 5), f"{what}: LMS's mode is not pause")
+        check(wait_for(lambda: self.mode() == "pause", 5), f"{what}: {self.label}'s mode is not pause")
         e1 = self.elapsed()
         time.sleep(interval)
         e2 = self.elapsed()
@@ -256,21 +311,24 @@ class Scenario:
             # 1. Preconditions
             self.shell = open_shell(args)
             try:
-                self.lms = LmsCli(*host_port(args.lms, "--lms"), args.verbose)
-            except LmsError as e:
+                if self.ma:
+                    self.server = open_ma(args)
+                else:
+                    self.server = LmsCli(*host_port(args.lms, "--lms"), args.verbose)
+            except (LmsError, MaError) as e:
                 raise Fail(2, str(e))
             for name in self.track_names:
-                track = self.lms.find_track(name)
+                track = self.server.find_track(name)
                 if not track:
                     raise Fail(2, f"{name} is not in the server's library (test sounds: "
                                   "tools/make-test-audio.sh, then a rescan)")
                 self.tracks[name] = track
-                print(f"LMS: {name}, track {track[0]}, {track[1]:.1f} s")
+                print(f"{self.label}: {name}, track {track[0]}, {track[1]:.1f} s")
             if amisqueeze_process(self.shell, self.exe):
                 raise Fail(2, f"{self.exe} is already running in the Amiga: stop it first")
 
             # 2. Preparation
-            reset_player(self.lms, args.name)
+            reset_player(self.server, args.name)
             for f in [self.log] + self.files:
                 if f.exists():
                     f.unlink()
@@ -281,10 +339,11 @@ class Scenario:
             # output after it (RUN_DONE). From here the clean-up stops amisqueeze whatever happens.
             started = True
             t0 = time.monotonic()
-            self.shell.run(f"Run NM:{self.exe} >NM:{self.log_name} SERVER={args.server} NAME={args.name} "
+            port = f" PORT={args.ma_port}" if self.ma else ""
+            self.shell.run(f"Run NM:{self.exe} >NM:{self.log_name} SERVER={args.server}{port} NAME={args.name} "
                            f"{self.options} VERBOSE".replace("  ", " "), timeout=30, until=RUN_DONE)
-            self.player = wait_for(lambda: self.lms.player_id(args.name, connected=True), 20, 1)
-            check(self.player, f"player {args.name} not connected to LMS within 20 s")
+            self.player = wait_for(lambda: self.server.player_id(args.name, connected=True), 20, 1)
+            check(self.player, f"player {args.name} not connected to {self.label} within 20 s")
             print(f"{self.exe}: started, player {args.name} ({self.player}) connected after "
                   f"{time.monotonic() - t0:.1f} s")
             output = wait_for(lambda: re.search(r"^output: (AHI unit|virtual).*$", self.log_text(), re.M), 10)
@@ -307,24 +366,28 @@ class Scenario:
                 print(f"warning: {underruns} underrun(s) (output: buffer empty)")
         except Fail as e:
             failure = e
-        except (ShellError, LmsError) as e:
+        except (ShellError, LmsError, MaError) as e:
             failure = Fail(1 if started else 2, str(e))
         finally:
-            # 5. Clean-up, whatever happened
+            # 5. Clean-up, whatever happened. What the steps changed is set back while the player is still
+            # connected: Music Assistant keeps a player's settings only then.
+            for action in self.exits:
+                try:
+                    action()
+                except (LmsError, MaError) as e:
+                    print(f"warning: not set back: {e}")
             if started:
                 gone = stop_amisqueeze(self.shell, self.exe)
                 stopped = gone and bool(wait_for(lambda: re.search(r"^stopped", self.log_text(), re.M), 15))
                 print(f"{self.exe}: {'stopped' if stopped else 'NOT stopped'}")
                 if not stopped and failure is None:
                     failure = Fail(1, f"{self.exe} did not stop cleanly (Break)")
-            if self.lms:
+            if self.server:
                 try:
-                    for action in self.exits:
-                        action()
-                    reset_player(self.lms, args.name)
-                except LmsError:
+                    reset_player(self.server, args.name)
+                except (LmsError, MaError):
                     pass
-                self.lms.close()
+                self.server.close()
             # Free memory back where it was: a corrupted free list shows first in the largest block
             if stopped and memory:
                 try:

@@ -2,12 +2,12 @@
 
 `tools/winuae/` runs tests in WinUAE from the host and prints their result: `OK`, or `FAIL:` and the reason, with
 an exit code. They replay before a release what `make test` cannot check: the Amiga platform layer (AHI,
-bsdsocket, `Break`), a real server (LMS) and the 68k builds. One command runs them all, `run-scenarios.py`; each
+bsdsocket, `Break`), the real servers (LMS and Music Assistant) and the 68k builds. One command runs them all, `run-scenarios.py`; each
 scenario also runs on its own. The machine, its profiles, its AHI units and the rules of the serial shell are in
 [testing.md](testing.md); the plan's steps behind these tools: tools-7 and tools-10 of
 [phase-0-tooling.md](phase-0-tooling.md).
 
-Python 3, standard library only. All six scenarios take about 4 minutes (JIT + FPU profile).
+Python 3, standard library only. All eight scenarios take about 5 minutes (JIT + FPU profile).
 
 | Scenario | What it checks | Time |
 |---|---|---|
@@ -17,10 +17,12 @@ Python 3, standard library only. All six scenarios take about 4 minutes (JIT + F
 | `output-pcm` | the counter pattern twice, decoded by the server, written by `amisqueeze.fpu` with `OUTPUT`: identical byte by byte | 50 s |
 | `output-flac` | the same, decoded by dr_flac on the 68k (`amisqueeze`) | 50 s |
 | `output-mp3` | an MP3 twice, decoded by minimp3 on the FPU (`amisqueeze.fpu`): exact length, the right tone on each side | 50 s |
+| `ma-flac` | Music Assistant's commands through its API (play, volume, pause, resume, seek, next, stop), its FLAC decoded by amisqueeze, each track waiting for `cont` | 30 s |
+| `ma-wav` | the same with its WAV stream, the codec for a slow Amiga: each WAV header read | 30 s |
 
 Every scenario also checks that the stream came in the format it tests, and that the fast memory is given back
-after the stop. Not in them: Music Assistant (a scenario through its API, before 1.0), the measures (CPU load,
-long runs, a slow network) and the old ROMs, which stay manual.
+after the stop. Not in them: the measures (CPU load, long runs, a slow network), Music Assistant's other codecs
+and radios, and the old ROMs, which stay manual.
 
 ## The parts and how they talk
 
@@ -35,11 +37,11 @@ flowchart LR
         AQ["amisqueeze"]
         AHI["ahi.device"]
     end
-    LMS["LMS"]
+    LMS["LMS or Music Assistant"]
 
     SCR -->|"A: serial shell, TCP 1234"| SH
     SH -->|"Run, Status, Break, Avail"| AQ
-    SCR -->|"B: CLI, TCP 9090"| LMS
+    SCR -->|"B: LMS CLI, TCP 9090, or MA API, HTTP 8095"| LMS
     AQ <-->|"slimproto 3483, HTTP stream"| LMS
     AQ -->|"C: log and OUTPUT written to NM:"| LOG
     SCR -->|"reads"| LOG
@@ -47,14 +49,14 @@ flowchart LR
     SCR -.->|"starts it if needed"| UAE
 ```
 
-A scenario has three ways in, and never touches the traffic between amisqueeze and LMS:
+A scenario has three ways in, and never touches the traffic between amisqueeze and the server:
 
 - **A, the serial shell**: AmigaDOS commands typed into the Shell that `S:User-Startup` opens on `AUX:`
   ([Serial shell](testing.md#serial-shell)). It starts amisqueeze in the background, finds it with `Status`, stops
   it with `Break`, and reads the free memory with `Avail`.
-- **B, LMS's CLI**: it drives the player (playlist, play, pause, seek, volume, stop) and reads what the server sees
-  (connected, play mode, elapsed time, playlist index), as [The server side](testing.md#the-server-side)
-  describes.
+- **B, the server**: LMS's CLI, or Music Assistant's API for the `ma-` scenarios. It drives the player (playlist
+  or queue, play, pause, seek, volume, stop) and reads what the server sees (connected, play mode, elapsed time,
+  index in the playlist), as [The server side](testing.md#the-server-side) describes.
 - **C, the files**: amisqueeze runs with `VERBOSE` and its output redirected to `NM:<scenario>.log`, its `OUTPUT`
   file in `NM:` too; `NM:` is the repository's `out/` folder ([The two volumes](testing.md#the-two-volumes)), so
   the scenario reads them as files on the host while amisqueeze writes them. They stay there after the run.
@@ -68,8 +70,10 @@ A scenario has three ways in, and never touches the traffic between amisqueeze a
 | `tools/winuae/play-tone.py` | a test tone through AHI |
 | `tools/winuae/lms-commands.py` | LMS's commands through AHI (`--flac off` or `on`) |
 | `tools/winuae/output-compare.py` | two tracks into an `OUTPUT` file, compared (`--case pcm`, `flac` or `mp3`) |
+| `tools/winuae/ma-commands.py` | Music Assistant's commands through AHI (`--codec flac` or `wav`) |
 | `tools/winuae/amiga_shell.py` | the serial shell client, a module; also a command line tool: `python3 tools/winuae/amiga_shell.py "Version"` prints the output of one command |
 | `tools/winuae/lms_cli.py` | the LMS CLI client, a module: one command and its decoded answer, a player's id from its name, a track from its file name |
+| `tools/winuae/ma_api.py` | the Music Assistant API client, a module: one command and its answer, a player's id from its name, a track from its file name, the queue and its elapsed time |
 
 ## Running them
 
@@ -82,9 +86,11 @@ What they need:
 - **The builds**: `amisqueeze` and `amisqueeze.fpu` in `out/` (`make`).
 - **AHI unit 0** set up (any mode; `Paula:14 bit stereo++` in [AHI](testing.md#ahi)).
 - **An LMS server running** before the scenarios start (tested with LMS 9.1.1), see below.
+- **For the two Music Assistant scenarios**: Music Assistant running, with an API token (tested with Music
+  Assistant 2.10.9), see [Music Assistant](#music-assistant). Without a token they are skipped.
 
-The server must be Lyrion Music Server: Music Assistant cannot run these scenarios (its LMS-like CLI cannot start
-a library track; its own scenario comes before 1.0). What the scenarios expect of it:
+All but the two `ma-` scenarios need Lyrion Music Server; the runner's warm-up needs it too. What they expect of
+it:
 
 - **Reachable on `127.0.0.1`** from both sides: from the host, its CLI (TCP 9090); from the Amiga, slimproto (TCP
   3483) and its web port (9000 by default), which serves the stream. With `bsdsocket_emu` the Amiga uses the
@@ -100,6 +106,23 @@ a library track; its own scenario comes before 1.0). What the scenarios expect o
   player of that name.
 
 An LMS that does not answer stops a scenario at once with exit code 2 ("no LMS CLI on 127.0.0.1:9090").
+
+### Music Assistant
+
+What the `ma-` scenarios expect of it:
+
+- **Its API reachable from the host** (`--ma`, `127.0.0.1:8095` by default), with a long-lived access token,
+  created in its web interface ("Long-lived access tokens"): in `MA_TOKEN`, or in a file given with
+  `--ma-token-file`. Never in the repository.
+- **Its slimproto port reachable from the Amiga** (`--ma-port`, 3483 by default, given to amisqueeze as `PORT=`):
+  another port when LMS runs on the same host.
+- **Its streams published at `--server`**: Music Assistant gives its players its own address for the stream, which
+  an emulated Amiga may not reach. Set it in Settings > System > Streams (advanced), "Published IP address"; a
+  scenario stops with exit code 2 when it is another address.
+- **The Squeezelite provider, and the test sounds in its library** (a local folder, synchronised): `sweep.flac`,
+  `tone-440.flac`, `tone-440-48k.flac`.
+- **A player of its own**, as for LMS: the scenarios set the player's output codec, volume and queue, and set the
+  codec and volume back at the end.
 
 With WinUAE already started in that profile:
 
@@ -128,6 +151,9 @@ The options every scenario takes, and `run-scenarios.py` passes on:
 | `--name` | `Amiga` | the player's name (`NAME=`), always given, so that `ENV:amisqueeze.prefs` cannot change it |
 | `--server` | `127.0.0.1` | the server as the Amiga reaches it (`SERVER=`) |
 | `--lms` | `127.0.0.1:9090` | LMS's CLI as the host reaches it |
+| `--ma` | `127.0.0.1:8095` | Music Assistant's API as the host reaches it |
+| `--ma-port` | `3483` | Music Assistant's slimproto port as the Amiga reaches it |
+| `--ma-token-file` | `MA_TOKEN` from the environment | a file holding Music Assistant's API token |
 | `--serial` | `127.0.0.1:1234` | the serial shell (`win32.serial_port` of the configuration) |
 | `--nm-dir` | the repository's `out/` | the host folder mounted as `NM:` |
 | `--memory-slack` | `16` | KB of fast memory, free or in the largest block, that may be missing after the stop |
@@ -144,6 +170,8 @@ And their own:
 | `lms-commands.py` | `--flac` | `off` | FLAC decoded by the server (`off`, raw PCM) or by amisqueeze (`on`) |
 | `lms-commands.py` | `--exe`, `--unit`, `--extra` | `amisqueeze`, `0`, `SWAP` | as for `play-tone.py` |
 | `output-compare.py` | `--case` | required | `pcm`, `flac` or `mp3` (see [output-compare](#output-compare)) |
+| `ma-commands.py` | `--codec` | `flac` | the player's output codec in Music Assistant: `flac` or `wav` |
+| `ma-commands.py` | `--exe`, `--unit`, `--extra` | `amisqueeze`, `0`, `SWAP` | as for `play-tone.py` |
 
 ## Starting WinUAE
 
@@ -176,14 +204,14 @@ sequenceDiagram
     participant P as scenario
     participant W as Shell on AUX:
     participant A as amisqueeze
-    participant L as LMS
+    participant L as LMS or MA
     participant F as out/<scenario>.log
 
     Note over P,F: 1. Preconditions
     P->>W: Status (amisqueeze must not be running)
-    P->>L: titles search:... tags:du (each track it needs)
+    P->>L: a search for each track it needs
     Note over P,F: 2. Preparation
-    P->>L: player stop, playlist clear
+    P->>L: player stop, playlist or queue cleared
     P->>F: delete the previous log and OUTPUT file
     P->>W: Avail FLUSH (fast memory before)
     Note over P,F: 3. Start
@@ -194,9 +222,10 @@ sequenceDiagram
     Note over P,F: 4. The scenario's own steps
     P->>F: every "stream: format" as expected?
     Note over P,F: 5. Clean-up, also after a failure
+    P->>L: what the steps changed set back (volume, codec)
     P->>W: Status, then Break n
     A->>F: stopped
-    P->>L: what the steps changed set back (volume), player stop, playlist clear
+    P->>L: player stop, playlist or queue cleared
     P->>W: Avail FLUSH (fast memory after), Wait 1, then close
     Note over P,F: 6. After a clean stop (OUTPUT scenarios)
     P->>F: the OUTPUT file compared
@@ -204,10 +233,10 @@ sequenceDiagram
 
 | Step | Check | When it fails |
 |---|---|---|
-| 1 | the program is in `NM:`, the serial shell gives a prompt, LMS's CLI answers | exit code 2 |
-| 1 | each track is in the server's library: among the answers to `titles ... search:`, the one whose URL ends with `/<track>` (no server path needed) | exit code 2 |
+| 1 | the program is in `NM:`, the serial shell gives a prompt, the server answers: LMS's CLI, or Music Assistant's API with its token and its streams published at `--server` | exit code 2 |
+| 1 | each track is in the server's library: among the answers to a search on its name (`titles ... search:`, or `music/tracks/library_items`), the one whose file ends with `/<track>` (no server path needed) | exit code 2 |
 | 1 | amisqueeze is not running already (`Status`); the scenario leaves it alone | exit code 2 |
-| 3 | the player is connected in LMS within 20 s | exit code 1 |
+| 3 | the player is connected to the server within 20 s | exit code 1 |
 | 3 | the log's `output:` line is the expected one: `AHI unit <n>`, or `virtual` with `OUTPUT` | exit code 1 |
 | 4 | every `stream: format <c>` line of the log gives the format under test: `p` raw PCM, `f` FLAC, `m` MP3 (not checked by `play-tone`, whose format depends on the profile): a FLAC "decoded on the Amiga" that LMS sent as PCM would pass the rest | exit code 1 |
 | 4 | `output: buffer empty, waiting for data` (an underrun) | reported, not a failure |
@@ -305,6 +334,28 @@ the tracks' length + 30 s, then amisqueeze stopped, `bytes written` awaited in t
   silence where the sine is expected), 56 to 61 dB once its delay is skipped. A side swapped, a wrong rate, a gap,
   a missing or extra frame or a corrupted decoding fails.
 
+### ma-commands
+
+The queue `sweep.flac` (20 s), `tone-440.flac`, `tone-440-48k.flac`, sent through Music Assistant's API; amisqueeze
+on AHI unit 0 with `SWAP`, `FLAC=ON` (`ma-flac`) or `FLAC=OFF` (`ma-wav`). First the player's output codec is set
+to the one under test and its volume to 100; both are set back before amisqueeze stops, since Music Assistant
+keeps a player's settings only while it is connected. The server's state and elapsed time come from its queue
+(`player_queues/get`); intervals only, as with LMS.
+
+| Step | Command | Check |
+|---|---|---|
+| 1 | `player_queues/play_media` | state `playing`, the elapsed time grows with the host's clock |
+| 2 | `players/cmd/volume_set` 50 | a `volume:` line below 100 % in the log |
+| 3 | `player_queues/pause` | state `paused`, the elapsed time still |
+| 4 | `player_queues/play`, then volume 100 | state `playing`, the elapsed time grows again; `volume: 100.0 %` in the log |
+| 5 | `player_queues/seek` to 2 s before the end of the sweep | the next track (index 1) starts within 8 s, on its own; two `output: track started` in the log (the sweep from the seek, then the next track) |
+| 6 | `player_queues/next` | the last track (index 2) and one more `output: track started` within 8 s; its rate 48 kHz after 44.1 |
+| 7 | `player_queues/stop` | state `idle` |
+
+Then the log: no `no cont from the server` (a stream that waited more than 10 s for Music Assistant's `cont`), at
+least three `<- cont`; with `wav`, at least three `stream: WAV header:` lines and no WAV header refused. Music
+Assistant 2.10.9 sends 16-bit WAV here, from 16-bit files.
+
 ## run-scenarios
 
 Before the first scenario, once:
@@ -316,7 +367,8 @@ Before the first scenario, once:
 | the warm-up: amisqueeze started on AHI unit 0 (`NM:warm-up.log`) until `output: AHI unit 0`, then stopped | exit code 2 |
 
 Then each scenario in its own process, its output indented; after an exit code 2 (the environment) the next ones
-are not run, after a 1 they are. At the end, one line per scenario (`OK` or its `FAIL:` line, and its time), then
+are not run, after a 1 they are. Without a Music Assistant token (`MA_TOKEN` or `--ma-token-file`), the `ma-`
+scenarios are skipped: a line says so, and they do not count as failures. At the end, one line per scenario (`OK` or its `FAIL:` line, and its time), then
 `OK` or `FAIL:` and the names of the scenarios that failed; the exit code is the worst of theirs.
 
 ## The serial shell client
@@ -359,7 +411,7 @@ of amisqueeze's log is printed above it.
 |---|---|
 | 0 | every check passed |
 | 1 | a check failed: amisqueeze or the scenario |
-| 2 | the environment: no serial shell, no LMS, a track not found, a program missing or already running, WinUAE not started or in another profile |
+| 2 | the environment: no serial shell, no LMS, no Music Assistant API or token, its streams published elsewhere, a track not found, a program missing or already running, WinUAE not started or in another profile |
 | 3 | usage: a wrong option |
 
 ## Adding a scenario
