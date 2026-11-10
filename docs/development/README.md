@@ -55,7 +55,7 @@ agreed with the user.
 | 0.1 to 0.7 | the player for LMS and Music Assistant: PCM, FLAC, MP3, start from the Workbench, the `.lha`, releases built by the CI | player-1 to player-8d, player-7b, part of player-10, tools-10 (LMS), publish-2 (`.lha`), publish-3 | ✅, see the [changelog](../../CHANGELOG.md) |
 | 0.8 | what the real machine shows; a lower rate asked of the server; automatic server discovery; hardening; the writing rules applied to the documentation | player-9, player-10 (discovery), player-12, player-13, player-14, player-15, player-16, player-17, tools-11, tools-13, publish-6 | ✅, see the [changelog](../../CHANGELOG.md) |
 | 0.9 | internet radios' metadata (ICY); the window shown and hidden from Exchange; finishing touches after the 0.8 reviews; the code's size and complexity checked; a readable architecture page; the technical documentation organised | player-10 (end), tools-14, player-18, player-19, publish-7, publish-8, player-20, player-21 | ✅, see the [changelog](../../CHANGELOG.md) |
-| 1.0 | `stream.c` and the unit tests split; a direct Paula output; a page on performance; a guide to the Amiga on the network, a full audit, the upload to Aminet | player-22, player-11, publish-9, publish-4, publish-5, tools-10 (Music Assistant), publish-2 (Aminet) | ⬜ |
+| 1.0 | `stream.c` and the unit tests split; a direct Paula output; a page on performance; a guide to the Amiga on the network, a full audit, the upload to Aminet | player-22, player-11, publish-9, publish-4, publish-5, tools-10 (Music Assistant), player-23, publish-2 (Aminet) | ⬜ |
 | none yet | idea: source-level debugging | tools-8 | ⬜ |
 | none | reference documents on AmigaOS for contributors, committed when ready (agreed with the user) | tools-12 | ⬜ |
 
@@ -166,6 +166,8 @@ In this order (agreed with the user):
   the Paula output. The audit came before player-11's last session, the end of publish-9 and the check of
   publish-4 (the A1200 was not at hand); a light review of what changes after it, before the tag (agreed with the
   user).
+- **Fixes after the audit** (player-23, agreed with the user): its findings R1, R2, R3, R5 and R6, and the stack
+  measured again.
 - **Last**: the upload to Aminet (publish-2), once its 1.0 part is done ([publish-2](phase-3-release.md)): the
   files renamed without the version, a drawer icon for the archive's directory, the `Author:` and `Uploader:` of
   the `.readme` corrected. The light review before the tag reads them.
@@ -215,6 +217,7 @@ In this order (agreed with the user):
 | player-20 Fixes after the 0.9 review | ✅ version 0.9 |
 | player-21 From the 0.9 review's 50 list | ✅ version 0.9 |
 | player-22 `stream.c` and the unit tests split | ✅ version 1.0 |
+| player-23 Fixes after the 1.0 review | ⬜ version 1.0 |
 | remote-0 Study (common interface, Music Assistant feasibility, name) | ⬜ before any amilms code |
 | remote-1 to remote-7 LMS | ⬜ |
 | remote-8 to remote-11 Music Assistant | ⬜ |
