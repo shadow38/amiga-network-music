@@ -163,7 +163,9 @@ In this order (agreed with the user):
   of the plan into a page of their own; completed after player-11's last session on the A1200.
 - **The guide and the audit**: the guide to the Amiga on the network (publish-4), written with the Paula output
   known; the Music Assistant scenario in WinUAE (tools-10); a full audit (publish-5), which checks the split and
-  the Paula output.
+  the Paula output. The audit came before player-11's last session, the end of publish-9 and the check of
+  publish-4 (the A1200 was not at hand); a light review of what changes after it, before the tag (agreed with the
+  user).
 - **Last**: the upload to Aminet (publish-2), once the `Author:` and `Uploader:` of the `.readme` are corrected.
 - **Perhaps**: an attestation of the archives' provenance (`actions/attest-build-provenance`). Left for 1.0 by the
   user: of little use to Amiga users, since the reproducible build already lets anyone check.
