@@ -383,6 +383,46 @@ static void test_paula_formats(void)
     }
 }
 
+/* strm q while two blocks are with the device: the one playing aborted first, nothing left queued; strm f while the
+ * only track plays: what it received plays to its end. Closed, no channel left open */
+static void test_paula_stop(void)
+{
+    struct player p;
+    uint32_t n = sizeof(track_a) / 2;
+    int order[8], guard;
+
+    fill(track_a, sizeof(track_a), 16);
+    setup_paula(&p, AUDIO_PAULA, 0);
+    open_paula_stream(&p, '1', '3', '2', '1');
+    stub_feed_stream(track_a, sizeof(track_a));
+    drain_stream(&p);
+    output_tick(&p, stub_now);
+    CHECK(stub_paula_queue(order) == 2);
+    feed_strm('q', NULL, 0, 0, 0, NULL);
+    drain(&p);
+    CHECK(stub_paula_queue(order) == 0 && audio_pending(&p) == 0 && p.out.state == OUTPUT_STOPPED);
+    CHECK(stub_paula_bad == 0);
+    audio_close(&p);
+    CHECK(stub_paula_open == 0);
+    teardown(&p);
+
+    setup_paula(&p, AUDIO_PAULA, 0);
+    open_paula_stream(&p, '1', '3', '2', '1');
+    stub_feed_stream(track_a, (int)n);
+    drain_stream(&p);
+    output_tick(&p, stub_now);
+    feed_strm('f', NULL, 0, 0, 0, NULL);
+    drain(&p);
+    CHECK(p.out.state == OUTPUT_RUNNING && stub_paula_queue(order) == 2);
+    for (guard = 0; guard < 40 && p.out.state == OUTPUT_RUNNING; guard++)
+        paula_finish(&p);
+    CHECK(p.out.state == OUTPUT_STOPPED && audio_played(&p, stub_now, 0) == n);
+    CHECK(stub_paula_bad == 0);
+    audio_close(&p);
+    CHECK(stub_paula_open == 0);
+    teardown(&p);
+}
+
 /* A file of tests/data/ (make test runs from the repository's root) */
 static uint32_t data_file(const char *name, uint8_t *buf, uint32_t size)
 {
@@ -511,6 +551,7 @@ void tests_paula(void)
     test_paula_mono_ntsc();
     test_paula_formats();
     test_paula_decoded();
+    test_paula_stop();
     test_paula_volume();
     test_paula_open_fails();
 }
