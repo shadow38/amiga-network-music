@@ -45,8 +45,8 @@ Read `.claude/skills/review-method/SKILL.md` first: it is the method you apply i
   - Root (tree under review, checked out, detached HEAD = the commit): <root>
   - Commit under review: <full SHA>
   - Release range: <previous tag>..<full SHA>
-  - Method: <path of review-method/SKILL.md> (the tree under review has no .claude/; this file is the only one
-    you may read outside the root).
+  - Method: <path of review-method/SKILL.md> (the working copy's, which may be newer than the tree's own
+    .claude/; this file is the only one you may read outside the root).
   - Level: <light or full> (the method's "Levels").
 
   How to build and test on this machine:
