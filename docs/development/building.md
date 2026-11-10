@@ -109,6 +109,10 @@ it saved.
 - `LICENSE`, the README and the changelog;
 - the user guide, with its images (`docs/images/`), and the network guide.
 
+They are flat, unlike the repository: the relative links of their text files are rewritten, to the file they hold
+(`docs/user-guide.md` becomes `user-guide.md`) or to GitHub for one they do not hold (`CONTRIBUTING.md`). A link
+to no file is refused; `make test` checks the links too.
+
 **Beside them**:
 
 - `<archive>.sha256`: the archive's SHA-256, in the format of `sha256sum` (checked with `sha256sum -c`);

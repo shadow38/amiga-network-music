@@ -12,7 +12,7 @@ portable core by `make test`, a change to the Amiga side in WinUAE too.
 |---|---|---|---|
 | Unit tests (`make test`) | `tests/test_<module>.c`, one file per module, what they share in `tests/test_core.c`, on `tests/stub_platform.c`: the core with a simulated clock, sockets and audio devices | the packets of slimproto, the stream and its states, the queue of tracks, the output and its statuses, the decoders on the files of `tests/data/`, the audio blocks and the rules of AHI (`stub_ahi_bad`), the direct Paula output bit for bit and its rules (`stub_paula_bad`), ICY, the discovery's replies, the Workbench's helpers (ToolTypes, window, message history) | the system: sockets, time, AHI, audio.device, AmigaOS |
 | Scenarios against a fake server (`make test`) | `tests/fake_server.py` against `out-host/amisqueeze` (`posix.c`), on localhost | the program from end to end, with real sockets and real time: see [Host build and tests](#host-build-and-tests) | AHI, audio.device and AmigaOS; the servers' real behaviour |
-| Checks of `make test` | `tools/check-version.py`, `check-core.py`, `check-quality.py`, the self-test of `check-saves.py`, the scripts' syntax, the Aminet readme, the archives' texts in ASCII | the rules a script can hold | |
+| Checks of `make test` | `tools/check-version.py`, `check-core.py`, `check-quality.py`, the self-test of `check-saves.py`, the scripts' syntax, the Aminet readme, the archives' texts in ASCII and their links | the rules a script can hold | |
 | Checks of the Amiga build | `tools/check-saves.py` on the assembly, `tools/check-stack.py` on the linker map | the compiler's register bug; the stack's set-up | how much stack is used |
 | Scenarios in WinUAE | `python3 tools/winuae/run-scenarios.py`, with LMS, and Music Assistant when its API token is given ([winuae-scenarios.md](winuae-scenarios.md)) | the Amiga build with the real servers: a test tone through AHI, LMS's commands, the `OUTPUT` file compared with the source, Music Assistant's commands (FLAC and WAV) | a real TCP/IP stack (unless the profile [Real network](#real-network)); listening |
 | By hand in WinUAE | the [checks the host tests cannot make](#checks-the-host-tests-cannot-make), and what no scenario covers yet | the stack, the speed, the memory, the sound; the window and Exchange | the speed of a real machine |
@@ -70,7 +70,8 @@ In this order, after building `out-host/amisqueeze`, the unit tests and the buil
 3. **`tools/check-quality.py`**: the C code within the size and complexity limits of
    [code-rules.md](code-rules.md), and no step name in the code.
 4. **The archives' texts**: the Aminet readme made from `dist/amisqueeze.readme` follows Aminet's rules, and the
-   texts that go into the archives are ASCII (`tools/make-dist.py --check-readme`, `--check-text`).
+   texts that go into the archives are ASCII, their links leading to a file once rewritten for the archives
+   (`tools/make-dist.py --check-readme`, `--check-text`).
 5. **The scripts' syntax**: every Python and shell script of `tools/` and `tests/`, those run only by hand
    included.
 6. **The self-test of `check-saves.py`**: on `tests/check-saves.s`, it must name each `_bad_` function, and no

@@ -6,7 +6,9 @@ Both archives hold the same <prog>-<version>/ directory: the Amiga executable (o
 built) with its .info icon, LICENSE, README.md, CHANGELOG.md, the user guide with its images (docs/images/ ->
 images/) and the network guide. The files are copied first into a temporary directory, the executables with
 mode 755 and the rest 644, so that both archives record the same modes whatever the file system the repository
-sits on. The version is the
+sits on. The archives are flat, unlike the repository: the relative links of their text files are rewritten, to
+the file they hold (docs/user-guide.md -> user-guide.md) or to GitHub for one they do not hold
+(CONTRIBUTING.md); a link to no file is refused. The version is the
 one tools/check-version.py --release accepts (the same in both $VER: strings, Firmware=, the user guide, the
 README and the CHANGELOG, not a -dev one), so the archives always match the executables.
 
@@ -30,7 +32,8 @@ UTF-8.
 Usage: make-dist.py [--dev] <prog>        (from the repository root, after the Amiga build)
          --dev: a development version is accepted (out/<prog>-<x.y>-dev.*), to try the archives; never published
        make-dist.py --check-readme <prog> (make test) checks the readme made from dist/<prog>.readme only
-       make-dist.py --check-text <prog>   (make test) checks that the text files and the sources are ASCII and LF
+       make-dist.py --check-text <prog>   (make test) checks that the text files and the sources are ASCII and LF,
+                                          and the archives' links
 """
 import glob
 import hashlib
@@ -44,7 +47,12 @@ import tempfile
 import zipfile
 
 READMES = "dist"
-TEXTS = ("LICENSE", "README.md", "CHANGELOG.md", "docs/user-guide.md", "docs/network-guide.md")   # in the archives
+TEXTS = {"LICENSE": "LICENSE", "README.md": "README.md", "CHANGELOG.md": "CHANGELOG.md",   # in the archives: path in
+         "docs/user-guide.md": "user-guide.md", "docs/network-guide.md": "network-guide.md"}  # the repository, name
+IMAGES = "docs/images"          # the user guide's images, at the same place relative to it: images/ in the archives
+REPO_URL = "https://github.com/shadow38/amiga-network-music/blob/main/"  # for a link to a file the archives lack
+INLINE_LINK = re.compile(r"\]\(([^)\s]+)\)")            # [text](target)
+REF_LINK = re.compile(r"^(\[[^\]]+\]: +)(\S+)", re.M)   # [name]: target
 AMIGA_TOOLS = "tools/amiga"     # developer tools built for the Amiga (make cpucount), not in the archives
 SHORT_MAX = 40          # Aminet: "This description must not be longer than 40 characters."
 LINE_MAX = 78           # Aminet: "Lines should not be longer than 78 characters"
@@ -124,7 +132,7 @@ def text_problems(prog):
     """The text files of the archives, the program's sources and those of the tools that run on the Amiga that are
     not ASCII with LF line endings, as a list."""
     problems = []
-    for path in TEXTS + tuple(sorted(glob.glob(f"src/{prog}/*.[ch]") + glob.glob(f"{AMIGA_TOOLS}/*.[ch]"))):
+    for path in tuple(TEXTS) + tuple(sorted(glob.glob(f"src/{prog}/*.[ch]") + glob.glob(f"{AMIGA_TOOLS}/*.[ch]"))):
         with open(path, "rb") as f:
             lines = f.read().split(b"\n")
         wrong = [n for n, line in enumerate(lines, 1) if any(c > 127 for c in line)]
@@ -133,6 +141,56 @@ def text_problems(prog):
                             f"{' and more' if len(wrong) > 5 else ''}")
         if any(line.endswith(b"\r") for line in lines):
             problems.append(f"{path}: CR in it: LF line endings only")
+    return problems
+
+
+def archive_names():
+    """The text files and images of the archives: {path in the repository: name in the archive}."""
+    names = dict(TEXTS)
+    if os.path.isdir(IMAGES):
+        names.update({f"{IMAGES}/{n}": f"images/{n}" for n in sorted(os.listdir(IMAGES))})
+    return names
+
+
+def relative(link):
+    """1 for a link to a file of the repository: neither a URL nor an anchor of the same page."""
+    return not re.match(r"[A-Za-z][A-Za-z0-9+.-]*:", link) and not link.startswith("#")
+
+
+def archive_text(src, names, problems):
+    """The text of src as the archives hold it: each relative link rewritten for their flat layout, to the file they
+    hold, or to GitHub for a file they do not hold; a link to no file of the repository added to problems."""
+    with open(src, encoding="ascii", newline="") as f:
+        text = f.read()
+    here = os.path.dirname(names[src])
+
+    def rewrite(link):
+        if not relative(link):
+            return link
+        path, hash_, anchor = link.partition("#")
+        repo = os.path.normpath(os.path.join(os.path.dirname(src), path)).replace(os.sep, "/")
+        if repo in names:
+            return os.path.relpath(names[repo], here or ".").replace(os.sep, "/") + hash_ + anchor
+        if not os.path.exists(repo):
+            problems.append(f"{src}: a link to {link}, no such file")
+        return REPO_URL + repo + hash_ + anchor
+
+    text = INLINE_LINK.sub(lambda m: "](" + rewrite(m.group(1)) + ")", text)
+    return REF_LINK.sub(lambda m: m.group(1) + rewrite(m.group(2)), text)
+
+
+def link_problems():
+    """The archives' text files rewritten: a relative link that leads to no file of the repository, or that leads
+    to no file of the archives once rewritten, as a list."""
+    names, problems = archive_names(), []
+    held = set(names.values())
+    for src in TEXTS:
+        text = archive_text(src, names, problems)
+        here = os.path.dirname(names[src])
+        for link in INLINE_LINK.findall(text) + [m.group(2) for m in REF_LINK.finditer(text)]:
+            path = os.path.normpath(os.path.join(here, link.partition("#")[0])).replace(os.sep, "/")
+            if relative(link) and path not in held:
+                problems.append(f"{names[src]} in the archives: a link to {link}, which they do not hold")
     return problems
 
 
@@ -197,28 +255,28 @@ def main():
         print(f"make-dist: {READMES}/{prog}.readme follows Aminet's rules")
         return
     problems = text_problems(prog)
+    problems += link_problems() if not problems else []
     if problems:
         sys.exit("\n".join(f"make-dist: {p}" for p in problems))
     if mode == "--check-text":
         print(f"make-dist: the text files, the sources of {prog} and of {AMIGA_TOOLS}/ are ASCII, with LF line "
-              "endings")
+              "endings; the archives' links lead to files they hold, or to GitHub")
         return
     if not shutil.which("lha"):
         sys.exit("make-dist: lha not found: LHa for UNIX (https://github.com/jca02266/lha), which the image "
                  "amigadev/crosstools has, builds the .lha")
     root = f"{prog}-{version}"
-    files = [(f"out/{prog}", prog), ("LICENSE", "LICENSE"), ("README.md", "README.md"),
-             ("CHANGELOG.md", "CHANGELOG.md"), ("docs/user-guide.md", "user-guide.md"),
-             ("docs/network-guide.md", "network-guide.md")]
+    names = archive_names()
+    files = [(f"out/{prog}", prog)]
     executables = {prog}
     if os.path.isfile(f"out/{prog}.fpu"):       # the FPU build, when the program has one
-        files.insert(1, (f"out/{prog}.fpu", f"{prog}.fpu"))
+        files.append((f"out/{prog}.fpu", f"{prog}.fpu"))
         executables.add(f"{prog}.fpu")
+    files += [(src, names[src]) for src in TEXTS]
     for exe in (prog, f"{prog}.fpu"):           # their Workbench icons (tools/make-icon.py)
         if os.path.isfile(f"out/{exe}.info"):
             files.append((f"out/{exe}.info", f"{exe}.info"))
-    if os.path.isdir("docs/images"):             # the user guide's images, at the same place relative to it
-        files += [(f"docs/images/{n}", f"images/{n}") for n in sorted(os.listdir("docs/images"))]
+    files += [(src, name) for src, name in names.items() if src not in TEXTS]   # the images
     for src, _ in files:
         if not os.path.isfile(src):
             sys.exit(f"make-dist: {src} missing (build the Amiga version first)")
@@ -230,7 +288,12 @@ def main():
         for src, name in files:
             dest = os.path.join(stage, root, name)
             os.makedirs(os.path.dirname(dest), exist_ok=True)
-            shutil.copy2(src, dest)
+            if src in TEXTS:                    # links rewritten for the archive (checked above)
+                with open(dest, "w", encoding="ascii", newline="") as f:
+                    f.write(archive_text(src, names, []))
+                shutil.copystat(src, dest)
+            else:
+                shutil.copy2(src, dest)
             os.chmod(dest, 0o755 if name in executables else 0o644)
         with zipfile.ZipFile(f"{out}.zip", "w", zipfile.ZIP_DEFLATED) as z:
             for _, name in files:
