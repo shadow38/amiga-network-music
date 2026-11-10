@@ -25,6 +25,12 @@ int host_big_endian(void)
     return *(const uint8_t *)&one == 0;
 }
 
+int pcm_format_same(const struct pcm_format *a, const struct pcm_format *b)
+{
+    return a->rate == b->rate && a->channels == b->channels && a->sample_bytes == b->sample_bytes &&
+           a->big_endian == b->big_endian;
+}
+
 static uint32_t le16(const uint8_t *b)
 {
     return (uint32_t)b[0] | (uint32_t)b[1] << 8;

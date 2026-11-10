@@ -175,15 +175,29 @@ static void output_empty(struct player *p)
     }
 }
 
+/* After a decoder call that wrote nothing: 1 to call it again (input consumed: a header, or an end not decodable;
+ * or the format changed, which the block is sized for again), 0 to wait */
+static int audio_nothing_decoded(struct player *p, uint64_t before, const struct pcm_format *was, int complete)
+{
+    if (p->ring.total_out != before || !pcm_format_same(was, &p->out.dec.out))
+        return 1;
+    /* The decoder waits for data that has not come, maybe the rest of a frame; a complete track only ends its
+     * decoding (the next track may be in the ring already) */
+    if ((!complete || ring_used(&p->ring) == 0) && sink_drained(p))
+        output_empty(p);
+    return 0;
+}
+
 /* Audio output: the decoder fills the free blocks. A block holds whole frames of one track; it is sent full, or
  * with what there is when the track's data is complete or when the device is about to run dry (fewer than two
- * blocks queued). How much a block takes: audio_block_room(). */
+ * blocks queued). How much a block takes: audio_block_room(), for the format the decoder had before the call. */
 static void feed_audio(struct player *p, uint32_t now)
 {
     struct output *o = &p->out;
 
     for (;;) {
         struct track *t;
+        struct pcm_format was;
         uint32_t n, avail, full;
         uint64_t before;
         int b, complete;
@@ -209,17 +223,16 @@ static void feed_audio(struct player *p, uint32_t now)
             avail < o->dec.ops->input_for(&o->dec, full))
             return;                         /* more of this track to come: wait to fill a whole block */
         before = p->ring.total_out;
+        was = t->out_fmt;
         n = o->dec.ops->run(&o->dec, &p->ring, avail, complete, audio_block_data(p, b), full);
         t->out_fmt = o->dec.out;            /* known once the decoder has read the stream's header */
         if (n == 0) {
-            if (p->ring.total_out != before)
-                continue;                   /* consumed without output: header, or an end not decodable */
-            /* The decoder waits for data that has not come, maybe the rest of a frame; a complete track only
-             * ends its decoding (the next track may be in the ring already) */
-            if ((!complete || ring_used(&p->ring) == 0) && sink_drained(p))
-                output_empty(p);
+            if (audio_nothing_decoded(p, before, &was, complete))
+                continue;
             return;
         }
+        if (n > audio_block_room(p, &t->out_fmt))   /* a guard: PCM in a format it was not sized for would */
+            n = audio_block_room(p, &t->out_fmt);   /* overrun Paula's buffers */
         o->starved = 0;
         audio_submit(p, b, n, &t->out_fmt, now);
         o->handed += n;
@@ -235,6 +248,7 @@ static void feed_virtual(struct player *p, uint32_t now)
     uint32_t bytes = sink_space(p, &t->out_fmt, now);
 
     for (;;) {
+        struct pcm_format was;
         uint32_t n, avail;
         uint64_t before;
         int complete;
@@ -254,12 +268,14 @@ static void feed_virtual(struct player *p, uint32_t now)
             continue;
         avail = track_input(p, t, &complete);
         before = p->ring.total_out;
+        was = t->out_fmt;
         n = o->dec.ops->run(&o->dec, &p->ring, avail, complete, (uint8_t *)pcm,
                             bytes < sizeof(pcm) ? bytes : sizeof(pcm));
         t->out_fmt = o->dec.out;            /* known once the decoder has read the stream's header */
         if (n == 0) {
-            if (p->ring.total_out != before)
-                continue;                   /* consumed without output: header, or an end not decodable */
+            if (p->ring.total_out != before || !pcm_format_same(&was, &t->out_fmt))
+                continue;                   /* consumed without output (a header, an end not decodable), or the
+                                               format changed */
             if (bytes < (uint32_t)t->out_fmt.channels * t->out_fmt.sample_bytes)
                 o->carry += bytes * 1000;   /* less than a frame due: kept for the next tick */
             else if (!complete || ring_used(&p->ring) == 0)

@@ -383,6 +383,76 @@ static void test_paula_formats(void)
     }
 }
 
+/* A file of tests/data/ (make test runs from the repository's root) */
+static uint32_t data_file(const char *name, uint8_t *buf, uint32_t size)
+{
+    char path[64];
+    FILE *f;
+    size_t n = 0;
+
+    snprintf(path, sizeof(path), "tests/data/%s", name);
+    f = fopen(path, "rb");
+    CHECK(f != NULL);
+    if (f != NULL) {
+        n = fread(buf, 1, size, f);
+        fclose(f);
+    }
+    CHECK(n > 0 && n < size);
+    return (uint32_t)n;
+}
+
+static uint32_t decoded_samples;        /* what play_decoded() had Paula play on each channel */
+
+/* Plays a FLAC ('f') or MP3 ('m') file through Paula, or through the virtual output: the bytes of PCM played */
+static uint32_t play_decoded(const char *name, char format, int paula)
+{
+    static uint8_t file[64 * 1024];
+    char fmt[7] = { '1', format, '?', '?', '?', '?', 1 };
+    uint32_t len = data_file(name, file, sizeof(file)), played;
+    struct player p;
+
+    if (paula)
+        setup_paula(&p, AUDIO_PAULA, 0);
+    else {
+        setup(&p, "Amiga");
+        CHECK(slim_connect(&p, 0));
+    }
+    feed_strm('s', fmt, 0, 9000, 0, request);
+    drain(&p);
+    stream_io(&p, PLAT_WRITE);
+    stub_feed_stream(http_ok, (int)strlen(http_ok));
+    stub_feed_stream(file, (int)len);
+    drain_stream(&p);
+    if (paula) {
+        output_tick(&p, stub_now);
+        paula_play_out(&p);
+        played = audio_played(&p, stub_now, 0);
+        decoded_samples = stub_paula_out_len;
+        CHECK(stub_paula_bad == 0);
+    } else {
+        stub_stream_end();
+        stream_io(&p, PLAT_READ);
+        play_for(&p, 10000);
+        played = (uint32_t)p.out.handed;
+    }
+    CHECK(p.out.state == OUTPUT_STOPPED);
+    teardown(&p);
+    return played;
+}
+
+/* A decoded track's format is known only once its decoder has read it: strm s guesses 44.1 kHz stereo. Mono at
+ * 22.05 kHz, which Paula plays undivided, takes twice the samples per byte: a block sized for the guess would
+ * overrun Paula's buffers. Every sample played, within them; an MP3 stream turning from stereo to mono too, played
+ * as the virtual output plays it */
+static void test_paula_decoded(void)
+{
+    CHECK(play_decoded("m16-22k-l5.flac", 'f', 1) == 22050 * 2 && decoded_samples == 22050);
+#ifdef AMISQUEEZE_MP3
+    CHECK(play_decoded("m16-22k-64.mp3", 'm', 1) == 22050 * 2 && decoded_samples == 22050);
+    CHECK(play_decoded("s16-m16-22k.mp3", 'm', 1) == play_decoded("s16-m16-22k.mp3", 'm', 0));
+#endif
+}
+
 /* The volume is Paula's, set at once; the samples are never scaled; 14 bits at full volume or fixed only */
 static void test_paula_volume(void)
 {
@@ -440,6 +510,7 @@ void tests_paula(void)
     test_paula_pause();
     test_paula_mono_ntsc();
     test_paula_formats();
+    test_paula_decoded();
     test_paula_volume();
     test_paula_open_fails();
 }

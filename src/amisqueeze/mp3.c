@@ -202,6 +202,19 @@ static uint32_t hand_out(struct decoder *d, struct mp3_state *st, uint8_t *out, 
     return n;
 }
 
+/* The PCM decoded is in another format than d->out: d->out takes it when nothing was written yet in this call (the
+ * caller sizes the next call's output for it) */
+static int new_format(struct decoder *d, const struct mp3_state *st, uint32_t produced)
+{
+    if (st->pcm_rate == d->out.rate && st->pcm_channels == d->out.channels)
+        return 0;
+    if (produced == 0) {
+        d->out.rate = st->pcm_rate;
+        d->out.channels = st->pcm_channels;
+    }
+    return 1;
+}
+
 static uint32_t mp3_run(struct decoder *d, struct ring *r, uint32_t avail, int complete, uint8_t *out,
                         uint32_t out_max)
 {
@@ -215,12 +228,8 @@ static uint32_t mp3_run(struct decoder *d, struct ring *r, uint32_t avail, int c
         int samples, all_in;
 
         if (st->pcm_pos < st->pcm_len) {
-            if (st->pcm_rate != d->out.rate || st->pcm_channels != d->out.channels) {
-                if (produced > 0)
-                    break;                      /* a new format: in the next block */
-                d->out.rate = st->pcm_rate;
-                d->out.channels = st->pcm_channels;
-            }
+            if (new_format(d, st, produced))
+                break;                          /* its PCM in the next call */
             produced += hand_out(d, st, out + produced, out_max - produced);
             if (st->pcm_pos < st->pcm_len)
                 break;                          /* the output is full */

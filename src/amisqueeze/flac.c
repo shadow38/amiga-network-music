@@ -317,7 +317,8 @@ static uint32_t flac_run(struct decoder *d, struct ring *r, uint32_t avail, int 
                          uint32_t out_max)
 {
     struct flac_state *st = d->state;
-    uint32_t frame, produced = 0;
+    uint32_t frame, produced = 0, rate = d->out.rate;
+    uint8_t channels = d->out.channels;
 
     st->r = r;
     st->avail = avail;
@@ -329,6 +330,8 @@ static uint32_t flac_run(struct decoder *d, struct ring *r, uint32_t avail, int 
         }
         return 0;
     }
+    if (d->out.rate != rate || d->out.channels != channels)
+        return 0;                               /* the stream's format, not the guess: out_max is sized again */
     frame = (uint32_t)d->out.channels * 2;
     while (produced + frame <= out_max) {
         uint32_t remaining = st->flac->currentFLACFrame.pcmFramesRemaining;

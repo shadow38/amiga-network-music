@@ -1310,11 +1310,10 @@ belongs to the task that opened it; packets serialised field by field; buffers a
 
 - The [1.0 review](reviews/1.0.md)'s findings at 75 but R4, one commit each (agreed with the user):
   - R1: a decoder hands out no PCM in the call where its format becomes known or changes (FLAC once open, MP3 at a
-    change), as the WAV header does, so that the output sizes the block from the real format; and Paula's
-    conversion capped at its buffers, a guard against corrupting chip RAM, never reached once the decoders are
-    right. New test files made once (`tests/data/README.txt`): a mono 22.05 kHz MP3 with lame, a mono 22.05 kHz
-    FLAC with ffmpeg. Tests: a mono FLAC, a mono MP3, and an MP3 stream turning from stereo to mono, through Paula,
-    every sample played;
+    change), as the WAV header does, so that the output sizes the block from the real format; and each block capped
+    at what its format allows, a guard against corrupting chip RAM, never reached once the decoders are right. New
+    test files made once with the LMS server's tools (`tests/data/README.txt`): a mono 22.05 kHz FLAC and MP3, and
+    an MP3 stream turning from stereo to mono. Tests: the three through Paula, every sample played;
   - R2: tests of Paula's close (no channel left open) and of `strm q` and `strm f` with two Paula blocks queued;
   - R3 and R5: the user guide's Paula CPU figures replaced by a link to `performance.md`; the VERBOSE line
     `output: Paula direct, ...` in its table;

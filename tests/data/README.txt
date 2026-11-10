@@ -9,6 +9,7 @@ FLAC test files, made once from the signals of tests/flac_data.py with flac 1.3.
   m16-l5.flac       m16       1  16  44100  5
   s24-l5.flac       s24       2  24  44100  5
   s16-48k-l5.flac   s16-48k   2  16  48000  5
+  m16-22k-l5.flac   m16-22k   1  16  22050  5
   s16-l5-pad.flac   s16       2  16  44100  5      --padding=1258291 (metadata bigger than the stream buffer)
   bench-l8.flac     bench     2  16  44100  8      --no-padding: built into amisqueeze for the speed measurement
                                                      (tools/bin2c.py tests/data/bench-l8.flac bench_flac
@@ -27,6 +28,9 @@ MP3 test files, made once from the same signals with lame 3.100:
   m16-64.mp3        m16       44.1   m  -b 64 --cbr --id3v2-only --tt Test      (mono)
   s16-48k-192.mp3   s16-48k   48     j  -b 192 --cbr --id3v2-only --tt Test
   s16-22k-64.mp3    s16-22k   22.05  j  -b 64 --cbr --id3v2-only --tt Test      (MPEG-2)
+  m16-22k-64.mp3    m16-22k   22.05  m  -b 64 --cbr --id3v2-only --tt Test      (MPEG-2, mono)
+  s16-m16-22k.mp3   s16-22k   22.05  j  -b 64 --cbr -t, then m16-22k at 22.05, m, -b 32 --cbr -t, the two files
+                                                   put end to end (cat): a stream turning from stereo to mono
   cont-a.mp3        cont-a    44.1   j  -b 128 --cbr --id3v2-only --tt Test     (first 57330 frames of cont)
   cont-b.mp3        cont-b    44.1   j  -b 128 --cbr --id3v2-only --tt Test     (the rest: played after cont-a)
 

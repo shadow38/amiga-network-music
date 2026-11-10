@@ -227,6 +227,10 @@ Raw PCM has the same size on both sides, which hides a mix-up. The test-only "wi
 
 What each decoder needs from its caller:
 
+- **Every decoder**: the output sizes a block from the decoder's format before calling it (Paula's blocks depend
+  on the rate and the channels), so the call in which the format changes (the stream's header read, an MP3 stream
+  turning mono) writes no PCM. A block is capped at what its format allows all the same: PCM in a format it was
+  not sized for would overrun Paula's chip RAM buffers.
 - **Raw PCM** (`decoder.c`): a WAV header at the start of a PCM track gives the format, whatever `strm s` says.
 - **FLAC** (`flac.c`, dr_flac): dr_flac takes a short read for the end of the stream, and reads ahead (a 4 KB
   cache). So a frame is decoded only when the ring holds a whole one, and a track ends for the output only when

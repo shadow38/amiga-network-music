@@ -22,6 +22,7 @@ SIGNALS = {
     "s16-48k": (48000, 2, 16, 1.0),
     "bench": (44100, 2, 16, 0.3),       # built into amisqueeze (level 8) for the speed measurement
     "s16-22k": (22050, 2, 16, 1.0),     # MP3 only: an MPEG-2 rate
+    "m16-22k": (22050, 1, 16, 1.0),     # mono at a rate Paula plays undivided
     "cont": (44100, 2, 16, 2.0),        # MP3 only: one continuous signal, cut in two files (PARTS)
 }
 

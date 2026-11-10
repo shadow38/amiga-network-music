@@ -34,8 +34,9 @@ struct decoder_ops {
     /* The track is left (end, stop, flush): frees what start allocated */
     void (*stop)(struct decoder *d);
     /* Reads at most avail bytes of the track from r (complete: no more bytes of this track will come) and writes at
-     * most out_max bytes of PCM (whole frames, in d->out, which it may update first) at out. Returns the bytes
-     * written: 0 = more input needed, or the track is used up (what could not be decoded at its end is dropped). */
+     * most out_max bytes of PCM (whole frames, in d->out) at out. Returns the bytes written: 0 = more input needed,
+     * the track is used up (what could not be decoded at its end is dropped), or d->out has changed. A call that
+     * changes d->out writes nothing: the caller sized out_max from d->out (Paula's blocks depend on the rate). */
     uint32_t (*run)(struct decoder *d, struct ring *r, uint32_t avail, int complete, uint8_t *out, uint32_t out_max);
     /* Bytes of input wanted to produce out bytes of PCM (the output waits for them rather than send a short block) */
     uint32_t (*input_for)(const struct decoder *d, uint32_t out);
@@ -74,5 +75,7 @@ int mp3_lame_header(const uint8_t *f, uint32_t size, uint32_t *lead, uint64_t *l
 
 /* 1 on a big-endian machine (the Amiga), 0 on a little-endian one (most hosts): decoders write native samples */
 int host_big_endian(void);
+/* 1 if a and b are the same format */
+int pcm_format_same(const struct pcm_format *a, const struct pcm_format *b);
 
 #endif

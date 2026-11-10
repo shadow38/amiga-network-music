@@ -46,10 +46,11 @@ static uint32_t decode_speed(const struct decoder_ops *ops, const uint8_t *sampl
         if (!d.ops->start(&d, &in))
             break;
         for (;;) {
+            struct pcm_format was = d.out;
             uint32_t got = d.ops->run(&d, &r, ring_used(&r), 1, (uint8_t *)pcm, sizeof(pcm));
 
             elapsed = plat_now_ms() - start;
-            if (got == 0)
+            if (got == 0 && pcm_format_same(&was, &d.out))
                 break;
             frames += got / (2U * d.out.channels);
             if (elapsed >= max_ms)
