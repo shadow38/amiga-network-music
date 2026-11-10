@@ -743,6 +743,7 @@ rows say what comes next.
 | `amisqueeze <version> (...)` | the version, at start-up |
 | `FLAC: decoded here (FLAC=ON)` (or `converted to PCM by the server (FLAC=OFF)`), the same for MP3 | where the format is decoded, as the option sets it |
 | `output: AHI unit N (..., N Hz)` | the AHI mode and frequency played with, for instance `output: AHI unit 0 (Paula:14 bit stereo++ calibrated, 27429 Hz)`; `output: virtual (no sound)` with `NOAUDIO` or `OUTPUT` |
+| `output: Paula direct, 14 bits` (or `8 bits, channels 2 and 3 left free`) | with `AUDIO=PAULA` (or `PAULA8`), or `PAULA` taken because AHI is missing; `, left and right swapped` follows with `SWAP` |
 | `volume: 5.9 % of full amplitude`, `volume: fixed at 100 % by LMS (samples untouched)` | a change of volume |
 | `<- strm ...`, `-> STAT ...`, `-> DSCO ...`, `<- audg ...`, `<- aude ...`, `<- cont ...` | the messages exchanged with the server |
 | `discovery: a packet that is no reply ignored (N bytes)` | while looking for a server, something else than a server's answer came in |
@@ -861,9 +862,8 @@ Paula through AHI 4.180, a Xircom CE3B-100 PCMCIA card with a fixed `xircomce2.d
 - AmigaOS 3.2.3; 3.0 and 3.1 from a Shell, without AHI; 2.04, the oldest version it asks for, starts;
 - TCP/IP: WinUAE's emulation (`bsdsocket_emu=true`), and AmiNetXDuo on WinUAE's emulated network card;
 - sound: AHI 6.6 with `paula.audio` and a Toccata card, checked by ear; Paula without AHI (`AUDIO=PAULA` and
-  `PAULA8`), in PAL and NTSC, checked by ear with LMS. On the 28 MHz 68020, LMS sending 28603 Hz, it took 20 % of
-  the CPU in 14 bits and 9 % in 8 bits, against 54 % through AHI at 27429 Hz; with a 44.1 kHz stream played at
-  half its rate, 45 % and 41 %, against 65 % through AHI;
+  `PAULA8`), in PAL and NTSC, checked by ear with LMS; what it costs the CPU, against AHI, is in the
+  [performance page](https://github.com/shadow38/amiga-network-music/blob/main/docs/development/performance.md#paula-without-ahi);
 - with LMS 9.1.1: everything amisqueeze does, an hour of playback included; with Music Assistant 2.10.7:
   playback, the commands, its codecs, a server restart;
 - an internet radio with LMS: an MP3 radio at an `http://` address fetched by `amisqueeze.fpu` itself, its titles
