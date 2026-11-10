@@ -28,6 +28,11 @@ Back to the [plan](README.md).
     an update is uploaded again under the same name; the content, so the SHA-256, unchanged); a drawer icon for
     the archive's directory, which the Workbench does not show without one (in the zip too, `tools/make-icon.py`
     to extend); `Uploader:` with an e-mail address, which Aminet requires.
+- **Done for 1.0** (agreed with the user): the release files named without the version everywhere,
+  `amisqueeze.lha`, `amisqueeze.zip`, their `.sha256` and `amisqueeze.readme`, on GitHub and in the CI's
+  artifacts too; the directory in the archives named `amisqueeze/`, its drawer icon `amisqueeze.info` beside it
+  (`tools/make-icon.py --drawer`), which opens showing all the files. Left: `Author:` and `Uploader:`, then the
+  upload.
 - **Done with 0.7** (decided with the user): `make dist` builds `out/<prog>-<version>.lha`
   with `lha` of the image `amigadev/crosstools` (LHa for UNIX 1.14i, jca02266: nothing to build), method `-lh5-`
   and header level 1 (the default of LhA 2.15 on the Amiga), from the same files as the zip copied with fixed

@@ -1,7 +1,8 @@
 # The release archives made from a tag: pushing a tag amisqueeze-<version> builds both Amiga
 # executables and "make dist" through tools/amiga-make.sh (its Docker way, the pinned image, as in tests.yml), checks
-# that the archives bear the tag's version (make dist itself refuses a version that does not agree everywhere), then
-# makes a draft GitHub Release with the archives, their .sha256 and the Aminet readme. Nothing is public until the
+# that the archives bear the tag's version (their names hold none: it is read from the Aminet readme; make dist
+# itself refuses a version that does not agree everywhere), then makes a draft GitHub Release with the archives,
+# their .sha256 and the Aminet readme. Nothing is public until the
 # user has written the notes, checked that the executables' SHA-256 (in the job's summary) are those of the build
 # tried in WinUAE, and published the draft.
 # Run by hand (workflow_dispatch), it is a trial: the development archives (make dist DEV=1) in a draft named after
@@ -31,16 +32,20 @@ jobs:
                                        # container mounts
       - name: Amiga build and release archives (tools/amiga-make.sh, Docker)
         run: sh tools/amiga-make.sh all dist ${{ github.event_name == 'workflow_dispatch' && 'DEV=1' || '' }}
-      - name: The archives' name against the tag
+      - name: The archives' version against the tag
         id: name
         run: |
           set -eu
-          name=$(basename out/amisqueeze-*.zip .zip)
-          if [ "$GITHUB_EVENT_NAME" = push ] && [ "$name" != "$GITHUB_REF_NAME" ]; then
-            echo "the tag $GITHUB_REF_NAME does not match the archives, out/$name.zip"
+          version=$(sed -n 's/^Version: *//p' out/amisqueeze.readme)
+          if [ -z "$version" ]; then
+            echo "no Version: in out/amisqueeze.readme"
             exit 1
           fi
-          echo "name=$name" >> "$GITHUB_OUTPUT"
+          if [ "$GITHUB_EVENT_NAME" = push ] && [ "amisqueeze-$version" != "$GITHUB_REF_NAME" ]; then
+            echo "the tag $GITHUB_REF_NAME does not match the archives' version, $version (out/amisqueeze.readme)"
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
       - name: SHA-256 of the executables (to compare with the build tried in WinUAE)
         run: |
           sha256sum out/amisqueeze out/amisqueeze.fpu
@@ -48,10 +53,11 @@ jobs:
       - name: Draft release
         env:
           GH_TOKEN: ${{ github.token }}
-          NAME: ${{ steps.name.outputs.name }}
+          VERSION: ${{ steps.name.outputs.version }}
         run: |
           set -eu
-          version=${NAME#amisqueeze-}
+          version=$VERSION
+          tag="amisqueeze-$version"
           title="amisqueeze $version"
           if [ "$GITHUB_EVENT_NAME" != push ]; then
             title="TRIAL $title, never to publish: delete it"
@@ -62,13 +68,14 @@ jobs:
             echo "NOTES TO WRITE, approved by the user."
             echo
             for ext in zip lha; do
-              echo "SHA-256 of \`$NAME.$ext\`: \`$(cut -d ' ' -f 1 "out/$NAME.$ext.sha256")\` (also in \`$NAME.$ext.sha256\`)."
+              echo "SHA-256 of \`amisqueeze.$ext\`: \`$(cut -d ' ' -f 1 "out/amisqueeze.$ext.sha256")\` (also in \`amisqueeze.$ext.sha256\`)."
               echo
             done
             echo "All changes: [CHANGELOG.md]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/blob/main/CHANGELOG.md)."
           } > notes.md
           prerelease=
           case "$version" in 0.*) prerelease=--prerelease ;; esac
-          gh release create "$NAME" --repo "$GITHUB_REPOSITORY" --draft $prerelease --target "$GITHUB_SHA" \
+          gh release create "$tag" --repo "$GITHUB_REPOSITORY" --draft $prerelease --target "$GITHUB_SHA" \
             --title "$title" --notes-file notes.md \
-            "out/$NAME.zip" "out/$NAME.zip.sha256" "out/$NAME.lha" "out/$NAME.lha.sha256" "out/$NAME.readme"
+            out/amisqueeze.zip out/amisqueeze.zip.sha256 out/amisqueeze.lha out/amisqueeze.lha.sha256 \
+            out/amisqueeze.readme

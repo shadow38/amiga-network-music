@@ -223,7 +223,7 @@ In this order (agreed with the user):
 | remote-8 to remote-11 Music Assistant | ⬜ |
 | remote-12 MPD | ⬜ idea, after Music Assistant |
 | publish-1 Licence and user documentation | 🔶 MIT licence; the user guide kept up to date |
-| publish-2 Aminet archive | 🔶 the `.lha` and its Aminet `.readme`; the upload with 1.0 |
+| publish-2 Aminet archive | 🔶 the `.lha` and its Aminet `.readme`, named without the version, with a drawer icon; left for 1.0: `Author:` and `Uploader:`, the upload |
 | publish-3 Public versions | 🔶 0.1 to 0.9 published; the CI tests, builds and drafts the release from a tag |
 | publish-4 Setup guide: the Amiga on the network | 🔶 the guide written; its check by hand on a fresh installation left |
 | publish-5 Review before each release | ✅ reviews since: [0.6](reviews/0.6.md), [0.7](reviews/0.7.md), [0.8](reviews/0.8.md) and its [light review](reviews/0.8-light.md), [0.9](reviews/0.9.md), [1.0](reviews/1.0.md) (its findings open) |

@@ -100,10 +100,13 @@ it saved.
 
 ## The archives (`make dist`)
 
-`make dist` (`sh tools/amiga-make.sh dist`) builds the release archives `out/amisqueeze-<version>.zip` and
-`out/amisqueeze-<version>.lha`.
+`make dist` (`sh tools/amiga-make.sh dist`) builds the release archives `out/amisqueeze.zip` and
+`out/amisqueeze.lha`. Their names hold no version, as Aminet asks: a new version is uploaded under the same name.
+The version is in the readme, in the executables' `$VER:` strings and in the GitHub release.
 
-**What they hold**: the same files in both, in an `amisqueeze-<version>/` directory:
+**What they hold**: the same files in both, in an `amisqueeze/` directory, with its drawer icon `amisqueeze.info`
+beside it (`tools/make-icon.py --drawer`). Without one the Workbench does not show the directory; it opens
+showing all the files, the documents without an icon included. In the directory:
 
 - the Amiga executables and their icons;
 - `LICENSE`, the README and the changelog;
@@ -116,7 +119,7 @@ to no file is refused; `make test` checks the links too.
 **Beside them**:
 
 - `<archive>.sha256`: the archive's SHA-256, in the format of `sha256sum` (checked with `sha256sum -c`);
-- `out/amisqueeze-<version>.readme`: the Aminet readme, `dist/amisqueeze.readme` with its version filled in.
+- `out/amisqueeze.readme`: the Aminet readme, `dist/amisqueeze.readme` with its version filled in.
 
 **The `.lha`** needs `lha` (LHa for UNIX, [jca02266/lha](https://github.com/jca02266/lha)), which the image
 `amigadev/crosstools` has.
@@ -147,7 +150,7 @@ changelog, the user guide), a source of amisqueeze or of `tools/amiga/`. `make t
 - The published archives are made by GitHub from the tag (`.github/workflows/release.yml`, see
   [releasing.md](releasing.md)).
 
-**To try them**: `make dist DEV=1` accepts a development version (`out/amisqueeze-<x.y>-dev.*`, never published).
+**To try them**: `make dist DEV=1` accepts a development version (`<x.y>-dev`, never published).
 
 ## The workflows
 
@@ -173,8 +176,8 @@ It then prints the executables' SHA-256: a local build from the same image gives
 
 - the `.lha` and the `.zip`, each under its own name, not wrapped in another zip;
 - on the run's page, for a signed-in GitHub user;
-- a development build to try without building it. Its version is `<next>-dev`, or on a release commit, the
-  release's own number.
+- a development build to try without building it. Its version, in the executables and the readme, is
+  `<next>-dev`, or on a release commit, the release's own number.
 
 The latest build of the version in development: the latest run of
 [`tests` on `dev`](https://github.com/shadow38/amiga-network-music/actions/workflows/tests.yml?query=branch%3Adev).

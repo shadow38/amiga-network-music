@@ -16,6 +16,12 @@ are previews, until 1.0.
 - A guide to putting the Amiga on the network, from the network card to the first music: `network-guide.md`,
   in the archives beside the user guide.
 
+### Changed
+
+- The archives are named without the version, `amisqueeze.lha` and `amisqueeze.zip`, as Aminet asks; the version
+  is in the readme and the release. They unpack into a drawer `amisqueeze` with its icon, which shows the
+  programs and the documents.
+
 ## [0.9] - 2026-11-03
 
 ### Added

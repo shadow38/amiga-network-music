@@ -64,7 +64,7 @@ The archives are made by GitHub from the tag (`.github/workflows/release.yml`, s
 `amisqueeze-<version>`:
 
 - runs `make dist` through the Docker way of `tools/amiga-make.sh`, with the pinned image;
-- checks that the archives bear the tag's version;
+- checks that the archives bear the tag's version, read from their readme (their names hold none);
 - makes a **draft** pre-release with the archives, their `.sha256` and the readme. Its notes hold the SHA-256
   lines and a place for the rest.
 
@@ -109,8 +109,8 @@ in a draft marked never to publish. Delete it afterwards. A draft's tag is creat
 
 ## Aminet
 
-From 1.0:
+From 1.0, the GitHub release's `amisqueeze.lha` and `amisqueeze.readme` are uploaded as they are: their names
+hold no version, as Aminet asks, and a new version goes under the same names. Before the upload:
 
-- the files are renamed without the version (Aminet's rule);
-- the readme's `Uploader:` gets an e-mail address;
+- the readme's `Uploader:` holds an e-mail address, which Aminet requires;
 - the `.lha` to be uploaded is first extracted by LhA in WinUAE, and the scenarios run on what it gives.

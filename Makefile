@@ -9,11 +9,12 @@
 #   make test     host build, unit tests of the portable core (tests/test_*.c), then scenarios against the
 #                 host build of amisqueeze driven by a fake server (tests/fake_server.py, python3), and against
 #                 its build without MP3
-#   make dist     release archives of amisqueeze: out/amisqueeze-<version>.zip and .lha (both executables and their
-#                 icons, LICENSE, README.md, CHANGELOG.md, the user guide and its images), the version read from
-#                 its $VER: string, their SHA-256 in out/amisqueeze-<version>.zip.sha256 and .lha.sha256, and the
-#                 Aminet readme out/amisqueeze-<version>.readme (tools/make-dist.py, python3, lha); DEV=1 accepts a
-#                 development version, to try them (never published)
+#   make dist     release archives of amisqueeze: out/amisqueeze.zip and .lha, names without the version (an
+#                 amisqueeze/ directory and its drawer icon; in it both executables and their icons, LICENSE,
+#                 README.md, CHANGELOG.md, the user guide and its images), the version checked everywhere and
+#                 written in the Aminet readme out/amisqueeze.readme, their SHA-256 in out/amisqueeze.zip.sha256
+#                 and .lha.sha256 (tools/make-dist.py, python3, lha); DEV=1 accepts a development version, to try
+#                 them (never published)
 #   make cpucount the free CPU meter of the tests (tools/amiga/cpucount.c -> out/cpucount), a developer tool:
 #                 built on demand only, never by make all nor in the release archive
 #   make clean    removes every build directory
@@ -93,6 +94,9 @@ amisqueeze: out/amisqueeze.fpu out/amisqueeze.info out/amisqueeze.fpu.info
 # Workbench icons (classic AmigaOS format), drawn by tools/make-icon.py
 out/%.info: tools/make-icon.py | out
 	python3 tools/make-icon.py $@
+# The drawer icon of the release archives' directory (amisqueeze.info in them)
+out/amisqueeze.drawer.info: tools/make-icon.py | out
+	python3 tools/make-icon.py --drawer $@
 out/amisqueeze.fpu: $(patsubst src/amisqueeze/%.c,obj/amisqueeze-fpu/%.o,$(call amiga_srcs,amisqueeze)) | out
 	$(CC) $(LDFLAGS) $(amisqueeze_fpu_LDFLAGS) $(amisqueeze_fpu_CFLAGS) -Wl,-Map,obj/amisqueeze-fpu.map -o $@ $^
 	python3 tools/check-stack.py obj/amisqueeze-fpu.map obj/amisqueeze-fpu/amiga.o $(amisqueeze_fpu_STACK)
@@ -149,7 +153,7 @@ test: host out-host/test_core out-host/amisqueeze-nomp3
 	out-host/test_core
 	python3 tests/fake_server.py out-host/amisqueeze out-host/amisqueeze-nomp3
 
-dist: out/amisqueeze out/amisqueeze.fpu out/amisqueeze.info out/amisqueeze.fpu.info
+dist: out/amisqueeze out/amisqueeze.fpu out/amisqueeze.info out/amisqueeze.fpu.info out/amisqueeze.drawer.info
 	python3 tools/make-dist.py $(if $(DEV),--dev) amisqueeze
 
 # Developer tools that run on the Amiga (tools/amiga/), plain 68000 code

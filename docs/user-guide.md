@@ -23,16 +23,19 @@ amisqueeze. The Amiga must be on the network first: if it is not, start with
 Download the archive from the project's [releases](https://github.com/shadow38/amiga-network-music/releases). It
 comes in two forms holding the same files:
 
-- the `.lha`, to unpack on the Amiga itself with LhA;
-- the zip, to unpack on a PC.
+- `amisqueeze.lha`, to unpack on the Amiga itself with LhA;
+- `amisqueeze.zip`, to unpack on a PC.
 
 AmigaOS 3.x does not include LhA. Aminet's `util/arc/lha.run` provides it: run it, and it unpacks itself
 into the current directory. Copy the one for your CPU (`lha_68k`, `lha_68020` or `lha_68040`) to `C:LhA`, then
 unpack amisqueeze:
 
 ```
-LhA x amisqueeze-<version>.lha RAM:
+LhA x amisqueeze.lha RAM:
 ```
+
+It unpacks into a drawer, `RAM:amisqueeze`, with its icon: open it from the Workbench to see the programs and the
+documents.
 
 The archive holds two executables of the same program. Take the one that suits the Amiga:
 

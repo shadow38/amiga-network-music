@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
-"""Builds the release archives of a program, out/<prog>-<version>.zip and out/<prog>-<version>.lha, and its Aminet
-readme, out/<prog>-<version>.readme.
+"""Builds the release archives of a program, out/<prog>.zip and out/<prog>.lha, and its Aminet readme,
+out/<prog>.readme. Their names hold no version (Aminet: "Version numbers should be part of the readme file, not
+part of the filename"; a new version is uploaded under the same name): it is in the readme and in the
+executables' $VER: strings, and GitHub's release bears it.
 
-Both archives hold the same <prog>-<version>/ directory: the Amiga executable (out/<prog>, and out/<prog>.fpu if
-built) with its .info icon, LICENSE, README.md, CHANGELOG.md, the user guide with its images (docs/images/ ->
-images/) and the network guide. The files are copied first into a temporary directory, the executables with
-mode 755 and the rest 644, so that both archives record the same modes whatever the file system the repository
-sits on. The archives are flat, unlike the repository: the relative links of their text files are rewritten, to
+Both archives hold the same <prog>/ directory, with its drawer icon <prog>.info beside it (out/<prog>.drawer.info,
+tools/make-icon.py --drawer), without which the Workbench does not show the directory: the Amiga executable
+(out/<prog>, and out/<prog>.fpu if built) with its .info icon, LICENSE, README.md, CHANGELOG.md, the user guide
+with its images (docs/images/ -> images/) and the network guide. The files are copied first into a temporary
+directory, the executables with mode 755 and the rest 644, so that both archives record the same modes whatever
+the file system the repository sits on. The archives are flat, unlike the repository: the relative links of their text files are rewritten, to
 the file they hold (docs/user-guide.md -> user-guide.md) or to GitHub for one they do not hold
 (CONTRIBUTING.md); a link to no file is refused. The version is the
 one tools/check-version.py --release accepts (the same in both $VER: strings, Firmware=, the user guide, the
@@ -30,7 +33,7 @@ run on the Amiga (tools/amiga/) must be ASCII with LF line endings: the Amiga re
 UTF-8.
 
 Usage: make-dist.py [--dev] <prog>        (from the repository root, after the Amiga build)
-         --dev: a development version is accepted (out/<prog>-<x.y>-dev.*), to try the archives; never published
+         --dev: a development version (<x.y>-dev) is accepted, to try the archives; never published
        make-dist.py --check-readme <prog> (make test) checks the readme made from dist/<prog>.readme only
        make-dist.py --check-text <prog>   (make test) checks that the text files and the sources are ASCII and LF,
                                           and the archives' links
@@ -227,8 +230,10 @@ def lha(*args, cwd=None):
 
 
 def make_lha(out, stage, root, expected):
-    """Builds out from stage/root, tests it, and checks that it lists the expected {name: size}."""
-    lha("-a1o5q", os.path.abspath(out), root, cwd=stage)   # the directory: lha adds its entries (-lhd-) too
+    """Builds out from stage/root and its drawer icon, tests it, and checks that it lists the expected
+    {name: size}."""
+    lha("-a1o5q", os.path.abspath(out), f"{root}.info", root, cwd=stage)   # the directory: lha adds its entries
+                                                                           # (-lhd-) too
     lha("t", out)
     listed = {}
     for line in lha("-lq", out).splitlines():
@@ -265,7 +270,8 @@ def main():
     if not shutil.which("lha"):
         sys.exit("make-dist: lha not found: LHa for UNIX (https://github.com/jca02266/lha), which the image "
                  "amigadev/crosstools has, builds the .lha")
-    root = f"{prog}-{version}"
+    root = prog
+    drawer = f"out/{prog}.drawer.info"           # the directory's icon, beside it: <prog>.info
     names = archive_names()
     files = [(f"out/{prog}", prog)]
     executables = {prog}
@@ -277,7 +283,7 @@ def main():
         if os.path.isfile(f"out/{exe}.info"):
             files.append((f"out/{exe}.info", f"{exe}.info"))
     files += [(src, name) for src, name in names.items() if src not in TEXTS]   # the images
-    for src, _ in files:
+    for src in [src for src, _ in files] + [drawer]:
         if not os.path.isfile(src):
             sys.exit(f"make-dist: {src} missing (build the Amiga version first)")
     out = f"out/{root}"
@@ -285,6 +291,8 @@ def main():
         if os.path.exists(path):                                            # match, should this run fail
             os.remove(path)
     with tempfile.TemporaryDirectory() as stage:
+        shutil.copy2(drawer, os.path.join(stage, f"{root}.info"))
+        os.chmod(os.path.join(stage, f"{root}.info"), 0o644)
         for src, name in files:
             dest = os.path.join(stage, root, name)
             os.makedirs(os.path.dirname(dest), exist_ok=True)
@@ -296,13 +304,14 @@ def main():
                 shutil.copy2(src, dest)
             os.chmod(dest, 0o755 if name in executables else 0o644)
         with zipfile.ZipFile(f"{out}.zip", "w", zipfile.ZIP_DEFLATED) as z:
+            z.write(os.path.join(stage, f"{root}.info"), f"{root}.info")
             for _, name in files:
                 z.write(os.path.join(stage, root, name), f"{root}/{name}")
         with zipfile.ZipFile(f"{out}.zip") as z:
             sizes = {info.filename: info.file_size for info in z.infolist()}
         make_lha(f"{out}.lha", stage, root, sizes)
     write_readme(prog, version, f"{out}.readme")
-    print(f"{out}.zip and {out}.lha:")
+    print(f"{out}.zip and {out}.lha, {prog} {version}:")
     for name, size in sizes.items():
         print(f"  {name} ({size} bytes)")
     digests = [(f"{root}.{ext}", write_sha256(f"{out}.{ext}")) for ext in ("zip", "lha")]
