@@ -217,7 +217,7 @@ In this order (agreed with the user):
 | player-20 Fixes after the 0.9 review | ✅ version 0.9 |
 | player-21 From the 0.9 review's 50 list | ✅ version 0.9 |
 | player-22 `stream.c` and the unit tests split | ✅ version 1.0 |
-| player-23 Fixes after the 1.0 review | ⬜ version 1.0 |
+| player-23 Fixes after the 1.0 review | ✅ version 1.0 |
 | remote-0 Study (common interface, Music Assistant feasibility, name) | ⬜ before any amilms code |
 | remote-1 to remote-7 LMS | ⬜ |
 | remote-8 to remote-11 Music Assistant | ⬜ |

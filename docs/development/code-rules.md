@@ -139,9 +139,10 @@ After each link, `tools/check-stack.py` reads the linker map (`obj/<prog>.map`).
 
 | Executable | Version, machine | Used |
 |---|---|---|
+| `amisqueeze` | 1.0-dev, WinUAE with AmiNetXDuo | 5672 of 16384 bytes with `AUDIO=PAULA`, FLAC (mono, 22.05 kHz), a pause and a seek; the same with `bsdsocket_emu` |
 | `amisqueeze` | 0.9-dev, WinUAE | 5724 of 16384 bytes with FLAC, a seek and a pause, started by `Run >NIL:`; 1174 with a command-line error shown in the window |
 | `amisqueeze` | 0.8-dev, an A1200 with AmiNetXDuo | 5688 of 16384 bytes with the server discovery, raw PCM and a seek; 5632 with FLAC and a seek |
-| `amisqueeze.fpu` | 0.7, WinUAE | 17544 of 32768 bytes with FLAC and MP3 |
+| `amisqueeze.fpu` | 1.0-dev, WinUAE with AmiNetXDuo | 17866 of 32768 bytes with MP3 and FLAC, a pause and a seek; 17628 with `bsdsocket_emu` |
 
 **When to measure again**: when `-fstack-usage` shows the deepest path growing by more than 1 KB, or when a new
 decoder, library or start-up path is linked. A few bytes more do not call for it.

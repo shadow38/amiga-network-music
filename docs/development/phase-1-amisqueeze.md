@@ -1306,22 +1306,9 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   `output.c` (the output, where the direct Paula output of player-11 goes); `tests/test_core.c` split into one
   `test_<module>.c` per module, what they share left in `test_core.c` (agreed with the user).
 
-## player-23 Fixes after the 1.0 review ⬜ version 1.0
+## player-23 Fixes after the 1.0 review ✅ version 1.0
 
-- The [1.0 review](reviews/1.0.md)'s findings at 75 but R4, one commit each (agreed with the user):
-  - R1: a decoder hands out no PCM in the call where its format becomes known or changes (FLAC once open, MP3 at a
-    change), as the WAV header does, so that the output sizes the block from the real format; and each block capped
-    at what its format allows, a guard against corrupting chip RAM, never reached once the decoders are right. New
-    test files made once with the LMS server's tools (`tests/data/README.txt`): a mono 22.05 kHz FLAC and MP3, and
-    an MP3 stream turning from stereo to mono. Tests: the three through Paula, every sample played;
-  - R2: tests of Paula's close (no channel left open) and of `strm q` and `strm f` with two Paula blocks queued;
-  - R3 and R5: the user guide's Paula CPU figures replaced by a link to `performance.md`; the VERBOSE line
-    `output: Paula direct, ...` in its table;
-  - R6: `make-dist.py` rewrites the links of the archive's text files for its flat layout (to a file in the
-    archive, or to GitHub for one it does not hold), and checks that every relative link leads to a file in it.
-- The stack measured again in WinUAE, after R1 (Releasing, step 4): `amisqueeze` with `AUDIO=PAULA`,
-  `amisqueeze.fpu` with an MP3; `amisqueeze.fpu` started from the Workbench only checked to play.
-- Criterion (agreed with the user): `make test` green; each guard seen catching its planted defect (the decoders'
-  fix alone, the cap alone, the two defects the review planted for R2); in WinUAE, slow profile, `AUDIO=PAULA`,
-  `FLAC=ON`: a mono 22.05 kHz FLAC plays right, with the right elapsed time in LMS; the stack figures recorded; the
-  user guide, the CHANGELOG, the plan and the report's decisions up to date.
+- The [1.0 review](reviews/1.0.md)'s findings at 75 but R4: a decoded track's Paula block sized from its real
+  format (R1); tests of Paula's close and stop (R2); the user guide's Paula figures and VERBOSE line (R3, R5); the
+  archive's links for its flat layout (R6). The stacks measured again
+  ([Stack and memory](code-rules.md#stack-and-memory)).
