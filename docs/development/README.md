@@ -166,7 +166,9 @@ In this order (agreed with the user):
   the Paula output. The audit came before player-11's last session, the end of publish-9 and the check of
   publish-4 (the A1200 was not at hand); a light review of what changes after it, before the tag (agreed with the
   user).
-- **Last**: the upload to Aminet (publish-2), once the `Author:` and `Uploader:` of the `.readme` are corrected.
+- **Last**: the upload to Aminet (publish-2), once its 1.0 part is done ([publish-2](phase-3-release.md)): the
+  files renamed without the version, a drawer icon for the archive's directory, the `Author:` and `Uploader:` of
+  the `.readme` corrected. The light review before the tag reads them.
 - **Perhaps**: an attestation of the archives' provenance (`actions/attest-build-provenance`). Left for 1.0 by the
   user: of little use to Amiga users, since the reproducible build already lets anyone check.
 
