@@ -169,8 +169,8 @@ In this order (agreed with the user):
 - **Fixes after the audit** (player-23, agreed with the user): its findings R1, R2, R3, R5 and R6, and the stack
   measured again.
 - **Last**: the upload to Aminet (publish-2), once its 1.0 part is done ([publish-2](phase-3-release.md)): the
-  files renamed without the version, a drawer icon for the archive's directory, the `Author:` and `Uploader:` of
-  the `.readme` corrected. The light review before the tag reads them.
+  files renamed without the version, a drawer icon for the archive's directory. The light review before the tag
+  reads them.
 - **Perhaps**: an attestation of the archives' provenance (`actions/attest-build-provenance`). Left for 1.0 by the
   user: of little use to Amiga users, since the reproducible build already lets anyone check.
 
@@ -223,7 +223,7 @@ In this order (agreed with the user):
 | remote-8 to remote-11 Music Assistant | ⬜ |
 | remote-12 MPD | ⬜ idea, after Music Assistant |
 | publish-1 Licence and user documentation | 🔶 MIT licence; the user guide kept up to date |
-| publish-2 Aminet archive | 🔶 the `.lha` and its Aminet `.readme`, named without the version, with a drawer icon; left for 1.0: `Author:` and `Uploader:`, the upload |
+| publish-2 Aminet archive | 🔶 the `.lha` and its Aminet `.readme`, named without the version, with a drawer icon; left for 1.0: the upload |
 | publish-3 Public versions | 🔶 0.1 to 0.9 published; the CI tests, builds and drafts the release from a tag |
 | publish-4 Setup guide: the Amiga on the network | 🔶 the guide written; its check by hand on a fresh installation left |
 | publish-5 Review before each release | ✅ reviews since: [0.6](reviews/0.6.md), [0.7](reviews/0.7.md), [0.8](reviews/0.8.md) and its [light review](reviews/0.8-light.md), [0.9](reviews/0.9.md), [1.0](reviews/1.0.md) (its findings open) |

@@ -109,8 +109,12 @@ in a draft marked never to publish. Delete it afterwards. A draft's tag is creat
 
 ## Aminet
 
-From 1.0, the GitHub release's `amisqueeze.lha` and `amisqueeze.readme` are uploaded as they are: their names
-hold no version, as Aminet asks, and a new version goes under the same names. Before the upload:
+From 1.0, the GitHub release's `amisqueeze.lha` and `amisqueeze.readme` are uploaded: their names hold no
+version, as Aminet asks, and a new version goes under the same names. The `.lha` goes as it is. Before the
+upload:
 
-- the readme's `Uploader:` holds an e-mail address, which Aminet requires;
-- the `.lha` to be uploaded is first extracted by LhA in WinUAE, and the scenarios run on what it gives.
+- the `.lha` to be uploaded is first extracted by LhA in WinUAE, and the scenarios run on what it gives;
+- in a copy of the `.readme`, outside the repository, `Uploader:` gets the uploader's e-mail address, which Aminet
+  requires; the repository and GitHub keep `shadow38` (agreed with the user);
+- that copy keeps Aminet's rules: LF line endings, no byte order mark, lines of 78 characters at most;
+- `Uploader:` stays the same from one version to the next: Aminet's moderators compare it on an update.

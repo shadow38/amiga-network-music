@@ -18,21 +18,21 @@ Back to the [plan](README.md).
 - **In two parts** (decided with the user):
   - **with 0.7**: `make dist` also builds `out/<prog>-<version>.lha` (the same files as the zip) with its
     `.sha256`, and the Aminet `.readme` (`Short:`, `Author:`, `Uploader:`, `Type: mus/play`, `Version:`,
-    `Architecture:`, `Requires:`, then the description), all attached to the GitHub Release. `Author:` and
-    `Uploader:` read `shadow38` for now: **to correct (name, e-mail address) before the upload to Aminet**. To
-    decide when designing it, proposed: the archive made by `lha` (jca02266/lha, built in the build environment;
+    `Architecture:`, `Requires:`, then the description), all attached to the GitHub Release. To decide when
+    designing it, proposed: the archive made by `lha` (jca02266/lha, built in the build environment;
     `lhasa` only extracts), the user guide shipped as text as it is (AmigaGuide later, if needed);
   - **with 1.0**: the upload to Aminet (`.lha` and `.readme`), by the user or at their explicit request. Before
     it (decided with the user): the files renamed without the version, `amisqueeze.lha` and
     `amisqueeze.readme` (Aminet: "Version numbers should be part of the readme file, not part of the filename";
     an update is uploaded again under the same name; the content, so the SHA-256, unchanged); a drawer icon for
     the archive's directory, which the Workbench does not show without one (in the zip too, `tools/make-icon.py`
-    to extend); `Uploader:` with an e-mail address, which Aminet requires.
+    to extend).
 - **Done for 1.0** (agreed with the user): the release files named without the version everywhere,
   `amisqueeze.lha`, `amisqueeze.zip`, their `.sha256` and `amisqueeze.readme`, on GitHub and in the CI's
   artifacts too; the directory in the archives named `amisqueeze/`, its drawer icon `amisqueeze.info` beside it
-  (`tools/make-icon.py --drawer`), which opens showing all the files. Left: `Author:` and `Uploader:`, then the
-  upload.
+  (`tools/make-icon.py --drawer`), which opens showing all the files. `Author:` and `Uploader:` stay `shadow38`
+  in the repository and on GitHub; the uploader's e-mail address, which Aminet requires, goes only into the copy
+  of the `.readme` uploaded, by hand at the upload (agreed with the user). Left: the upload.
 - **Done with 0.7** (decided with the user): `make dist` builds `out/<prog>-<version>.lha`
   with `lha` of the image `amigadev/crosstools` (LHa for UNIX 1.14i, jca02266: nothing to build), method `-lh5-`
   and header level 1 (the default of LhA 2.15 on the Amiga), from the same files as the zip copied with fixed
