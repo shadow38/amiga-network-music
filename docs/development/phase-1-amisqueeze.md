@@ -902,7 +902,7 @@ belongs to the task that opened it; packets serialised field by field; buffers a
 - **Criterion**: started without arguments, the player finds the server and shows up under the chosen name; with
   `LOG=<file>`, the messages appear in the Shell window and, at the same time, in the file.
 
-## player-11 Direct Paula output ⬜ version 1.0
+## player-11 Direct Paula output ✅ version 1.0
 
 - **Scope for 1.0** (agreed with the user): an option, AHI still the default, so nothing changes for those who
   use AHI today.
@@ -1002,9 +1002,10 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   - `REALLY_PAL` exists from graphics V39; before it, the `PAL` flag of `DisplayFlags`;
   - `PAULA_PERIOD_MIN` stays at 124, the documented shortest period; on the A1200 its rate sounded at least as
     good as AHI's (player-11c).
-- **On the A1200** (agreed with the user): the AHI Paula driver 4.33 (Aminet `driver/audio/AHI-Paula`, the
-  A1200 has 4.23) tried with its `AHIpaulaBufferLength`, to learn whether a larger AHI buffer stops the crackles
-  with a PCMCIA network card.
+- **On the A1200** (agreed with the user): the AHI Paula driver 4.33 (Aminet `driver/audio/AHI-Paula`) tried
+  with its `AHIpaulaBufferLength`. From 1024 to 4096 it stops the crackles with the PCMCIA card, at the fixed
+  driver's load; 8192 makes the sound choppy ([performance.md](performance.md#the-network-driver-and-the-stack)).
+  The A1200 keeps 4.33 at 2048 (agreed with the user).
 - **Heard through AHI on the A1200** (`paula.audio` of AHI 4.180, the same music): Paula at 27,429 Hz with a
   32 kHz stream sounded best; at 22,050 Hz with 44.1 kHz (an exact half) and at 24,000 Hz with 24 kHz (no
   conversion), worse. Paula's highest rate matters.

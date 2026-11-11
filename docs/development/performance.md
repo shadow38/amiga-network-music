@@ -41,7 +41,7 @@ The machines:
 
 | Machine | What it is | What it tells |
 |---|---|---|
-| A1200 | ACA1221lc accelerator (68EC020 at 26.67 MHz, no FPU, 32-bit fast memory), AmigaOS 3.1, a Xircom CE3B-100 PCMCIA card with `xircomce2.device` 1.1 fixed (below), AmiNetXDuo 1.0.0-rc2, AHI 4.18 with `paula.audio` 4.23, LMS 9.1.1 with the [`MAXRATE` rules](../user-guide.md#maxrate) | the real figures |
+| A1200 | ACA1221lc accelerator (68EC020 at 26.67 MHz, no FPU, 32-bit fast memory), AmigaOS 3.1, a Xircom CE3B-100 PCMCIA card with `xircomce2.device` 1.1 fixed (below), AmiNetXDuo 1.0.0-rc2, AHI 4.18 with `paula.audio` 4.23 (4.33 where [said](#the-network-driver-and-the-stack)), LMS 9.1.1 with the [`MAXRATE` rules](../user-guide.md#maxrate) | the real figures |
 | WinUAE, slow profile | a 68020 at 28.4 MHz, WinUAE's approximate mode ([testing.md](testing.md#profiles)), its TCP/IP emulation on the host | the core and the output alone: the network costs the Amiga nothing |
 | WinUAE, slow profile, real network | the same with AmiNetXDuo and `cnet.device` on WinUAE's NE2000 PCMCIA card ([testing.md](testing.md#real-network)) | an estimate of the network's cost |
 | WinUAE, JIT profile | about 230 times the slow profile, the order of a PiStorm | decoding on the Amiga |
@@ -151,6 +151,27 @@ next two, the last):
 
 The fixed driver is not published.
 
+AHI's Paula driver 4.33 (Aminet `driver/audio/AHI-Paula`) reads `AHIpaulaBufferLength`, an environment variable:
+the shortest block it plays from chip RAM, in samples. A longer block gives AHI the margin the reception takes
+from it. A1200, 1.0-dev, a 44.1 kHz track from Music Assistant (codec `wav`, 16 bits), AHI 4.180,
+`Paula:14 bit stereo++` at 27,429 Hz, the 1.1 sources rebuilt, without the fix and without `RXBUFFER`:
+
+| `paula.audio` | `AHIpaulaBufferLength` | Load | Crackles |
+|---|---|---|---|
+| 4.23 | none | 66 % | many |
+| 4.33 | none | 66 % | many, no clear difference with 4.23 |
+| 4.33 | 1024 (37 ms) | 77 % | none |
+| 4.33 | 2048 (75 ms) | 76 % | none |
+| 4.33 | 4096 (150 ms) | 76 % | none |
+| 4.33 | 8192 (300 ms) | no count: `cpucount` never finished a window | the sound very choppy |
+
+With the fixed driver, 4.33 and 2048: 77 %, no crackle. Two readings, not checked:
+
+- the load rises to the fixed driver's when the crackles stop: the blocks AHI was late for were not mixed at all;
+- at 8192, the driver mixes 300 ms of sound at once in its software interrupt, and no task runs meanwhile.
+
+4.23 was not tried with the variable.
+
 The stack, the same machine (0.8):
 
 | Stack | `NOAUDIO`, 44.1 kHz | AHI, 44.1 kHz |
@@ -222,8 +243,6 @@ None of these is measured; each is a lead, with what is known of it.
 - **The reception**, the largest share on the A1200. The Xircom's driver reads each frame 2 bytes at a time. A
   faster path through the card's shared memory exists, but only when no system memory covers the PCMCIA range
   `$600000`-`$9FFFFF`; the ACA1221lc's memory does. The driver is a separate project.
-- **AHI's Paula driver 4.33**: whether a larger AHI buffer (`AHIpaulaBufferLength`) stops the crackles with the
-  PCMCIA network card, and at what load, on the A1200.
 - **A lighter system**: a trimmed install, MapROM. A few points each, estimated.
 - **The clock read at every turn of the main loop** (`ReadEClock` and a 64-bit division): a build with one more
   read per turn went much slower, a hint that it is costly.
