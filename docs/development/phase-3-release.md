@@ -249,7 +249,7 @@ what amisqueeze trusts and what it does not handle; in `architecture.md`, the st
 memory and the platform layer. The review tooling reads the rules in the pages `CONTRIBUTING.md` lists; the
 documents carry no dates (agreed with the user).
 
-## publish-9 A page on performance 🔶 version 1.0
+## publish-9 A page on performance ✅ version 1.0
 
 - **Why** (agreed with the user): the optimizations deserve a page of their own. Today their figures are spread
   over the plan (player-4c, player-9, player-13, player-11c, player-11d), where a contributor does not look.

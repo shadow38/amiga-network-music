@@ -165,7 +165,9 @@ from it. A1200, 1.0-dev, a 44.1 kHz track from Music Assistant (codec `wav`, 16 
 | 4.33 | 4096 (150 ms) | 76 % | none |
 | 4.33 | 8192 (300 ms) | no count: `cpucount` never finished a window | the sound very choppy |
 
-With the fixed driver, 4.33 and 2048: 77 %, no crackle. Two readings, not checked:
+With the fixed driver, 4.33 and 2048: 77 %, no crackle. With Aminet's build of 1.1, 4.33: 73 % and crackles
+without the variable, 86 % and no crackle at 2048 (`RXBUFFER=8192` instead: 92 %, above). Two readings, not
+checked:
 
 - the load rises to the fixed driver's when the crackles stop: the blocks AHI was late for were not mixed at all;
 - at 8192, the driver mixes 300 ms of sound at once in its software interrupt, and no task runs meanwhile.

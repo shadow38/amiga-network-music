@@ -230,7 +230,7 @@ In this order (agreed with the user):
 | publish-6 Writing rules for the documentation | ✅ the rules, the plan and the user guide; `docs/development/` later, where the user finds it worth it (closed) |
 | publish-7 A readable architecture page | ✅ version 0.9 |
 | publish-8 The technical documentation organised | ✅ version 0.9 |
-| publish-9 A page on performance | 🔶 version 1.0, [performance.md](performance.md) written, with player-11's last session on the A1200; the user guide's Slow row left |
+| publish-9 A page on performance | ✅ version 1.0, [performance.md](performance.md); the user guide's Slow row: `AUDIO=PAULA` |
 
 Phase 0 moves forward as needed: a tooling step is done when a step of phase 1 or 2 needs it. Phases 1 and 2 can
 progress in parallel.

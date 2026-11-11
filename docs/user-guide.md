@@ -76,10 +76,12 @@ without an FPU, it says so. `BENCH` needs no server, prints its measures and qui
 
 | Your Amiga | Program | Options | LMS | Music Assistant |
 |---|---|---|---|---|
-| **Slow**: `BENCH` leaves FLAC to the server, such as on a 68020 at 26 MHz | `amisqueeze` | `SWAP` with Paula; `PRI=1` if the sound has gaps while the Workbench is used | `MAXRATE=AHI` and its [rules](#maxrate), which also convert MP3 (without `MAXRATE`: the [MP3 rule](#lyrion-music-server)); the volume [fixed at 100](#volume) | the codec `wav`, with normalization and crossfade off (see [Music Assistant](#music-assistant)); leave `MAXRATE` out |
+| **Slow**: `BENCH` leaves FLAC to the server, such as on a 68020 at 26 MHz | `amisqueeze` | `AUDIO=PAULA` without a sound card ([Paula without AHI](#paula-without-ahi)); `PRI=1` if the sound has gaps while the Workbench is used | the [rules of `MAXRATE`](#maxrate), which also convert MP3; through AHI, `MAXRATE=AHI` too; the volume [fixed at 100](#volume) | the codec `wav`, with normalization and crossfade off (see [Music Assistant](#music-assistant)); leave `MAXRATE` out |
 | **Fast**: `BENCH` lets this machine decode FLAC and MP3, such as on a PiStorm | `amisqueeze.fpu` | `SWAP` with Paula | nothing | the codec `flac`, the default |
 
-- The Slow row was tried on an A1200 with a 68EC020 at 26 MHz and Paula. The Fast row was tried in WinUAE, at
+- The Slow row was tried on an A1200 with a 68EC020 at 26 MHz and Paula. There, Paula without AHI takes about a
+  third of the CPU, against more than half through AHI, and does not crackle where AHI does. With a sound card,
+  keep AHI (the default), with `MAXRATE=AHI`. The Fast row was tried in WinUAE, at
   about a PiStorm's speed. What each setting costs and saves, measured, is in the developers'
   [performance page](https://github.com/shadow38/amiga-network-music/blob/main/docs/development/performance.md).
 - A 68030, 68040 or 68060 has not been tried yet. A format that `BENCH` leaves to the server needs that server's
@@ -137,8 +139,8 @@ CPU.
 
 - **Add [`SWAP`](#options)**: `paula.audio` swaps left and right.
 - **Fix the volume at 100** on the server, and turn the amplifier down instead (see [volume](#volume)).
-- **To save CPU**: `Paula:8 bit stereo++` takes a little less than the 14-bit mode, at a lower quality. The "HiFi"
-  modes take more.
+- **To save CPU**: [Paula without AHI](#paula-without-ahi) takes much less. Through AHI, `Paula:8 bit stereo++`
+  takes a little less than the 14-bit mode, at a lower quality. The "HiFi" modes take more.
 - **The power LED dims** while amisqueeze runs: `paula.audio` turns Paula's filter off, which the LED shows. This
   is normal; the LED comes back when amisqueeze quits.
 
@@ -507,8 +509,8 @@ MP3 at 320 kbit/s (the slowest) decoded at 74.2x real time: MP3=AUTO lets this m
 `MAXRATE` asks the server for music at a lower sample rate, to lighten a slow Amiga: less to receive, less for
 AHI to mix. Without it, the server sends each file at its own rate, up to 48 kHz.
 
-**On a slow Amiga with Paula**, give `MAXRATE=AHI` and, with LMS, add the rules below. The music then comes at the
-rate Paula plays (27429 Hz), and nothing Paula can play is lost.
+**On a slow Amiga with AHI's Paula driver**, give `MAXRATE=AHI` and, with LMS, add the rules below. The music
+then comes at the rate Paula plays (27429 Hz), and nothing Paula can play is lost.
 
 What it saves, on an A1200 with a 68EC020 at 26.67 MHz, Paula at 27429 Hz, LMS and its rules below:
 
@@ -837,8 +839,13 @@ rows say what comes next.
 
   An inverted polarity, which LMS does not offer for this player, would be ignored too.
 - Exchange's Active/Inactive switch is shown, but does not affect the music.
-- With a Xircom PCMCIA card and Aminet's `xircomce2.device` 1.1, Paula crackles now and then while the music comes
-  in. AmiNetXDuo's `RXBUFFER=8192`, in its interface file, stops it, at about 90 % of the CPU on a 26 MHz 68020.
+- With a Xircom PCMCIA card and Aminet's `xircomce2.device` 1.1, Paula crackles through AHI while the music comes
+  in. Two ways stop it, tried with AHI 4.180 on a 26 MHz 68020:
+  - AHI's Paula driver 4.33 (Aminet `driver/audio/AHI-Paula`) with `AHIpaulaBufferLength` at 2048: about 86 % of
+    the CPU. Set it with `SetEnv AHIpaulaBufferLength 2048`, and keep it for every start with
+    `Copy ENV:AHIpaulaBufferLength ENVARC:`. At 8192, the sound becomes choppy;
+  - AmiNetXDuo's `RXBUFFER=8192`, in its interface file: about 90 % of the CPU.
+
   The CPU figures of this guide were measured with a fixed version of that driver, not published.
 
 ### What has been tried

@@ -21,6 +21,9 @@ are previews, until 1.0.
 - The archives are named without the version, `amisqueeze.lha` and `amisqueeze.zip`, as Aminet asks; the version
   is in the readme and the release. They unpack into a drawer `amisqueeze` with its icon, which shows the
   programs and the documents.
+- User guide: on a slow Amiga without a sound card, `AUDIO=PAULA` is now the advice, instead of AHI's Paula
+  driver. With a Xircom PCMCIA card through AHI, a lighter way to stop the crackles: AHI's Paula driver 4.33 with
+  `AHIpaulaBufferLength` at 2048 (see the user guide, Known limits).
 
 ## [0.9] - 2026-11-03
 
