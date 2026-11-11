@@ -24,6 +24,8 @@ are previews, until 1.0.
 - User guide: on a slow Amiga without a sound card, `AUDIO=PAULA` is now the advice, instead of AHI's Paula
   driver. With a Xircom PCMCIA card through AHI, a lighter way to stop the crackles: AHI's Paula driver 4.33 with
   `AHIpaulaBufferLength` at 2048 (see the user guide, Known limits).
+- README and Aminet readme: AHI is no longer listed as needed. Paula is played directly without it; AHI is for a
+  sound card, or to play on Paula through it.
 
 ## [0.9] - 2026-11-03
 

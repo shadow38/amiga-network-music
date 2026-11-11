@@ -916,8 +916,9 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   - Left for later: a rate conversion with a real filter, 14 bits calibrated, and `AUDIO=AUTO` (agreed with the
     user). `AUTO` would be the default: Paula direct when AHI is missing or the AHI unit's driver is Paula
     (`AHIDB_Driver`, a tag more in the call `amiga_ahi.c` already makes), AHI otherwise. Little code, but every
-    user of AHI on Paula would change output unasked, so it waits until the A1200 has judged Paula direct (a step
-    after 1.0). Without being the default it would serve no one.
+    user of AHI on Paula would change output unasked, so it waited until the A1200 had judged Paula direct (done
+    in player-11); for the version after 1.0 (agreed with the user). Without being the default it would serve no
+    one.
   - A ceiling: if 8 bits proves too poor to hear and 14 bits too costly, the step leaves 1.0 rather than grow.
 - **Why**: on the slow profile, playing through AHI and `paula.audio` costs 61-68 % of the CPU, almost all of it
   in AHI (player-4c), and up to 88 % with the volume scaled in the core (player-6). On the A1200, a PCMCIA network

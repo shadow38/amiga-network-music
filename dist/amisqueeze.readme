@@ -31,9 +31,10 @@ What it needs:
 
   - AmigaOS 3.x and a 68020 or better; about 1.7 MB of free memory;
   - a TCP/IP stack providing bsdsocket.library (Roadshow, AmiTCP...);
-  - AHI (driver/audio/m68k-amigaos-ahiusr.lha and the driver of your sound
-    output, driver/audio/m68k-amigaos-ahidrv.lha for Paula); without AHI,
-    amisqueeze plays on Paula directly;
+  - for the sound, nothing more with Paula: amisqueeze plays on it directly
+    (AUDIO=PAULA), the lightest way on a slow Amiga; AHI for a sound card
+    (driver/audio/m68k-amigaos-ahiusr.lha and the card's driver), or to play
+    on Paula through AHI (driver/audio/m68k-amigaos-ahidrv.lha);
   - a music server on the network: Lyrion Music Server or Music Assistant.
 
 user-guide.md, in the archive, tells how to set up the server, install and

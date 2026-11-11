@@ -14,7 +14,7 @@ Version 1.0 in development. The latest release, 0.9, is a preview (see [what has
 
 ## Using amisqueeze
 
-In order: install amisqueeze, find the settings for your Amiga, set up AHI, set up the server, then start
+In order: install amisqueeze, find the settings for your Amiga, set up the sound, set up the server, then start
 amisqueeze. The Amiga must be on the network first: if it is not, start with
 [putting the Amiga on the network](network-guide.md).
 

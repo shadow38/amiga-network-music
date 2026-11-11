@@ -42,8 +42,9 @@ flowchart LR
 - About **1.7 MB of free memory**.
 - A **TCP/IP stack** providing `bsdsocket.library`: Roadshow, Miami, AmiNetXDuo, AmiTCP, or WinUAE's emulation.
   Amiga not on the network yet: see [putting the Amiga on the network](docs/network-guide.md).
-- **AHI**, the standard Amiga audio system, with the driver of Paula or of a sound card. It is free, on Aminet,
-  but not part of AmigaOS 3.x. Without it, amisqueeze plays on Paula directly.
+- **For the sound**, nothing more with Paula, the Amiga's own sound chip: amisqueeze plays on it directly, the
+  lightest way on a slow Amiga. A sound card needs **AHI**, the standard Amiga audio system, with the card's
+  driver: free, on Aminet, but not part of AmigaOS 3.x. AHI can drive Paula too, at a higher CPU cost.
 
 ## Quick start
 
@@ -52,8 +53,10 @@ flowchart LR
 2. **Copy the executable** with its icon (`.info`) into a drawer, or into `C:` to run it from a Shell:
    `amisqueeze` for any Amiga with a 68020 or better, `amisqueeze.fpu` for an Amiga with an FPU, which also decodes
    MP3.
-3. **Set up AHI**: unit 0 in a "stereo++" mode in `SYS:Prefs/AHI` (with Paula: `Paula:14 bit stereo++`).
-   Without "++", the music plays on one side only. See [sound](docs/user-guide.md#sound-ahi).
+3. **Choose the sound output**. Without a sound card: Paula directly, with the option `AUDIO=PAULA` (taken by
+   itself when AHI is not installed); see [Paula without AHI](docs/user-guide.md#paula-without-ahi). Through AHI:
+   unit 0 in a "stereo++" mode in `SYS:Prefs/AHI`; without "++", the music plays on one side only. See
+   [sound](docs/user-guide.md#sound-ahi).
 4. **Open the server's ports** to the Amiga: 3483 tcp and udp, and 9000/tcp for LMS or 8097/tcp for Music
    Assistant. MP3, or a slow Amiga, may need a setting on the server: see
    [settings for your Amiga](docs/user-guide.md#settings-for-your-amiga).
