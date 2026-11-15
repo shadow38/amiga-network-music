@@ -9,10 +9,10 @@ tools/make-icon.py --drawer), without which the Workbench does not show the dire
 (out/<prog>, and out/<prog>.fpu if built) with its .info icon, LICENSE, README.md, CHANGELOG.md, the user guide
 with its images (docs/images/ -> images/) and the network guide. The files are copied first into a temporary
 directory, the executables with mode 755 and the rest 644, so that both archives record the same modes whatever
-the file system the repository sits on. The archives are flat, unlike the repository: the relative links of their text files are rewritten, to
-the file they hold (docs/user-guide.md -> user-guide.md) or to GitHub for one they do not hold
-(CONTRIBUTING.md); a link to no file is refused. The version is the
-one tools/check-version.py --release accepts (the same in both $VER: strings, Firmware=, the user guide, the
+the file system the repository sits on. The archives are flat, unlike the repository: the relative links of their
+text files are rewritten, to the file they hold (docs/user-guide.md -> user-guide.md) or to GitHub for one they do
+not hold (CONTRIBUTING.md); a link to no file, or in a form this script does not read, is refused. The version is
+the one tools/check-version.py --release accepts (the same in both $VER: strings, Firmware=, the user guide, the
 README and the CHANGELOG, not a -dev one), so the archives always match the executables.
 
 The .lha is made by lha (LHa for UNIX, jca02266/lha; the reference image amigadev/crosstools has it), method
@@ -54,7 +54,7 @@ TEXTS = {"LICENSE": "LICENSE", "README.md": "README.md", "CHANGELOG.md": "CHANGE
          "docs/user-guide.md": "user-guide.md", "docs/network-guide.md": "network-guide.md"}  # the repository, name
 IMAGES = "docs/images"          # the user guide's images, at the same place relative to it: images/ in the archives
 REPO_URL = "https://github.com/shadow38/amiga-network-music/blob/main/"  # for a link to a file the archives lack
-INLINE_LINK = re.compile(r"\]\(([^)\s]+)\)")            # [text](target)
+INLINE_LINK = re.compile(r"""\]\(([^)\s]+)(\s+"[^"]*"|\s+'[^']*')?\)""")   # [text](target "title"), title optional
 REF_LINK = re.compile(r"^(\[[^\]]+\]: +)(\S+)", re.M)   # [name]: target
 AMIGA_TOOLS = "tools/amiga"     # developer tools built for the Amiga (make cpucount), not in the archives
 SHORT_MAX = 40          # Aminet: "This description must not be longer than 40 characters."
@@ -178,19 +178,27 @@ def archive_text(src, names, problems):
             problems.append(f"{src}: a link to {link}, no such file")
         return REPO_URL + repo + hash_ + anchor
 
-    text = INLINE_LINK.sub(lambda m: "](" + rewrite(m.group(1)) + ")", text)
+    text = INLINE_LINK.sub(lambda m: "](" + rewrite(m.group(1)) + (m.group(2) or "") + ")", text)
     return REF_LINK.sub(lambda m: m.group(1) + rewrite(m.group(2)), text)
 
 
 def link_problems():
     """The archives' text files rewritten: a relative link that leads to no file of the repository, or that leads
-    to no file of the archives once rewritten, as a list."""
+    to no file of the archives once rewritten, and a link this script cannot read (so cannot check), as a list."""
     names, problems = archive_names(), []
     held = set(names.values())
     for src in TEXTS:
+        with open(src, encoding="ascii", newline="") as f:
+            source = f.read()
+        read = {m.start() for m in INLINE_LINK.finditer(source)}
+        for m in re.finditer(r"\]\(", source):  # another form of link (<target>, a space...) would go unchecked
+            if m.start() not in read:
+                line = source.count("\n", 0, m.start()) + 1
+                problems.append(f"{src}, line {line}: a link make-dist.py cannot read: "
+                                f"{source[m.start():m.start() + 40].splitlines()[0]}")
         text = archive_text(src, names, problems)
         here = os.path.dirname(names[src])
-        for link in INLINE_LINK.findall(text) + [m.group(2) for m in REF_LINK.finditer(text)]:
+        for link in [m.group(1) for m in INLINE_LINK.finditer(text)] + [m.group(2) for m in REF_LINK.finditer(text)]:
             path = os.path.normpath(os.path.join(here, link.partition("#")[0])).replace(os.sep, "/")
             if relative(link) and path not in held:
                 problems.append(f"{names[src]} in the archives: a link to {link}, which they do not hold")

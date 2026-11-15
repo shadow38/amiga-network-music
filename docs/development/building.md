@@ -114,7 +114,8 @@ showing all the files, the documents without an icon included. In the directory:
 
 They are flat, unlike the repository: the relative links of their text files are rewritten, to the file they hold
 (`docs/user-guide.md` becomes `user-guide.md`) or to GitHub for one they do not hold (`CONTRIBUTING.md`). A link
-to no file is refused; `make test` checks the links too.
+to no file is refused, and so is a link in a form the script does not read (it reads `[text](target)`, with or
+without a title, and `[name]: target`); `make test` checks the links too.
 
 **Beside them**:
 
