@@ -666,7 +666,7 @@ amisqueeze stops at once.
 | `amisqueeze.fpu needs an FPU (...): use amisqueeze instead` | `amisqueeze.fpu` started on an Amiga without an FPU |
 | `amisqueeze is already running (Exchange lists it and can stop it)` | started from a Shell while another amisqueeze runs; from the Workbench, the new one quits without a word |
 | `bsdsocket.library not found (is a TCP/IP stack running?)` | no TCP/IP stack started |
-| `server ... not found` | the server's host name cannot be resolved |
+| `server ... not found` | the server's host name cannot be resolved. A `.local` name needs a TCP/IP stack that resolves it: give the address instead |
 | `not enough memory for the 1024 KB stream buffer` | not enough free memory |
 | `not enough memory for the audio blocks` (or `for the audio output`) | the 3 audio blocks (96 KB), the AHI requests, or those of Paula without AHI cannot be allocated |
 | `cannot open ahi.device unit N (is AHI installed?)`, then `AUDIO=PAULA plays without AHI, NOAUDIO without sound` | with `AUDIO=AHI`: AHI missing, or that unit cannot be opened; without `AUDIO`, amisqueeze plays on Paula instead (see [warnings at start-up](#warnings-at-start-up)) |
@@ -785,11 +785,13 @@ rows say what comes next.
   - `stream: cannot connect`: the server's stream port is blocked (LMS: its web port, 9000/tcp; Music Assistant:
     8097/tcp; see [ports](#ports)), or Music Assistant's "Published IP address" is wrong (see
     [Music Assistant](#music-assistant)).
-  - `stream format X not supported`, or nothing at all, with "Couldn't create command line" in LMS's `server.log`:
-    LMS has no rule to convert that file. Typically MP3 with `amisqueeze`: add the
-    [MP3 rule](#lyrion-music-server), or use `amisqueeze.fpu` on an Amiga with an FPU. Or a file above 48 kHz
-    when FLAC is not decoded on the Amiga (see [known limits](#known-limits)). With `MAXRATE`: the rules of
-    [`MAXRATE`](#maxrate) are missing, or carry another player's MAC address.
+  - `stream format X not supported`, or nothing at all, with "Couldn't create command line" in LMS's log: LMS has
+    no rule to convert that file. The log opens from *Settings > Information*, "Lyrion Music Server Log File".
+    - Typically MP3 with `amisqueeze`: add the [MP3 rule](#lyrion-music-server), or use `amisqueeze.fpu` on an
+      Amiga with an FPU.
+    - A file above 48 kHz when FLAC is not decoded on the Amiga (see [known limits](#known-limits)).
+    - With `MAXRATE`, or with [Paula without AHI](#paula-without-ahi), which asks for a lower rate by itself: the
+      rules of [`MAXRATE`](#maxrate) are missing, or carry another player's MAC address.
 - **The music plays on one side only.** The AHI unit uses a plain "stereo" mode: choose a "stereo++" one (see
   [setting up the unit](#setting-up-the-unit)).
 - **Left and right are swapped.** Add `SWAP`: `paula.audio` swaps them.
