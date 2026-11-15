@@ -26,9 +26,18 @@ comes in two forms holding the same files:
 - `amisqueeze.lha`, to unpack on the Amiga itself with LhA;
 - `amisqueeze.zip`, to unpack on a PC.
 
-AmigaOS 3.x does not include LhA. Aminet's `util/arc/lha.run` provides it: run it, and it unpacks itself
-into the current directory. Copy the one for your CPU (`lha_68k`, `lha_68020` or `lha_68040`) to `C:LhA`, then
-unpack amisqueeze:
+AmigaOS 3.x does not include LhA. Aminet's `util/arc/lha.run` provides it. It unpacks itself into the current
+directory, so run it in `RAM:`, from a Shell in the drawer that holds it:
+
+```
+Copy lha.run RAM:
+CD RAM:
+lha.run
+Copy lha_68020 C:LhA
+```
+
+Take the one for your CPU: `lha_68k`, `lha_68020` or `lha_68040`. The unpacked files have no icon: `List` shows
+them in the Shell. Then unpack amisqueeze:
 
 ```
 LhA x amisqueeze.lha RAM:

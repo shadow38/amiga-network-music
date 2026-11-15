@@ -59,8 +59,9 @@ Before the network works, the files must come from the PC another way. Two are n
 
 - **LhA**, which unpacks `.lha` archives, and which AmigaOS 3.x does not include: `util/arc/lha.run` on
   [Aminet](https://aminet.net/package/util/arc/lha);
-- **the TCP/IP stack**: AmiNetXDuo's `.lha`, from its [releases](https://github.com/tinic/AmiNetXDuo/releases).
-  It takes several megabytes: more than a floppy disk holds.
+- **the TCP/IP stack**: AmiNetXDuo's `.lha`, the latest one on its
+  [releases](https://github.com/tinic/AmiNetXDuo/releases) page, not a nightly build. It takes several megabytes:
+  more than a floppy disk holds.
 
 The usual ways to carry them, from the PC to the Amiga:
 
@@ -89,11 +90,13 @@ AmiNetXDuo is free (MIT licence) and recent. Its installer finds the card, and t
 
 1. **Fit the card**, and copy its driver to `DEVS:Networks` if it is not one of AmiNetXDuo's.
 2. **Run the installer**: open the drawer `AmiNetXDuo` just unpacked and double-click `Install-AmiNetXDuo`.
-   Choose **Intermediate User**: it shows every card and asks whether to start the network at boot. Then:
-   - the stack it proposes for your memory;
-   - the installation into the system;
+   Choose **Intermediate User**: it shows every card and asks whether to start the network at boot. Keep what it
+   proposes, and check these screens:
+   - the stack: one of four variants (full, fat, minimal, micro), chosen for your memory;
    - your card;
    - DHCP, the address given by the router;
+   - serving "every volume, an AmigaDOS shell and this Amiga's display in a web browser": **No**. amisqueeze does
+     not need it, and it opens the Amiga to the whole local network;
    - "Yes, at boot".
 3. **Reboot.** The network starts with the Amiga.
 
