@@ -633,7 +633,7 @@ amisqueeze plays anyway.
 | `AHI unit N uses "...", a mono mode: the music will play in mono` | choose a "stereo++" mode for stereo |
 | `MP3=ON: this build does not decode MP3 ...` | `MP3=ON` given to `amisqueeze`: MP3 stays with the server |
 | `MAXRATE=AHI: the AHI unit's rate is not known (...): at most 48000 Hz asked of the server` (or `AHISTD`) | with `NOAUDIO` or `OUTPUT`, or when the AHI preferences cannot be read: give the rate in Hz instead |
-| `playing on Paula directly instead (AUDIO=PAULA)` | after `cannot open ahi.device ...`, without `AUDIO`: AHI is missing, amisqueeze plays on Paula (see [Paula without AHI](#paula-without-ahi)) |
+| `cannot open ahi.device unit N (is AHI installed?)`, then `playing on Paula directly instead (AUDIO=PAULA)` | without `AUDIO`: AHI is missing, amisqueeze plays on Paula, as expected without AHI (see [Paula without AHI](#paula-without-ahi)) |
 | `SWAP is not needed with AUDIO=PAULA, whose left and right are in place: swapped as asked` (or `PAULA8`) | leave `SWAP` out with Paula without AHI |
 | `MAXRATE=AHI: no AHI with Paula direct: at most N Hz asked of the server, Paula's highest rate` (or `AHISTD`) | with `AUDIO=PAULA` or `PAULA8`, leave `MAXRATE` out, or give a rate in Hz |
 
@@ -660,7 +660,7 @@ amisqueeze stops at once.
 | `server ... not found` | the server's host name cannot be resolved |
 | `not enough memory for the 1024 KB stream buffer` | not enough free memory |
 | `not enough memory for the audio blocks` (or `for the audio output`) | the 3 audio blocks (96 KB), the AHI requests, or those of Paula without AHI cannot be allocated |
-| `cannot open ahi.device unit N (is AHI installed? NOAUDIO plays without sound)` | with `AUDIO=AHI`: AHI missing, or that unit cannot be opened; without `AUDIO`, amisqueeze plays on Paula instead |
+| `cannot open ahi.device unit N (is AHI installed?)`, then `AUDIO=PAULA plays without AHI, NOAUDIO without sound` | with `AUDIO=AHI`: AHI missing, or that unit cannot be opened; without `AUDIO`, amisqueeze plays on Paula instead (see [warnings at start-up](#warnings-at-start-up)) |
 | `Paula's channels 0 to 3 are used by another program (AUDIO=PAULA8 needs only channels 0 and 1)` (or `0 and 1`) | another program plays on Paula: stop it, or try `AUDIO=PAULA8` |
 | `cannot open audio.device`, `not enough chip memory for Paula: N KB` | Paula without AHI cannot start: the system's audio device, or not enough chip memory |
 | `timer.device unavailable` | the system timer cannot be opened; should not happen |

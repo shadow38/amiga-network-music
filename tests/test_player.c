@@ -196,7 +196,7 @@ static void test_start_paula(void)
 }
 
 /* Without AUDIO, ahi.device missing gives Paula with 14 bits, said; AUDIO=AHI keeps the error; NOAUDIO and OUTPUT
- * win over AUDIO */
+ * win over AUDIO; the hint at the other outputs only with AUDIO=AHI */
 static void test_start_paula_fallback(void)
 {
     struct player p;
@@ -210,9 +210,11 @@ static void test_start_paula_fallback(void)
     stub_ahi_fails = 1;
     CHECK(start_with(&p, &o, PLAYER_OK) && stub_paula_volumes > 0 && helo_caps_have(",MaxSampleRate=28603,"));
     CHECK(strstr(stub_out, "cannot open ahi.device unit 0") &&
-          strstr(stub_out, "amisqueeze: playing on Paula directly instead (AUDIO=PAULA)\n"));
+          strstr(stub_out, "amisqueeze: playing on Paula directly instead (AUDIO=PAULA)\n") &&
+          !strstr(stub_out, "NOAUDIO"));
     o.audio_output = AUDIO_AHI;
-    CHECK(start_with(&p, &o, PLAYER_FAIL) && stub_paula_volumes == 0 && !strstr(stub_out, "Paula"));
+    CHECK(start_with(&p, &o, PLAYER_FAIL) && stub_paula_volumes == 0 && !strstr(stub_out, "playing on Paula") &&
+          strstr(stub_out, "amisqueeze: AUDIO=PAULA plays without AHI, NOAUDIO without sound\n"));
     stub_ahi_fails = 0;
 
     o.audio_output = AUDIO_PAULA;

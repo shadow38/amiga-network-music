@@ -481,8 +481,10 @@ static int open_output(struct player *p, const struct options *o, struct ahi_mod
     if (out != AUDIO_PAULA && out != AUDIO_PAULA8) {
         if (audio_open(p, AUDIO_AHI, o->unit, o->swap))
             return read_ahi_mode(p, o, mode);
-        if (out == AUDIO_AHI)
+        if (out == AUDIO_AHI) {
+            msg("amisqueeze: AUDIO=PAULA plays without AHI, NOAUDIO without sound\n");
             return -1;
+        }
         msg("amisqueeze: playing on Paula directly instead (AUDIO=PAULA)\n");
         out = AUDIO_PAULA;
     }

@@ -39,7 +39,7 @@ int plat_ahi_open(int unit)
     }
     ahi_req[0]->ahir_Version = 4;
     if (OpenDevice(AHINAME, (ULONG)unit, (struct IORequest *)ahi_req[0], 0) != 0) {
-        msg("amisqueeze: cannot open ahi.device unit %d (is AHI installed? NOAUDIO plays without sound)\n", unit);
+        msg("amisqueeze: cannot open ahi.device unit %d (is AHI installed?)\n", unit);
         DeleteIORequest((struct IORequest *)ahi_req[0]);
         ahi_req[0] = NULL;
         plat_ahi_close();
