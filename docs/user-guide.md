@@ -852,9 +852,10 @@ rows say what comes next.
 - Exchange's Active/Inactive switch is shown, but does not affect the music.
 - With a Xircom PCMCIA card and Aminet's `xircomce2.device` 1.1, Paula crackles through AHI while the music comes
   in. Two ways stop it, tried with that driver and AHI 4.180 on a 26 MHz 68020:
-  - AHI's Paula driver 4.33 (Aminet `driver/audio/AHI-Paula`) with `AHIpaulaBufferLength` at 2048: about 86 % of
-    the CPU. Set it with `SetEnv AHIpaulaBufferLength 2048`, and keep it for every start with
-    `Copy ENV:AHIpaulaBufferLength ENVARC:`. At 8192, the sound becomes choppy;
+  - `AHIpaulaBufferLength` at 2048, a setting of AHI's Paula driver: about 86 % of the CPU. Set it with
+    `SetEnv AHIpaulaBufferLength 2048`, and keep it for every start with `Copy ENV:AHIpaulaBufferLength ENVARC:`.
+    At 8192, the sound becomes choppy. The Paula driver reads it from version 4.11, so that of AHI 4.18 and of
+    AHI 6 too; tried with 4.33 (Aminet `driver/audio/AHI-Paula`). AHI's own guide describes it, under The Drivers;
   - AmiNetXDuo's `RXBUFFER=8192`, in its interface file: about 92 % of the CPU.
 
   The other CPU figures of this guide, such as those of [`MAXRATE`](#maxrate), were measured with a fixed version

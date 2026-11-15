@@ -151,7 +151,7 @@ next two, the last):
 
 The fixed driver is not published.
 
-AHI's Paula driver 4.33 (Aminet `driver/audio/AHI-Paula`) reads `AHIpaulaBufferLength`, an environment variable:
+AHI's Paula driver reads `AHIpaulaBufferLength` from version 4.11 (AHI's `History`), an environment variable:
 the shortest block it plays from chip RAM, in samples. A longer block gives AHI the margin the reception takes
 from it. A1200, 1.0-dev, a 44.1 kHz track from Music Assistant (codec `wav`, 16 bits), AHI 4.180,
 `Paula:14 bit stereo++` at 27,429 Hz, the 1.1 sources rebuilt, without the fix and without `RXBUFFER`:
@@ -172,7 +172,8 @@ checked:
 - the load rises to the fixed driver's when the crackles stop: the blocks AHI was late for were not mixed at all;
 - at 8192, the driver mixes 300 ms of sound at once in its software interrupt, and no task runs meanwhile.
 
-4.23 was not tried with the variable.
+4.23, the driver of AHI 4.18, has the variable's name in its binary, but was not tried with it. 4.33 is Aminet's
+`driver/audio/AHI-Paula`.
 
 The stack, the same machine (0.8):
 
