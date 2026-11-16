@@ -12,7 +12,8 @@ belongs, with a link.
 | `docs/network-guide.md` | a user whose Amiga has no network | How do I put the Amiga on the network, up to the first music? |
 | `docs/README.md` | a reader browsing `docs/` | Which page do I read? |
 | `CHANGELOG.md` | a user upgrading | What changed in this version? |
-| `CONTRIBUTING.md` | a new contributor | Which page answers my question? How do I start, and propose a change? |
+| `CONTRIBUTING.md` | a new contributor | How do I start, and propose a change? |
+| `docs/development/README.md` | a contributor | Which page answers my question? |
 | `docs/development/building.md` | a contributor | What does the build need, and how do I build and package it? |
 | `docs/development/code-rules.md` | a contributor changing the code | Which rules does the code follow, within which limits? |
 | `docs/development/testing.md` | a contributor testing a change | Which test covers what, and how do I run it, on the host and in WinUAE? |
@@ -23,7 +24,7 @@ belongs, with a link.
 | `docs/development/pitfalls.md` | a contributor who is stuck | What has already gone wrong, and how do I debug? |
 | `docs/development/releasing.md` | the maintainer | How is a version checked and published? |
 | `docs/development/documentation-rules.md` | anyone writing documentation | Which document answers which question, and how do I write it? |
-| `docs/development/README.md` | the maintainer, a contributor | What is left to do, in which order? Where does each step stand? |
+| `docs/development/plan.md` | the maintainer, a contributor | What is left to do, in which order? Where does each step stand? |
 | `docs/development/phase-*.md` | the same | What is each step: its goal, its success criterion, how to check it? |
 | `docs/development/reviews/` | the maintainer | What did a review find, and what became of each finding? |
 | commit messages | anyone reading the history | What was done, how was it checked, and why? |

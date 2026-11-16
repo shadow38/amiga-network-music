@@ -1,6 +1,6 @@
 # Phase 3 — Release
 
-Back to the [plan](README.md).
+Back to the [plan](plan.md).
 
 ## publish-1 Licence and user documentation 🔶
 
@@ -200,7 +200,7 @@ place where the reader had to guess is fixed in the guides.
   exceptions, sentences pile up clauses, and the plan had become a log of past work. The user guide is too long.
 - **Content**:
   - the rules, in [documentation-rules.md](documentation-rules.md) (in `CONTRIBUTING.md` until publish-8);
-  - the plan ([README.md](README.md)) rewritten to them first, to try them;
+  - the plan ([plan.md](plan.md)) rewritten to them first, to try them;
   - then the user guide, in one file with two parts: using amisqueeze (the common case), then a reference
     (options, ToolTypes, messages, troubleshooting, limits);
   - then the documents of `docs/development/`, one at a time, only where the user finds it worth it.

@@ -241,7 +241,7 @@ tools/make-icon.py    draws the Workbench icons (out/<prog>.info, classic AmigaO
 ```
 
 - `obj/`, `out/`, `obj-host/`, `out-host/` and `.sdk/` are generated, and ignored by `.gitignore`.
-- The plan, `docs/development/README.md` and its `phase-*.md`, is the project's working plan: steps, rules,
+- The plan, `docs/development/plan.md` and its `phase-*.md`, is the project's working plan: steps, rules,
   review reports, which commit messages refer to. It is not needed to use or build the programs.
 
 ## VS Code

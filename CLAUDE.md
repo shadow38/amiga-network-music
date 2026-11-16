@@ -1,10 +1,10 @@
 # CLAUDE.md — amiga-network-music
 
 For Claude Code. What a human contributor needs is in the repository's own documents, not here: `README.md` (for
-users, kept short), `docs/user-guide.md` (options, messages, server setup), `CONTRIBUTING.md` (the map of the
-documents for contributors, a quick start, proposing a change) and the pages of `docs/development/` it lists:
-`building.md`, `code-rules.md`, `testing.md`, `architecture.md`, `performance.md`, `pitfalls.md`, `releasing.md`,
-`documentation-rules.md`; `docs/development/README.md` is the plan (roadmap, where each step stands, open points).
+users, kept short), `docs/user-guide.md` (options, messages, server setup), `CONTRIBUTING.md` (a quick start,
+proposing a change) and the pages of `docs/development/`, whose `README.md` is their map: `building.md`,
+`code-rules.md`, `testing.md`, `architecture.md`, `performance.md`, `pitfalls.md`, `releasing.md`,
+`documentation-rules.md`; `docs/development/plan.md` is the plan (roadmap, where each step stands, open points).
 This file keeps only how to work with the maintainer, the rules never to break, and what to read before touching
 what. Public GitHub repository `shadow38/amiga-network-music`; documentation, code comments and program messages
 in English.
@@ -18,7 +18,7 @@ in English.
   recorded in the plan, once, briefly, without a date ("agreed with the user"); how a step was checked goes in
   its commit message, not in the plan.
 - Which version brings which steps, and where each step stands: "Roadmap" and "Where we are" in
-  `docs/development/README.md`, the only place they are kept; keep the statuses up to date.
+  `docs/development/plan.md`, the only place they are kept; keep the statuses up to date.
 - Each user-visible change: the user guide updated and a line under "Unreleased" in `CHANGELOG.md`, as it is made.
 - `make test` after every change to the core; extend the tests with each step.
 - Never implement an "Open point" of the plan unasked. No amilms code before its study (step remote-0).

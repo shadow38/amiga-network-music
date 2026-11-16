@@ -1,6 +1,6 @@
 # Phase 2 — amilms, remote control
 
-Back to the [plan](README.md).
+Back to the [plan](plan.md).
 
 A remote control from the Amiga for LMS, then for Music Assistant. It drives any player of the server
 (amisqueeze, squeezelite, Squeezebox…). **amilms** is a working name: **amiremote** is proposed, since the remote

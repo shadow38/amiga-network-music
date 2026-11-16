@@ -1,23 +1,13 @@
 # Contributing
 
-For developers: where to find what, how to start, and how to propose a change. Using the programs is covered in
-the [user guide](docs/user-guide.md).
+For developers: how to start, and how to propose a change. Using the programs is covered in the
+[user guide](docs/user-guide.md).
 
 ## The documents
 
-| Your question | The page |
-|---|---|
-| What does the build need, how do I build and package it? Where is what in the repository? | [building.md](docs/development/building.md) |
-| Which rules does the code follow? How much stack and memory may it use? | [code-rules.md](docs/development/code-rules.md) |
-| Which test covers what? How do I run the tests, on the host and in WinUAE? | [testing.md](docs/development/testing.md), [winuae-scenarios.md](docs/development/winuae-scenarios.md) |
-| How does amisqueeze work, and why this way? | [architecture.md](docs/development/architecture.md) |
-| What costs the CPU, what was done to lower it, how is it measured? | [performance.md](docs/development/performance.md) |
-| What do the servers send, what does amisqueeze answer, what does it trust? What does `STMs` mean? | [protocol.md](docs/development/protocol.md) |
-| Something makes no sense: what has already gone wrong? How do I debug? | [pitfalls.md](docs/development/pitfalls.md) |
-| How do I write documentation for this project? | [documentation-rules.md](docs/development/documentation-rules.md) |
-| How is a version checked and published? | [releasing.md](docs/development/releasing.md) |
-| What is planned, and where does each step stand? | [the plan](docs/development/README.md) |
-| What changed in each version? | [CHANGELOG.md](CHANGELOG.md) |
+The developers' pages, and the question each answers, are listed in
+**[docs/development/](docs/development/README.md)**: how amisqueeze works, building, the code rules, the tests,
+releasing, and the plan.
 
 ## Quick start
 

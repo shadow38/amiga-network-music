@@ -1,6 +1,6 @@
 # Phase 1 — amisqueeze, slimproto player
 
-Back to the [plan](README.md).
+Back to the [plan](plan.md).
 
 A network player for LMS (Music Assistant later, after version 0.2): slimproto control connection (TCP 3483), HTTP
 audio stream, audio output through AHI. Protocol references: squeezelite (`slimproto.c`, `slimproto.h`, `stream.c`, `pcm.c`) and LMS
@@ -77,7 +77,7 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   - WinUAE: no memory leak (same free memory after three play/stop cycles), and still working with a 2 KB stack;
     Amiga executable: 21,488 bytes.
 - The `BUFFER` option mentioned in Content did not come with player-6: an open point of the
-  [plan](README.md#open-points).
+  [plan](plan.md#open-points).
 
 ## player-3 Output to a file ✅
 
@@ -404,7 +404,7 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   minimp3), tested on the host first; advertised in `HELO` only once validated. (Written before the design
   further down; where they differ, the design and what was done prevail: no `mpega.library` in `amisqueeze`, which
   leaves MP3 to the server; no `CPU` variable in the Makefile, but a second set of flags for `amisqueeze.fpu`; the
-  64-bit `muls.l` check below was not written, see the open points of the [plan](README.md#open-points).)
+  64-bit `muls.l` check below was not written, see the open points of the [plan](plan.md#open-points).)
   - **Decoder interface** (`decoder.h`): compressed bytes in, 16-bit PCM out; integers and pointers only across
     it, so a decoder can be built with other CPU options than the rest of the program.
   - **FLAC**: one 68020 build for every CPU (integer only, no FPU needed). Watch the 32×32→64 multiply
@@ -753,7 +753,7 @@ belongs to the task that opened it; packets serialised field by field; buffers a
 
 ## player-10 Finishing touches ✅ (versions 0.4 to 0.9)
 
-- **Split** (decided, see the [plan](README.md)): **0.4** the volume modes (`LMS` and `FIXED`, done
+- **Split** (decided, see the [plan](plan.md)): **0.4** the volume modes (`LMS` and `FIXED`, done
   as LMS's own setting, see below; `MIXER` left for later) and the AHI mode warning; **0.5** `LOG=<file>` and
   the start from the Workbench; **0.8** the automatic server discovery (agreed with the user: its
   last check needs the real machine, in the same session as player-9); **0.9** the internet radios' metadata.
@@ -819,7 +819,7 @@ belongs to the task that opened it; packets serialised field by field; buffers a
   - **Also in the branch**, one commit each: the 88.2 kHz rate code (`:`); a line in the user guide's Known limits
     for what `strm s` asks and amisqueeze ignores (polarity, one side only, transitions, replay gain).
   - **Not done**: LMS's `body` frame for playlist addresses (see the plan's
-    [Open points](README.md#open-points)), HTTPS, `codc`.
+    [Open points](plan.md#open-points)), HTTPS, `codc`.
   - **Criterion**:
     - on the host, unit tests at every cut: a block across two reads, the length byte last in a read, an empty
       block, the longest one, intervals of 1 and 0;

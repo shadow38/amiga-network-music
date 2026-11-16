@@ -1,6 +1,6 @@
 # Phase 0 — Tooling and test environment
 
-Back to the [plan](README.md).
+Back to the [plan](plan.md).
 
 ## tools-1 Toolchain ✅
 

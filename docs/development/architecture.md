@@ -3,7 +3,7 @@
 For contributors: how amisqueeze works, and why this way. The code comments give the details; this page gives the
 picture. What the servers send and what amisqueeze answers, with a glossary of slimproto's words, is in
 [protocol.md](protocol.md). Building and testing are in [building.md](building.md) and [testing.md](testing.md),
-the steps and their decisions in the [plan](README.md).
+the steps and their decisions in the [plan](plan.md).
 
 ## The picture
 
