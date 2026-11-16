@@ -76,6 +76,13 @@ tried in WinUAE before the tag.
 
 ## Publishing the draft
 
+**Its tag**: before publishing, check that the draft's tag is `amisqueeze-<version>`, and after, that
+`gh release view amisqueeze-<version>` finds the release. Once, after the tag had been deleted and pushed again,
+the published draft got a new tag `untagged-...` on the same commit instead. Then set the release's tag back
+(`gh api -X PATCH repos/<owner>/<repo>/releases/<id> -f tag_name=amisqueeze-<version>`) and delete the stray tag.
+That tag also starts `tests.yml` on the commit: `main` can move forward only once that run is green (see
+[Branches](#branches)).
+
 The draft is published by hand, once:
 
 - `tests.yml` is green on the tag (`release.yml` does not wait for it);
