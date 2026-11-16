@@ -65,8 +65,8 @@ The archives are made by GitHub from the tag (`.github/workflows/release.yml`, s
 
 - runs `make dist` through the Docker way of `tools/amiga-make.sh`, with the pinned image;
 - checks that the archives bear the tag's version, read from their readme (their names hold none);
-- makes a **draft** pre-release with the archives, their `.sha256` and the readme. Its notes hold the SHA-256
-  lines and a place for the rest.
+- makes a **draft** release, a pre-release for a 0.x version, with the archives, their `.sha256` and the readme.
+  Its notes hold the SHA-256 lines and a place for the rest.
 
 **The notes** describe this version only, its known limits as plain facts. Nothing about later versions (agreed
 with the maintainer; the roadmap stays in the plan).

@@ -2,10 +2,12 @@
 
 What changed in each release of amisqueeze, the newest first. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions are those of the
-[releases](https://github.com/shadow38/amiga-network-music/releases) (tags `amisqueeze-<version>`). All of them
-are previews, until 1.0.
+[releases](https://github.com/shadow38/amiga-network-music/releases) (tags `amisqueeze-<version>`). The versions
+before 1.0 were previews.
 
 ## [Unreleased]
+
+## [1.0] - 2026-11-16
 
 ### Added
 
@@ -279,7 +281,8 @@ Lyrion Music Server (LMS) as a player and plays through AHI.
 - Options `SERVER`, `PORT`, `NAME`, `MAC`, `UNIT` (AHI unit), `SWAP`, `NOAUDIO`, `OUTPUT`, `VERBOSE`; default
   options in `ENV:amisqueeze.prefs`.
 
-[Unreleased]: https://github.com/shadow38/amiga-network-music/compare/amisqueeze-0.9...HEAD
+[Unreleased]: https://github.com/shadow38/amiga-network-music/compare/amisqueeze-1.0...HEAD
+[1.0]: https://github.com/shadow38/amiga-network-music/compare/amisqueeze-0.9...amisqueeze-1.0
 [0.9]: https://github.com/shadow38/amiga-network-music/compare/amisqueeze-0.8...amisqueeze-0.9
 [0.8]: https://github.com/shadow38/amiga-network-music/compare/amisqueeze-0.7...amisqueeze-0.8
 [0.7]: https://github.com/shadow38/amiga-network-music/compare/amisqueeze-0.6...amisqueeze-0.7

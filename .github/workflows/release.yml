@@ -63,7 +63,7 @@ jobs:
             title="TRIAL $title, never to publish: delete it"
           fi
           {
-            echo "**amisqueeze $version** — preview"
+            echo "**amisqueeze $version**"
             echo
             echo "NOTES TO WRITE, approved by the user."
             echo
